@@ -1,0 +1,7 @@
+transport_saas_backup.dump
+
+backend/.env
+backend/.env.*
+frontend/.env
+frontend/.env.*
+transport_saas_backup.dump
