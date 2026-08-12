@@ -8,7 +8,7 @@ export default function DriverLoginPage() {
 
   const login = async () => {
     const response = await fetch(
-      "http://localhost:5000/driver-login",
+      "https://routex-smgu.onrender.com/driver-login",
       {
         method: "POST",
         headers: {
