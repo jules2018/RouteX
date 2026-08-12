@@ -2,13 +2,19 @@ const express = require("express");
 const cors = require("cors");
 const pool = require("./db");
 const app = express();
+app.get("/hello", (req, res) => {
+  res.send("HELLO ROUTEX");
+});
+app.get("/hello", (req, res) => {
+  res.send("HELLO ROUTEX");
+});
 
 app.use(cors());
 app.use(express.json());
 
 app.get("/", (req, res) => {
   res.json({
-    message: "Upington to Cape Town Transport SaaS API Running",
+    message: "ROUTEX BUILD 20260812",
   });
 });
 
