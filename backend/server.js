@@ -1582,6 +1582,7 @@ app.get("/passenger-trips/:id", async (req, res) => {
 const PORT = process.env.PORT || 5000;
 
 console.log("ROUTEX SERVER FILE LOADED");
+ 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
