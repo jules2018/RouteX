@@ -14,11 +14,11 @@ export default function NewTripPage() {
   const [vehicleId, setVehicleId] = useState("");
 
   useEffect(() => {
-    fetch("http://localhost:5000/available-drivers")
+    fetch("https://routex-smgu.onrender.com/available-drivers")
       .then((res) => res.json())
       .then((data) => setDrivers(data));
 
-    fetch("http://localhost:5000/available-vehicles")
+    fetch("https://routex-smgu.onrender.com/available-vehicles")
       .then((res) => res.json())
       .then((data) => setVehicles(data));
   }, []);
@@ -29,7 +29,7 @@ export default function NewTripPage() {
     e.preventDefault();
 
     const response = await fetch(
-      "http://localhost:5000/trips",
+      "https://routex-smgu.onrender.com/trips",
       {
         method: "POST",
         headers: {
