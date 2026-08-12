@@ -6,7 +6,7 @@ export default function VehiclesPage() {
   const [vehicles, setVehicles] = useState<any[]>([]);
 
   useEffect(() => {
-    fetch("http://localhost:5000/vehicles")
+    fetch("https://routex-smgu.onrender.com/vehicles")
       .then((res) => res.json())
       .then((data) => {
         setVehicles(data);
