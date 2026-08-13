@@ -8,7 +8,7 @@ export default function PassengerLoginPage() {
 
   const login = async () => {
     const response = await fetch(
-      "http://localhost:5000/passenger-loginhttps://routex-smgu.onrender.com",
+      "https://routex-smgu.onrender.com/passenger-login",
       {
         method: "POST",
         headers: {

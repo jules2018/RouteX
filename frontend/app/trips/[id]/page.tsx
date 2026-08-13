@@ -14,7 +14,7 @@ export default function TripDetailsPage() {
   if (!id) return;
 
   fetch(
-    `http://localhost:5000/trips/${id}/driver-manifest`
+    `https://routex-smgu.onrender.com/trips/${id}/driver-manifest`
   )
     .then((res) => res.json())
     .then((data) => {
@@ -22,7 +22,7 @@ export default function TripDetailsPage() {
     });
 
   fetch(
-    `http://localhost:5000/trips/${id}/passengers`
+    `https://routex-smgu.onrender.com/trips/${id}/passengers`
   )
     .then((res) => res.json())
     .then((data) => {
@@ -40,7 +40,7 @@ if (!trip || !trip.trip) {
 
 const departTrip = async () => {
   await fetch(
-    `http://localhost:5000/trips/${id}/depart`,
+    `https://routex-smgu.onrender.com/trips/${id}/depart`,
     {
       method: "POST",
     }
@@ -51,7 +51,7 @@ const departTrip = async () => {
 
 const completeTrip = async () => {
   await fetch(
-    `http://localhost:5000/trips/${id}/complete`,
+    `https://routex-smgu.onrender.com/trips/${id}/complete`,
     {
       method: "POST",
     }

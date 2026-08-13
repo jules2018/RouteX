@@ -63,7 +63,7 @@ if (
     setLoading(true);
 
     const response = await fetch(
-      "http://localhost:5000/passengers",
+      "https://routex-smgu.onrender.com/passengers",
       {
         method: "POST",
         headers: {
@@ -76,7 +76,7 @@ if (
   const data = await response.json();
 
 await fetch(
-  `http://localhost:5000/auto-assign/${data.id}`,
+  `https://routex-smgu.onrender.com/auto-assign/${data.id}`,
   {
     method: "POST",
   }

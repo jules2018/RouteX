@@ -19,27 +19,27 @@ export default function DriverPortalPage() {
     setDriver(JSON.parse(storedDriver));
   }
 
-  fetch("http://localhost:5000/trip-requests")
+  fetch("https://routex-smgu.onrender.com/trip-requests")
       .then((res) => res.json())
       .then((data) => {
         setRequests(data);
       });
-      fetch("http://localhost:5000/accepted-trips")
+      fetch("https://routex-smgu.onrender.com/accepted-trips")
   .then((res) => res.json())
   .then((data) => {
     setAcceptedTrips(data);
   });
-  fetch("http://localhost:5000/in-progress-trips")
+  fetch("https://routex-smgu.onrender.com/in-progress-trips")
   .then((res) => res.json())
   .then((data) => {
     setInProgressTrips(data);
   });
-  fetch("http://localhost:5000/completed-trips")
+  fetch("https://routex-smgu.onrender.com/completed-trips")
   .then((res) => res.json())
   .then((data) => {
     setCompletedTrips(data);
   });
-  fetch("http://localhost:5000/driver-list")
+  fetch("https://routex-smgu.onrender.com/driver-list")
   .then((res) => res.json())
   .then((data) => {
     setDrivers(data);
@@ -112,7 +112,7 @@ export default function DriverPortalPage() {
     const driverId = driver?.id;
 
     await fetch(
-      `http://localhost:5000/trip-requests/${request.id}/accept`,
+      `https://routex-smgu.onrender.com/trip-requests/${request.id}/accept`,
       {
         method: "POST",
         headers: {
@@ -192,7 +192,7 @@ export default function DriverPortalPage() {
       <button
   onClick={async () => {
     await fetch(
-      `http://localhost:5000/trip-requests/${trip.id}/start`,
+      `https://routex-smgu.onrender.com/trip-requests/${trip.id}/start`,
       {
         method: "POST",
       }
@@ -250,7 +250,7 @@ export default function DriverPortalPage() {
       <button
         onClick={async () => {
           await fetch(
-            `http://localhost:5000/trip-requests/${trip.id}/complete`,
+            `https://routex-smgu.onrender.com/trip-requests/${trip.id}/complete`,
             {
               method: "POST",
             }

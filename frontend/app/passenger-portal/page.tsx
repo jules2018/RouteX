@@ -18,7 +18,7 @@ export default function PassengerPortalPage() {
   setPassenger(passengerData);
 
   fetch(
-    `http://localhost:5000/passenger-trips/${passengerData.id}`
+    `https://routex-smgu.onrender.com/passenger-trips/${passengerData.id}`
   )
     .then((res) => res.json())
     .then((data) => {
