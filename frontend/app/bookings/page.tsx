@@ -71,18 +71,17 @@ if (
     if (loading) return;
 
     setLoading(true);
+    console.log("Passenger:", passenger);
 
     const response = await fetch(
-      "https://routex-smgu.onrender.com/passengers",
+  "https://routex-smgu.onrender.com/bookings",
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-  ...form,
-  full_name: passenger?.full_name,
-  phone: passenger?.phone,
+       body: JSON.stringify({
+  passenger_id: passenger?.id,
 }),
       }
     );
