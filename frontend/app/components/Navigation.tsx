@@ -11,8 +11,7 @@ export default function Navigation() {
 const [isDriver, setIsDriver] =
   useState(false);
 
-  const isAdmin =
-  localStorage.getItem("user") !== null;
+  const [isAdmin, setIsAdmin] = useState(false);
   console.log({
   isPassenger,
   isDriver,
@@ -20,6 +19,10 @@ const [isDriver, setIsDriver] =
 });
 
 useEffect(() => {
+  if (localStorage.getItem("user")) {
+  setIsAdmin(true);
+}
+
   if (
   localStorage.getItem("user") ||
   localStorage.getItem("driver") ||
