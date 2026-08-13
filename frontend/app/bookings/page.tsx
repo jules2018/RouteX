@@ -2,7 +2,13 @@
 import { useState } from "react";
 
 export default function BookingPage() {
-  const [loading, setLoading] = useState(false);
+  const passengerData = JSON.parse(
+  localStorage.getItem("passenger") || "{}"
+  
+);
+console.log(passengerData);
+
+const [loading, setLoading] = useState(false);
 const [form, setForm] = useState({
   full_name: "",
   phone: "",
