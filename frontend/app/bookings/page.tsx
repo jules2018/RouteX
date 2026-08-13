@@ -1,5 +1,4 @@
 "use client";
-import AuthGuard from "../components/AuthGuard";
 import { useState } from "react";
 
 export default function BookingPage() {
@@ -100,7 +99,7 @@ alert(
   };
 
   return (
-    <AuthGuard>
+    
     <main className="p-8">
       <h1 className="text-4xl font-bold mb-6">
         New Booking
@@ -212,6 +211,6 @@ alert(
 `
       </form>
     </main>
-    </AuthGuard>
+    
   );
 }
