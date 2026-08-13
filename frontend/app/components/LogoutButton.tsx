@@ -5,10 +5,13 @@ import { useRouter } from "next/navigation";
 export default function LogoutButton() {
   const router = useRouter();
 
-  const logout = () => {
-    localStorage.removeItem("user");
-    router.push("/login");
-  };
+ const logout = () => {
+  localStorage.removeItem("user");
+  localStorage.removeItem("driver");
+  localStorage.removeItem("passenger");
+
+  router.push("/login");
+};
 
   return (
     <button
