@@ -1,8 +1,20 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function BookingPage() {
 const [loading, setLoading] = useState(false);
+const [passenger, setPassenger] = useState<any>(null);
+
+useEffect(() => {
+  const storedPassenger =
+    localStorage.getItem("passenger");
+
+  if (storedPassenger) {
+    setPassenger(
+      JSON.parse(storedPassenger)
+    );
+  }
+}, []);
 
 const [form, setForm] = useState({
   full_name: "",
@@ -67,7 +79,11 @@ if (
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+  ...form,
+  full_name: passenger?.full_name,
+  phone: passenger?.phone,
+}),
       }
     );
 
