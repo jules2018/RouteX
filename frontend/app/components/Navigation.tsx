@@ -2,8 +2,9 @@
 
 import LogoutButton from "./LogoutButton";
 import { useEffect, useState } from "react";
-const [isLoggedIn, setIsLoggedIn] = useState(false);
+
 export default function Navigation() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
  const [isPassenger, setIsPassenger] =
   useState(false);
 
