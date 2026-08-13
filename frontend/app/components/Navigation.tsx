@@ -81,7 +81,11 @@ useEffect(() => {
        {isPassenger && !isAdmin && (<a href="/passenger-portal" className="text-slate-500 hover:text-slate-900">
           Passenger Portal
         </a>)}
-
+        {isPassenger && !isAdmin && (
+  <a href="/bookings" className="text-slate-500 hover:text-slate-900">
+    New Booking
+  </a>
+)}
 
         <div className="ml-auto">
           <LogoutButton />
