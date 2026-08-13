@@ -312,7 +312,7 @@ app.post("/trip-bookings", async (req, res) => {
 app.post("/bookings", async (req, res) => {
   try {
   const { passenger_id } = req.body;
-  
+
   console.log("Booking request:", passenger_id);
   const tripResult = await pool.query(`
   SELECT
@@ -333,7 +333,29 @@ app.post("/bookings", async (req, res) => {
       t.id ASC
   LIMIT 1
 `);
+if (tripResult.rows.length === 0) {
+  return res.status(400).json({
+    message: "No available seats"
+  });
+}
 
+const tripId = tripResult.rows[0].id;
+const bookingResult = await pool.query(
+  `
+  INSERT INTO trip_bookings
+  (
+    trip_id,
+    passenger_id
+  )
+  VALUES ($1,$2)
+  RETURNING *
+  `,
+  [tripId, passenger_id]
+);
+res.status(201).json({
+  message: "Booking created",
+  booking: bookingResult.rows[0]
+});
   } catch (error) {
 
     res.status(500).json({
@@ -369,29 +391,7 @@ app.get("/trips/:id/occupancy", async (req, res) => {
       `,
       [tripId]
     );
-    if (tripResult.rows.length === 0) {
-  return res.status(400).json({
-    message: "No available seats"
-  });
-}
-const tripId = tripResult.rows[0].id;
-const bookingResult = await pool.query(
-  `
-  INSERT INTO trip_bookings
-  (
-    trip_id,
-    passenger_id
-  )
-  VALUES ($1,$2)
-  RETURNING *
-  `,
-  [tripId, passenger_id]
-);
-res.status(201).json({
-  message: "Booking created",
-  booking: bookingResult.rows[0]
-});
-
+    
     res.json(result.rows[0]);
 
   } catch (error) {
