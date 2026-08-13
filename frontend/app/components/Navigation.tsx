@@ -21,6 +21,7 @@ const [isDriver, setIsDriver] =
 useEffect(() => {
   if (localStorage.getItem("user")) {
   setIsAdmin(true);
+  setIsLoggedIn(true);
 }
 
   if (
