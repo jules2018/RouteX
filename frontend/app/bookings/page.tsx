@@ -3,6 +3,7 @@ import { useState } from "react";
 
 export default function BookingPage() {
 const [loading, setLoading] = useState(false);
+
 const [form, setForm] = useState({
   full_name: "",
   phone: "",
@@ -46,8 +47,6 @@ const [form, setForm] = useState({
   const handleSubmit = async (e: any) => {
     e.preventDefault();
 if (
-  !form.full_name ||
-  !form.phone ||
   !form.pickup_town ||
   !form.pickup_address ||
   !form.dropoff_town ||
@@ -109,7 +108,7 @@ alert(
         onSubmit={handleSubmit}
         className="flex flex-col gap-4 max-w-md"
       >
-        <input
+       {/* <input
           placeholder="Full Name"
           value={form.full_name}
           onChange={(e) =>
@@ -120,7 +119,8 @@ alert(
           }
           className="border p-2"
         />
-
+        */}
+{/*
         <input
           placeholder="Phone"
           value={form.phone}
@@ -132,7 +132,7 @@ alert(
           }
           className="border p-2"
         />
-
+*/}
         <select
   value={form.pickup_town}
   onChange={(e) =>
