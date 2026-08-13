@@ -2,7 +2,7 @@
 
 import LogoutButton from "./LogoutButton";
 import { useEffect, useState } from "react";
-
+const [isLoggedIn, setIsLoggedIn] = useState(false);
 export default function Navigation() {
  const [isPassenger, setIsPassenger] =
   useState(false);
@@ -11,7 +11,7 @@ const [isDriver, setIsDriver] =
   useState(false);
 
   const isAdmin =
-  !isPassenger && !isDriver;
+  localStorage.getItem("user") !== null;
   console.log({
   isPassenger,
   isDriver,
@@ -19,6 +19,13 @@ const [isDriver, setIsDriver] =
 });
 
 useEffect(() => {
+  if (
+  localStorage.getItem("user") ||
+  localStorage.getItem("driver") ||
+  localStorage.getItem("passenger")
+) {
+  setIsLoggedIn(true);
+}
   if (localStorage.getItem("passenger")) {
     setIsPassenger(true);
   }
@@ -28,7 +35,9 @@ useEffect(() => {
   }
 }, []);
  
- 
+ if (!isLoggedIn) {
+  return null;
+}
   return (
     <nav className="bg-white border-b border-slate-200 px-6 py-4">
       <div className="flex gap-8 items-center text-sm font-medium">
