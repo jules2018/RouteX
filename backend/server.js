@@ -1616,18 +1616,27 @@ app.get("/passenger-bookings/:id", async (req, res) => {
   try {
 
     const passengerId = req.params.id;  
-     
+
     console.log("Passenger bookings request:", passengerId);
 
     const result = await pool.query(
   `
   SELECT
-      tb.id,
-      tb.trip_id,
-      tb.created_at
-  FROM trip_bookings tb
-  WHERE tb.passenger_id = $1
-  ORDER BY tb.id DESC
+    tb.id,
+    tb.trip_id,
+    tb.created_at,
+    p.pickup_address,
+    p.dropoff_address,
+    p.travel_date,
+    p.trip_status,
+    d.full_name AS driver_name
+FROM trip_bookings tb
+JOIN passengers p
+    ON tb.passenger_id = p.id
+LEFT JOIN drivers d
+    ON p.assigned_driver_id = d.id
+WHERE tb.passenger_id = $1
+ORDER BY tb.id DESC
   `,
   [passengerId]
 );
