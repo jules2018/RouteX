@@ -1317,7 +1317,7 @@ app.get("/trip-requests", async (req, res) => {
   FROM trip_bookings tb
   JOIN passengers p
       ON tb.passenger_id = p.id
- WHERE tb.passenger_id IS NOT NULL
+ WHERE tb.booking_status = 'Waiting'
   ORDER BY tb.id DESC
 `);
 
