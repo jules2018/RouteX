@@ -18,11 +18,12 @@ export default function PassengerPortalPage() {
   setPassenger(passengerData);
 
   fetch(
-    `https://routex-smgu.onrender.com/passenger-trips/${passengerData.id}`
-  )
+  `https://routex-smgu.onrender.com/passenger-bookings/${passengerData.id}`
+)
     .then((res) => res.json())
     .then((data) => {
       setTrips(data);
+      console.log(data);
     });
 }
   }, []);
