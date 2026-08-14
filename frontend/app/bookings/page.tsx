@@ -61,12 +61,7 @@ const [form, setForm] = useState({
   }
 };
 useEffect(() => {
-  console.log(
-  "AREAS:",
-  form.pickup_area,
-  form.dropoff_area
-);
-  if (
+    if (
     form.pickup_area &&
     form.dropoff_area
   ) {
@@ -98,10 +93,6 @@ const calculateFare = async (
 );
 
 const data = await response.json();
-
-alert(JSON.stringify(data));
-
-console.log("FARE:", data);
 
 setFare(data.fare); 
 
@@ -168,7 +159,8 @@ alert("Booking created successfully");
   dropoff_address: "",
   travel_date: "",
 });
-setFare("");
+    setFare("");
+
     setLoading(false);
 
   };
@@ -187,8 +179,6 @@ setFare("");
      <select
   value={form.pickup_area}
   onChange={(e) => {
-  alert("Pickup: " + e.target.value);
-
   setForm({
     ...form,
     pickup_area: e.target.value,
