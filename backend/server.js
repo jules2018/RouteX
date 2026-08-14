@@ -1612,6 +1612,32 @@ app.post("/passenger-login", async (req, res) => {
 
   }
 });
+app.get("/passenger-bookings/:id", async (req, res) => {
+  try {
+
+    const passengerId = req.params.id;
+    const result = await pool.query(
+  `
+  SELECT
+      tb.id,
+      tb.trip_id,
+      tb.created_at
+  FROM trip_bookings tb
+  WHERE tb.passenger_id = $1
+  ORDER BY tb.id DESC
+  `,
+  [passengerId]
+);
+
+  } catch (error) {
+
+    res.status(500).json({
+      error: error.message
+    });
+
+  }
+});
+
 app.get("/passenger-trips/:id", async (req, res) => {
   try {
 
