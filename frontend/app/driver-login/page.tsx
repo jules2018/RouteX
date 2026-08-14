@@ -53,22 +53,22 @@ export default function DriverLoginPage() {
             RX
           </div>
 
-          <h1 className="text-3xl font-bold text-slate-800">
+          <h1 className="text-3xl font-bold text-slate-900">
             RouteX
           </h1>
 
-          <p className="text-sm text-slate-500 mt-2">
+          <p className="text-sm text-slate-700 mt-2">
             Move People. Manage Operations.
           </p>
         </div>
 
-        <h2 className="text-2xl font-semibold text-slate-800 mb-2">
-          Driver Login
-        </h2>
+        <h2 className="text-2xl font-bold text-slate-900 mb-2">
+  Driver Login
+</h2>
 
-        <p className="text-sm text-slate-500 mb-6">
-          Access assigned trips and passenger information.
-        </p>
+        <p className="text-sm text-slate-700 mb-6">
+  Access assigned trips and passenger information.
+</p>
 
         <input
           placeholder="Phone Number"
@@ -76,7 +76,8 @@ export default function DriverLoginPage() {
           onChange={(e) =>
             setPhone(e.target.value)
           }
-          className="w-full border border-slate-300 rounded-xl px-4 py-3 mb-4"
+          className="w-full border border-slate-300 rounded-xl px-4 py-3 mb-4 text-slate-900 placeholder-slate-500"
+
         />
 
         <input
@@ -86,7 +87,7 @@ export default function DriverLoginPage() {
           onChange={(e) =>
             setPassword(e.target.value)
           }
-          className="w-full border border-slate-300 rounded-xl px-4 py-3 mb-4"
+          className="w-full border border-slate-300 rounded-xl px-4 py-3 mb-4 text-slate-900 placeholder-slate-500"
         />
 
         <button

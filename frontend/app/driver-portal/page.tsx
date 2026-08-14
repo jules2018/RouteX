@@ -87,25 +87,26 @@ export default function DriverPortalPage() {
                 {request.full_name}
               </h2>
 
-              <p>
-                <strong>Phone:</strong>{" "}
-                {request.phone}
-              </p>
+              <p className="text-slate-700">
+  <strong>Phone:</strong>{" "}
+  {request.phone}
+</p>
 
-              <p>
-                <strong>Pickup:</strong>{" "}
-                {request.pickup_address}
-              </p>
+              <p className="text-slate-700">
+  <strong>Pickup:</strong>{" "}
+  {request.pickup_address}
+</p>
 
-              <p>
-                <strong>Dropoff:</strong>{" "}
-                {request.dropoff_address}
-              </p>
+              <p className="text-slate-700">
+  <strong>Dropoff:</strong>{" "}
+  {request.dropoff_address}
+</p>
+``
 
-              <p>
-                <strong>Date:</strong>{" "}
-                {request.travel_date}
-              </p>
+              <p className="text-slate-700">
+  <strong>Date:</strong>{" "}
+  {request.travel_date}
+</p>
              
        <button
   onClick={async () => {
