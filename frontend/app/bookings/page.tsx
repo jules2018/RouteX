@@ -17,9 +17,6 @@ useEffect(() => {
 }, []);
 
 const [form, setForm] = useState({
-  full_name: "",
-  phone: "",
-
   pickup_area: "",
   dropoff_area: "",
 
@@ -145,6 +142,7 @@ if (
   passenger_id: passenger?.id,
   pickup_area: form.pickup_area,
   dropoff_area: form.dropoff_area,
+  fare_amount: fare,
 }),
       }
     );
@@ -161,8 +159,6 @@ await fetch(
 alert("Booking created successfully");
 
     setForm({
-  full_name: "",
-  phone: "",
   pickup_area: "",
   dropoff_area: "",
   pickup_town: "",
@@ -186,31 +182,6 @@ alert("Booking created successfully");
         onSubmit={handleSubmit}
         className="flex flex-col gap-4 max-w-md"
       >
-       { <input
-          placeholder="Full Name"
-          value={form.full_name}
-          onChange={(e) =>
-            setForm({
-              ...form,
-              full_name: e.target.value,
-            })
-          }
-          className="border p-2"
-        />
-        }
-
-        <input
-          placeholder="Phone"
-          value={form.phone}
-          onChange={(e) =>
-            setForm({
-              ...form,
-              phone: e.target.value,
-            })
-          }
-          className="border p-2"
-        />
-
      <select
   value={form.pickup_area}
   onChange={(e) => {
