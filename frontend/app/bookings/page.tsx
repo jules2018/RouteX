@@ -117,12 +117,13 @@ setFare(data.fare);
   const handleSubmit = async (e: any) => {
     e.preventDefault();
 if (
-  !form.pickup_town ||
+  !form.pickup_area ||
   !form.pickup_address ||
-  !form.dropoff_town ||
+  !form.dropoff_area ||
   !form.dropoff_address ||
   !form.travel_date
-) {
+)
+ {
   alert("Please complete all fields");
   return;
 }
