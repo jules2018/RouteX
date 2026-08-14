@@ -1577,7 +1577,7 @@ app.post("/driver-login", async (req, res) => {
 
     res.status(500).json({
       error: error.message
-    });
+    });   
 
   }
 });
@@ -1615,7 +1615,10 @@ app.post("/passenger-login", async (req, res) => {
 app.get("/passenger-bookings/:id", async (req, res) => {
   try {
 
-    const passengerId = req.params.id;
+    const passengerId = req.params.id;  
+     
+    console.log("Passenger bookings request:", passengerId);
+
     const result = await pool.query(
   `
   SELECT
@@ -1628,7 +1631,7 @@ app.get("/passenger-bookings/:id", async (req, res) => {
   `,
   [passengerId]
 );
-
+res.json(result.rows);
   } catch (error) {
 
     res.status(500).json({
