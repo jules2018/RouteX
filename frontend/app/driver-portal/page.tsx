@@ -83,9 +83,9 @@ export default function DriverPortalPage() {
               key={request.id}
               className="bg-white rounded-xl shadow-lg p-6"
             >
-              <h2 className="text-xl font-bold mb-2">
-                {request.full_name}
-              </h2>
+              <h2 className="text-xl font-bold text-slate-900 mb-2">
+  {request.full_name}
+</h2>
 
               <p className="text-slate-700">
   <strong>Phone:</strong>{" "}
@@ -101,11 +101,18 @@ export default function DriverPortalPage() {
   <strong>Dropoff:</strong>{" "}
   {request.dropoff_address}
 </p>
-``
+
 
               <p className="text-slate-700">
   <strong>Date:</strong>{" "}
-  {request.travel_date}
+  {new Date(request.travel_date).toLocaleDateString(
+    "en-ZA",
+    {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    }
+  )}
 </p>
              
        <button
