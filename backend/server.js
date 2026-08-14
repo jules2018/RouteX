@@ -1304,11 +1304,22 @@ app.get("/trip-requests", async (req, res) => {
   try {
 
     const result = await pool.query(`
-      SELECT *
-      FROM passengers
-      WHERE trip_status = 'Waiting'
-      ORDER BY id DESC
-    `);
+  SELECT
+      tb.id,
+      tb.trip_id,
+      tb.fare_amount,
+      p.full_name,
+      p.phone,
+      p.pickup_address,
+      p.dropoff_address,
+      p.travel_date,
+      p.trip_status
+  FROM trip_bookings tb
+  JOIN passengers p
+      ON tb.passenger_id = p.id
+  WHERE p.trip_status = 'Waiting'
+  ORDER BY tb.id DESC
+`);
 
     res.json(result.rows);
 
