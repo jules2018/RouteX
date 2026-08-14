@@ -19,14 +19,21 @@ useEffect(() => {
 const [form, setForm] = useState({
   full_name: "",
   phone: "",
+
+  pickup_area: "",
+  dropoff_area: "",
+
   pickup_town: "",
   pickup_address: "",
   dropoff_town: "",
   dropoff_address: "",
   travel_date: "",
 });
+
   const [pickupResults, setPickupResults] = useState<any[]>([]);
   const [dropoffResults, setDropoffResults] = useState<any[]>([]);
+  
+  const [fare, setFare] = useState("");
   const searchAddress = async (
   query: string,
   type: "pickup" | "dropoff"
@@ -56,6 +63,36 @@ const [form, setForm] = useState({
     );
   }
 };
+const calculateFare = async (
+  pickupArea: string,
+  dropoffArea: string
+) => {
+
+  if (!pickupArea || !dropoffArea) return;
+
+  try {
+
+    const response = await fetch(
+      `https://routex-smgu.onrender.com/calculate-fare?pickup_area=${encodeURIComponent(
+        pickupArea
+      )}&dropoff_area=${encodeURIComponent(
+        dropoffArea
+      )}`
+    );
+
+    const data = await response.json();
+
+    setFare(data.fare);
+
+  } catch (error) {
+
+    console.error(
+      "Fare calculation failed",
+      error
+    );
+
+  }
+};
   const handleSubmit = async (e: any) => {
     e.preventDefault();
 if (
@@ -82,6 +119,8 @@ if (
         },
        body: JSON.stringify({
   passenger_id: passenger?.id,
+  pickup_area: form.pickup_area,
+  dropoff_area: form.dropoff_area,
 }),
       }
     );
@@ -95,13 +134,13 @@ await fetch(
   }
 );
 
-alert(
-  `Passenger Created and Assigned: ${data.full_name}`
-);
+alert("Booking created successfully");
 
     setForm({
   full_name: "",
   phone: "",
+  pickup_area: "",
+  dropoff_area: "",
   pickup_town: "",
   pickup_address: "",
   dropoff_town: "",
@@ -148,20 +187,32 @@ alert(
           className="border p-2"
         />
 */}
-        <select
-  value={form.pickup_town}
+     <select
+  value={form.pickup_area}
   onChange={(e) =>
     setForm({
       ...form,
-      pickup_town: e.target.value,
+      pickup_area: e.target.value,
     })
   }
   className="border p-2"
 >
-  <option value="">Select Pickup Town</option>
-  <option value="Upington">Upington</option>
-  <option value="Kakamas">Kakamas</option>
-  <option value="Springbok">Springbok</option>
+  <option value="">
+    Select Pickup Area
+  </option>
+  <option value="Blydeville">Blydeville</option>
+  <option value="Die Rand">Die Rand</option>
+  <option value="Flora Park">Flora Park</option>
+  <option value="Keidebees">Keidebees</option>
+  <option value="Middelpos">Middelpos</option>
+  <option value="Morning Glory">Morning Glory</option>
+  <option value="Oosterville">Oosterville</option>
+  <option value="Paballelo">Paballelo</option>
+  <option value="Progress">Progress</option>
+  <option value="Louisvale">Louisvale</option>
+  <option value="Laboria">Laboria</option>
+  <option value="Ses Brugge">Ses Brugge</option>
+  <option value="Upington Central">Upington Central</option>   
 </select>
 <input
   placeholder="Pickup Address"
@@ -176,21 +227,31 @@ alert(
 />
 
         <select
-  value={form.dropoff_town}
+  value={form.dropoff_area}
   onChange={(e) =>
     setForm({
       ...form,
-      dropoff_town: e.target.value,
+      dropoff_area: e.target.value,
     })
   }
   className="border p-2"
 >
-  <option value="">Select Dropoff Town</option>
-  <option value="Upington">Upington</option>
-  <option value="Bellville">Bellville</option>
-  <option value="Parow">Parow</option>
-  <option value="Goodwood">Goodwood</option>
-  <option value="Cape Town">Cape Town</option>
+  <option value="">
+    Select Dropoff Area
+  </option>
+  <option value="Blydeville">Blydeville</option>
+  <option value="Die Rand">Die Rand</option>
+  <option value="Flora Park">Flora Park</option>
+  <option value="Keidebees">Keidebees</option>
+  <option value="Middelpos">Middelpos</option>
+  <option value="Morning Glory">Morning Glory</option>
+  <option value="Oosterville">Oosterville</option>
+  <option value="Paballelo">Paballelo</option>
+  <option value="Progress">Progress</option>
+  <option value="Louisvale">Louisvale</option>
+  <option value="Laboria">Laboria</option>
+  <option value="Ses Brugge">Ses Brugge</option>
+  <option value="Upington Central">Upington Central</option>
 </select>
 
 <input
@@ -216,6 +277,17 @@ alert(
   }
   className="border p-2"
 />
+{fare && (
+  <div className="border rounded-xl p-4 bg-green-50 border-green-200">
+    <p className="text-sm text-slate-500">
+      Estimated Fare
+    </p>
+
+    <p className="text-2xl font-bold text-green-700">
+      R{fare}
+    </p>
+  </div>
+)}
         <button
              type="submit"
              disabled={loading}

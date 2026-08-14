@@ -1612,6 +1612,57 @@ app.post("/passenger-login", async (req, res) => {
 
   }
 });
+app.get("/calculate-fare", async (req, res) => {
+  try {
+    const pickup_area = req.query.pickup_area;
+const dropoff_area = req.query.dropoff_area;
+const pickupResult = await pool.query(
+  `
+  SELECT category
+FROM public.areas
+WHERE area_name = $1
+  `,
+  [pickup_area]
+);
+const dropoffResult = await pool.query(
+  `
+  SELECT category
+FROM public.areas
+WHERE area_name = $1
+  `,
+  [dropoff_area]
+);
+const pickupCategory =
+  pickupResult.rows[0].category;
+
+const dropoffCategory =
+  dropoffResult.rows[0].category;
+const fareResult = await pool.query(
+  `
+  SELECT fare
+  FROM public.fare_matrix
+  WHERE from_category = $1
+  AND to_category = $2
+  `,
+  [
+    pickupCategory,
+    dropoffCategory
+  ]
+);
+res.json({
+  pickup_category: pickupCategory,
+  dropoff_category: dropoffCategory,
+  fare: fareResult.rows[0].fare
+});
+  } catch (error) {
+
+    res.status(500).json({
+      error: error.message
+    });
+
+  }
+});
+
 app.get("/passenger-bookings/:id", async (req, res) => {
   try {
 
