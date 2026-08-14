@@ -168,6 +168,7 @@ alert("Booking created successfully");
   dropoff_address: "",
   travel_date: "",
 });
+setFare("");
     setLoading(false);
 
   };
