@@ -63,6 +63,26 @@ const [form, setForm] = useState({
     );
   }
 };
+useEffect(() => {
+  console.log(
+  "AREAS:",
+  form.pickup_area,
+  form.dropoff_area
+);
+  if (
+    form.pickup_area &&
+    form.dropoff_area
+  ) {
+    calculateFare(
+      form.pickup_area,
+      form.dropoff_area
+    );
+  }
+}, [
+  form.pickup_area,
+  form.dropoff_area
+]);
+
 const calculateFare = async (
   pickupArea: string,
   dropoffArea: string
@@ -72,17 +92,21 @@ const calculateFare = async (
 
   try {
 
-    const response = await fetch(
-      `https://routex-smgu.onrender.com/calculate-fare?pickup_area=${encodeURIComponent(
-        pickupArea
-      )}&dropoff_area=${encodeURIComponent(
-        dropoffArea
-      )}`
-    );
+   const response = await fetch(
+  `https://routex-smgu.onrender.com/calculate-fare?pickup_area=${encodeURIComponent(
+    pickupArea
+  )}&dropoff_area=${encodeURIComponent(
+    dropoffArea
+  )}`
+);
 
-    const data = await response.json();
+const data = await response.json();
 
-    setFare(data.fare);
+alert(JSON.stringify(data));
+
+console.log("FARE:", data);
+
+setFare(data.fare); 
 
   } catch (error) {
 
@@ -162,7 +186,7 @@ alert("Booking created successfully");
         onSubmit={handleSubmit}
         className="flex flex-col gap-4 max-w-md"
       >
-       {/* <input
+       { <input
           placeholder="Full Name"
           value={form.full_name}
           onChange={(e) =>
@@ -173,8 +197,8 @@ alert("Booking created successfully");
           }
           className="border p-2"
         />
-        */}
-{/*
+        }
+
         <input
           placeholder="Phone"
           value={form.phone}
@@ -186,15 +210,17 @@ alert("Booking created successfully");
           }
           className="border p-2"
         />
-*/}
+
      <select
   value={form.pickup_area}
-  onChange={(e) =>
-    setForm({
-      ...form,
-      pickup_area: e.target.value,
-    })
-  }
+  onChange={(e) => {
+  alert("Pickup: " + e.target.value);
+
+  setForm({
+    ...form,
+    pickup_area: e.target.value,
+  });
+}}
   className="border p-2"
 >
   <option value="">
