@@ -87,7 +87,7 @@ export default function DriverPortalPage() {
               className="bg-white rounded-xl shadow-lg p-6"
             >
               <h2 className="text-xl font-bold text-slate-900 mb-2">
-  {request.full_name}
+  {request.full_name} (#{request.id})
 </h2>
 
               <p className="text-slate-700">
@@ -116,6 +116,9 @@ export default function DriverPortalPage() {
       year: "numeric",
     }
   )}
+</p>
+<p className="text-slate-700">
+  <strong>Fare:</strong> R{request.fare_amount}
 </p>
              
        <button
