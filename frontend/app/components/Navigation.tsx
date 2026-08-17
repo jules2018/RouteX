@@ -40,9 +40,7 @@ useEffect(() => {
   }
 }, []);
  
- if (!isLoggedIn) {
-  return null;
-}
+ 
   return (
     <nav className="bg-white border-b border-slate-200 px-6 py-4">
       <div className="flex gap-8 items-center text-sm font-medium">

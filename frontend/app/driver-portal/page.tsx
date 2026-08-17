@@ -22,6 +22,9 @@ export default function DriverPortalPage() {
   fetch("https://routex-smgu.onrender.com/trip-requests")
       .then((res) => res.json())
       .then((data) => {
+        console.log("REQUESTS COUNT:", data.length);
+        console.log("REQUESTS:", data);
+        
         setRequests(data);
       });
       fetch("https://routex-smgu.onrender.com/accepted-trips")
@@ -95,7 +98,7 @@ export default function DriverPortalPage() {
               <p className="text-slate-700">
   <strong>Pickup:</strong>{" "}
   {request.pickup_address}
-</p>
+</p> 
 
               <p className="text-slate-700">
   <strong>Dropoff:</strong>{" "}
@@ -236,7 +239,7 @@ export default function DriverPortalPage() {
     <div
       key={trip.id}
       className="bg-yellow-50 rounded-xl shadow-lg p-6"
-    >
+    > 
       <h3 className="text-xl font-bold">
         {trip.full_name}
       </h3>

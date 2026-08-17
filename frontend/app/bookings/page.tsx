@@ -137,10 +137,10 @@ if (
   fare_amount: fare,
 }),
       }
-    );
+    ); 
 
   const data = await response.json();
-
+  console.log("BOOKING RESPONSE:", data)
 await fetch(
   `https://routex-smgu.onrender.com/auto-assign/${data.id}`,
   {
