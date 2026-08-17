@@ -1306,6 +1306,7 @@ app.get("/trip-requests", async (req, res) => {
     const result = await pool.query(`
   SELECT
       tb.id,
+      tb.passenger_id,
       tb.trip_id,
       tb.fare_amount,
       p.full_name,
