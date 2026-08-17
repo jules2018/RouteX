@@ -15,10 +15,15 @@ export default function DriverPortalPage() {
   useEffect(() => {
   const storedDriver = localStorage.getItem("driver");
 
-  if (storedDriver) {
-    setDriver(JSON.parse(storedDriver));
-  }
   console.log("STORED DRIVER:", storedDriver);
+
+  if (storedDriver) {
+    const parsedDriver = JSON.parse(storedDriver);
+
+    console.log("PARSED DRIVER:", parsedDriver);
+
+    setDriver(parsedDriver);
+  }
 
   fetch("https://routex-smgu.onrender.com/trip-requests")
       .then((res) => res.json())
