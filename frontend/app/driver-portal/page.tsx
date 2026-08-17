@@ -18,6 +18,7 @@ export default function DriverPortalPage() {
   if (storedDriver) {
     setDriver(JSON.parse(storedDriver));
   }
+  console.log("STORED DRIVER:", storedDriver);
 
   fetch("https://routex-smgu.onrender.com/trip-requests")
       .then((res) => res.json())
