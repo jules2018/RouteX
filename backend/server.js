@@ -1339,6 +1339,7 @@ app.post(
 
       const passengerId = req.params.id;
       const { driverId } = req.body;
+      
       console.log("PASSENGER ID:", passengerId);
       console.log("DRIVER ID:", driverId);
 
