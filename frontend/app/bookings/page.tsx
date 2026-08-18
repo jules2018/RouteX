@@ -19,12 +19,11 @@ useEffect(() => {
 const [form, setForm] = useState({
   pickup_area: "",
   dropoff_area: "",
-
   pickup_town: "",
   pickup_address: "",
   dropoff_town: "",
   dropoff_address: "",
-  travel_date: "",
+  travel_date: new Date().toISOString().split("T")[0],
 });
 
   const [pickupResults, setPickupResults] = useState<any[]>([]);
@@ -163,9 +162,13 @@ if (
   return (
     
     <main className="p-8">
-      <h1 className="text-4xl font-bold mb-6">
-        New Booking
-      </h1>
+      <h1 className="text-4xl font-bold mb-2">
+  Book Your Ride
+</h1>
+
+<p className="text-slate-500 mb-6">
+  Request a driver for your trip
+</p>
 
       <form
         onSubmit={handleSubmit}
@@ -252,6 +255,7 @@ if (
 
 <input
   type="date"
+  min={new Date().toISOString().split("T")[0]}
   value={form.travel_date}
   onChange={(e) =>
     setForm({
@@ -259,13 +263,21 @@ if (
       travel_date: e.target.value,
     })
   }
-  className="border p-2"
+  className="border p-2 rounded-lg"
 />
 {fare && (
   <div className="border rounded-xl p-4 bg-green-50 border-green-200">
     <p className="text-sm text-slate-500">
-      Estimated Fare
-    </p>
+  Estimated Fare
+</p>
+
+<p className="text-3xl font-bold text-green-700">
+  R{fare}
+</p>
+
+<p className="text-xs text-slate-500 mt-2">
+  Driver will be assigned once available
+</p>
 
     <p className="text-2xl font-bold text-green-700">
       R{fare}
@@ -277,7 +289,7 @@ if (
              disabled={loading}
              className="bg-blue-600 text-white p-2 rounded"
                 >           
-            {loading ? "Creating..." : "Create Booking"}
+            {loading ? "Creating..." : "Confirm Booking"}
         </button>
 `
       </form>
