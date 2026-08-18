@@ -19,12 +19,13 @@ export default function DriverPortalPage() {
     setDriver(parsedDriver);
   }
 
-  fetch("https://routex-smgu.onrender.com/trip-requests")
-      .then((res) => res.json())
-      .then((data) => {
-      
-        setRequests(data);
-      });
+  fetch("https://routex-smgu.onrender.com/accepted-trips")
+  .then((res) => res.json())
+  .then((data) => {
+    console.log("ACCEPTED TRIPS:", data);
+    setAcceptedTrips(data);
+  });
+
       fetch("https://routex-smgu.onrender.com/accepted-trips")
   .then((res) => res.json())
   .then((data) => {
@@ -166,10 +167,6 @@ export default function DriverPortalPage() {
 )}
 <div className="grid gap-4">
   {acceptedTrips
-  .filter(
-    (trip) =>
-      trip.assigned_driver_id === driver?.id
-  )
   .map((trip) => (
     <div
   key={trip.id}
