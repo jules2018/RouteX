@@ -1375,7 +1375,7 @@ await pool.query(
     trip_status = 'Accepted',
     assigned_driver_id = $2
   WHERE passenger_id = $1
-    AND booking_status = 'Waiting'
+    AND booking_status = 'Accepted'
   `,
   [passengerId, driverId]
 );
@@ -1728,7 +1728,7 @@ app.get("/passenger-bookings/:id", async (req, res) => {
     tb.pickup_address,
     tb.dropoff_address,
     tb.travel_date,
-    p.trip_status,
+    tb.trip_status,
     d.full_name AS driver_name
 FROM trip_bookings tb
 JOIN passengers p
