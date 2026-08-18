@@ -156,9 +156,11 @@ export default function DriverPortalPage() {
 </div>
 
 
-{acceptedTrips.filter(
-  (trip) => trip.assigned_driver_id === driver?.id
-).length === 0 && (
+{acceptedTrips
+  .filter(
+    (trip) =>
+      Number(trip.assigned_driver_id) === Number(driver?.id)
+  ).length === 0 && (
   <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm max-w-4xl">
     <p className="text-slate-500">
       You have no accepted trips yet.
@@ -167,6 +169,10 @@ export default function DriverPortalPage() {
 )}
 <div className="grid gap-4">
   {acceptedTrips
+  .filter(
+    (trip) =>
+      Number(trip.assigned_driver_id) === Number(driver?.id)
+  )
   .map((trip) => (
     <div
   key={trip.id}
