@@ -318,7 +318,6 @@ app.post("/bookings", async (req, res) => {
   fare_amount
 } = req.body;
 
-  console.log("Booking request:", passenger_id);
   const tripResult = await pool.query(`
   SELECT
       t.id,
@@ -1340,9 +1339,6 @@ app.post(
       const passengerId = req.params.id;
       const { driverId } = req.body;
 
-      console.log("PASSENGER ID:", passengerId);
-      console.log("DRIVER ID:", driverId);
-
       await pool.query(
         `
         UPDATE passengers
@@ -1381,7 +1377,6 @@ app.post(
     try {
 
       const passengerId = req.params.id;
-      console.log("START TRIP PASSENGER ID:", passengerId);
       await pool.query(
         `
         UPDATE passengers
@@ -1701,9 +1696,6 @@ app.get("/passenger-bookings/:id", async (req, res) => {
   try {
 
     const passengerId = req.params.id;  
-
-    console.log("Passenger bookings request:", passengerId);
-
     const result = await pool.query(
   `
   SELECT
@@ -1765,9 +1757,6 @@ app.get("/passenger-trips/:id", async (req, res) => {
   }
 });
 const PORT = process.env.PORT || 5000;
-
-console.log("ROUTEX SERVER FILE LOADED");
- 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

@@ -34,7 +34,7 @@ export default function PassengerLoginPage() {
       window.location.href =
         "/passenger-portal";
     } else {
-      alert(data.error);
+      
     }
   };
 

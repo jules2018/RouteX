@@ -14,23 +14,15 @@ export default function DriverPortalPage() {
 
   useEffect(() => {
   const storedDriver = localStorage.getItem("driver");
-
-  console.log("STORED DRIVER:", storedDriver);
-
   if (storedDriver) {
     const parsedDriver = JSON.parse(storedDriver);
-
-    console.log("PARSED DRIVER:", parsedDriver);
-
     setDriver(parsedDriver);
   }
 
   fetch("https://routex-smgu.onrender.com/trip-requests")
       .then((res) => res.json())
       .then((data) => {
-        console.log("REQUESTS COUNT:", data.length);
-        console.log("REQUESTS:", data);
-        
+      
         setRequests(data);
       });
       fetch("https://routex-smgu.onrender.com/accepted-trips")
@@ -129,12 +121,7 @@ export default function DriverPortalPage() {
              
        <button
   onClick={async () => {
-    console.log("DRIVER BEFORE ACCEPT:", driver);
-    console.log("DRIVER ID BEFORE ACCEPT:", driver?.id);
-
     const driverId = driver?.id;
-
-    console.log("SENDING DRIVER ID:", driver?.id);
     await fetch(
       `https://routex-smgu.onrender.com/trip-requests/${request.passenger_id}/accept`,
       {
@@ -221,8 +208,7 @@ export default function DriverPortalPage() {
         method: "POST",
       }
     );
-    alert(await response.text());
-
+    
     location.reload();
   }}
   className="mt-4 bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg"

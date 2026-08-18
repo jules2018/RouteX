@@ -10,7 +10,7 @@ export default function LogoutButton() {
   localStorage.removeItem("driver");
   localStorage.removeItem("passenger");
 
-  router.push("/login");
+  router.push("/");
 };
 
   return (

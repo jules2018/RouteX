@@ -100,18 +100,20 @@ export default function PassengerPortalPage() {
   </h3>
 </div>
   <span
-    className={
-      trip.trip_status === "Completed"
-        ? "bg-green-50 text-green-700 px-2.5 py-1 rounded-full text-xs font-medium"
-        : trip.trip_status === "In Progress"
-        ? "bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-sm"
+  className={`px-3 py-1 rounded-full text-sm font-medium
+    ${
+      trip.trip_status === "Waiting"
+        ? "bg-blue-100 text-blue-700"
         : trip.trip_status === "Accepted"
-        ? "bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm"
-        : "bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-sm"
+        ? "bg-green-100 text-green-700"
+        : trip.trip_status === "In Progress"
+        ? "bg-orange-100 text-orange-700"
+        : "bg-green-100 text-green-700"
     }
-  >
-    {trip.trip_status}
-  </span>
+  `}
+>
+  {trip.trip_status}
+</span>
 </div>
     <div className="grid md:grid-cols-2 gap-6 mt-4">
 

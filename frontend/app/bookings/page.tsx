@@ -121,8 +121,7 @@ if (
     if (loading) return;
 
     setLoading(true);
-    console.log("Passenger:", passenger);
-
+   
     const response = await fetch(
   "https://routex-smgu.onrender.com/bookings",
       {
@@ -140,7 +139,7 @@ if (
     ); 
 
   const data = await response.json();
-  console.log("BOOKING RESPONSE:", data)
+  
 await fetch(
   `https://routex-smgu.onrender.com/auto-assign/${data.id}`,
   {

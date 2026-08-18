@@ -29,10 +29,6 @@ export default function DriverLoginPage() {
         JSON.stringify(data)
       );
 
-      alert(
-        `Welcome ${data.full_name}`
-      );
-
       window.location.href =
         "/driver-portal";
     } else {
