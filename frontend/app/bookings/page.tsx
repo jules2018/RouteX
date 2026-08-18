@@ -1,10 +1,5 @@
-import {
-  MapPin,
-  Flag,
-  CalendarDays,
-} from "lucide-react";
-
 "use client";
+
 import { useEffect, useState } from "react";
 
 export default function BookingPage() {
@@ -182,11 +177,7 @@ if (
         className="flex flex-col gap-6"
       >
         <div className="flex items-center gap-2">
-  <MapPin
-    size={20}
-    className="text-blue-600"
-  />
-
+  
   <h2 className="font-semibold text-lg">
     Pickup Location
   </h2>
@@ -231,10 +222,6 @@ if (
   className="border rounded-xl p-3 shadow-sm"
 />
 <div className="flex items-center gap-2">
-  <Flag
-    size={20}
-    className="text-green-600"
-  />
 
   <h2 className="font-semibold text-lg">
     Dropoff Location
@@ -280,11 +267,7 @@ if (
   className="border rounded-xl p-3 shadow-sm"
 />
 <div className="flex items-center gap-2">
-  <CalendarDays
-    size={20}
-    className="text-orange-600"
-  />
-
+  
   <h2 className="font-semibold text-lg">
     Travel Date
   </h2>
