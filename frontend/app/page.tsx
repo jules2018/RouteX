@@ -1,7 +1,7 @@
 export default function Home() {
   return (
-    <main className="min-h-screen bg-gray-100 flex items-center justify-center p-8">
-      <div className="bg-white rounded-2xl shadow-lg p-10 max-w-3xl w-full text-center">
+  <main className="min-h-screen bg-slate-100 flex items-center justify-center p-8">
+      <div className="bg-white rounded-3xl shadow-xl p-12 max-w-4xl w-full text-center border border-slate-200">
 
         <h1 className="text-4xl font-bold text-slate-800 mb-4">
           RouteX
@@ -13,29 +13,19 @@ export default function Home() {
 
         <div className="grid md:grid-cols-2 gap-6">
 
-          <a
-            href="/passenger-login"
-            className="bg-blue-600 text-white hover:bg-blue-700 py-4 px-6 rounded-xl transition">
-            <h2 className="text-xl font-bold mb-2">
-              Passenger Login
-            </h2>
+          <a href="/passenger-login"
+  className="bg-blue-600 text-white p-8 rounded-2xl hover:bg-blue-700 transition shadow-md">
+  <p>
+    Book trips and track trip status.
+  </p>
+</a>
 
-            <p>
-              Book trips and track trip status.
-            </p>
-          </a>
-
-          <a
-            href="/driver-login"
-            className="bg-green-600 text-white hover:bg-green-700 py-4 px-6 rounded-xl transition">
-            <h2 className="text-xl font-bold mb-2">
-              Driver Login
-            </h2>
-
-            <p>
-              Accept trips and manage bookings.
-            </p>
-          </a>
+          <a href="/driver-login"
+  className="bg-green-600 text-white p-8 rounded-2xl hover:bg-green-700 transition shadow-md">
+    <p>
+    Accept trips and manage bookings.
+  </p>
+</a>
         </div>
       </div>
     </main> 
