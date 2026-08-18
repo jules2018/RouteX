@@ -1,3 +1,9 @@
+import {
+  MapPin,
+  Flag,
+  CalendarDays,
+} from "lucide-react";
+
 "use client";
 import { useEffect, useState } from "react";
 
@@ -161,7 +167,8 @@ if (
 
   return (
     
-    <main className="p-8">
+    <main className="p-6 bg-slate-50 min-h-screen">
+      <div className="max-w-xl mx-auto bg-white rounded-2xl shadow-lg p-6">
       <h1 className="text-4xl font-bold mb-2">
   Book Your Ride
 </h1>
@@ -172,8 +179,19 @@ if (
 
       <form
         onSubmit={handleSubmit}
-        className="flex flex-col gap-4 max-w-md"
+        className="flex flex-col gap-6"
       >
+        <div className="flex items-center gap-2">
+  <MapPin
+    size={20}
+    className="text-blue-600"
+  />
+
+  <h2 className="font-semibold text-lg">
+    Pickup Location
+  </h2>
+</div>
+
      <select
   value={form.pickup_area}
   onChange={(e) => {
@@ -182,7 +200,7 @@ if (
     pickup_area: e.target.value,
   });
 }}
-  className="border p-2"
+ className="border rounded-xl p-3 shadow-sm"
 >
   <option value="">
     Select Pickup Area
@@ -210,9 +228,18 @@ if (
     pickup_address: e.target.value,
   })
 }
-  className="border p-2"
+  className="border rounded-xl p-3 shadow-sm"
 />
+<div className="flex items-center gap-2">
+  <Flag
+    size={20}
+    className="text-green-600"
+  />
 
+  <h2 className="font-semibold text-lg">
+    Dropoff Location
+  </h2>
+</div>
         <select
   value={form.dropoff_area}
   onChange={(e) =>
@@ -221,7 +248,7 @@ if (
       dropoff_area: e.target.value,
     })
   }
-  className="border p-2"
+  className="border rounded-xl p-3 shadow-sm"
 >
   <option value="">
     Select Dropoff Area
@@ -250,9 +277,18 @@ if (
       dropoff_address: e.target.value,
     })
   }
-  className="border p-2"
+  className="border rounded-xl p-3 shadow-sm"
 />
+<div className="flex items-center gap-2">
+  <CalendarDays
+    size={20}
+    className="text-orange-600"
+  />
 
+  <h2 className="font-semibold text-lg">
+    Travel Date
+  </h2>
+</div>
 <input
   type="date"
   min={new Date().toISOString().split("T")[0]}
@@ -263,16 +299,12 @@ if (
       travel_date: e.target.value,
     })
   }
-  className="border p-2 rounded-lg"
+  className="border rounded-xl p-3 shadow-sm"
 />
 {fare && (
   <div className="border rounded-xl p-4 bg-green-50 border-green-200">
     <p className="text-sm text-slate-500">
   Estimated Fare
-</p>
-
-<p className="text-3xl font-bold text-green-700">
-  R{fare}
 </p>
 
 <p className="text-xs text-slate-500 mt-2">
@@ -284,16 +316,39 @@ if (
     </p>
   </div>
 )}
+{fare && (
+  <div className="border rounded-2xl p-5 bg-slate-50">
+    <h3 className="font-semibold mb-3">
+      Trip Summary
+    </h3>
+
+    <p>
+      <strong>Pickup:</strong> {form.pickup_area}
+    </p>
+
+    <p>
+      <strong>Dropoff:</strong> {form.dropoff_area}
+    </p>
+
+    <p>
+      <strong>Date:</strong> {form.travel_date}
+    </p>
+
+    <p className="mt-3 text-xl font-bold text-green-700">
+      Fare: R{fare}
+    </p>
+  </div>
+)}
         <button
              type="submit"
              disabled={loading}
-             className="bg-blue-600 text-white p-2 rounded"
+             className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-semibold text-lg shadow-md"
                 >           
             {loading ? "Creating..." : "Confirm Booking"}
         </button>
-`
-      </form>
-    </main>
-    
+</form>
+</div>
+</main>
+      
   );
 }
