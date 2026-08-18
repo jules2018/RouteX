@@ -1353,36 +1353,16 @@ app.post(
 
       await pool.query(
         `
-        UPDATE passengers
-        SET trip_status = 'Accepted',
-            assigned_driver_id = $2
+        UPDATE trip_bookings
+        SET
+          booking_status = 'Accepted',
+          trip_status = 'Accepted',
+          assigned_driver_id = $2
         WHERE id = $1
         `,
-        [passengerId, driverId]
+        [bookingId, driverId]
       );
 
-  await pool.query(
-  `
-  UPDATE trip_bookings
-SET booking_status = 'Accepted',
-    trip_status = 'Accepted',
-    assigned_driver_id = $2
-WHERE id = $1
-  `,
-  [passengerId, driverId]
-);
-await pool.query(
-  `
-  UPDATE trip_bookings
-  SET
-    trip_status = 'Accepted',
-    assigned_driver_id = $2
-  WHERE id = $1
-    AND booking_status = 'Accepted'
-  `,
-  [passengerId, driverId]
-);
- 
       res.json({
         message: "Trip accepted"
       });
@@ -1399,28 +1379,19 @@ await pool.query(
 app.post(
   "/trip-requests/:id/start",
   async (req, res) => {
-
     try {
 
-      const passengerId = req.params.id;
+      const bookingId = req.params.id;
+
       await pool.query(
         `
-        UPDATE passengers
+        UPDATE trip_bookings
         SET trip_status = 'In Progress'
         WHERE id = $1
         `,
-        [passengerId]
+        [bookingId]
       );
 
-  await pool.query(
-  `
-  UPDATE trip_bookings
-  SET trip_status = 'In Progress'
-  WHERE passenger_id = $1
-    AND trip_status = 'Accepted'
-  `,
-  [passengerId]
-);
       res.json({
         message: "Trip started"
       });
@@ -1437,28 +1408,19 @@ app.post(
 app.post(
   "/trip-requests/:id/complete",
   async (req, res) => {
-
     try {
 
-      const passengerId = req.params.id;
+      const bookingId = req.params.id;
 
       await pool.query(
         `
-        UPDATE passengers
+        UPDATE trip_bookings
         SET trip_status = 'Completed'
         WHERE id = $1
         `,
-        [passengerId]
+        [bookingId]
       );
-      await pool.query(
-  `
-  UPDATE trip_bookings
-  SET trip_status = 'Completed'
-  WHERE passenger_id = $1
-    AND trip_status = 'In Progress'
-  `,
-  [passengerId]
-);
+      
       res.json({
         message: "Trip completed"
       });
@@ -1500,64 +1462,7 @@ app.get("/accepted-trips", async (req, res) => {
 
   }
 });
-app.post(
-  "/trip-requests/:id/start",
-  async (req, res) => {
-    try {
 
-      const passengerId = req.params.id;
-
-      await pool.query(
-        `
-        UPDATE passengers
-        SET trip_status = 'In Progress'
-        WHERE id = $1
-        `,
-        [passengerId]
-      );
-
-      res.json({
-        message: "Trip started"
-      });
-
-    } catch (error) {
-
-      res.status(500).json({
-        error: error.message
-      });
-
-    }
-  }
-);
-app.post(
-  "/trip-requests/:id/complete",
-  async (req, res) => {
-    try {
-
-      const passengerId = req.params.id;
-
-      await pool.query(
-        `
-        UPDATE passengers
-        SET trip_status = 'Completed'
-        WHERE id = $1
-        `,
-        [passengerId]
-      );
-
-      res.json({
-        message: "Trip completed"
-      });
-
-    } catch (error) {
-
-      res.status(500).json({
-        error: error.message
-      });
-
-    }
-  }
-);
 app.get("/in-progress-trips", async (req, res) => {
   try {
 
