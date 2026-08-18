@@ -140,14 +140,7 @@ if (
 
   const data = await response.json();
   
-await fetch(
-  `https://routex-smgu.onrender.com/auto-assign/${data.id}`,
-  {
-    method: "POST",
-  }
-);
-
-alert("Booking created successfully");
+  alert("Booking created successfully");
 
     setForm({
   pickup_area: "",
