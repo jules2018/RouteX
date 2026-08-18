@@ -26,6 +26,7 @@ export default function PassengerLoginPage() {
     if (response.ok) {
       localStorage.removeItem("driver");
       localStorage.removeItem("user");
+      localStorage.removeItem("passenger");
       localStorage.setItem(
         "passenger",
         JSON.stringify(data)
@@ -34,7 +35,7 @@ export default function PassengerLoginPage() {
       window.location.href =
         "/passenger-portal";
     } else {
-      
+      alert(data.error);
     }
   };
 

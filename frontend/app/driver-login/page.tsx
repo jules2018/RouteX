@@ -24,6 +24,8 @@ export default function DriverLoginPage() {
     const data = await response.json();
 
     if (response.ok) {
+      localStorage.removeItem("passenger");
+      
       localStorage.setItem(
         "driver",
         JSON.stringify(data)
