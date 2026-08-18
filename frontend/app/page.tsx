@@ -20,14 +20,14 @@ transport operations in real time.
         <div className="grid md:grid-cols-2 gap-6">
 
           <a href="/passenger-login"
-  className="bg-blue-600 text-white p-8 rounded-2xl hover:bg-slate-700 hover:bg-slate-800 transition shadow-md">
+  className="bg-cyan-600 text-white p-8 rounded-2xl hover:bg-slate-700 hover:bg-slate-800 transition shadow-md">
   <p>
     Book trips and track trip status.
   </p>
 </a>
 
           <a href="/driver-login"
-  className="bg-green-600 text-white p-8 rounded-2xl hover:bg-teal-600 hover:bg-teal-700 transition shadow-md">
+  className="bg-emerald-600 text-white p-8 rounded-2xl hover:bg-teal-600 hover:bg-teal-700 transition shadow-md">
     <p>
     Accept trips and manage bookings.
   </p>
