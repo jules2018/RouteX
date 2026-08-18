@@ -1457,13 +1457,17 @@ app.get("/accepted-trips", async (req, res) => {
 
    const result = await pool.query(`
   SELECT
-    p.*,
+    tb.*,
+    p.full_name,
+    p.phone,
     d.full_name AS driver_name
-  FROM passengers p
+  FROM trip_bookings tb
+  JOIN passengers p
+    ON tb.passenger_id = p.id
   LEFT JOIN drivers d
-    ON p.assigned_driver_id = d.id
-  WHERE p.trip_status = 'Accepted'
-  ORDER BY p.id DESC
+    ON tb.assigned_driver_id = d.id
+  WHERE tb.trip_status = 'Accepted'
+  ORDER BY tb.id DESC
 `);
 
     res.json(result.rows);
