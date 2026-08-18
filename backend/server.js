@@ -1671,7 +1671,7 @@ FROM trip_bookings tb
 JOIN passengers p
     ON tb.passenger_id = p.id
 LEFT JOIN drivers d
-    ON p.assigned_driver_id = d.id
+    ON tb.assigned_driver_id = d.id
 WHERE tb.passenger_id = $1
 ORDER BY tb.id DESC
   `,
