@@ -216,12 +216,13 @@ export default function DriverPortalPage() {
       <button
   onClick={async () => {
     const response = await fetch(
-      `https://routex-smgu.onrender.com/trip-requests/${trip.passenger_id}/start`,
+      `https://routex-smgu.onrender.com/trip-requests/${trip.id}/start`,
       {
         method: "POST",
       }
     );
     alert(await response.text());
+
     location.reload();
   }}
   className="mt-4 bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg"
