@@ -129,6 +129,9 @@ export default function DriverPortalPage() {
              
        <button
   onClick={async () => {
+    console.log("DRIVER BEFORE ACCEPT:", driver);
+    console.log("DRIVER ID BEFORE ACCEPT:", driver?.id);
+
     const driverId = driver?.id;
 
     await fetch(
