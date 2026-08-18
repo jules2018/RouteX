@@ -160,27 +160,36 @@ app.get("/drivers", async (req, res) => {
 app.post("/drivers", async (req, res) => {
   try {
     const {
-      full_name,
-      phone,
-      license_number
-    } = req.body;
+  full_name,
+  phone,
+  license_number,
+  vehicle_type,
+  vehicle_color,
+  license_plate
+} = req.body;
 
     const result = await pool.query(
       `
       INSERT INTO drivers
-      (
-        full_name,
-        phone,
-        license_number
-      )
-      VALUES ($1,$2,$3)
-      RETURNING *
+(
+  full_name,
+  phone,
+  license_number,
+  vehicle_type,
+  vehicle_color,
+  license_plate
+)
+VALUES ($1,$2,$3,$4,$5,$6)
+RETURNING *
       `,
       [
-        full_name,
-        phone,
-        license_number
-      ]
+  full_name,
+  phone,
+  license_number,
+  vehicle_type,
+  vehicle_color,
+  license_plate
+]
     );
 
     res.status(201).json(result.rows[0]);
@@ -1666,7 +1675,11 @@ app.get("/passenger-bookings/:id", async (req, res) => {
     tb.dropoff_address,
     tb.travel_date,
     tb.trip_status,
-    d.full_name AS driver_name
+    d.full_name AS driver_name,
+    d.vehicle_type,
+    d.vehicle_color,
+    d.license_plate
+
 FROM trip_bookings tb
 JOIN passengers p
     ON tb.passenger_id = p.id

@@ -27,6 +27,9 @@ export default function DriversPage() {
             <th className="border p-2">Name</th>
             <th className="border p-2">Phone</th>
             <th className="border p-2">License</th>
+            <th className="border p-2">Vehicle Type</th>
+            <th className="border p-2">Color</th>
+            <th className="border p-2">License Plate</th>
             <th className="border p-2">Status</th>
           </tr>
         </thead>
@@ -39,6 +42,17 @@ export default function DriversPage() {
               <td className="border p-2">{driver.phone}</td>
               <td className="border p-2">
                 {driver.license_number}
+              </td>
+              <td className="border p-2">
+              {driver.vehicle_type}
+              </td>
+
+              <td className="border p-2">
+              {driver.vehicle_color}
+              </td>
+
+              <td className="border p-2">
+               {driver.license_plate}
               </td>
               <td className="border p-2">
                 {driver.status}

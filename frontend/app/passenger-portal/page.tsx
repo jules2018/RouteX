@@ -157,6 +157,22 @@ export default function PassengerPortalPage() {
     <p className="text-slate-800">
       {trip.driver_name}
     </p>
+    <p>
+
+Driver: {trip.driver_name || "Not assigned"}
+
+</p>
+    <p>
+  Vehicle: {trip.vehicle_type}
+</p>
+
+<p>
+  Color: {trip.vehicle_color}
+</p>
+
+<p>
+  Plate: {trip.license_plate}
+</p>
   </div>
 
 </div>
