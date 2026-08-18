@@ -1448,7 +1448,15 @@ app.post(
         `,
         [passengerId]
       );
-
+      await pool.query(
+  `
+  UPDATE trip_bookings
+  SET trip_status = 'Completed'
+  WHERE passenger_id = $1
+    AND trip_status = 'In Progress'
+  `,
+  [passengerId]
+);
       res.json({
         message: "Trip completed"
       });
@@ -1582,13 +1590,17 @@ app.get("/completed-trips", async (req, res) => {
 
     const result = await pool.query(`
   SELECT
-    p.*,
+    tb.*,
+    p.full_name,
+    p.phone,
     d.full_name AS driver_name
-  FROM passengers p
+  FROM trip_bookings tb
+  JOIN passengers p
+    ON tb.passenger_id = p.id
   LEFT JOIN drivers d
-    ON p.assigned_driver_id = d.id
-  WHERE p.trip_status = 'Completed'
-  ORDER BY p.id DESC
+    ON tb.assigned_driver_id = d.id
+  WHERE tb.trip_status = 'Completed'
+  ORDER BY tb.id DESC
 `);
 
     res.json(result.rows);
