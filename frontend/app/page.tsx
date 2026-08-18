@@ -11,23 +11,23 @@ export default function Home() {
           On-Demand Transport Platform
         </p>
 <p className="text-slate-500 max-w-2xl mx-auto mb-10">
-10
+
 Book trips, accept rides, track journeys and manage
-11
+
 transport operations in real time.
-12
+
 </p>
         <div className="grid md:grid-cols-2 gap-6">
 
           <a href="/passenger-login"
-  className="bg-blue-600 text-white p-8 rounded-2xl hover:bg-blue-700 transition shadow-md">
+  className="bg-blue-600 text-white p-8 rounded-2xl hover:bg-slate-700 hover:bg-slate-800 transition shadow-md">
   <p>
     Book trips and track trip status.
   </p>
 </a>
 
           <a href="/driver-login"
-  className="bg-green-600 text-white p-8 rounded-2xl hover:bg-green-700 transition shadow-md">
+  className="bg-green-600 text-white p-8 rounded-2xl hover:bg-teal-600 hover:bg-teal-700 transition shadow-md">
     <p>
     Accept trips and manage bookings.
   </p>
