@@ -1322,10 +1322,10 @@ app.get("/trip-requests", async (req, res) => {
       tb.fare_amount,
       p.full_name,
       p.phone,
-      p.pickup_address,
-      p.dropoff_address,
-      p.travel_date,
-      p.trip_status
+      tb.pickup_address,
+      tb.dropoff_address,
+      tb.travel_date,
+      tb.trip_status
   FROM trip_bookings tb
   JOIN passengers p
       ON tb.passenger_id = p.id
