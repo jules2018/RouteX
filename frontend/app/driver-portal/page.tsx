@@ -133,7 +133,8 @@ export default function DriverPortalPage() {
     console.log("DRIVER ID BEFORE ACCEPT:", driver?.id);
 
     const driverId = driver?.id;
-
+    
+    console.log("SENDING DRIVER ID:", driver?.id);
     await fetch(
       `https://routex-smgu.onrender.com/trip-requests/${request.passenger_id}/accept`,
       {
@@ -142,7 +143,7 @@ export default function DriverPortalPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          driverId,
+        driverId: driver?.id,
         }),
       }
     );
