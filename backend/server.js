@@ -1343,11 +1343,6 @@ app.post(
       console.log("PASSENGER ID:", passengerId);
       console.log("DRIVER ID:", driverId);
 
-      return res.json({
-  passengerId,
-  driverId
-});
-
       await pool.query(
         `
         UPDATE passengers
@@ -1365,7 +1360,7 @@ app.post(
   `,
   [passengerId]
 );
-
+ 
       res.json({
         message: "Trip accepted"
       });
