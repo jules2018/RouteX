@@ -320,24 +320,7 @@ app.post("/bookings", async (req, res) => {
   travel_date,
   fare_amount
 } = req.body;
-await pool.query(
-  `
-  UPDATE passengers
-  SET
-    pickup_address = $2,
-    dropoff_address = $3,
-    travel_date = $4,
-    trip_status = 'Waiting',
-    assigned_driver_id = NULL
-  WHERE id = $1
-  `,
-  [
-    passenger_id,
-    pickup_address,
-    dropoff_address,
-    travel_date
-  ]
-);
+
 
   const tripResult = await pool.query(`
   SELECT
@@ -367,20 +350,26 @@ if (tripResult.rows.length === 0) {
 const tripId = tripResult.rows[0].id;
 const bookingResult = await pool.query(
   `
-  INSERT INTO trip_bookings
-  (
-    trip_id,
-    passenger_id,
-    fare_amount
-  )
-  VALUES ($1,$2,$3)
-  RETURNING *
+   INSERT INTO trip_bookings
+(
+  trip_id,
+  passenger_id,
+  fare_amount,
+  pickup_address,
+  dropoff_address,
+  travel_date
+)
+VALUES ($1,$2,$3,$4,$5,$6)
+RETURNING *
   `,
   [
-    tripId,
-    passenger_id,
-    fare_amount
-  ]
+  tripId,
+  passenger_id,
+  fare_amount,
+  pickup_address,
+  dropoff_address,
+  travel_date
+]
 );
 
 res.status(201).json({
@@ -1723,9 +1712,9 @@ app.get("/passenger-bookings/:id", async (req, res) => {
     tb.id,
     tb.trip_id,
     tb.created_at,
-    p.pickup_address,
-    p.dropoff_address,
-    p.travel_date,
+    tb.pickup_address,
+    tb.dropoff_address,
+    tb.travel_date,
     p.trip_status,
     d.full_name AS driver_name
 FROM trip_bookings tb
