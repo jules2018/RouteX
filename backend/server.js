@@ -1381,7 +1381,7 @@ app.post(
     try {
 
       const passengerId = req.params.id;
-
+      console.log("START TRIP PASSENGER ID:", passengerId);
       await pool.query(
         `
         UPDATE passengers
