@@ -133,8 +133,11 @@ if (
   passenger_id: passenger?.id,
   pickup_area: form.pickup_area,
   dropoff_area: form.dropoff_area,
+  pickup_address: form.pickup_address,
+  dropoff_address: form.dropoff_address,
+  travel_date: form.travel_date,
   fare_amount: fare,
-}),
+})
       }
     ); 
 

@@ -315,8 +315,29 @@ app.post("/bookings", async (req, res) => {
   passenger_id,
   pickup_area,
   dropoff_area,
+  pickup_address,
+  dropoff_address,
+  travel_date,
   fare_amount
 } = req.body;
+await pool.query(
+  `
+  UPDATE passengers
+  SET
+    pickup_address = $2,
+    dropoff_address = $3,
+    travel_date = $4,
+    trip_status = 'Waiting',
+    assigned_driver_id = NULL
+  WHERE id = $1
+  `,
+  [
+    passenger_id,
+    pickup_address,
+    dropoff_address,
+    travel_date
+  ]
+);
 
   const tripResult = await pool.query(`
   SELECT
