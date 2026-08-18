@@ -350,16 +350,17 @@ if (tripResult.rows.length === 0) {
 const tripId = tripResult.rows[0].id;
 const bookingResult = await pool.query(
   `
-   INSERT INTO trip_bookings
+  INSERT INTO trip_bookings
 (
   trip_id,
   passenger_id,
   fare_amount,
   pickup_address,
   dropoff_address,
-  travel_date
+  travel_date,
+  trip_status
 )
-VALUES ($1,$2,$3,$4,$5,$6)
+VALUES ($1,$2,$3,$4,$5,$6,$7)
 RETURNING *
   `,
   [
@@ -368,7 +369,8 @@ RETURNING *
   fare_amount,
   pickup_address,
   dropoff_address,
-  travel_date
+  travel_date,
+  "Waiting"
 ]
 );
 
@@ -1365,6 +1367,17 @@ app.post(
   WHERE passenger_id = $1
   `,
   [passengerId]
+);
+await pool.query(
+  `
+  UPDATE trip_bookings
+  SET
+    trip_status = 'Accepted',
+    assigned_driver_id = $2
+  WHERE passenger_id = $1
+    AND booking_status = 'Waiting'
+  `,
+  [passengerId, driverId]
 );
  
       res.json({
