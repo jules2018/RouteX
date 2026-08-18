@@ -1342,7 +1342,7 @@ app.post(
 
       console.log("PASSENGER ID:", passengerId);
       console.log("DRIVER ID:", driverId);
-      
+
       return res.json({
   passengerId,
   driverId
@@ -1357,6 +1357,14 @@ app.post(
         `,
         [passengerId, driverId]
       );
+      await pool.query(
+  `
+  UPDATE trip_bookings
+  SET booking_status = 'Accepted'
+  WHERE passenger_id = $1
+  `,
+  [passengerId]
+);
 
       res.json({
         message: "Trip accepted"
