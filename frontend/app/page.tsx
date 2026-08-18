@@ -8,9 +8,15 @@ export default function Home() {
         </h1>
 
         <p className="text-slate-500 mb-10">
-          Passenger and Driver Transport Platform
+          On-Demand Transport Platform
         </p>
-
+<p className="text-slate-500 max-w-2xl mx-auto mb-10">
+10
+Book trips, accept rides, track journeys and manage
+11
+transport operations in real time.
+12
+</p>
         <div className="grid md:grid-cols-2 gap-6">
 
           <a href="/passenger-login"
