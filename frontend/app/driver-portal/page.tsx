@@ -40,6 +40,13 @@ export default function DriverPortalPage() {
   .then((res) => res.json())
   .then((data) => {
     setCompletedTrips(data);
+    
+    fetch("https://routex-smgu.onrender.com/trip-requests")
+  .then((res) => res.json())
+  .then((data) => {
+    setRequests(data);
+  });
+
   });
   fetch("https://routex-smgu.onrender.com/driver-list")
   .then((res) => res.json())
