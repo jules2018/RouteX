@@ -1348,7 +1348,7 @@ app.post(
   async (req, res) => {
     try {
 
-      const passengerId = req.params.id;
+      const bookingId = req.params.id;
       const { driverId } = req.body;
 
       await pool.query(
@@ -1364,10 +1364,12 @@ app.post(
   await pool.query(
   `
   UPDATE trip_bookings
-  SET booking_status = 'Accepted'
-  WHERE passenger_id = $1
+SET booking_status = 'Accepted',
+    trip_status = 'Accepted',
+    assigned_driver_id = $2
+WHERE id = $1
   `,
-  [passengerId]
+  [passengerId, driverId]
 );
 await pool.query(
   `
@@ -1375,7 +1377,7 @@ await pool.query(
   SET
     trip_status = 'Accepted',
     assigned_driver_id = $2
-  WHERE passenger_id = $1
+  WHERE id = $1
     AND booking_status = 'Accepted'
   `,
   [passengerId, driverId]

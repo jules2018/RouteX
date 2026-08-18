@@ -131,7 +131,7 @@ export default function DriverPortalPage() {
   onClick={async () => {
     const driverId = driver?.id;
     await fetch(
-      `https://routex-smgu.onrender.com/trip-requests/${request.passenger_id}/accept`,
+      `https://routex-smgu.onrender.com/trip-requests/${request.id}/accept`,
       {
         method: "POST",
         headers: {
@@ -213,7 +213,7 @@ export default function DriverPortalPage() {
       <button
   onClick={async () => {
     const response = await fetch(
-      `https://routex-smgu.onrender.com/trip-requests/${trip.passenger_id}/start`,
+      `https://routex-smgu.onrender.com/trip-requests/${trip.id}/start`,
       {
         method: "POST",
       }
