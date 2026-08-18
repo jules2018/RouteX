@@ -163,8 +163,8 @@ if (
   return (
     
     <main className="p-6 bg-slate-50 min-h-screen">
-      <div className="max-w-xl mx-auto bg-white rounded-2xl shadow-lg p-6">
-      <h1 className="text-4xl font-bold mb-2">
+      <div className="max-w-lg mx-auto bg-white rounded-2xl shadow-lg p-6">
+      <h1 className="text-3xl font-bold mb-2">
   Book Your Ride
 </h1>
 
@@ -174,14 +174,13 @@ if (
 
       <form
         onSubmit={handleSubmit}
-        className="flex flex-col gap-6"
+        className="flex flex-col gap-4"
       >
-        <div className="flex items-center gap-2">
-  
-  <h2 className="font-semibold text-lg">
-    Pickup Location
-  </h2>
-</div>
+        <div className="bg-slate-50 rounded-xl p-4">
+        <h2 className="font-semibold text-lg">
+          Pickup Location
+          </h2>
+        </div>
 
      <select
   value={form.pickup_area}
@@ -282,7 +281,7 @@ if (
       travel_date: e.target.value,
     })
   }
-  className="border rounded-xl p-3 shadow-sm"
+  className="border rounded-xl px-3 py-2 shadow-sm"
 />
 {fare && (
   <div className="border rounded-xl p-4 bg-green-50 border-green-200">
