@@ -1657,13 +1657,10 @@ app.post("/passenger-login", async (req, res) => {
     }
 const passengerResult = await pool.query(
 `
-25
 SELECT *
-26
 FROM passengers
-27
 WHERE email = $1
-28
+
 `,
 [email]
 );
