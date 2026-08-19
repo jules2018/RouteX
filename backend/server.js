@@ -1655,8 +1655,20 @@ app.post("/passenger-login", async (req, res) => {
         error: "Invalid credentials"
       });
     }
-
-    res.json(result.rows[0]);
+const passengerResult = await pool.query(
+24
+`
+25
+SELECT *
+26
+FROM passengers
+27
+WHERE email = $1
+28
+`,
+[email]
+);
+   res.json(passengerResult.rows[0]);
 
   } catch (error) {
 
