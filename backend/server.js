@@ -314,7 +314,7 @@ app.post("/trip-bookings", async (req, res) => {
 
     res.status(500).json({
       error: error.message
-    });
+    }); 
 
   }
 });
@@ -329,6 +329,8 @@ app.post("/bookings", async (req, res) => {
   travel_date,
   fare_amount
 } = req.body;
+console.log("Pickup Area:", pickup_area);
+console.log("Dropoff Area:", dropoff_area);
 
 
   const tripResult = await pool.query(`
@@ -384,7 +386,7 @@ const destinationLat =
 
 const destinationLng =
   dropoffAreaResult.rows[0]?.longitude;
-  
+
 const tripId = tripResult.rows[0].id;
 const bookingResult = await pool.query(
   `
