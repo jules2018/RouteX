@@ -1,43 +1,45 @@
 export default function Home() {
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-100 via-white to-teal-50 flex items-center justify-center p-6">
-      <div className="w-full max-w-md">
-        <div className="rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-lg">
-          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-teal-600 text-2xl font-bold text-white">
+    <main className="min-h-screen bg-gradient-to-br from-teal-600 via-teal-700 to-slate-900 flex items-center justify-center px-6">
+      <div className="w-full max-w-md text-center">
+
+        <div className="mb-8">
+          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-white text-teal-700 text-3xl font-bold shadow-lg">
             RX
           </div>
 
-          <h1 className="mb-3 text-4xl font-bold text-slate-800">
+          <h1 className="text-5xl font-bold text-white mb-3">
             RouteX
           </h1>
-
-          <p className="mb-3 text-slate-600">Your Ride Starts Here</p>
-
-          <p className="mb-8 text-sm text-slate-500">
-            Book rides, track your journey and travel with confidence.
+                    <p className="text-xl text-teal-100 mb-4">
+            Your Ride Starts Here
           </p>
 
-          <a
-            href="/passenger-login"
-            className="my-6 block w-full rounded-xl bg-teal-600 px-4 py-3 text-center font-semibold text-white transition hover:bg-teal-700"
-          >
-            Passenger Login
-          </a>
-
-          <p className="mb-2 text-sm font-semibold text-slate-700">Driver Access</p>
-
-          <p className="mb-4 text-sm text-slate-500">
-            Manage bookings, trips and passengers.
+          <p className="text-white/80">
+            Book rides, track journeys and connect with trusted local drivers.
           </p>
-
-          <a
-            href="/driver-login"
-            className="block w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-center font-semibold text-slate-700 transition hover:bg-slate-50"
-          >
-            Driver Login
-          </a>
         </div>
-      </div>
-    </main>
-  );
+        <a
+  href="/passenger-login"
+  className="block w-full bg-white text-teal-700 py-4 rounded-2xl font-bold text-lg shadow-lg hover:bg-slate-100 transition mb-6"
+>
+  Book a Ride
+</a>
+
+<div className="border-t border-white/20 pt-6">
+  <p className="text-white/70 text-sm mb-4">
+    Already driving with RouteX?
+  </p>
+
+  <a
+    href="/driver-login"
+    className="text-white font-bold hover:text-teal-200 transition"
+  >
+    Driver Login
+  </a>
+</div>
+
+</div>
+</main>
+);
 }
