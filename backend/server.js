@@ -1656,7 +1656,6 @@ app.post("/passenger-login", async (req, res) => {
       });
     }
 const passengerResult = await pool.query(
-24
 `
 25
 SELECT *

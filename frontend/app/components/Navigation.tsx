@@ -1,10 +1,13 @@
 "use client";
 
+
 import LogoutButton from "./LogoutButton";
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 
 export default function Navigation() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const pathname = usePathname();
+ const [isLoggedIn, setIsLoggedIn] = useState(false);
  const [isPassenger, setIsPassenger] =
   useState(false);
 
@@ -40,7 +43,13 @@ useEffect(() => {
   }
 }, []);
  
- 
+ if (
+  pathname === "/login" ||
+  pathname === "/passenger-login" ||
+  pathname === "/passenger-register"
+) {
+  return null;
+}
   return (
     <nav className="bg-white border-b border-slate-200 px-6 py-4">
       <div className="flex gap-4 items-center text-sm font-medium">
