@@ -43,7 +43,7 @@ useEffect(() => {
  
   return (
     <nav className="bg-white border-b border-slate-200 px-6 py-4">
-      <div className="flex gap-8 items-center text-sm font-medium">
+      <div className="flex gap-4 items-center text-sm font-medium">
 
         {isAdmin && (<a href="/" className="text-slate-500 hover:text-slate-900">
           Dashboard
@@ -80,13 +80,13 @@ useEffect(() => {
        {isPassenger && !isAdmin && (
   <a
     href="/passenger-portal"
-    className="text-slate-800 font-medium hover:text-teal-600 transition">
+    className="text-slate-900 font-semibold hover:text-teal-600 transition">
           Home
         </a>)}
         {isPassenger && !isAdmin && (
   <a
     href="/bookings"
-    className="text-slate-800 font-medium hover:text-teal-600 transition">
+    className="text-slate-900 font-semibold hover:text-teal-600 transition">
     Book Ride
   </a>
 )}
