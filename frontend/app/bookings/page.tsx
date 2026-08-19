@@ -163,8 +163,8 @@ if (
   return (
     
     <main className="p-6 bg-slate-50 min-h-screen">
-      <div className="max-w-lg mx-auto bg-white rounded-2xl shadow-lg p-6">
-      <h1 className="text-3xl font-bold mb-2">
+      <div className="max-w-lg mx-auto bg-white rounded-2xl shadow-lg p-4 md:p-6">
+      <h1 className="text-2xl md:text-3xl font-bold mb-2 text-slate-800">
   Book Your Ride
 </h1>
 
@@ -176,95 +176,95 @@ if (
         onSubmit={handleSubmit}
         className="flex flex-col gap-4"
       >
-        <div className="bg-slate-50 rounded-xl p-4">
-        <h2 className="font-semibold text-lg">
-          Pickup Location
-          </h2>
-        </div>
-
-     <select
-  value={form.pickup_area}
-  onChange={(e) => {
-  setForm({
-    ...form,
-    pickup_area: e.target.value,
-  });
-}}
- className="border rounded-xl p-3 shadow-sm"
->
-  <option value="">
-    Select Pickup Area
-  </option>
-  <option value="Blydeville">Blydeville</option>
-  <option value="Die Rand">Die Rand</option>
-  <option value="Flora Park">Flora Park</option>
-  <option value="Keidebees">Keidebees</option>
-  <option value="Middelpos">Middelpos</option>
-  <option value="Morning Glory">Morning Glory</option>
-  <option value="Oosterville">Oosterville</option>
-  <option value="Paballelo">Paballelo</option>
-  <option value="Progress">Progress</option>
-  <option value="Louisvale">Louisvale</option>
-  <option value="Laboria">Laboria</option>
-  <option value="Ses Brugge">Ses Brugge</option>
-  <option value="Upington Central">Upington Central</option>   
-</select>
-<input
-  placeholder="Pickup Address"
-  value={form.pickup_address}
-  onChange={(e) =>
-  setForm({
-    ...form,
-    pickup_address: e.target.value,
-  })
-}
-  className="border rounded-xl p-3 shadow-sm"
-/>
-<div className="flex items-center gap-2">
-
-  <h2 className="font-semibold text-lg">
-    Dropoff Location
+      <div className="bg-slate-50 border rounded-2xl p-4">
+  <h2 className="font-semibold text-lg text-slate-800 mb-3">
+    📍 Pickup Location
   </h2>
-</div>
-        <select
-  value={form.dropoff_area}
-  onChange={(e) =>
-    setForm({
-      ...form,
-      dropoff_area: e.target.value,
-    })
-  }
-  className="border rounded-xl p-3 shadow-sm"
->
-  <option value="">
-    Select Dropoff Area
-  </option>
-  <option value="Blydeville">Blydeville</option>
-  <option value="Die Rand">Die Rand</option>
-  <option value="Flora Park">Flora Park</option>
-  <option value="Keidebees">Keidebees</option>
-  <option value="Middelpos">Middelpos</option>
-  <option value="Morning Glory">Morning Glory</option>
-  <option value="Oosterville">Oosterville</option>
-  <option value="Paballelo">Paballelo</option>
-  <option value="Progress">Progress</option>
-  <option value="Louisvale">Louisvale</option>
-  <option value="Laboria">Laboria</option>
-  <option value="Ses Brugge">Ses Brugge</option>
-  <option value="Upington Central">Upington Central</option>
-</select>
 
-<input
-  placeholder="Dropoff Address"
-  value={form.dropoff_address}
-  onChange={(e) =>
-    setForm({
-      ...form,
-      dropoff_address: e.target.value,
-    })
-  }
-  className="border rounded-xl p-3 shadow-sm"
-/>
+  <select
+    value={form.pickup_area}
+    onChange={(e) =>
+      setForm({
+        ...form,
+        pickup_area: e.target.value,
+      })
+    }
+    className="w-full border rounded-xl p-3 mb-3"
+  >
+    <option value="">Select Pickup Area</option>
+
+    <option value="Blydeville">Blydeville</option>
+    <option value="Die Rand">Die Rand</option>
+    <option value="Flora Park">Flora Park</option>
+    <option value="Keidebees">Keidebees</option>
+    <option value="Middelpos">Middelpos</option>
+    <option value="Morning Glory">Morning Glory</option>
+    <option value="Oosterville">Oosterville</option>
+    <option value="Paballelo">Paballelo</option>
+    <option value="Progress">Progress</option>
+    <option value="Louisvale">Louisvale</option>
+    <option value="Laboria">Laboria</option>
+    <option value="Ses Brugge">Ses Brugge</option>
+    <option value="Upington Central">Upington Central</option>
+  </select>
+
+  <input
+    placeholder="House number, street, landmark..."
+    value={form.pickup_address}
+    onChange={(e) =>
+      setForm({
+        ...form,
+        pickup_address: e.target.value,
+      })
+    }
+    className="w-full border rounded-xl p-3"
+  />
+</div>
+
+<div className="bg-slate-50 border rounded-2xl p-4">
+  <h2 className="font-semibold text-lg text-slate-800 mb-3">
+    🚩 Dropoff Location
+  </h2>
+
+  <select
+    value={form.dropoff_area}
+    onChange={(e) =>
+      setForm({
+        ...form,
+        dropoff_area: e.target.value,
+      })
+    }
+    className="w-full border rounded-xl p-3 mb-3"
+  >
+    <option value="">Select Dropoff Area</option>
+
+    <option value="Blydeville">Blydeville</option>
+    <option value="Die Rand">Die Rand</option>
+    <option value="Flora Park">Flora Park</option>
+    <option value="Keidebees">Keidebees</option>
+    <option value="Middelpos">Middelpos</option>
+    <option value="Morning Glory">Morning Glory</option>
+    <option value="Oosterville">Oosterville</option>
+    <option value="Paballelo">Paballelo</option>
+    <option value="Progress">Progress</option>
+    <option value="Louisvale">Louisvale</option>
+    <option value="Laboria">Laboria</option>
+    <option value="Ses Brugge">Ses Brugge</option>
+    <option value="Upington Central">Upington Central</option>
+  </select>
+
+  <input
+    placeholder="House number, street, landmark..."
+    value={form.dropoff_address}
+    onChange={(e) =>
+      setForm({
+        ...form,
+        dropoff_address: e.target.value,
+      })
+    }
+    className="w-full border rounded-xl p-3"
+  />
+</div>
 <div className="flex items-center gap-2">
   
   <h2 className="font-semibold text-lg">
@@ -324,7 +324,7 @@ if (
         <button
              type="submit"
              disabled={loading}
-             className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-semibold text-lg shadow-md"
+             className="w-full bg-teal-600 hover:bg-teal-700 text-white py-4 rounded-xl font-semibold text-lg shadow-md transition"
                 >           
             {loading ? "Creating..." : "Confirm Booking"}
         </button>
