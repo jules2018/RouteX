@@ -318,8 +318,10 @@ app.post("/trip-bookings", async (req, res) => {
 
   }
 });
+
 app.post("/bookings", async (req, res) => {
   try {
+    console.log("BOOKINGS ROUTE HIT");
   const {
   passenger_id,
   pickup_area,
@@ -374,7 +376,15 @@ const dropoffAreaResult = await pool.query(
   `,
   [dropoff_area]
 );
+console.log(
+  "Pickup Lookup:",
+  pickupAreaResult.rows
+);
 
+console.log(
+  "Dropoff Lookup:",
+  dropoffAreaResult.rows
+);
 const pickupLat =
   pickupAreaResult.rows[0]?.latitude;
 
