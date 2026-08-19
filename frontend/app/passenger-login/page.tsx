@@ -57,7 +57,7 @@ export default function PassengerLoginPage() {
   </h1>
 
   <p className="text-sm text-slate-500 mt-2">
-    Move People. Manage Operations.
+    Move People. 
   </p>
 </div>
   <h2 className="text-2xl font-semibold text-slate-800 mb-2">
@@ -74,7 +74,7 @@ export default function PassengerLoginPage() {
     onChange={(e) =>
       setEmail(e.target.value)
     }
-    className="w-full border border-slate-300 rounded-xl px-4 py-3 mb-4"
+    className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900 placeholder:text-slate-500 bg-white"
   />
 
   <input
@@ -84,7 +84,7 @@ export default function PassengerLoginPage() {
     onChange={(e) =>
       setPassword(e.target.value)
     }
-    className="w-full border border-slate-300 rounded-xl px-4 py-3 mb-4"
+    className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900 placeholder:text-slate-500 bg-white"
   />
 
   <button

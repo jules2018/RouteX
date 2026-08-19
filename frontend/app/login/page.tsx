@@ -77,7 +77,7 @@ Connecting Drivers, Passengers and Fleet Operations
               placeholder="Email Address"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full border border-slate-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900 placeholder:text-slate-500 bg-white"
             />
 
             <input
@@ -87,7 +87,7 @@ Connecting Drivers, Passengers and Fleet Operations
               onChange={(e) =>
                 setPassword(e.target.value)
               }
-              className="w-full border border-slate-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900 placeholder:text-slate-500 bg-white"
             />
 
             <button

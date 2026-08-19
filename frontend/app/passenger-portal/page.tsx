@@ -29,54 +29,31 @@ export default function PassengerPortalPage() {
   }, []);
 
   return (
-    <main className="p-8">
-      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm max-w-4xl">
+    <main className="min-h-screen bg-slate-50 p-6">
 
+  <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm max-w-4xl">
   <h1 className="text-2xl font-semibold text-slate-800">
     Welcome back, {passenger?.full_name}
   </h1>
-
   <div className="mt-4 grid md:grid-cols-2 gap-4s">
 
-    <div>
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-500 mb-1">
-        Email
-      </p>
-
-      <p className="text-slate-800">
-        {passenger?.email}
-      </p>
-    </div>
-
-    <div>
-  <p className="text-xs font-medium uppercase tracking-wide text-slate-500 mb-1">
-    Phone
-  </p>
-
-  <p className="text-slate-800">
-    {passenger?.phone}
+  <div className="mt-2">
+  <p className="text-sm text-slate-700">
+     {passenger?.email}
   </p>
 </div>
+
+  <div>
   </div>
-  
-  <div className="mt-4 flex justify-end">
-  <button
-    onClick={() => {
-      localStorage.removeItem("passenger");
-      window.location.href = "/passenger-login";
-    }}
-    className="bg-teal-50 text-teal-700 px-4 py-2 rounded-lg hover:bg-teal-100 transition"
-  >
-    Logout
-  </button>
 </div>
+
 </div>
-<div className="mt-10 mb-6">
-  <h2 className="text-xl font-semibold text-slate-800">
+<div className="mt-6 mb-4">
+ <h2 className="text-xl font-bold text-slate-800">
     Your Trips
   </h2>
 
-  <p className="text-sm text-slate-500">
+  <p className="text-sm text-slate-700">
     {trips.length} booking{trips.length !== 1 ? "s" : ""} tracked
   </p>
 </div>
