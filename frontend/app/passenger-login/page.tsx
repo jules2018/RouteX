@@ -68,13 +68,13 @@ export default function PassengerLoginPage() {
     Access your bookings and trip information.
   </p>
 
-  <input
+  <input 
     placeholder="Email"
     value={email}
     onChange={(e) =>
       setEmail(e.target.value)
     }
-    className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900 placeholder:text-slate-500 bg-white"
+    className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900 placeholder:text-slate-500 bg-white mb-4"
   />
 
   <input
@@ -84,12 +84,12 @@ export default function PassengerLoginPage() {
     onChange={(e) =>
       setPassword(e.target.value)
     }
-    className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900 placeholder:text-slate-500 bg-white"
+   className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900 placeholder:text-slate-500 bg-white mb-4"
   />
 
   <button
     onClick={login}
-    className="w-full bg-teal-600 text-white py-3 rounded-xl hover:bg-teal-700 transition"
+    className="w-full bg-teal-600 text-white py-3 rounded-xl hover:bg-teal-700 transition mt-2"
   >
     Sign In
   </button>
