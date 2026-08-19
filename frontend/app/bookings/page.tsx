@@ -189,7 +189,7 @@ if (
         pickup_area: e.target.value,
       })
     }
-    className="w-full border rounded-xl p-3 mb-3"
+    className="w-full border border-slate-300 rounded-xl p-3 text-slate-900 bg-white placeholder:text-slate-500"
   >
     <option value="">Select Pickup Area</option>
 
@@ -217,7 +217,7 @@ if (
         pickup_address: e.target.value,
       })
     }
-    className="w-full border rounded-xl p-3"
+   className="w-full border border-slate-300 rounded-xl p-3 mb-3 text-slate-900 bg-white"
   />
 </div>
 
@@ -234,7 +234,7 @@ if (
         dropoff_area: e.target.value,
       })
     }
-    className="w-full border rounded-xl p-3 mb-3"
+   className="w-full border border-slate-300 rounded-xl p-3 text-slate-900 bg-white placeholder:text-slate-500"
   >
     <option value="">Select Dropoff Area</option>
 
@@ -262,14 +262,14 @@ if (
         dropoff_address: e.target.value,
       })
     }
-    className="w-full border rounded-xl p-3"
+   className="w-full border border-slate-300 rounded-xl p-3 mb-3 text-slate-900 bg-white"
   />
 </div>
 <div className="flex items-center gap-2">
   
-  <h2 className="font-semibold text-lg">
-    Travel Date
-  </h2>
+  <h2 className="font-semibold text-lg text-slate-800">
+  Travel Date
+</h2>
 </div>
 <input
   type="date"
@@ -281,7 +281,7 @@ if (
       travel_date: e.target.value,
     })
   }
-  className="border rounded-xl px-3 py-2 shadow-sm"
+  className="border border-slate-300 rounded-xl px-3 py-2 shadow-sm text-slate-900 bg-white"
 />
 {fare && (
   <div className="border rounded-xl p-4 bg-green-50 border-green-200">

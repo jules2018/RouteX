@@ -80,13 +80,13 @@ useEffect(() => {
        {isPassenger && !isAdmin && (
   <a
     href="/passenger-portal"
-    className="text-slate-900 font-semibold hover:text-teal-600 transition">
+    className="text-teal-700 font-bold text-base hover:text-teal-800 transition">
           Home
         </a>)}
         {isPassenger && !isAdmin && (
   <a
     href="/bookings"
-    className="text-slate-900 font-semibold hover:text-teal-600 transition">
+    className="text-teal-700 font-bold text-base hover:text-teal-800 transition">
     Book Ride
   </a>
 )}
