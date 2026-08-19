@@ -93,9 +93,21 @@ export default function PassengerLoginPage() {
   >
     Sign In
   </button>
+<div className="text-center mt-4">
+  <p className="text-sm text-slate-600">
+    Don't have an account?
+  </p>
 
+  <a
+    href="/passenger-register"
+    className="text-teal-600 font-semibold hover:underline"
+  >
+    Create Account
+  </a>
 </div>
-</div>
+  </div>
+      </div>
+      
     </main>
   );
 }

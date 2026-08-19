@@ -395,7 +395,61 @@ res.status(201).json({
 
   }
 });
+app.post("/passenger-register", async (req, res) => {
+  try {
 
+    const {
+      full_name,
+      phone,
+      email,
+      password
+    } = req.body;
+
+    const passengerResult = await pool.query(
+      `
+      INSERT INTO passengers
+      (
+        full_name,
+        phone,
+        email
+      )
+      VALUES ($1,$2,$3)
+      RETURNING *
+      `,
+      [
+        full_name,
+        phone,
+        email
+      ]
+    );
+
+    await pool.query(
+      `
+      INSERT INTO users
+      (
+        username,
+        password,
+        role
+      )
+      VALUES ($1,$2,$3)
+      `,
+      [
+        phone,
+        password,
+        "passenger"
+      ]
+    );
+
+    res.status(201).json({
+      message: "Passenger registered successfully"
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      error: error.message
+    });
+  }
+});
 
 app.get("/trips/:id/occupancy", async (req, res) => {
   try {
@@ -1601,6 +1655,49 @@ app.post("/passenger-login", async (req, res) => {
     }
 
     res.json(result.rows[0]);
+
+  } catch (error) {
+
+    res.status(500).json({
+      error: error.message
+    });
+
+  }
+});
+app.post("/passenger-register", async (req, res) => {
+  try {
+
+    const {
+      full_name,
+      phone,
+      email,
+      password
+    } = req.body;
+
+    const result = await pool.query(
+      `
+      INSERT INTO passengers
+      (
+        full_name,
+        phone,
+        email,
+        password
+      )
+      VALUES ($1,$2,$3,$4)
+      RETURNING *
+      `,
+      [
+        full_name,
+        phone,
+        email,
+        password
+      ]
+    );
+
+    res.status(201).json({
+      message: "Passenger registered successfully",
+      passenger: result.rows[0]
+    });
 
   } catch (error) {
 
