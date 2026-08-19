@@ -1,25 +1,21 @@
-import { playfair } from "./layout";
+
 export default function Home() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-teal-600 via-teal-700 to-slate-900 flex items-center justify-center px-6">
       <div className="w-full max-w-md text-center">
 
         <div className="mb-8">
-          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-white text-teal-700 text-3xl font-bold shadow-lg">
-            RX
-          </div>
+          
 
-          <h1
-  className={`${playfair.className} text-6xl text-white mb-3 tracking-tight`}
->
+          <h1 className="text-5xl font-extrabold text-white mb-3 tracking-tight">
   RouteX
 </h1>
                     <p className="text-xl text-teal-100 mb-4">
-            Your Ride Starts Here
-          </p>
+  Local Transport Made Simple
+</p>
 
           <p className="text-white/80">
-            Book rides, track journeys and connect with trusted local drivers.
+            Request a ride, track your booking and travel with confidence.
           </p>
         </div>
         <a
