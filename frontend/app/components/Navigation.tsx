@@ -44,7 +44,9 @@ useEffect(() => {
 }, []);
  
  if (
+  pathname === "/" ||
   pathname === "/login" ||
+  pathname === "/driver-login" ||
   pathname === "/passenger-login" ||
   pathname === "/passenger-register"
 ) {
