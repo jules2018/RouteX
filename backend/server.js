@@ -1640,14 +1640,15 @@ app.post("/passenger-login", async (req, res) => {
     const { email, password } = req.body;
 
     const result = await pool.query(
-      `
-      SELECT *
-      FROM passengers
-      WHERE email = $1
-      AND password = $2
-      `,
-      [email, password]
-    );
+  `
+  SELECT *
+  FROM users
+  WHERE email = $1
+  AND password = $2
+  AND role = 'passenger'
+  `,
+  [email, password]
+);
 
     if (result.rows.length === 0) {
       return res.status(401).json({
