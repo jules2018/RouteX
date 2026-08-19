@@ -265,23 +265,41 @@ export default function DriverPortalPage() {
       key={trip.id}
       className="bg-yellow-50 rounded-xl shadow-lg p-6"
     > 
-      <h3 className="text-xl font-bold">
-        {trip.full_name}
-      </h3>
+      <h3 className="text-lg font-semibold text-slate-900">
 
-      <p>
-        <strong>Phone:</strong> {trip.phone}
-      </p>
-<p>
-  <strong>Driver:</strong> {trip.driver_name}
+{trip.full_name}
+
+</h3>
+
+      <p className="text-slate-700">
+
+<strong>Phone:</strong> {trip.phone}
+
 </p>
-      <p>
-        <strong>Pickup:</strong> {trip.pickup_address}
-      </p>
+<p className="text-slate-700">
 
-      <p>
-        <strong>Dropoff:</strong> {trip.dropoff_address}
-      </p>
+<strong>Driver:</strong> {trip.driver_name}
+
+</p>
+     <div className="bg-slate-50 rounded-xl p-4 mt-4">
+  <p className="text-xs uppercase tracking-wide text-slate-500">
+    Pickup Location
+  </p>
+
+  <p className="text-slate-900 font-medium mt-1">
+    {trip.pickup_address}
+  </p>
+</div>
+
+<div className="bg-slate-50 rounded-xl p-4 mt-3">
+  <p className="text-xs uppercase tracking-wide text-slate-500">
+    Destination
+  </p>
+
+  <p className="text-slate-900 font-medium mt-1">
+    {trip.dropoff_address}
+  </p>
+</div>
 <button
   onClick={() =>
     openNavigation(
