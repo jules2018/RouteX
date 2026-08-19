@@ -1,3 +1,4 @@
+import { playfair } from "./layout";
 export default function Home() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-teal-600 via-teal-700 to-slate-900 flex items-center justify-center px-6">
@@ -8,9 +9,11 @@ export default function Home() {
             RX
           </div>
 
-          <h1 className="text-5xl font-bold text-white mb-3">
-            RouteX
-          </h1>
+          <h1
+  className={`${playfair.className} text-6xl text-white mb-3 tracking-tight`}
+>
+  RouteX
+</h1>
                     <p className="text-xl text-teal-100 mb-4">
             Your Ride Starts Here
           </p>
