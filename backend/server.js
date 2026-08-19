@@ -355,7 +355,36 @@ if (tripResult.rows.length === 0) {
     message: "No available seats"
   });
 }
+const pickupAreaResult = await pool.query(
+  `
+  SELECT latitude, longitude
+  FROM areas
+  WHERE area_name = $1
+  `,
+  [pickup_area]
+);
 
+const dropoffAreaResult = await pool.query(
+  `
+  SELECT latitude, longitude
+  FROM areas
+  WHERE area_name = $1
+  `,
+  [dropoff_area]
+);
+
+const pickupLat =
+  pickupAreaResult.rows[0]?.latitude;
+
+const pickupLng =
+  pickupAreaResult.rows[0]?.longitude;
+
+const destinationLat =
+  dropoffAreaResult.rows[0]?.latitude;
+
+const destinationLng =
+  dropoffAreaResult.rows[0]?.longitude;
+  
 const tripId = tripResult.rows[0].id;
 const bookingResult = await pool.query(
   `
@@ -498,60 +527,6 @@ app.post("/auto-assign/:passengerId", async (req, res) => {
   try {
 
     const passengerId = req.params.passengerId;
-
-    const tripResult = await pool.query(`
-      SELECT
-          t.id,
-          v.capacity,
-          COUNT(tb.id) AS passenger_count
-      FROM trips t
-      JOIN vehicles v
-          ON t.vehicle_id = v.id
-      LEFT JOIN trip_bookings tb
-          ON tb.trip_id = t.id
-      GROUP BY
-          t.id,
-          v.capacity
-      HAVING COUNT(tb.id) < v.capacity
-      ORDER BY
-      COUNT(tb.id) DESC,
-      t.id ASC
-      LIMIT 1
-    `);
-
-    if (tripResult.rows.length === 0) {
-      return res.status(400).json({
-        message: "No available seats"
-      });
-    }
-const pickupAreaResult = await pool.query(
-  `
-  SELECT latitude, longitude
-  FROM areas
-  WHERE area_name = $1
-  `,
-  [pickup_area]
-);
-
-const dropoffAreaResult = await pool.query(
-  `
-  SELECT latitude, longitude
-  FROM areas
-  WHERE area_name = $1
-  `,
-  [dropoff_area]
-);
-const pickupLat =
-  pickupAreaResult.rows[0]?.latitude;
-
-const pickupLng =
-  pickupAreaResult.rows[0]?.longitude;
-
-const destinationLat =
-  dropoffAreaResult.rows[0]?.latitude;
-
-const destinationLng =
-dropoffAreaResult.rows[0]?.longitude;
 
     const tripId = tripResult.rows[0].id;
 
