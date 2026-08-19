@@ -77,18 +77,26 @@ useEffect(() => {
           Driver Portal
         </a>)}
 
-       {isPassenger && !isAdmin && (<a href="/passenger-portal" className="text-slate-500 hover:text-slate-900">
+       {isPassenger && !isAdmin && (
+  <a
+    href="/passenger-portal"
+    className="text-slate-800 font-medium hover:text-teal-600 transition">
           Home
         </a>)}
         {isPassenger && !isAdmin && (
-  <a href="/bookings" className="text-slate-500 hover:text-slate-900">
+  <a
+    href="/bookings"
+    className="text-slate-800 font-medium hover:text-teal-600 transition">
     Book Ride
   </a>
 )}
 
-        <div className="ml-auto">
-          <LogoutButton />
-        </div>
+     {isLoggedIn && (
+  <div className="ml-auto">
+    <LogoutButton />
+  </div>
+)}
+
 
       </div>
     </nav>
