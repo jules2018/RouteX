@@ -142,8 +142,14 @@ if (
     ); 
 
   const data = await response.json();
-  
-  alert("Booking created successfully");
+
+if (!response.ok) {
+  alert(data.message || data.error || "Booking failed");
+  setLoading(false);
+  return;
+}
+
+alert("Booking created successfully");
 
     setForm({
   pickup_area: "",
