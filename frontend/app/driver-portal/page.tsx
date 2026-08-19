@@ -281,35 +281,40 @@ export default function DriverPortalPage() {
 <strong>Driver:</strong> {trip.driver_name}
 
 </p>
-     <div className="bg-slate-50 rounded-xl p-4 mt-4">
+
+  <div className="bg-slate-50 rounded-xl p-4 mt-4">
   <p className="text-xs uppercase tracking-wide text-slate-500">
     Pickup Location
   </p>
-<div className="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-3">
-  <p className="text-sm text-blue-800">
-    Navigation will take you to the {trip.pickup_area} area.
-    Use the address above to reach the exact pickup point.
-  </p>
-</div>
-  <p className="text-slate-900 font-medium mt-1">
+
+  <p className="text-slate-900 font-medium mt-2">
     {trip.pickup_address}
   </p>
+
+  <div className="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-3">
+    <p className="text-sm text-blue-800">
+      Navigation will guide you to the selected area.
+Use the address above for the exact pickup location.
+    </p>
+  </div>
 </div>
 
-<div className="bg-slate-50 rounded-xl p-4 mt-3">
+
+<div className="bg-slate-50 rounded-xl p-4 mt-4">
   <p className="text-xs uppercase tracking-wide text-slate-500">
     Destination
   </p>
 
-  <p className="text-slate-900 font-medium mt-1">
+  <p className="text-slate-900 font-medium mt-2">
     {trip.dropoff_address}
   </p>
+
   <div className="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-3">
-  <p className="text-sm text-blue-800">
-    Navigation will take you to the {trip.dropoff_area} area.
-    Confirm the exact dropoff address before travelling.
-  </p>
-</div>
+    <p className="text-sm text-blue-800">
+      Navigation will guide you to the selected area.
+Use the address above for the exact dropoff location.
+    </p>
+  </div>
 </div>
 <button
   onClick={() =>
