@@ -1,5 +1,5 @@
 "use client";
-
+import { openNavigation } from "../lib/navigation";
 import { useEffect, useState } from "react";
 import AuthGuard from "../components/AuthGuard";
 
@@ -69,7 +69,7 @@ export default function DriverPortalPage() {
   </p>
 
 </div>
-        <div className="mt-10 mb-6">
+  <div className="mt-10 mb-6">
   <h2 className="text-xl font-semibold text-slate-800">
     Available Trips
   </h2>
@@ -162,7 +162,6 @@ export default function DriverPortalPage() {
   </p>
 </div>
 
-
 {acceptedTrips
   .filter(
     (trip) =>
@@ -209,6 +208,21 @@ export default function DriverPortalPage() {
       <p>
         <strong>Dropoff:</strong> {trip.dropoff_address}
       </p>
+<p>
+  <strong>Dropoff:</strong> {trip.dropoff_address}
+</p>
+
+<button
+  onClick={() =>
+    openNavigation(
+      trip.pickup_lat,
+      trip.pickup_lng
+    )
+  }
+  className="mt-4 mr-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+>
+  Navigate to Pickup
+</button>
 
       <button
   onClick={async () => {
@@ -228,6 +242,7 @@ export default function DriverPortalPage() {
     </div>
   ))}
 </div>
+
 <div className="mt-10 mb-6">
   <h2 className="text-xl font-semibold text-slate-800">
     Trips In Progress

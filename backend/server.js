@@ -359,7 +359,7 @@ if (tripResult.rows.length === 0) {
 const tripId = tripResult.rows[0].id;
 const bookingResult = await pool.query(
   `
-  INSERT INTO trip_bookings
+INSERT INTO trip_bookings
 (
   trip_id,
   passenger_id,
@@ -367,9 +367,13 @@ const bookingResult = await pool.query(
   pickup_address,
   dropoff_address,
   travel_date,
-  trip_status
+  trip_status,
+  pickup_lat,
+  pickup_lng,
+  destination_lat,
+  destination_lng
 )
-VALUES ($1,$2,$3,$4,$5,$6,$7)
+VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
 RETURNING *
   `,
   [
@@ -379,7 +383,11 @@ RETURNING *
   pickup_address,
   dropoff_address,
   travel_date,
-  "Waiting"
+  "Waiting",
+  pickupLat,
+  pickupLng,
+  destinationLat,
+  destinationLng
 ]
 );
 
@@ -516,6 +524,34 @@ app.post("/auto-assign/:passengerId", async (req, res) => {
         message: "No available seats"
       });
     }
+const pickupAreaResult = await pool.query(
+  `
+  SELECT latitude, longitude
+  FROM areas
+  WHERE area_name = $1
+  `,
+  [pickup_area]
+);
+
+const dropoffAreaResult = await pool.query(
+  `
+  SELECT latitude, longitude
+  FROM areas
+  WHERE area_name = $1
+  `,
+  [dropoff_area]
+);
+const pickupLat =
+  pickupAreaResult.rows[0]?.latitude;
+
+const pickupLng =
+  pickupAreaResult.rows[0]?.longitude;
+
+const destinationLat =
+  dropoffAreaResult.rows[0]?.latitude;
+
+const destinationLng =
+dropoffAreaResult.rows[0]?.longitude;
 
     const tripId = tripResult.rows[0].id;
 
