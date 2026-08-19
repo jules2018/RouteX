@@ -60,14 +60,17 @@ export default function PassengerRegisterPage() {
   };
 
   return (
-    <main className="p-6 bg-slate-50 min-h-screen">
-      <div className="max-w-md mx-auto bg-white rounded-2xl shadow-lg p-6">
+    <main className="p-6 min-h-screen bg-gradient-to-br from-slate-100 via-white to-teal-50">
+      <div className="max-w-md mx-auto bg-white rounded-2xl shadow-lg p-6 border border-slate-200">
 
-        <h1 className="text-3xl font-bold mb-2">
-          Create Account
-        </h1>
 
-        <p className="text-slate-500 mb-6">
+        <h1 className="text-3xl font-bold mb-2 text-slate-900">
+
+Create Account
+
+</h1>
+
+        <p className="text-slate-700 mb-6">
           Join RouteX and book your next ride.
         </p>
 
@@ -85,7 +88,7 @@ export default function PassengerRegisterPage() {
                 full_name: e.target.value,
               })
             }
-            className="border rounded-xl p-3 shadow-sm"
+            className="border border-slate-300 rounded-xl p-3 shadow-sm text-slate-900 placeholder:text-slate-500 bg-white"
           />
 
           <input
@@ -97,7 +100,7 @@ export default function PassengerRegisterPage() {
                 phone: e.target.value,
               })
             }
-            className="border rounded-xl p-3 shadow-sm"
+            className="border border-slate-300 rounded-xl p-3 shadow-sm text-slate-900 placeholder:text-slate-500 bg-white"
           />
 
           <input
@@ -110,7 +113,7 @@ export default function PassengerRegisterPage() {
                 email: e.target.value,
               })
             }
-            className="border rounded-xl p-3 shadow-sm"
+            className="border border-slate-300 rounded-xl p-3 shadow-sm text-slate-900 placeholder:text-slate-500 bg-white"
           />
 
           <input
@@ -123,7 +126,7 @@ export default function PassengerRegisterPage() {
                 password: e.target.value,
               })
             }
-            className="border rounded-xl p-3 shadow-sm"
+            className="border border-slate-300 rounded-xl p-3 shadow-sm text-slate-900 placeholder:text-slate-500 bg-white"
           />
 
           <input
@@ -136,18 +139,18 @@ export default function PassengerRegisterPage() {
                 confirmPassword: e.target.value,
               })
             }
-            className="border rounded-xl p-3 shadow-sm"
+            className="border border-slate-300 rounded-xl p-3 shadow-sm text-slate-900 placeholder:text-slate-500 bg-white"
           />
 
           <button
             type="submit"
             disabled={loading}
-            className="bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-semibold"
+            className="bg-teal-600 hover:bg-teal-700 text-white py-3 rounded-xl font-semibold shadow-md transition"
           >
             {loading ? "Creating Account..." : "Create Account"}
           </button>
 
-<p className="text-center text-sm text-slate-600">
+<p className="text-center text-sm text-slate-700">
   Already have an account?
 </p>
 
