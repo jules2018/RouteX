@@ -285,7 +285,12 @@ export default function DriverPortalPage() {
   <p className="text-xs uppercase tracking-wide text-slate-500">
     Pickup Location
   </p>
-
+<div className="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-3">
+  <p className="text-sm text-blue-800">
+    Navigation will take you to the {trip.pickup_area} area.
+    Use the address above to reach the exact pickup point.
+  </p>
+</div>
   <p className="text-slate-900 font-medium mt-1">
     {trip.pickup_address}
   </p>
@@ -299,6 +304,12 @@ export default function DriverPortalPage() {
   <p className="text-slate-900 font-medium mt-1">
     {trip.dropoff_address}
   </p>
+  <div className="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-3">
+  <p className="text-sm text-blue-800">
+    Navigation will take you to the {trip.dropoff_area} area.
+    Confirm the exact dropoff address before travelling.
+  </p>
+</div>
 </div>
 <button
   onClick={() =>
