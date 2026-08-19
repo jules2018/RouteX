@@ -424,22 +424,23 @@ app.post("/passenger-register", async (req, res) => {
     );
 
     await pool.query(
-      `
-      INSERT INTO users
-      (
-        username,
-        password,
-        role
-      )
-      VALUES ($1,$2,$3)
-      `,
-      [
-        phone,
-        password,
-        "passenger"
-      ]
-    );
-
+  `
+  INSERT INTO users
+  (
+    full_name,
+    email,
+    password,
+    role
+  )
+  VALUES ($1,$2,$3,$4)
+  `,
+  [
+    full_name,
+    email,
+    password,
+    "passenger"
+  ]
+);
     res.status(201).json({
       message: "Passenger registered successfully"
     });
