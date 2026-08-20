@@ -738,6 +738,37 @@ app.get("/trips/:id/route-manifest", async (req, res) => {
 
   }
 });
+app.get("/addresses/search", async (req, res) => {
+  try {
+    const query = req.query.q;
+
+    if (!query) {
+      return res.json([]);
+    }
+
+    const result = await pool.query(
+      `
+      SELECT
+        address,
+        area_name
+      FROM addresses
+      WHERE address ILIKE $1
+      ORDER BY address
+      LIMIT 10
+      `,
+      [`%${query}%`]
+    );
+
+    res.json(result.rows);
+
+  } catch (error) {
+
+    res.status(500).json({
+      error: error.message
+    });
+
+  }
+});
 app.get("/dashboard", async (req, res) => {
   try {
 
