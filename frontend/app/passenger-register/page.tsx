@@ -9,6 +9,7 @@ export default function PassengerRegisterPage() {
     email: "",
     password: "",
     confirmPassword: "",
+    referral_code: "",
   });
 
   const [loading, setLoading] = useState(false);
@@ -36,6 +37,7 @@ export default function PassengerRegisterPage() {
             phone: form.phone,
             email: form.email,
             password: form.password,
+            referral_code: form.referral_code,
           }),
         }
       );
@@ -117,38 +119,38 @@ Create Account
           />
 
           <input
-            type="password"
-            placeholder="Password"
-            value={form.password}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                password: e.target.value,
-              })
-            }
-            className="border border-slate-300 rounded-xl p-3 shadow-sm text-slate-900 placeholder:text-slate-500 bg-white"
-          />
+  type="password"
+  placeholder="Confirm Password"
+  value={form.confirmPassword}
+  onChange={(e) =>
+    setForm({
+      ...form,
+      confirmPassword: e.target.value,
+    })
+  }
+  className="border border-slate-300 rounded-xl p-3 shadow-sm text-slate-900 placeholder:text-slate-500 bg-white"
+/>
 
-          <input
-            type="password"
-            placeholder="Confirm Password"
-            value={form.confirmPassword}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                confirmPassword: e.target.value,
-              })
-            }
-            className="border border-slate-300 rounded-xl p-3 shadow-sm text-slate-900 placeholder:text-slate-500 bg-white"
-          />
+<input
+  type="text"
+  placeholder="Referral Code (Optional)"
+  value={form.referral_code}
+  onChange={(e) =>
+    setForm({
+      ...form,
+      referral_code: e.target.value,
+    })
+  }
+  className="border border-slate-300 rounded-xl p-3 shadow-sm text-slate-900 placeholder:text-slate-500 bg-white"
+/>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="bg-teal-600 hover:bg-teal-700 text-white py-3 rounded-xl font-semibold shadow-md transition"
-          >
-            {loading ? "Creating Account..." : "Create Account"}
-          </button>
+<button
+  type="submit"
+  disabled={loading}
+  className="bg-teal-600 hover:bg-teal-700 text-white py-3 rounded-xl font-semibold shadow-md transition"
+>
+  {loading ? "Creating Account..." : "Create Account"}
+</button>
 
 <p className="text-center text-sm text-slate-700">
   Already have an account?

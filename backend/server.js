@@ -451,7 +451,8 @@ app.post("/passenger-register", async (req, res) => {
       full_name,
       phone,
       email,
-      password
+      password,
+      referral_code
     } = req.body;
 
     const passengerResult = await pool.query(
@@ -460,16 +461,18 @@ app.post("/passenger-register", async (req, res) => {
       (
         full_name,
         phone,
-        email
+        email,
+        referral_code
       )
       VALUES ($1,$2,$3)
       RETURNING *
       `,
-      [
-        full_name,
-        phone,
-        email
-      ]
+     [
+  full_name,
+  phone,
+  email,
+  referral_code
+]
     );
 
     await pool.query(
