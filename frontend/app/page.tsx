@@ -12,17 +12,19 @@ RouteX
 
 </h1>
 
-<h2 className="text-2xl font-light text-white mt-3">
-  Getting Upington Moving
+<h2 className="text-lg text-white/90 mt-3">
+
+Getting Upington Moving
+
 </h2>
 
- <p className="text-base text-white/80 mt-2">
+ <p className="text-sm text-white/70 mt-2">
   Book local rides across Upington.
 </p>
         </div>
-        <a
+       <a
   href="/passenger-login"
-  className="w-full max-w-md mx-auto bg-white text-teal-700 py-4 rounded-2xl font-semibold text-xl shadow-lg hover:bg-slate-100 transition"
+  className="block w-full max-w-sm mx-auto bg-white text-teal-700 py-4 rounded-2xl font-semibold text-xl text-center shadow-lg hover:bg-slate-100 transition"
 >
   Book a Ride
 </a>
