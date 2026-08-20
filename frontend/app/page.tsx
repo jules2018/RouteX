@@ -13,11 +13,11 @@ export default function Home() {
   className="mx-auto w-56"
 />
 
-<h2 className="text-3xl font-bold text-white">
+<h2 className="text-2xl font-semibold">
   Getting Upington Moving
 </h2>
 
-         <p className="text-white/90">
+         <p className="text-base">
   Book a ride with local drivers in minutes.
 </p>
         </div>
