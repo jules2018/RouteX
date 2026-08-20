@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 export default function BookingPage() {
 const [loading, setLoading] = useState(false);
 const [passenger, setPassenger] = useState<any>(null);
+const [dropoffSuggestions, setDropoffSuggestions] = useState<any[]>([]);
 
 useEffect(() => {
   const storedPassenger =
@@ -29,6 +30,7 @@ const [form, setForm] = useState({
 
   const [pickupResults, setPickupResults] = useState<any[]>([]);
   const [dropoffResults, setDropoffResults] = useState<any[]>([]);
+  const [pickupSuggestions, setPickupSuggestions] = useState<any[]>([]);
   
   const [fare, setFare] = useState("");
   const searchAddress = async (
@@ -215,16 +217,58 @@ alert("Booking created successfully");
   </select>
 
   <input
-    placeholder="House number, street, landmark..."
-    value={form.pickup_address}
-    onChange={(e) =>
-      setForm({
-        ...form,
-        pickup_address: e.target.value,
-      })
+  placeholder="House number, street, landmark..."
+  value={form.pickup_address}
+  onChange={async (e) => {
+    const value = e.target.value;
+
+    setForm({
+      ...form,
+      pickup_address: value,
+    });
+
+    if (value.length < 2) {
+      setPickupSuggestions([]);
+      return;
     }
-   className="w-full border border-slate-300 rounded-xl p-3 mb-3 text-slate-900 bg-white"
-  />
+
+    const response = await fetch(
+      `https://routex-smgu.onrender.com/addresses/search?q=${value}`
+    );
+
+    const data = await response.json();
+
+    setPickupSuggestions(data);
+  }}
+  className="w-full border border-slate-300 rounded-xl p-3 mb-3 text-slate-900 bg-white"
+/>
+{pickupSuggestions.length > 0 && (
+  <div className="bg-white border border-slate-200 rounded-xl shadow-sm mb-3">
+    {pickupSuggestions.map((item) => (
+      <button
+        key={item.address}
+        type="button"
+        onClick={() => {
+          setForm({
+            ...form,
+            pickup_address: item.address,
+          });
+
+          setPickupSuggestions([]);
+        }}
+        className="w-full text-left px-4 py-3 hover:bg-slate-100 border-b last:border-b-0"
+      >
+        <div className="font-medium text-slate-900">
+          {item.address}
+        </div>
+
+        <div className="text-xs text-slate-500">
+          {item.area_name}
+        </div>
+      </button>
+    ))}
+  </div>
+)}
 </div>
 
 <div className="bg-slate-50 border rounded-2xl p-4">
@@ -260,16 +304,59 @@ alert("Booking created successfully");
   </select>
 
   <input
-    placeholder="House number, street, landmark..."
-    value={form.dropoff_address}
-    onChange={(e) =>
-      setForm({
-        ...form,
-        dropoff_address: e.target.value,
-      })
+  placeholder="House number, street, landmark..."
+  value={form.dropoff_address}
+  onChange={async (e) => {
+    const value = e.target.value;
+
+    setForm({
+      ...form,
+      dropoff_address: value,
+    });
+
+    if (value.length < 2) {
+      setDropoffSuggestions([]);
+      return;
     }
-   className="w-full border border-slate-300 rounded-xl p-3 mb-3 text-slate-900 bg-white"
-  />
+
+    const response = await fetch(
+      `https://routex-smgu.onrender.com/addresses/search?q=${value}`
+    );
+
+    const data = await response.json();
+
+    setDropoffSuggestions(data);
+  }}
+  className="w-full border border-slate-300 rounded-xl p-3 mb-3 text-slate-900 bg-white"
+/>
+
+{dropoffSuggestions.length > 0 && (
+  <div className="bg-white border border-slate-200 rounded-xl shadow-sm mb-3">
+    {dropoffSuggestions.map((item) => (
+      <button
+        key={item.address}
+        type="button"
+        onClick={() => {
+          setForm({
+            ...form,
+            dropoff_address: item.address,
+          });
+
+          setDropoffSuggestions([]);
+        }}
+        className="w-full text-left px-4 py-3 hover:bg-slate-100 border-b last:border-b-0"
+      >
+        <div className="font-medium text-slate-900">
+          {item.address}
+        </div>
+
+        <div className="text-xs text-slate-500">
+          {item.area_name}
+        </div>
+      </button>
+    ))}
+  </div>
+)}
 </div>
 <div className="flex items-center gap-2">
   
