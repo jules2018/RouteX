@@ -464,7 +464,7 @@ app.post("/passenger-register", async (req, res) => {
         email,
         referral_code
       )
-      VALUES ($1,$2,$3)
+      VALUES ($1,$2,$3,$4)
       RETURNING *
       `,
      [
