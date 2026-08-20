@@ -1797,24 +1797,36 @@ WHERE area_name = $1
 const pickupCategory =
   pickupResult.rows[0].category;
 
+const pickupCategory =
+  pickupResult.rows[0].category;
+
 const dropoffCategory =
   dropoffResult.rows[0].category;
-const fareResult = await pool.query(
-  `
-  SELECT fare
-  FROM public.fare_matrix
-  WHERE from_category = $1
-  AND to_category = $2
-  `,
-  [
-    pickupCategory,
-    dropoffCategory
-  ]
-);
+
+let fare;
+
+if (pickup_area === dropoff_area) {
+  fare = 50;
+} else {
+  const fareResult = await pool.query(
+    `
+    SELECT fare
+    FROM public.fare_matrix
+    WHERE from_category = $1
+    AND to_category = $2
+    `,
+    [
+      pickupCategory,
+      dropoffCategory
+    ]
+  );
+
+  fare = fareResult.rows[0].fare;
+}
 res.json({
   pickup_category: pickupCategory,
   dropoff_category: dropoffCategory,
-  fare: fareResult.rows[0].fare
+  fare
 });
   } catch (error) {
 
