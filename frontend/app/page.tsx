@@ -7,16 +7,19 @@ export default function Home() {
         <div className="mb-8">
           
 
-          <h1 className="text-5xl font-extrabold text-white mb-3 tracking-tight">
-  RouteX
-</h1>
-                    <p className="text-xl text-teal-100 mb-4">
-  Local Transport Made Simple
-</p>
+          <img
+  src="/routex-logo.png"
+  alt="RouteX"
+  className="mx-auto w-56"
+/>
 
-          <p className="text-white/80">
-            Request a ride, track your booking and travel with confidence.
-          </p>
+<h2 className="text-3xl font-bold text-white">
+  Getting Upington Moving
+</h2>
+
+         <p className="text-white/90">
+  Book a ride with local drivers in minutes.
+</p>
         </div>
         <a
   href="/passenger-login"
