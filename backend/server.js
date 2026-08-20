@@ -1797,9 +1797,6 @@ WHERE area_name = $1
 const pickupCategory =
   pickupResult.rows[0].category;
 
-const pickupCategory =
-  pickupResult.rows[0].category;
-
 const dropoffCategory =
   dropoffResult.rows[0].category;
 
