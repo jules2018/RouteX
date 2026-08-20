@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-export default function BookingPage() {
+export default function BookRidePage() {
 const [loading, setLoading] = useState(false);
 const [passenger, setPassenger] = useState<any>(null);
 const [dropoffSuggestions, setDropoffSuggestions] = useState<any[]>([]);
@@ -31,6 +31,7 @@ const [form, setForm] = useState({
   const [pickupResults, setPickupResults] = useState<any[]>([]);
   const [dropoffResults, setDropoffResults] = useState<any[]>([]);
   const [pickupSuggestions, setPickupSuggestions] = useState<any[]>([]);
+  const [areas, setAreas] = useState<any[]>([]);
   
   const [fare, setFare] = useState("");
   const searchAddress = async (
@@ -107,6 +108,19 @@ setFare(data.fare);
 
   }
 };
+useEffect(() => {
+  const loadAreas = async () => {
+    const response = await fetch(
+      "https://routex-smgu.onrender.com/areas"
+    );
+
+    const data = await response.json();
+
+    setAreas(data);
+  };
+
+  loadAreas();
+}, []);
   const handleSubmit = async (e: any) => {
     e.preventDefault();
 if (
@@ -201,19 +215,31 @@ alert("Booking created successfully");
   >
     <option value="">Select Pickup Area</option>
 
-    <option value="Blydeville">Blydeville</option>
-    <option value="Die Rand">Die Rand</option>
-    <option value="Flora Park">Flora Park</option>
-    <option value="Keidebees">Keidebees</option>
-    <option value="Middelpos">Middelpos</option>
-    <option value="Morning Glory">Morning Glory</option>
-    <option value="Oosterville">Oosterville</option>
-    <option value="Paballelo">Paballelo</option>
-    <option value="Progress">Progress</option>
-    <option value="Louisvale">Louisvale</option>
-    <option value="Laboria">Laboria</option>
-    <option value="Ses Brugge">Ses Brugge</option>
-    <option value="Upington Central">Upington Central</option>
+    <option value="">Select Pickup Area</option>
+
+<option value="Bellvue">Bellvue</option>
+<option value="Blydeville">Blydeville</option>
+<option value="Die Rand">Die Rand</option>
+<option value="Flora Park">Flora Park</option>
+<option value="Keidebees">Keidebees</option>
+<option value="Klippunt">Klippunt</option>
+<option value="Laboria">Laboria</option>
+<option value="Lemoendraai">Lemoendraai</option>
+<option value="Louisvale">Louisvale</option>
+<option value="Louisvale Weg">Louisvale Weg</option>
+<option value="Middelpos">Middelpos</option>
+<option value="Morning Glory">Morning Glory</option>
+<option value="Nuwerus">Nuwerus</option>
+<option value="Oosterville">Oosterville</option>
+<option value="Paballelo">Paballelo</option>
+<option value="Progress">Progress</option>
+<option value="Raaswater">Raaswater</option>
+<option value="Rosedale">Rosedale</option>
+<option value="Ses Brugge">Ses Brugge</option>
+<option value="Straussburg">Straussburg</option>
+<option value="Swartkop">Swartkop</option>
+<option value="Upington Central">Upington Central</option>
+<option value="Vaalkroek">Vaalkroek</option>
   </select>
 
   <input
@@ -286,21 +312,31 @@ alert("Booking created successfully");
     }
    className="w-full border border-slate-300 rounded-xl p-3 text-slate-900 bg-white placeholder:text-slate-500"
   >
-    <option value="">Select Dropoff Area</option>
+    <option value="">Select Pickup Area</option>
 
-    <option value="Blydeville">Blydeville</option>
-    <option value="Die Rand">Die Rand</option>
-    <option value="Flora Park">Flora Park</option>
-    <option value="Keidebees">Keidebees</option>
-    <option value="Middelpos">Middelpos</option>
-    <option value="Morning Glory">Morning Glory</option>
-    <option value="Oosterville">Oosterville</option>
-    <option value="Paballelo">Paballelo</option>
-    <option value="Progress">Progress</option>
-    <option value="Louisvale">Louisvale</option>
-    <option value="Laboria">Laboria</option>
-    <option value="Ses Brugge">Ses Brugge</option>
-    <option value="Upington Central">Upington Central</option>
+<option value="Bellvue">Bellvue</option>
+<option value="Blydeville">Blydeville</option>
+<option value="Die Rand">Die Rand</option>
+<option value="Flora Park">Flora Park</option>
+<option value="Keidebees">Keidebees</option>
+<option value="Klippunt">Klippunt</option>
+<option value="Laboria">Laboria</option>
+<option value="Lemoendraai">Lemoendraai</option>
+<option value="Louisvale">Louisvale</option>
+<option value="Louisvale Weg">Louisvale Weg</option>
+<option value="Middelpos">Middelpos</option>
+<option value="Morning Glory">Morning Glory</option>
+<option value="Nuwerus">Nuwerus</option>
+<option value="Oosterville">Oosterville</option>
+<option value="Paballelo">Paballelo</option>
+<option value="Progress">Progress</option>
+<option value="Raaswater">Raaswater</option>
+<option value="Rosedale">Rosedale</option>
+<option value="Ses Brugge">Ses Brugge</option>
+<option value="Straussburg">Straussburg</option>
+<option value="Swartkop">Swartkop</option>
+<option value="Upington Central">Upington Central</option>
+<option value="Vaalkroek">Vaalkroek</option>
   </select>
 
   <input
