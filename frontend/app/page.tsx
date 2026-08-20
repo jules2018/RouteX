@@ -6,24 +6,22 @@ export default function Home() {
 
         <div className="mb-8">
           
+<h1 className="text-5xl font-bold text-white">
+  RouteX
+</h1>
 
-          <img
-  src="/routex-logo.png"
-  alt="RouteX"
-  className="mx-auto w-56"
-/>
-
-<h2 className="text-2xl font-semibold">
+<h2 className="text-2xl font-semibold text-white">
   Getting Upington Moving
 </h2>
 
-         <p className="text-base">
+         <p className="text-base text-white/90">
   Book a ride with local drivers in minutes.
 </p>
         </div>
         <a
   href="/passenger-login"
-  className="block w-full bg-white text-teal-700 py-4 rounded-2xl font-bold text-lg shadow-lg hover:bg-slate-100 transition mb-6"
+  className="w-72 mx-auto bg-white text-teal-700 py-4 rounded-xl font-bold text-xl"
+
 >
   Book a Ride
 </a>
