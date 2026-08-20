@@ -117,7 +117,18 @@ Create Account
             }
             className="border border-slate-300 rounded-xl p-3 shadow-sm text-slate-900 placeholder:text-slate-500 bg-white"
           />
-
+<input
+  type="password"
+  placeholder="Password"
+  value={form.password}
+  onChange={(e) =>
+    setForm({
+      ...form,
+      password: e.target.value,
+    })
+  }
+  className="border border-slate-300 rounded-xl p-3 shadow-sm text-slate-900 placeholder:text-slate-500 bg-white"
+/>
           <input
   type="password"
   placeholder="Confirm Password"
