@@ -1,7 +1,7 @@
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-gradient-to-br from-teal-600 via-teal-700 to-slate-900 flex items-center justify-center px-6">
+    <main className="min-h-screen bg-gradient-to-br from-teal-600 via-teal-700 to-slate-900 flex flex-col items-center justify-center px-6">
       <div className="w-full max-w-md text-center">
 
         <div className="mb-8">
