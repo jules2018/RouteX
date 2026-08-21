@@ -37,6 +37,24 @@ loadTrips();
   if (storedDriver) {
     const parsedDriver = JSON.parse(storedDriver);
     setDriver(parsedDriver);
+    fetch(
+  "https://routex-smgu.onrender.com/driver-list"
+)
+  .then((res) => res.json())
+  .then((data) => {
+    const currentDriver = data.find(
+      (d: any) =>
+        Number(d.id) === Number(parsedDriver.id)
+    );
+  
+    if (
+      currentDriver?.status === "Available"
+    ) {
+      setStatus("available");
+    } else {
+      setStatus("offline");
+    }
+  });
   }
 
   fetch("https://routex-smgu.onrender.com/accepted-trips")
@@ -105,13 +123,42 @@ return () => clearInterval(interval);
     </span>
 
     <button
-      onClick={() =>
-        setStatus(
-          status === "available"
-            ? "offline"
-            : "available"
-        )
+    onClick={async () => {
+  const newStatus =
+    status === "available"
+      ? "Offline"
+      : "Available";
+
+  try {
+    console.log("Driver:", driver);
+console.log("Driver ID:", driver?.id);
+console.log("New Status:", newStatus);
+    const response = await fetch(
+      `https://routex-smgu.onrender.com/drivers/${driver?.id}/status`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          status: newStatus,
+        }),
       }
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to update driver status");
+    }
+
+    setStatus(
+      newStatus === "Available"
+        ? "available"
+        : "offline"
+    );
+  } catch (error) {
+    console.error("Error updating driver status:", error);
+  }
+}}
       className={`px-4 py-2 rounded-lg text-white ${
         status === "available"
           ? "bg-red-600 hover:bg-red-700"
