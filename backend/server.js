@@ -335,30 +335,7 @@ console.log("Pickup Area:", pickup_area);
 console.log("Dropoff Area:", dropoff_area);
 
 
-  const tripResult = await pool.query(`
-  SELECT
-      t.id,
-      v.capacity,
-      COUNT(tb.id) AS passenger_count
-  FROM trips t
-  JOIN vehicles v
-      ON t.vehicle_id = v.id
-  LEFT JOIN trip_bookings tb
-      ON tb.trip_id = t.id
-  GROUP BY
-      t.id,
-      v.capacity
-  HAVING COUNT(tb.id) < v.capacity
-  ORDER BY
-      COUNT(tb.id) DESC,
-      t.id ASC
-  LIMIT 1
-`);
-if (tripResult.rows.length === 0) {
-  return res.status(400).json({
-    message: "No available seats"
-  });
-}
+  
 const pickupAreaResult = await pool.query(
   `
   SELECT latitude, longitude
@@ -397,12 +374,10 @@ const destinationLat =
 const destinationLng =
   dropoffAreaResult.rows[0]?.longitude;
 
-const tripId = tripResult.rows[0].id;
 const bookingResult = await pool.query(
   `
 INSERT INTO trip_bookings
 (
-  trip_id,
   passenger_id,
   fare_amount,
   pickup_address,
@@ -414,11 +389,10 @@ INSERT INTO trip_bookings
   destination_lat,
   destination_lng
 )
-VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
 RETURNING *
   `,
-  [
-  tripId,
+ [
   passenger_id,
   fare_amount,
   pickup_address,
