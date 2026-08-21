@@ -111,6 +111,7 @@ console.log("New Status:", newStatus);
         }),
       }
     );
+  console.log("Response Status:", response.status);
 
     if (!response.ok) {
       throw new Error("Failed to update driver status");
