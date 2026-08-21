@@ -1634,6 +1634,7 @@ app.get("/driver-list", async (req, res) => {
 
   }
 });
+
 app.post("/driver-login", async (req, res) => {
   try {
 
@@ -1663,6 +1664,28 @@ app.post("/driver-login", async (req, res) => {
       error: error.message
     });   
 
+  }
+});
+app.post("/drivers/:id/status", async (req, res) => {
+  try {
+    const driverId = req.params.id;
+    const { status } = req.body;
+
+    const result = await pool.query(
+      `
+      UPDATE drivers
+      SET status = $1
+      WHERE id = $2
+      RETURNING *
+      `,
+      [status, driverId]
+    );
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    res.status(500).json({
+      error: error.message,
+    });
   }
 });
 app.post("/passenger-login", async (req, res) => {
