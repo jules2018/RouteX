@@ -10,6 +10,7 @@ export default function DriverPortalPage() {
   const [completedTrips, setCompletedTrips] = useState<any[]>([]);
   const [drivers, setDrivers] = useState<any[]>([]);
   const [driver, setDriver] = useState<any>(null);
+  const [status, setStatus] = useState("offline");
   const availableTrips = requests;
 
   useEffect(() => {
@@ -58,8 +59,8 @@ export default function DriverPortalPage() {
   return (
     <>
       <main className="p-8 bg-gray-100 min-h-screen">
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm max-w-4xl mb-8">
 
+  <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm max-w-4xl mb-8">
   <h1 className="text-2xl font-semibold text-slate-800">
     Welcome back, {driver?.full_name}
   </h1>
@@ -68,7 +69,38 @@ export default function DriverPortalPage() {
     Manage and track your assigned trips.
   </p>
 
+  <div className="mt-4 flex items-center gap-3">
+    <span
+      className={`px-3 py-1 rounded-full text-sm font-medium ${
+        status === "available"
+          ? "bg-green-100 text-green-700"
+          : "bg-red-100 text-red-700"
+      }`}
+    >
+      {status === "available" ? "Online" : "Offline"}
+    </span>
+
+    <button
+      onClick={() =>
+        setStatus(
+          status === "available"
+            ? "offline"
+            : "available"
+        )
+      }
+      className={`px-4 py-2 rounded-lg text-white ${
+        status === "available"
+          ? "bg-red-600 hover:bg-red-700"
+          : "bg-green-600 hover:bg-green-700"
+      }`}
+    >
+      {status === "available"
+        ? "Go Offline"
+        : "Go Online"}
+    </button>
+  </div>
 </div>
+
   <div className="mt-10 mb-6">
   <h2 className="text-xl font-semibold text-slate-800">
     Available Trips
