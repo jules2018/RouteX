@@ -1666,8 +1666,13 @@ app.post("/driver-login", async (req, res) => {
 
   }
 });
+
 app.post("/drivers/:id/status", async (req, res) => {
   try {
+    console.log("STATUS ROUTE HIT");
+    console.log("Driver ID:", req.params.id);
+    console.log("Body:", req.body);
+
     const driverId = req.params.id;
     const { status } = req.body;
 
