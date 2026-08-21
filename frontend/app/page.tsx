@@ -41,26 +41,24 @@ Getting Upington Moving
     Driver Login
   </a>
 </div>
-
 </div>
-<footer className="mt-12 border-t border-slate-200 pt-6 text-center text-sm text-slate-600">
-  <p className="font-semibold text-slate-800">
+
+<footer className="mt-12 pt-6 border-t border-white/20 text-center">
+  <h3 className="text-white font-semibold">
     Need Help?
+  </h3>
+
+  <p className="text-slate-200 mt-2">
+    RouteX Support
   </p>
 
-  <p className="mt-2">
-    Contact RouteX Support
-  </p>
-
-  <a
-    href="tel:0799132513"
-    className="mt-1 inline-block font-semibold text-teal-600 hover:text-teal-700"
-  >
+  <p className="text-white font-bold text-lg">
     079 913 2513
-  </a>
+  </p>
 
-  <p className="mt-2 text-xs text-slate-500">
-    RouteX is currently in development. We welcome your feedback and suggestions.
+  <p className="text-slate-300 text-sm mt-2">
+    RouteX is currently in development.
+    We welcome feedback, bug reports and suggestions.
   </p>
 </footer>
 </main>
