@@ -30,7 +30,6 @@ export default function DriverPortalPage() {
     .then((res) => res.json())
     .then((data) => setRequests(data));
 };
-loadTrips();
 
   useEffect(() => {
   const storedDriver = localStorage.getItem("driver");
@@ -56,46 +55,13 @@ loadTrips();
     }
   });
   }
+loadTrips();
 
-  fetch("https://routex-smgu.onrender.com/accepted-trips")
-  .then((res) => res.json())
-  .then((data) => {
-    console.log("ACCEPTED TRIPS:", data);
-    setAcceptedTrips(data);
-  });
-
-      fetch("https://routex-smgu.onrender.com/accepted-trips")
-  .then((res) => res.json())
-  .then((data) => {
-    setAcceptedTrips(data);
-  });
-  fetch("https://routex-smgu.onrender.com/in-progress-trips")
-  .then((res) => res.json())
-  .then((data) => {
-    setInProgressTrips(data);
-  });
-  fetch("https://routex-smgu.onrender.com/completed-trips")
-  .then((res) => res.json())
-  .then((data) => {
-    setCompletedTrips(data);
-    
-    fetch("https://routex-smgu.onrender.com/trip-requests")
-  .then((res) => res.json())
-  .then((data) => {
-    setRequests(data);
-  });
-
-  });
-  fetch("https://routex-smgu.onrender.com/driver-list")
-  .then((res) => res.json())
-  .then((data) => {
-    setDrivers(data);
-  });
-  const interval = setInterval(() => {
+const interval = setInterval(() => {
   loadTrips();
 }, 5000);
 
-return () => clearInterval(interval);
+return () => clearInterval(interval
   }, []);
 
   return (
