@@ -42,25 +42,26 @@ Getting Upington Moving
   </a>
 </div>
 </div>
+<div className="w-full col-span-full">
+  <footer className="mt-12 pt-6 border-t border-white/20 text-center">
+    <h3 className="text-white font-semibold">
+      Need Help?
+    </h3>
 
-<footer className="mt-12 pt-6 border-t border-white/20 text-center">
-  <h3 className="text-white font-semibold">
-    Need Help?
-  </h3>
+    <p className="text-slate-200 mt-2">
+      RouteX Support
+    </p>
 
-  <p className="text-slate-200 mt-2">
-    RouteX Support
-  </p>
+    <p className="text-white font-bold text-lg">
+      079 913 2513
+    </p>
 
-  <p className="text-white font-bold text-lg">
-    079 913 2513
-  </p>
-
-  <p className="text-slate-300 text-sm mt-2">
-    RouteX is currently in development.
-    We welcome feedback, bug reports and suggestions.
-  </p>
-</footer>
+    <p className="text-slate-300 text-sm mt-2">
+      RouteX is currently in development.
+      We welcome feedback, bug reports and suggestions.
+    </p>
+  </footer>
+</div>
 </main>
 );
 }
