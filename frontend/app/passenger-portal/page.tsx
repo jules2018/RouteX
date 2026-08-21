@@ -6,6 +6,16 @@ export default function PassengerPortalPage() {
   const [passenger, setPassenger] = useState<any>(null);
   const [trips, setTrips] = useState<any[]>([]);
 
+ const loadTrips = (passengerId: number) => {
+  fetch(
+    `https://routex-smgu.onrender.com/passenger-bookings/${passengerId}`
+  )
+    .then((res) => res.json())
+    .then((data) => {
+      setTrips(data);
+      console.log(data);
+    });
+};
   useEffect(() => {
     const storedPassenger =
       localStorage.getItem("passenger");
@@ -17,14 +27,13 @@ export default function PassengerPortalPage() {
 
   setPassenger(passengerData);
 
-  fetch(
-  `https://routex-smgu.onrender.com/passenger-bookings/${passengerData.id}`
-)
-    .then((res) => res.json())
-    .then((data) => {
-      setTrips(data);
-      console.log(data);
-    });
+ loadTrips(passengerData.id);
+
+const interval = setInterval(() => {
+  loadTrips(passengerData.id);
+}, 5000);
+
+return () => clearInterval(interval);
 }
   }, []);
 
