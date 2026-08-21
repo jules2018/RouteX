@@ -1634,7 +1634,25 @@ app.get("/driver-list", async (req, res) => {
 
   }
 });
+app.get("/online-drivers", async (req, res) => {
+  try {
 
+    const result = await pool.query(`
+      SELECT COUNT(*) AS total
+      FROM drivers
+      WHERE status = 'Available'
+    `);
+
+    res.json(result.rows[0]);
+
+  } catch (error) {
+
+    res.status(500).json({
+      error: error.message
+    });
+
+  }
+});
 app.post("/driver-login", async (req, res) => {
   try {
 

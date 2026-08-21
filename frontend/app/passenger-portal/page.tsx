@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 export default function PassengerPortalPage() {
   const [passenger, setPassenger] = useState<any>(null);
   const [trips, setTrips] = useState<any[]>([]);
+  const [onlineDrivers, setOnlineDrivers] = useState(0);
 
  const loadTrips = (passengerId: number) => {
   fetch(
@@ -14,6 +15,17 @@ export default function PassengerPortalPage() {
     .then((data) => {
       setTrips(data);
       console.log(data);
+    });
+};
+const loadOnlineDrivers = () => {
+  fetch(
+    "https://routex-smgu.onrender.com/online-drivers"
+  )
+    .then((res) => res.json())
+    .then((data) => {
+      setOnlineDrivers(
+        Number(data.total)
+      );
     });
 };
   useEffect(() => {
@@ -28,9 +40,11 @@ export default function PassengerPortalPage() {
   setPassenger(passengerData);
 
  loadTrips(passengerData.id);
+loadOnlineDrivers();
 
 const interval = setInterval(() => {
   loadTrips(passengerData.id);
+  loadOnlineDrivers();
 }, 5000);
 
 return () => clearInterval(interval);
@@ -40,10 +54,26 @@ return () => clearInterval(interval);
   return (
     <main className="min-h-screen bg-slate-50 p-6">
 
-  <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm max-w-4xl">
+ <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm max-w-4xl">
+
   <h1 className="text-2xl font-semibold text-slate-800">
     Welcome back, {passenger?.full_name}
   </h1>
+
+  <div className="mt-4 bg-slate-50 border border-slate-200 rounded-xl p-4">
+    <h2 className="text-sm font-semibold text-slate-700">
+      RouteX Availability
+    </h2>
+
+    <p className="text-xl font-bold text-green-600 mt-1">
+      🚖 Drivers Online: {onlineDrivers}
+    </p>
+
+    <p className="text-xs text-slate-500 mt-1">
+      Available drivers ready to accept trips.
+    </p>
+  </div>
+
   <div className="mt-4 grid md:grid-cols-2 gap-4s">
 
   <div className="mt-2">
