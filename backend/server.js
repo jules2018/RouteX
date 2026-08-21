@@ -1619,7 +1619,7 @@ app.get("/driver-list", async (req, res) => {
   try {
 
     const result = await pool.query(`
-      SELECT id, full_name
+      SELECT id, full_name, status
       FROM drivers
       ORDER BY full_name
     `);
