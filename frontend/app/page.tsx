@@ -43,6 +43,26 @@ Getting Upington Moving
 </div>
 
 </div>
+<footer className="mt-12 border-t border-slate-200 pt-6 text-center text-sm text-slate-600">
+  <p className="font-semibold text-slate-800">
+    Need Help?
+  </p>
+
+  <p className="mt-2">
+    Contact RouteX Support
+  </p>
+
+  <a
+    href="tel:0799132513"
+    className="mt-1 inline-block font-semibold text-teal-600 hover:text-teal-700"
+  >
+    079 913 2513
+  </a>
+
+  <p className="mt-2 text-xs text-slate-500">
+    RouteX is currently in development. We welcome your feedback and suggestions.
+  </p>
+</footer>
 </main>
 );
 }
