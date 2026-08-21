@@ -44,7 +44,7 @@ Getting Upington Moving
 </div>
 <div className="w-full col-span-full">
   <footer className="mt-12 pt-6 border-t border-white/20 text-center">
-    <h3 className="text-white font-semibold">
+    <h3 className="text-white font-medium text-sm">
       Need Help?
     </h3>
 
@@ -56,7 +56,7 @@ Getting Upington Moving
       079 913 2513
     </p>
 
-    <p className="text-slate-300 text-sm mt-2">
+    <p className="text-white font-semibold text-base">
       RouteX is currently in development.
       We welcome feedback, bug reports and suggestions.
     </p>
