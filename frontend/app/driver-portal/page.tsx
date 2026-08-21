@@ -55,14 +55,14 @@ export default function DriverPortalPage() {
     }
   });
   }
-loadTrips();
+ loadTrips();
 
-const interval = setInterval(() => {
-  loadTrips();
-}, 5000);
+  const interval = setInterval(() => {
+    loadTrips();
+  }, 5000);
 
-return () => clearInterval(interval
-  }, []);
+  return () => clearInterval(interval);
+}, []);
 
   return (
     <>
