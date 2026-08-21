@@ -429,26 +429,26 @@ alert("Booking created successfully");
 )}
 {fare && (
   <div className="border rounded-2xl p-5 bg-slate-50">
-    <h3 className="font-semibold mb-3">
-      Trip Summary
-    </h3>
+  <h3 className="font-semibold mb-3 text-slate-900">
+    Trip Summary
+  </h3>
 
-    <p>
-      <strong>Pickup:</strong> {form.pickup_area}
-    </p>
+  <p className="text-slate-700">
+    <strong>Pickup:</strong> {form.pickup_area}
+  </p>
 
-    <p>
-      <strong>Dropoff:</strong> {form.dropoff_area}
-    </p>
+  <p className="text-slate-700">
+    <strong>Dropoff:</strong> {form.dropoff_area}
+  </p>
 
-    <p>
-      <strong>Date:</strong> {form.travel_date}
-    </p>
+  <p className="text-slate-700">
+    <strong>Date:</strong> {form.travel_date}
+  </p>
 
-    <p className="mt-3 text-xl font-bold text-green-700">
-      Fare: R{fare}
-    </p>
-  </div>
+  <p className="mt-3 text-xl font-bold text-green-700">
+    Fare: R{fare}
+  </p>
+</div>
 )}
         <button
              type="submit"

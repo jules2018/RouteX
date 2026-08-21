@@ -173,20 +173,20 @@ return () => clearInterval(interval);
     <p className="text-slate-800">
       {trip.driver_name}
     </p>
-    <p>
 
-Driver: {trip.driver_name || "Not assigned"}
-
+ <p className="text-slate-700">
+  Driver: {trip.driver_name}
 </p>
-    <p>
+
+<p className="text-slate-700">
   Vehicle: {trip.vehicle_type}
 </p>
 
-<p>
+<p className="text-slate-700">
   Color: {trip.vehicle_color}
 </p>
 
-<p>
+<p className="text-slate-700">
   Plate: {trip.license_plate}
 </p>
   </div>
