@@ -2034,6 +2034,110 @@ app.get("/admin/applications", async (req, res) => {
 
   }
 });
+app.post("/admin/applications/:id/approve", async (req, res) => {
+  try {
+
+    const applicationId = req.params.id;
+
+    const application = await pool.query(
+      `
+      SELECT *
+      FROM driver_applications
+      WHERE id = $1
+      `,
+      [applicationId]
+    );
+
+    if (application.rows.length === 0) {
+      return res.status(404).json({
+        error: "Application not found"
+      });
+    }
+
+    const appData = application.rows[0];
+
+    await pool.query(
+      `
+      INSERT INTO drivers
+      (
+        full_name,
+        phone,
+        status,
+        password,
+        role,
+        vehicle_type,
+        vehicle_color,
+        license_plate,
+        referral_code,
+        license_number
+      )
+      VALUES
+      (
+        $1,
+        $2,
+        'Offline',
+        '1234',
+        'driver',
+        $3,
+        $4,
+        $5,
+        $6,
+        'N/A'
+      )
+      `,
+      [
+        appData.full_name,
+        appData.phone,
+        appData.vehicle_type,
+        appData.vehicle_color,
+        appData.license_plate,
+        appData.referral_code
+      ]
+    );
+
+    await pool.query(
+      `
+      UPDATE driver_applications
+      SET status = 'Approved'
+      WHERE id = $1
+      `,
+      [applicationId]
+    );
+
+    res.json({
+      message: "Application approved"
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      error: error.message
+    });
+  }
+});
+app.post("/admin/applications/:id/reject", async (req, res) => {
+  try {
+
+    const applicationId = req.params.id;
+
+    await pool.query(
+      `
+      UPDATE driver_applications
+      SET status = 'Rejected'
+      WHERE id = $1
+      `,
+      [applicationId]
+    );
+
+    res.json({
+      message: "Application rejected"
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      error: error.message
+    });
+  }
+});
 app.get("/calculate-fare", async (req, res) => {
   try {
     const pickup_area = req.query.pickup_area;

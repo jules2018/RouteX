@@ -111,7 +111,11 @@ export default function AdminDashboardPage() {
                   <h3 className="font-bold text-lg text-slate-800">
                     {app.full_name}
                   </h3>
+                    <p className="text-sm text-slate-500">
 
+                    Applied: {new Date(app.created_at).toLocaleDateString()}
+
+                    </p>
                   <p className="text-slate-600">
                     📞 {app.phone}
                   </p>
@@ -129,14 +133,48 @@ export default function AdminDashboardPage() {
                   </p>
 
                   {app.referral_code && (
-                    <p className="text-green-600 font-medium mt-2">
-                      Referral: {app.referral_code}
-                    </p>
-                  )}
+  <p className="text-green-600 font-medium">
+    Referral: {app.referral_code}
+  </p>
+)}
+
+<div className="mt-4 flex gap-2">
+
+  <button
+    onClick={async () => {
+      await fetch(
+        `https://routex-smgu.onrender.com/admin/applications/${app.id}/approve`,
+        { method: "POST" }
+      );
+
+      window.location.reload();
+    }}
+    className="bg-green-600 text-white px-4 py-2 rounded-lg"
+  >
+    Approve
+  </button>
+
+  <button
+    onClick={async () => {
+      await fetch(
+        `https://routex-smgu.onrender.com/admin/applications/${app.id}/reject`,
+        { method: "POST" }
+      );
+
+      window.location.reload();
+    }}
+    className="bg-red-600 text-white px-4 py-2 rounded-lg"
+  >
+    Reject
+  </button>
+
+</div>
+
                 </div>
               ))}
 
             </div>
+            
           )}
         </div>
 
