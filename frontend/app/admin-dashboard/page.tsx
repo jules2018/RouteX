@@ -1,10 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function AdminDashboardPage() {
-  const [applications, setApplications] = useState<any[]>([]);
 
+  const router = useRouter();
+
+  const [applications, setApplications] = useState<any[]>([]);
   const [stats, setStats] = useState({
     passengers: 0,
     drivers: 0,
@@ -97,7 +100,7 @@ export default function AdminDashboardPage() {
           </h2>
 
           {applications.length === 0 ? (
-            <div className="bg-white rounded-2xl p-6 shadow-sm">
+            <div className="bg-white rounded-2xl p-6 shadow-sm text-slate-700 font-medium">
               No pending applications.
             </div>
           ) : (
@@ -177,7 +180,15 @@ export default function AdminDashboardPage() {
             
           )}
         </div>
-
+        <button
+  onClick={() => {
+    localStorage.removeItem("admin");
+    router.push("/");
+  }}
+  className="mt-6 w-full bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg font-semibold"
+>
+  Logout
+</button>
       </div>
     </main>
   );
