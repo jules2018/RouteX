@@ -1960,6 +1960,59 @@ app.post("/driver-application", async (req, res) => {
 
   }
 });
+app.get("/admin/stats", async (req, res) => {
+  try {
+
+    const passengers = await pool.query(
+      "SELECT COUNT(*) AS total FROM passengers"
+    );
+
+    const drivers = await pool.query(
+      "SELECT COUNT(*) AS total FROM drivers"
+    );
+
+    const ambassadors = await pool.query(
+      "SELECT COUNT(*) AS total FROM ambassadors"
+    );
+
+    const bookings = await pool.query(
+      "SELECT COUNT(*) AS total FROM trip_bookings"
+    );
+
+    const onlineDrivers = await pool.query(
+      `
+      SELECT COUNT(*) AS total
+      FROM drivers
+      WHERE status = 'Online'
+      `
+    );
+
+    const applications = await pool.query(
+      `
+      SELECT COUNT(*) AS total
+      FROM driver_applications
+      WHERE status = 'Pending'
+      `
+    );
+
+    res.json({
+      passengers: Number(passengers.rows[0].total),
+      drivers: Number(drivers.rows[0].total),
+      ambassadors: Number(ambassadors.rows[0].total),
+      bookings: Number(bookings.rows[0].total),
+      onlineDrivers: Number(onlineDrivers.rows[0].total),
+      pendingApplications: Number(applications.rows[0].total)
+    });
+
+  } catch (error) {
+
+    res.status(500).json({
+      error: error.message
+    });
+
+  }
+});
+
 app.get("/calculate-fare", async (req, res) => {
   try {
     const pickup_area = req.query.pickup_area;
