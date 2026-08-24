@@ -17,6 +17,13 @@ export default function AmbassadorDashboardPage() {
   const allowance = 750;
   const bonus = bookings * 20;
   const totalEarned = allowance + bonus;
+  const conversionRate =
+  registrations === 0
+    ? 0
+    : (
+        (bookings / registrations) *
+        100
+      ).toFixed(1);
 
   useEffect(() => {
     try {
@@ -118,31 +125,32 @@ fetch(
 </div>
 <div className="mt-4 bg-slate-50 border rounded-xl p-4">
   <h2 className="font-semibold text-slate-700">
-    Monthly Allowance
+    Conversion Rate
   </h2>
 
-  <p className="text-2xl font-bold text-purple-600 mt-2">
-    R{allowance}
-  </p>
-</div>
-<div className="mt-4 bg-slate-50 border rounded-xl p-4">
-  <h2 className="font-semibold text-slate-700">
-    Bonus Earned
-  </h2>
-
-  <p className="text-2xl font-bold text-green-600 mt-2">
-    R{bonus}
+  <p className="text-2xl font-bold text-orange-600 mt-2">
+    {conversionRate}%
   </p>
 </div>
 
 <div className="mt-4 bg-slate-50 border rounded-xl p-4">
-  <h2 className="font-semibold text-slate-700">
-    Total Earnings
+  <h2 className="font-semibold text-slate-700 mb-3">
+    💰 Earnings Summary
   </h2>
 
-  <p className="text-2xl font-bold text-teal-600 mt-2">
-    R{totalEarned}
-  </p>
+  <div className="space-y-2 text-slate-700">
+    <p>
+      <strong>Allowance:</strong> R{allowance}
+    </p>
+
+    <p>
+      <strong>Bonus:</strong> R{bonus}
+    </p>
+
+    <p className="text-lg font-bold text-teal-600">
+      Total: R{totalEarned}
+    </p>
+  </div>
 </div>
 <div className="mt-4 bg-slate-50 border rounded-xl p-4">
   <h2 className="font-semibold text-slate-700 mb-3">
