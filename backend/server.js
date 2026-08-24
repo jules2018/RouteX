@@ -1906,6 +1906,60 @@ app.post("/passenger-register", async (req, res) => {
 
   }
 });
+app.post("/driver-application", async (req, res) => {
+  try {
+
+    const {
+      full_name,
+      phone,
+      vehicle_type,
+      vehicle_color,
+      license_plate,
+      referral_code
+    } = req.body;
+
+    const result = await pool.query(
+      `
+      INSERT INTO driver_applications
+      (
+        full_name,
+        phone,
+        vehicle_type,
+        vehicle_color,
+        license_plate,
+        referral_code
+      )
+      VALUES
+      (
+        $1,
+        $2,
+        $3,
+        $4,
+        $5,
+        $6
+      )
+      RETURNING *
+      `,
+      [
+        full_name,
+        phone,
+        vehicle_type,
+        vehicle_color,
+        license_plate,
+        referral_code
+      ]
+    );
+
+    res.json(result.rows[0]);
+
+  } catch (error) {
+
+    res.status(500).json({
+      error: error.message
+    });
+
+  }
+});
 app.get("/calculate-fare", async (req, res) => {
   try {
     const pickup_area = req.query.pickup_area;

@@ -27,27 +27,50 @@ export default function Home() {
         </a>
 
         {/* Driver / Ambassador */}
-        <div className="border-t border-white/20 pt-6 mt-6">
-          <p className="text-white/70 text-sm mb-4">
-            Driver or Ambassador?
-          </p>
+<div className="border-t border-white/20 pt-6 mt-6">
+  <p className="text-white/70 text-sm mb-4">
+    Driver or Ambassador?
+  </p>
 
-          <div className="space-y-3">
-            <a
-              href="/driver-login"
-              className="block text-white font-bold hover:underline transition"
-            >
-              Driver Login
-            </a>
+  <div className="space-y-3">
+    <a
+      href="/driver-login"
+      className="block text-white font-bold hover:underline transition"
+    >
+      Driver Login
+    </a>
 
-            <a
-              href="/ambassador-login"
-              className="block text-white font-bold hover:underline transition"
-            >
-              Ambassador Login
-            </a>
-          </div>
-        </div>
+    <a
+      href="/ambassador-login"
+      className="block text-white font-bold hover:underline transition"
+    >
+      Ambassador Login
+    </a>
+    <a
+  href="/become-a-driver"
+  className="block text-white font-bold hover:underline transition"
+></a>
+  </div>
+</div>
+
+{/* Become a Driver */}
+<div className="mt-6 border-t border-white/20 pt-6">
+  <h3 className="text-white font-bold text-lg">
+    Earn with RouteX
+  </h3>
+
+  <p className="text-white/80 text-sm mt-2">
+    Have a reliable vehicle? Join RouteX and start earning by providing rides
+    across Upington and surrounding areas.
+  </p>
+
+  <a
+    href="/become-a-driver"
+    className="mt-4 inline-block bg-white text-teal-700 px-6 py-3 rounded-xl font-bold hover:bg-slate-100 transition"
+  >
+    Become a Driver
+  </a>
+</div>
 
         {/* Footer */}
         <footer className="mt-12 pt-6 border-t border-white/20 text-center">
