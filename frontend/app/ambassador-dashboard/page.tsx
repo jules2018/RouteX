@@ -9,15 +9,27 @@ interface Ambassador {
 
 export default function AmbassadorDashboardPage() {
   const [ambassador, setAmbassador] = useState<Ambassador | null>(null);
+  const [registrations, setRegistrations] = useState(0);
 
   useEffect(() => {
     try {
       const storedAmbassador = localStorage.getItem("ambassador");
 
-      if (storedAmbassador) {
-        const parsedAmbassador = JSON.parse(storedAmbassador);
-        setAmbassador(parsedAmbassador);
-      }
+     if (storedAmbassador) {
+  const parsedAmbassador = JSON.parse(storedAmbassador);
+  setAmbassador(parsedAmbassador);
+
+  fetch(
+    `https://routex-smgu.onrender.com/ambassador/${parsedAmbassador.referral_code}/stats`
+  )
+    .then((res) => res.json())
+    .then((data) => {
+      setRegistrations(
+        data.registrations
+      );
+    });
+}
+
     } catch (error) {
       console.error("Failed to load ambassador data:", error);
       localStorage.removeItem("ambassador");
@@ -67,6 +79,15 @@ export default function AmbassadorDashboardPage() {
             {ambassador.referral_code || "Not assigned"}
           </p>
         </div>
+        <div className="mt-4 bg-slate-50 border rounded-xl p-4">
+  <h2 className="font-semibold text-slate-700">
+    Registrations
+  </h2>
+
+  <p className="text-2xl font-bold text-blue-600 mt-2">
+    {registrations}
+  </p>
+</div>
       </div>
     </main>
   );

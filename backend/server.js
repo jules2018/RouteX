@@ -1745,6 +1745,35 @@ app.post("/ambassador-login", async (req, res) => {
 
   }
 });
+app.get("/ambassador/:code/stats", async (req, res) => {
+  try {
+
+    const referralCode = req.params.code;
+
+    const registrations = await pool.query(
+      `
+      SELECT COUNT(*) AS total
+      FROM passengers
+      WHERE referral_code = $1
+      `,
+      [referralCode]
+    );
+
+    res.json({
+      registrations:
+        Number(
+          registrations.rows[0].total
+        )
+    });
+
+  } catch (error) {
+
+    res.status(500).json({
+      error: error.message
+    });
+
+  }
+});
 app.post("/passenger-login", async (req, res) => {
   try {
 
