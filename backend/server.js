@@ -2012,7 +2012,28 @@ app.get("/admin/stats", async (req, res) => {
 
   }
 });
+app.get("/admin/applications", async (req, res) => {
+  try {
 
+    const result = await pool.query(
+      `
+      SELECT *
+      FROM driver_applications
+      WHERE status = 'Pending'
+      ORDER BY created_at DESC
+      `
+    );
+
+    res.json(result.rows);
+
+  } catch (error) {
+
+    res.status(500).json({
+      error: error.message
+    });
+
+  }
+});
 app.get("/calculate-fare", async (req, res) => {
   try {
     const pickup_area = req.query.pickup_area;
