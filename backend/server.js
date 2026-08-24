@@ -1711,6 +1711,40 @@ app.post("/drivers/:id/status", async (req, res) => {
     });
   }
 });
+app.post("/ambassador-login", async (req, res) => {
+  try {
+
+    const { phone, password } = req.body;
+
+    console.log("AMBASSADOR PHONE:", phone);
+    console.log("AMBASSADOR PASSWORD:", password);
+
+    const result = await pool.query(
+      `
+      SELECT *
+      FROM ambassadors
+      WHERE phone = $1
+      AND password = $2
+      `,
+      [phone, password]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(401).json({
+        error: "Invalid credentials"
+      });
+    }
+
+    res.json(result.rows[0]);
+
+  } catch (error) {
+
+    res.status(500).json({
+      error: error.message
+    });
+
+  }
+});
 app.post("/passenger-login", async (req, res) => {
   try {
 
