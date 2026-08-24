@@ -40,30 +40,26 @@ export default function AmbassadorLoginPage() {
 
   return (
     <main className="min-h-screen flex items-center justify-center p-6 bg-slate-100">
-      <div className="bg-white p-8 rounded-2xl shadow-md w-full max-w-md">
-        <h1 className="text-2xl font-bold mb-6">
+    <div className="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md">
+        <h1 className="text-2xl font-bold text-slate-800 mb-6">
           Ambassador Login
         </h1>
 
         <input
-          type="text"
-          placeholder="Phone Number"
-          value={phone}
-          onChange={(e) =>
-            setPhone(e.target.value)
-          }
-          className="w-full border rounded-lg p-3 mb-4"
-        />
+  type="text"
+  placeholder="Phone Number"
+  value={phone}
+  onChange={(e) => setPhone(e.target.value)}
+  className="w-full border rounded-lg p-3 mb-4 text-slate-800 placeholder-slate-400"
+/>
 
         <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) =>
-            setPassword(e.target.value)
-          }
-          className="w-full border rounded-lg p-3 mb-4"
-        />
+  type="password"
+  placeholder="Password"
+  value={password}
+  onChange={(e) => setPassword(e.target.value)}
+  className="w-full border rounded-lg p-3 mb-4 text-slate-800 placeholder-slate-400"
+/>
 
         <button
           onClick={handleLogin}
