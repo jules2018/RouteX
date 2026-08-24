@@ -2059,35 +2059,35 @@ app.post("/admin/applications/:id/approve", async (req, res) => {
     await pool.query(
       `
       INSERT INTO drivers
-      (
-        full_name,
-        phone,
-        status,
-        password,
-        role,
-        vehicle_type,
-        vehicle_color,
-        license_plate,
-        referral_code,
-        license_number
-      )
+(
+  full_name,
+  phone,
+  status,
+  password,
+  role,
+  vehicle_type,
+  vehicle_color,
+  license_plate,
+  referral_code
+)
+
       VALUES
-      (
-        $1,
-        $2,
-        'Offline',
-        '1234',
-        'driver',
-        $3,
-        $4,
-        $5,
-        $6,
-        'N/A'
-      )
+(
+  $1,
+  $2,
+  'Offline',
+  '1234',
+  'driver',
+  $3,
+  $4,
+  $5,
+  $6
+)
+
       `,
       [
         appData.full_name,
-        appData.phone,
+        appData.phone, 
         appData.vehicle_type,
         appData.vehicle_color,
         appData.license_plate,
