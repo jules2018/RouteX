@@ -64,7 +64,7 @@ export default function BecomeADriverPage() {
               full_name: e.target.value,
             })
           }
-          className="w-full border rounded-lg p-3 mb-3"
+          className="w-full border border-slate-300 rounded-lg p-3 mb-3 text-slate-800 placeholder-slate-500"
         />
 
         <input
@@ -76,7 +76,7 @@ export default function BecomeADriverPage() {
               phone: e.target.value,
             })
           }
-          className="w-full border rounded-lg p-3 mb-3"
+          className="w-full border border-slate-300 rounded-lg p-3 mb-3 text-slate-800 placeholder-slate-500"
         />
 
         <input
@@ -88,7 +88,7 @@ export default function BecomeADriverPage() {
               vehicle_type: e.target.value,
             })
           }
-          className="w-full border rounded-lg p-3 mb-3"
+          className="w-full border border-slate-300 rounded-lg p-3 mb-3 text-slate-800 placeholder-slate-500"
         />
 
         <input
@@ -100,7 +100,7 @@ export default function BecomeADriverPage() {
               vehicle_color: e.target.value,
             })
           }
-          className="w-full border rounded-lg p-3 mb-3"
+          className="w-full border border-slate-300 rounded-lg p-3 mb-3 text-slate-800 placeholder-slate-500"
         />
 
         <input
@@ -112,7 +112,7 @@ export default function BecomeADriverPage() {
               license_plate: e.target.value,
             })
           }
-          className="w-full border rounded-lg p-3 mb-3"
+          className="w-full border border-slate-300 rounded-lg p-3 mb-3 text-slate-800 placeholder-slate-500"
         />
 
         <input
@@ -124,7 +124,7 @@ export default function BecomeADriverPage() {
               referral_code: e.target.value,
             })
           }
-          className="w-full border rounded-lg p-3 mb-4"
+          className="w-full border border-slate-300 rounded-lg p-3 mb-4 text-slate-800 placeholder-slate-500"
         />
 
         <button
