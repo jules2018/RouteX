@@ -1786,6 +1786,34 @@ app.get("/ambassador/:code/stats", async (req, res) => {
 
   }
 });
+app.get("/ambassador/:code/referrals", async (req, res) => {
+  try {
+
+    const referralCode = req.params.code;
+
+    const result = await pool.query(
+      `
+      SELECT
+        full_name,
+        phone,
+        created_at
+      FROM passengers
+      WHERE referral_code = $1
+      ORDER BY created_at DESC
+      `,
+      [referralCode]
+    );
+
+    res.json(result.rows);
+
+  } catch (error) {
+
+    res.status(500).json({
+      error: error.message
+    });
+
+  }
+});
 app.post("/passenger-login", async (req, res) => {
   try {
 

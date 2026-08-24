@@ -11,6 +11,7 @@ export default function AmbassadorDashboardPage() {
   const [ambassador, setAmbassador] = useState<Ambassador | null>(null);
   const [registrations, setRegistrations] = useState(0);
   const [bookings, setBookings] = useState(0);
+  const [referrals, setReferrals] = useState<any[]>([]);
 
   useEffect(() => {
     try {
@@ -32,6 +33,13 @@ export default function AmbassadorDashboardPage() {
 setBookings(
   data.bookings
 );
+fetch(
+  `https://routex-smgu.onrender.com/ambassador/${parsedAmbassador.referral_code}/referrals`
+)
+  .then((res) => res.json())
+  .then((data) => {
+    setReferrals(data);
+  });
     });
 }
 
@@ -102,6 +110,34 @@ setBookings(
   <p className="text-2xl font-bold text-green-600 mt-2">
     {bookings}
   </p>
+</div>
+<div className="mt-4 bg-slate-50 border rounded-xl p-4">
+  <h2 className="font-semibold text-slate-700 mb-3">
+    Recent Referrals
+  </h2>
+
+  {referrals.length === 0 ? (
+    <p className="text-slate-500">
+      No referrals yet.
+    </p>
+  ) : (
+    <div className="space-y-3">
+      {referrals.map((referral, index) => (
+        <div
+          key={index}
+          className="border rounded-lg p-3 bg-white"
+        >
+          <p className="font-medium text-slate-800">
+            {referral.full_name}
+          </p>
+
+          <p className="text-sm text-slate-600">
+            {referral.phone}
+          </p>
+        </div>
+      ))}
+    </div>
+  )}
 </div>
       </div>
     </main>
