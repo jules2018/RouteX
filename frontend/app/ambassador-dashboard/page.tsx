@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 interface Ambassador {
   full_name?: string;
@@ -12,6 +13,10 @@ export default function AmbassadorDashboardPage() {
   const [registrations, setRegistrations] = useState(0);
   const [bookings, setBookings] = useState(0);
   const [referrals, setReferrals] = useState<any[]>([]);
+  const router = useRouter();
+  const allowance = 750;
+  const bonus = bookings * 20;
+  const totalEarned = allowance + bonus;
 
   useEffect(() => {
     try {
@@ -112,6 +117,34 @@ fetch(
   </p>
 </div>
 <div className="mt-4 bg-slate-50 border rounded-xl p-4">
+  <h2 className="font-semibold text-slate-700">
+    Monthly Allowance
+  </h2>
+
+  <p className="text-2xl font-bold text-purple-600 mt-2">
+    R{allowance}
+  </p>
+</div>
+<div className="mt-4 bg-slate-50 border rounded-xl p-4">
+  <h2 className="font-semibold text-slate-700">
+    Bonus Earned
+  </h2>
+
+  <p className="text-2xl font-bold text-green-600 mt-2">
+    R{bonus}
+  </p>
+</div>
+
+<div className="mt-4 bg-slate-50 border rounded-xl p-4">
+  <h2 className="font-semibold text-slate-700">
+    Total Earnings
+  </h2>
+
+  <p className="text-2xl font-bold text-teal-600 mt-2">
+    R{totalEarned}
+  </p>
+</div>
+<div className="mt-4 bg-slate-50 border rounded-xl p-4">
   <h2 className="font-semibold text-slate-700 mb-3">
     Recent Referrals
   </h2>
@@ -139,6 +172,15 @@ fetch(
     </div>
   )}
 </div>
+<button
+  onClick={() => {
+    localStorage.removeItem("ambassador");
+    router.push("/ambassador-login");
+  }}
+  className="mt-6 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg"
+>
+  Logout
+</button>
       </div>
     </main>
   );
