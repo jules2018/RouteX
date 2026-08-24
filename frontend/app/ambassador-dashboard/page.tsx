@@ -175,6 +175,17 @@ fetch(
           <p className="text-sm text-slate-600">
             {referral.phone}
           </p>
+          <p className="text-sm mt-1">
+  {referral.booked ? (
+    <span className="text-green-600 font-medium">
+      ✅ Booked
+    </span>
+  ) : (
+    <span className="text-orange-600 font-medium">
+      ⏳ Not Yet Booked
+    </span>
+  )}
+</p>
         </div>
       ))}
     </div>

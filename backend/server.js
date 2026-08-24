@@ -1791,18 +1791,27 @@ app.get("/ambassador/:code/referrals", async (req, res) => {
 
     const referralCode = req.params.code;
 
-    const result = await pool.query(
-      `
-      SELECT
-        full_name,
-        phone,
-        created_at
-      FROM passengers
-      WHERE referral_code = $1
-      ORDER BY created_at DESC
-      `,
-      [referralCode]
-    );
+  const result = await pool.query(
+  `
+  SELECT
+    p.full_name,
+    p.phone,
+    CASE
+      WHEN COUNT(tb.id) > 0 THEN TRUE
+      ELSE FALSE
+    END AS booked
+  FROM passengers p
+  LEFT JOIN trip_bookings tb
+    ON tb.passenger_id = p.id
+  WHERE p.referral_code = $1
+  GROUP BY
+    p.id,
+    p.full_name,
+    p.phone
+  ORDER BY p.full_name
+  `,
+  [referralCode]
+);
 
     res.json(result.rows);
 
