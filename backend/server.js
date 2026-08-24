@@ -1758,13 +1758,25 @@ app.get("/ambassador/:code/stats", async (req, res) => {
       `,
       [referralCode]
     );
+    const bookings = await pool.query(
+  `
+  SELECT COUNT(*) AS total
+  FROM trip_bookings tb
+  JOIN passengers p
+    ON tb.passenger_id = p.id
+  WHERE p.referral_code = $1
+  `,
+  [referralCode]
+);
 
-    res.json({
-      registrations:
-        Number(
-          registrations.rows[0].total
-        )
-    });
+   res.json({
+  registrations: Number(
+    registrations.rows[0].total
+  ),
+  bookings: Number(
+    bookings.rows[0].total
+  )
+});
 
   } catch (error) {
 
