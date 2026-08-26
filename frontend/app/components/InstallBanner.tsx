@@ -31,25 +31,27 @@ export default function InstallBanner() {
 
   return (
     <div
-      style={{
-        background: "#0f172a",
-        padding: "6px",
-        textAlign: "center",
-      }}
-    >
+  style={{
+    background: "#0f172a",
+    padding: "8px",
+    textAlign: "center",
+  }}
+>
       <button
-        onClick={install}
-        style={{
-          background: "transparent",
-          color: "white",
-          border: "none",
-          cursor: "pointer",
-          fontSize: "14px",
-          fontWeight: "600",
-        }}
-      >
-        ⬇ Install RouteX
-      </button>
+onClick={install}
+style={{
+background: "#10b981",
+color: "white",
+border: "none",
+borderRadius: "20px",
+padding: "6px 16px",
+fontSize: "14px",
+fontWeight: "600",
+cursor: "pointer",
+}}
+>
+⬇ Install RouteX
+</button>
     </div>
   );
 }
