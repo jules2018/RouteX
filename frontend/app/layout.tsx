@@ -1,10 +1,8 @@
-
+import ServiceWorker from "./components/ServiceWorker";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Outfit } from "next/font/google";
 import "./globals.css";
-import LogoutButton from "./components/LogoutButton";
 import Navigation from "./components/Navigation";
-
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,12 +13,15 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
+
 const outfit = Outfit({
   subsets: ["latin"],
 });
+
 export const metadata: Metadata = {
-  title: "Transport SaaS",
-  description: "Transport Management System",
+  title: "RouteX",
+  description: "Getting Upington Moving",
+  manifest: "/manifest.json",
 };
 
 export default function RootLayout({
@@ -34,9 +35,10 @@ export default function RootLayout({
       className={`${outfit.className} antialiased`}
     >
       <body>
-  <Navigation />
-  {children}
-</body>
+        <ServiceWorker />
+        <Navigation />
+        {children}
+      </body>
     </html>
   );
 }
