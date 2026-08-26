@@ -5,6 +5,8 @@ import "./globals.css";
 import Navigation from "./components/Navigation";
 import InstallBanner from "./components/InstallBanner";
 import FirebaseTest from "./components/FirebaseTest";
+import NotificationPermission from "./components/NotificationPermission";
+
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -38,6 +40,7 @@ export default function RootLayout({
     >
       <body>
   <FirebaseTest />
+  <NotificationPermission />
   <ServiceWorker />
   <InstallBanner />
   <Navigation />
