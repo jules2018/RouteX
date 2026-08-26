@@ -4,6 +4,7 @@ import { Geist, Geist_Mono, Outfit } from "next/font/google";
 import "./globals.css";
 import Navigation from "./components/Navigation";
 import InstallBanner from "./components/InstallBanner";
+import FirebaseTest from "./components/FirebaseTest";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,6 +37,7 @@ export default function RootLayout({
       className={`${outfit.className} antialiased`}
     >
       <body>
+  <FirebaseTest />
   <ServiceWorker />
   <InstallBanner />
   <Navigation />
