@@ -1,8 +1,15 @@
 "use client";
 
-import { app } from "../lib/firebase";
+import { useEffect } from "react";
+import { showNotification } from "../lib/notifications";
 
 export default function FirebaseTest() {
-  console.log("Firebase Connected:", app.name);
+  useEffect(() => {
+    showNotification(
+      "✅ Booking Confirmed",
+      "Your RouteX trip has been booked successfully."
+    );
+  }, []);
+
   return null;
 }
