@@ -1,8 +1,20 @@
 "use client";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
-import { useState } from "react";
 
 export default function DriverLoginPage() {
+  const router = useRouter();
+
+useEffect(() => {
+  const driver = JSON.parse(
+    localStorage.getItem("driver") || "null"
+  );
+
+  if (driver) {
+    router.push("/driver-dashboard");
+  }
+}, [router]);
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
 

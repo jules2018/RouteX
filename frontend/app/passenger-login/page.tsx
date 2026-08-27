@@ -1,8 +1,21 @@
 "use client";
 
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export default function PassengerLoginPage() {
+  const router = useRouter();
+
+useEffect(() => {
+  const passenger = JSON.parse(
+    localStorage.getItem("passenger") || "null"
+  );
+
+  if (passenger) {
+    router.push("/passenger-portal");
+  }
+}, [router]);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
