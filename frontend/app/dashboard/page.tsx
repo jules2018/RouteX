@@ -1,38 +1,46 @@
+import { Car, User } from "lucide-react";
 export default function Home() {
   return (
-    <main className="min-h-screen bg-gray-100 flex items-center justify-center p-8">
-      <div className="bg-white rounded-2xl shadow-lg p-10 max-w-3xl w-full text-center">
+    <main className="min-h-screen bg-white flex items-center justify-center p-8">
+      <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-10 max-w-3xl w-full text-center">
 
-        <h1 className="text-4xl font-bold text-slate-800 mb-4">
-          RouteX
-        </h1>
+       <div className="mb-10">
+  <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">
+    ROUTEX
+  </h1>
 
-        <p className="text-slate-500 mb-10">
-          Passenger and Driver Transport Platform
-        </p>
+  <p className="text-sm text-slate-500 mt-1">
+    Getting Upington Moving
+  </p>
+</div>
 
         <div className="grid md:grid-cols-2 gap-6">
 
-          <a
-            href="/passenger-login"
-            className="bg-blue-600 text-white p-6 rounded-xl hover:bg-blue-700">
-            <h2 className="text-xl font-semibold mb-2">
-              Passenger Login
-            </h2>
+ <a
+  href="/passenger-login"
+  className="bg-white border border-gray-200 p-8 rounded-3xl hover:shadow-lg transition-all duration-300 mb-2"
+>
+  <h2 className="text-xl font-bold text-gray-900">
+    Passenger
+  </h2>
 
-            <p className="text-blue-100">
-              Book trips and track trip status.
-            </p>
-          </a>
+  <p className="text-gray-500 mt-2">
+    Book rides and track your journey.
+  </p>
+</a>
 
-          <a
-            href="/driver-login"
-            className="bg-green-600 text-white p-6 rounded-xl hover:bg-green-700">
+       <a
+  href="/driver-login"
+  className="bg-white border border-gray-200 p-8 rounded-3xl hover:shadow-lg transition-all duration-200"
+>
+  <h2 className="text-xl font-bold text-gray-900">
+    Driver
+  </h2>
 
-            <p className="text-green-100">
-              Accept trips and manage bookings.
-            </p>
-          </a>
+  <p className="text-gray-500 mt-2">
+    Accept rides and manage your trips.
+  </p>
+</a>  
 
         </div>  
 
