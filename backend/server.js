@@ -1446,21 +1446,23 @@ app.post(
       const bookingId = req.params.id;
       const { driverId } = req.body;
 
-      await pool.query(
-        `
-        UPDATE trip_bookings
-        SET
-          booking_status = 'Accepted',
-          trip_status = 'Accepted',
-          assigned_driver_id = $2
-        WHERE id = $1
-        `,
-        [bookingId, driverId]
-      );
+      const result = await pool.query(
+  `
+  UPDATE trip_bookings
+  SET
+    booking_status = 'Accepted',
+    trip_status = 'Accepted',
+    assigned_driver_id = $2
+  WHERE id = $1
+  RETURNING *
+  `,
+  [bookingId, driverId]
+);
 
       res.json({
-        message: "Trip accepted"
-      });
+  message: "Trip accepted",
+  booking: result.rows[0]
+});
 
     } catch (error) {
 

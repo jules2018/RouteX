@@ -2,7 +2,7 @@
 import { openNavigation } from "../lib/navigation";
 import { useEffect, useState } from "react";
 import AuthGuard from "../components/AuthGuard";
-
+import { showNotification } from "../lib/notifications";
 export default function DriverPortalPage() {
   const [requests, setRequests] = useState<any[]>([]);
   const [acceptedTrips, setAcceptedTrips] = useState<any[]>([]);
@@ -199,22 +199,28 @@ console.log("New Status:", newStatus);
              
        <button
   onClick={async () => {
-    const driverId = driver?.id;
-    await fetch(
-      `https://routex-smgu.onrender.com/trip-requests/${request.id}/accept`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-        driverId: driver?.id,
-        }),
-      }
-    );
+  const driverId = driver?.id;
 
-    location.reload();
-  }}
+  await fetch(
+    `https://routex-smgu.onrender.com/trip-requests/${request.id}/accept`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        driverId: driver?.id,
+      }),
+    }
+  );
+
+  showNotification(
+    "✅ Trip Accepted",
+    "Navigate to the pickup location."
+  );
+
+  location.reload();
+}}
   className="mt-4 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg"
 >
   Accept Trip
