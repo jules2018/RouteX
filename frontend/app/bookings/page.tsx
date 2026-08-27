@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
+import { showNotification } from "../lib/notifications";
 export default function BookRidePage() {
 const [loading, setLoading] = useState(false);
 const [passenger, setPassenger] = useState<any>(null);
@@ -166,6 +166,11 @@ if (!response.ok) {
 }
 
 alert("Booking created successfully");
+
+showNotification(
+  "✅ Booking Confirmed",
+  "Your RouteX trip has been booked successfully."
+);
 
     setForm({
   pickup_area: "",
