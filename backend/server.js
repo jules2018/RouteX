@@ -1459,6 +1459,27 @@ app.post(
   [bookingId, driverId]
 );
 
+const booking = result.rows[0];
+
+await pool.query(
+  `
+  INSERT INTO notifications
+  (user_type, user_id, title, message)
+  VALUES ($1, $2, $3, $4)
+  `,
+  [
+    "passenger",
+    booking.passenger_id,
+    "🚖 Driver Assigned",
+    "Your driver is on the way to collect you."
+  ]
+);
+
+res.json({
+  message: "Trip accepted",
+  booking
+});
+
       res.json({
   message: "Trip accepted",
   booking: result.rows[0]
@@ -1473,6 +1494,28 @@ app.post(
     }
   }
 );
+app.get("/notifications/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const result = await pool.query(
+      `
+      SELECT *
+      FROM notifications
+      WHERE user_type = 'passenger'
+      AND user_id = $1
+      ORDER BY created_at DESC
+      `,
+      [userId]
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({
+      error: error.message,
+    });
+  }
+});
 app.post(
   "/trip-requests/:id/start",
   async (req, res) => {
