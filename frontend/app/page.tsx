@@ -52,14 +52,22 @@ export default function TestLandingPage() {
        {/* ================================
     BOOK A RIDE
 ================================= */}
-<section className="mt-8">
-  <a
-    href="/passenger-login"
-    className="block w-full rounded-2xl border border-white/30 bg-white/10 py-5 text-center text-lg font-bold text-white shadow-lg backdrop-blur-md transition hover:bg-white/20 active:scale-[0.98]"
-  >
-    Book a Ride
-  </a>
-</section>
+<button
+  onClick={() => {
+    const passenger = JSON.parse(
+      localStorage.getItem("passenger") || "null"
+    );
+
+    if (passenger) {
+      window.location.href = "/passenger-portal";
+    } else {
+      window.location.href = "/passenger-login";
+    }
+  }}
+  className="block w-full rounded-2xl border border-white/30 bg-white/10 py-5 text-center text-lg font-bold text-white shadow-lg backdrop-blur-md transition hover:bg-white/20 active:scale-[0.98]"
+>
+  Book a Ride
+</button>
 
         {/* ================================
             DRIVER / AMBASSADOR
