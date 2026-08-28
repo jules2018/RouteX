@@ -74,7 +74,7 @@ export default function TestLandingPage() {
         ================================= */}
         
 <a
-  href="/login"
+  href="/passenger-login"
   className="
     flex
     w-full
@@ -92,12 +92,12 @@ export default function TestLandingPage() {
 >
   <div>
     <p className="text-[18px] font-extrabold tracking-tight">
-      Log in
-    </p>
+  Book a ride
+</p>
 
-    <p className="mt-1 text-[13px] font-medium text-[#777777]">
-      Access your RouteX account
-    </p>
+<p className="mt-1 text-[13px] font-medium text-[#777777]">
+  Where are you going?
+</p>
   </div>
 
   <div
