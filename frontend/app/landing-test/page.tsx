@@ -72,77 +72,61 @@ export default function TestLandingPage() {
         {/* ================================
             BOOK A RIDE
         ================================= */}
-        <section className="mt-7">
+        
+<a
+  href="/login"
+  className="
+    flex
+    w-full
+    items-center
+    justify-between
+    rounded-[20px]
+    bg-[#f5f5f5]
+    px-5
+    py-5
+    text-left
+    transition
+    hover:bg-[#eeeeee]
+    active:scale-[0.98]
+  "
+>
+  <div>
+    <p className="text-[18px] font-extrabold tracking-tight">
+      Log in
+    </p>
 
-          <button
-            onClick={() => {
-              const passenger = JSON.parse(
-                localStorage.getItem("passenger") || "null"
-              );
+    <p className="mt-1 text-[13px] font-medium text-[#777777]">
+      Access your RouteX account
+    </p>
+  </div>
 
-              if (passenger) {
-                window.location.href = "/passenger-portal";
-              } else {
-                window.location.href = "/passenger-login";
-              }
-            }}
-            className="
-              flex
-              w-full
-              items-center
-              justify-between
-              rounded-[20px]
-              bg-[#f5f5f5]
-              px-5
-              py-5
-              text-left
-              transition
-              hover:bg-[#eeeeee]
-              active:scale-[0.98]
-            "
-          >
-
-            <div>
-              <p className="text-[18px] font-extrabold tracking-tight">
-                Book a ride
-              </p>
-
-              <p className="mt-1 text-[13px] font-medium text-[#777777]">
-                Where are you going?
-              </p>
-            </div>
-
-            <div
-              className="
-                flex
-                h-10
-                w-10
-                items-center
-                justify-center
-                rounded-full
-                bg-[#111111]
-                text-white
-              "
-            >
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M5 12h14" />
-                <path d="m13 6 6 6-6 6" />
-              </svg>
-            </div>
-
-          </button>
-
-        </section>
-
+  <div
+    className="
+      flex
+      h-10
+      w-10
+      items-center
+      justify-center
+      rounded-full
+      bg-[#111111]
+      text-white
+    "
+  >
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M5 12h14" />
+      <path d="m13 6 6 6-6 6" />
+    </svg>
+  </div>
+</a>
 
         {/* ================================
             PORTAL ACCESS
@@ -153,7 +137,7 @@ export default function TestLandingPage() {
             Portal Access
           </p>
 
-          <div className="grid grid-cols-2 gap-3">
+         <div className="grid grid-cols-1 gap-3">
 
             {/* Driver */}
             <a
@@ -172,25 +156,6 @@ export default function TestLandingPage() {
               "
             >
               Driver Login
-            </a>
-
-            {/* Ambassador */}
-            <a
-              href="/ambassador-login"
-              className="
-                rounded-[18px]
-                bg-[#f7f7f7]
-                p-4
-                text-center
-                text-[14px]
-                font-bold
-                text-[#111111]
-                transition
-                hover:bg-[#eeeeee]
-                active:scale-[0.98]
-              "
-            >
-              Ambassador Login
             </a>
 
           </div>
