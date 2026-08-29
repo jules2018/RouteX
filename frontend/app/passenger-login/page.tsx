@@ -1,21 +1,27 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { Plus_Jakarta_Sans } from "next/font/google";
+
+const jakarta = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-jakarta",
+});
 
 export default function PassengerLoginPage() {
   const router = useRouter();
 
-useEffect(() => {
-  const passenger = JSON.parse(
-    localStorage.getItem("passenger") || "null"
-  );
+  useEffect(() => {
+    const passenger = JSON.parse(
+      localStorage.getItem("passenger") || "null"
+    );
 
-  if (passenger) {
-    router.push("/passenger-portal");
-  }
-}, [router]);
+    if (passenger) {
+      router.push("/passenger-portal");
+    }
+  }, [router]);
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -40,87 +46,262 @@ useEffect(() => {
       localStorage.removeItem("driver");
       localStorage.removeItem("user");
       localStorage.removeItem("passenger");
+
       localStorage.setItem(
         "passenger",
         JSON.stringify(data)
       );
 
-      window.location.href =
-        "/passenger-portal";
+      window.location.href = "/passenger-portal";
     } else {
       alert(data.error);
     }
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-100 via-white to-teal-100 p-6">
-    <div className="relative w-full max-w-md">
+    <main
+      className={`${jakarta.variable} min-h-[100dvh] bg-white text-[#111111]`}
+      style={{ fontFamily: "var(--font-jakarta)" }}
+    >
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col px-5">
 
-  <div className="absolute inset-0 bg-teal-300/20 blur-3xl rounded-full"></div>
+        {/* ================================
+            HEADER
+        ================================= */}
+        <header className="flex items-center py-5">
 
-  <div className="relative bg-white border border-slate-200 rounded-2xl p-8 shadow-sm">
-    
-<div className="text-center mb-8">
-  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-teal-600 text-white font-bold text-xl">
-  RX
-</div>
+          <a
+            href="/"
+            className="text-[25px] font-extrabold tracking-[-0.06em]"
+          >
+            <span className="text-[#111111]">Route</span>
+            <span className="text-teal-600">X</span>
+          </a>
 
-  <h1 className="text-3xl font-bold text-slate-800">
-    RouteX
-  </h1>
+        </header>
 
-  <p className="text-sm text-slate-500 mt-2">
-    Move People. 
-  </p>
-</div>
-  <h2 className="text-2xl font-semibold text-slate-800 mb-2">
-  Welcome Back
-</h2>
 
-  <p className="text-sm text-slate-500 mb-6">
-    Access your bookings and trip information.
-  </p>
+        {/* ================================
+            LOGIN
+        ================================= */}
+        <section className="flex flex-1 items-center">
 
-  <input 
-    placeholder="Email"
-    value={email}
-    onChange={(e) =>
-      setEmail(e.target.value)
-    }
-    className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900 placeholder:text-slate-500 bg-white mb-4"
-  />
+          <div className="w-full">
 
-  <input
-    type="password"
-    placeholder="Password"
-    value={password}
-    onChange={(e) =>
-      setPassword(e.target.value)
-    }
-   className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900 placeholder:text-slate-500 bg-white mb-4"
-  />
+            {/* RX Icon */}
+            <div
+              className="
+                mb-6
+                flex
+                h-12
+                w-12
+                items-center
+                justify-center
+                rounded-[15px]
+                bg-[#111111]
+                text-[14px]
+                font-extrabold
+                text-white
+              "
+            >
+              RX
+            </div>
 
-  <button
-    onClick={login}
-    className="w-full bg-teal-600 text-white py-3 rounded-xl hover:bg-teal-700 transition mt-2"
-  >
-    Sign In
-  </button>
-<div className="text-center mt-4">
-  <p className="text-sm text-slate-600">
-    Don't have an account?
-  </p>
 
-  <a
-    href="/passenger-register"
-    className="text-teal-600 font-semibold hover:underline"
-  >
-    Create Account
-  </a>
-</div>
-  </div>
+            {/* Heading */}
+            <h1
+              className="
+                text-[32px]
+                font-extrabold
+                leading-[1.05]
+                tracking-[-0.055em]
+              "
+            >
+              Welcome back
+            </h1>
+
+            <p
+              className="
+                mt-3
+                text-[14px]
+                font-medium
+                leading-relaxed
+                text-[#6b6b6b]
+              "
+            >
+              Access your bookings and trip information.
+            </p>
+
+
+            {/* ================================
+                FORM
+            ================================= */}
+            <div className="mt-8">
+
+              {/* Email */}
+              <div className="mb-4">
+
+                <label
+                  className="
+                    mb-2
+                    block
+                    text-[12px]
+                    font-bold
+                    text-[#333333]
+                  "
+                >
+                  Email
+                </label>
+
+                <input
+                  type="email"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) =>
+                    setEmail(e.target.value)
+                  }
+                  className="
+                    w-full
+                    rounded-[14px]
+                    border
+                    border-[#dddddd]
+                    bg-white
+                    px-4
+                    py-3.5
+                    text-[14px]
+                    font-medium
+                    text-[#111111]
+                    outline-none
+                    transition
+                    placeholder:text-[#999999]
+                    focus:border-[#111111]
+                  "
+                />
+
+              </div>
+
+
+              {/* Password */}
+              <div className="mb-4">
+
+                <label
+                  className="
+                    mb-2
+                    block
+                    text-[12px]
+                    font-bold
+                    text-[#333333]
+                  "
+                >
+                  Password
+                </label>
+
+                <input
+                  type="password"
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) =>
+                    setPassword(e.target.value)
+                  }
+                  className="
+                    w-full
+                    rounded-[14px]
+                    border
+                    border-[#dddddd]
+                    bg-white
+                    px-4
+                    py-3.5
+                    text-[14px]
+                    font-medium
+                    text-[#111111]
+                    outline-none
+                    transition
+                    placeholder:text-[#999999]
+                    focus:border-[#111111]
+                  "
+                />
+
+              </div>
+
+
+              {/* Sign In */}
+              <button
+                onClick={login}
+                className="
+                  mt-2
+                  w-full
+                  rounded-[14px]
+                  bg-[#111111]
+                  py-3.5
+                  text-[14px]
+                  font-extrabold
+                  text-white
+                  transition
+                  hover:bg-[#222222]
+                  active:scale-[0.98]
+                "
+              >
+                Sign In
+              </button>
+
+            </div>
+
+
+            {/* ================================
+                REGISTER
+            ================================= */}
+            <div className="mt-6 text-center">
+
+              <p
+                className="
+                  text-[13px]
+                  font-medium
+                  text-[#777777]
+                "
+              >
+                Don't have an account?
+              </p>
+
+              <a
+                href="/passenger-register"
+                className="
+                  mt-1
+                  inline-block
+                  text-[13px]
+                  font-extrabold
+                  text-teal-600
+                  transition
+                  hover:text-teal-700
+                "
+              >
+                Create Account
+              </a>
+
+            </div>
+
+          </div>
+
+        </section>
+
+
+        {/* ================================
+            FOOTER
+        ================================= */}
+        <footer className="pb-6 text-center">
+
+          <p
+            className="
+              text-[11px]
+              font-medium
+              text-[#aaaaaa]
+            "
+          >
+            Getting Upington Moving
+          </p>
+
+        </footer>
+
       </div>
-      
     </main>
   );
 }
