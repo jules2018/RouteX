@@ -1,201 +1,829 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Plus_Jakarta_Sans } from "next/font/google";
+import {
+  Car,
+  MapPin,
+  CalendarDays,
+  UserRound,
+  Palette,
+  CreditCard,
+} from "lucide-react";
+
+const jakarta = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-jakarta",
+});
 
 export default function PassengerPortalPage() {
   const [passenger, setPassenger] = useState<any>(null);
   const [trips, setTrips] = useState<any[]>([]);
   const [onlineDrivers, setOnlineDrivers] = useState(0);
 
- const loadTrips = (passengerId: number) => {
-  fetch(
-    `https://routex-smgu.onrender.com/passenger-bookings/${passengerId}`
-  )
-    .then((res) => res.json())
-    .then((data) => {
-      setTrips(data);
-      console.log(data);
-    });
-};
-const loadOnlineDrivers = () => {
-  fetch(
-    "https://routex-smgu.onrender.com/online-drivers"
-  )
-    .then((res) => res.json())
-    .then((data) => {
-      setOnlineDrivers(
-        Number(data.total)
-      );
-    });
-};
+  /* ================================
+      LOAD PASSENGER TRIPS
+  ================================= */
+  const loadTrips = (passengerId: number) => {
+    fetch(
+      `https://routex-smgu.onrender.com/passenger-bookings/${passengerId}`
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        setTrips(data);
+        console.log(data);
+      });
+  };
+
+  /* ================================
+      LOAD ONLINE DRIVERS
+  ================================= */
+  const loadOnlineDrivers = () => {
+    fetch(
+      "https://routex-smgu.onrender.com/online-drivers"
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        setOnlineDrivers(Number(data.total));
+      });
+  };
+
+  /* ================================
+      LOAD DATA
+  ================================= */
   useEffect(() => {
     const storedPassenger =
       localStorage.getItem("passenger");
 
     if (storedPassenger) {
+      const passengerData =
+        JSON.parse(storedPassenger);
 
-  const passengerData =
-    JSON.parse(storedPassenger);
+      setPassenger(passengerData);
 
-  setPassenger(passengerData);
+      loadTrips(passengerData.id);
+      loadOnlineDrivers();
 
- loadTrips(passengerData.id);
-loadOnlineDrivers();
+      const interval = setInterval(() => {
+        loadTrips(passengerData.id);
+        loadOnlineDrivers();
+      }, 5000);
 
-const interval = setInterval(() => {
-  loadTrips(passengerData.id);
-  loadOnlineDrivers();
-}, 5000);
-
-return () => clearInterval(interval);
-}
+      return () => clearInterval(interval);
+    }
   }, []);
 
   return (
-    <main className="min-h-screen bg-slate-50 p-6">
+    <main
+      className={`${jakarta.variable} min-h-[100dvh] bg-white text-[#111111]`}
+      style={{ fontFamily: "var(--font-jakarta)" }}
+    >
 
- <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm max-w-4xl">
+      {/* =================================
+          MAIN CONTAINER
+      ================================== */}
+      <div className="mx-auto w-full max-w-md px-5 pb-10">
 
-  <h1 className="text-2xl font-semibold text-slate-800">
-    Welcome back, {passenger?.full_name}
-  </h1>
 
-  <div className="mt-4 bg-slate-50 border border-slate-200 rounded-xl p-4">
-    <h2 className="text-sm font-semibold text-slate-700">
-      RouteX Availability
-    </h2>
+        {/* =================================
+            ROUTEX BRAND
+        ================================= */}
+        <header className="pt-7">
 
-    <p className="text-xl font-bold text-green-600 mt-1">
-      🚖 Drivers Online: {onlineDrivers}
-    </p>
+          <h1
+            className="
+              text-[25px]
+              font-extrabold
+              tracking-[-0.06em]
+            "
+          >
+            <span className="text-[#111111]">
+              Route
+            </span>
 
-    <p className="text-xs text-slate-500 mt-1">
-      Available drivers ready to accept trips.
-    </p>
-  </div>
+            <span className="text-teal-600">
+              X
+            </span>
+          </h1>
 
-  <div className="mt-4 grid md:grid-cols-2 gap-4s">
+        </header>
 
-  <div className="mt-2">
-  <p className="text-sm text-slate-700">
-     {passenger?.email}
-  </p>
-</div>
 
-  <div>
-  </div>
-</div>
+        {/* =================================
+            WELCOME
+        ================================= */}
+        <section className="pt-8">
 
-</div>
-<div className="mt-6 mb-4">
- <h2 className="text-xl font-bold text-slate-800">
-    Your Trips
-  </h2>
+          <p
+            className="
+              text-[11px]
+              font-bold
+              uppercase
+              tracking-[0.08em]
+              text-[#888888]
+            "
+          >
+            Passenger Portal
+          </p>
 
-  <p className="text-sm text-slate-700">
-    {trips.length} booking{trips.length !== 1 ? "s" : ""} tracked
-  </p>
-</div>
-<div className="grid gap-4 max-w-4xl">
-  {trips.length === 0 ? (
-    <p className="text-gray-600">You have no trips scheduled.</p>
-  ) : (
-    trips.map((trip) => (
-      <div
-        key={trip.id}
-        className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition"
-      >
-        <div className="flex items-center justify-between mb-6">
-  <div>
-  <p className="text-xs uppercase tracking-wide text-slate-400">
-    Booking Reference
-  </p>
+          <h2
+            className="
+              mt-2
+              text-[30px]
+              font-extrabold
+              leading-[1.05]
+              tracking-[-0.055em]
+            "
+          >
+            Welcome back
+            {passenger?.full_name
+              ? `, ${passenger.full_name.split(" ")[0]}`
+              : ""}
+          </h2>
 
-  <h3 className="text-lg font-semibold text-slate-800">
-    BK-{trip.id.toString().padStart(4, "0")}
-  </h3>
-</div>
-  <span
-  className={`px-3 py-1 rounded-full text-sm font-medium
-    ${
-      trip.trip_status === "Waiting"
-        ? "bg-blue-100 text-blue-700"
-        : trip.trip_status === "Accepted"
-        ? "bg-green-100 text-green-700"
-        : trip.trip_status === "In Progress"
-        ? "bg-orange-100 text-orange-700"
-        : "bg-green-100 text-green-700"
-    }
-  `}
->
-  {trip.trip_status}
-</span>
-</div>
-    <div className="grid md:grid-cols-2 gap-6 mt-4">
+          <p
+            className="
+              mt-3
+              text-[13px]
+              font-medium
+              text-[#777777]
+            "
+          >
+            Manage your rides and bookings.
+          </p>
 
-  <div>
-    <p className="text-xs font-medium uppercase tracking-wide text-slate-500 mb-2">
-      Pickup
-    </p>
+        </section>
 
-    <p className="text-slate-800">
-      {trip.pickup_address}
-    </p>
-  </div>
 
-  <div>
-    <p className="text-xs uppercase tracking-wide text-slate-400 mb-1">
-      Dropoff
-    </p>
+        {/* =================================
+            AVAILABILITY
+        ================================== */}
+        <section className="mt-7">
 
-    <p className="text-slate-800">
-      {trip.dropoff_address}
-    </p>
-  </div>
+          <div
+            className="
+              rounded-[20px]
+              bg-[#f5f5f5]
+              p-5
+            "
+          >
 
-  <div>
-    <p className="text-xs uppercase tracking-wide text-slate-400 mb-1">
-      Travel Date
-    </p>
+            <div className="flex items-center gap-4">
 
-    <p className="text-slate-800">
-      {new Date(
-        trip.travel_date
-      ).toLocaleDateString()}
-    </p>
-  </div>
+              {/* Icon */}
+              <div
+                className="
+                  flex
+                  h-11
+                  w-11
+                  shrink-0
+                  items-center
+                  justify-center
+                  rounded-full
+                  bg-white
+                "
+              >
+                <Car
+                  size={21}
+                  strokeWidth={2.3}
+                  className="text-[#111111]"
+                />
+              </div>
 
-  <div>
-    <p className="text-xs uppercase tracking-wide text-slate-400 mb-1">
-      Driver
-    </p>
 
-    <p className="text-slate-800">
-      {trip.driver_name}
-    </p>
+              {/* Text */}
+              <div>
 
- <p className="text-slate-700">
-  Driver: {trip.driver_name}
-</p>
+                <p
+                  className="
+                    text-[11px]
+                    font-bold
+                    text-[#777777]
+                  "
+                >
+                  RouteX Availability
+                </p>
 
-<p className="text-slate-700">
-  Vehicle: {trip.vehicle_type}
-</p>
+                <p
+                  className="
+                    mt-0.5
+                    text-[18px]
+                    font-extrabold
+                    tracking-[-0.03em]
+                  "
+                >
+                  {onlineDrivers} Drivers Online
+                </p>
 
-<p className="text-slate-700">
-  Color: {trip.vehicle_color}
-</p>
+              </div>
 
-<p className="text-slate-700">
-  Plate: {trip.license_plate}
-</p>
-  </div>
+            </div>
 
-</div>
-    </div>
-    ))
-  )}
-</div>
+
+            <p
+              className="
+                mt-4
+                text-[12px]
+                font-medium
+                leading-relaxed
+                text-[#777777]
+              "
+            >
+              Available drivers ready to accept trips.
+            </p>
+
+          </div>
+
+        </section>
+
+
+        {/* =================================
+            ACCOUNT
+        ================================== */}
+        <section className="mt-5">
+
+          <div
+            className="
+              rounded-[20px]
+              border
+              border-[#e5e5e5]
+              bg-white
+              p-5
+            "
+          >
+
+            <p
+              className="
+                text-[10px]
+                font-bold
+                uppercase
+                tracking-[0.08em]
+                text-[#999999]
+              "
+            >
+              Account
+            </p>
+
+            <p
+              className="
+                mt-2
+                text-[14px]
+                font-bold
+                text-[#222222]
+              "
+            >
+              {passenger?.email}
+            </p>
+
+          </div>
+
+        </section>
+
+
+        {/* =================================
+            TRIPS HEADER
+        ================================== */}
+        <section className="mt-9">
+
+          <h2
+            className="
+              text-[22px]
+              font-extrabold
+              tracking-[-0.04em]
+            "
+          >
+            Your Trips
+          </h2>
+
+          <p
+            className="
+              mt-1
+              text-[12px]
+              font-medium
+              text-[#777777]
+            "
+          >
+            {trips.length} booking
+            {trips.length !== 1 ? "s" : ""} tracked
+          </p>
+
+        </section>
+
+
+        {/* =================================
+            TRIPS
+        ================================== */}
+        <section className="mt-5 space-y-4">
+
+          {trips.length === 0 ? (
+
+            /* =================================
+                NO TRIPS
+            ================================== */
+            <div
+              className="
+                rounded-[20px]
+                bg-[#f5f5f5]
+                p-7
+                text-center
+              "
+            >
+
+              <div
+                className="
+                  mx-auto
+                  flex
+                  h-12
+                  w-12
+                  items-center
+                  justify-center
+                  rounded-full
+                  bg-white
+                "
+              >
+                <Car
+                  size={21}
+                  strokeWidth={2}
+                  className="text-[#555555]"
+                />
+              </div>
+
+              <p
+                className="
+                  mt-4
+                  text-[14px]
+                  font-extrabold
+                "
+              >
+                No trips yet
+              </p>
+
+              <p
+                className="
+                  mt-1
+                  text-[12px]
+                  font-medium
+                  text-[#777777]
+                "
+              >
+                You have no trips scheduled.
+              </p>
+
+            </div>
+
+          ) : (
+
+            /* =================================
+                TRIP CARDS
+            ================================== */
+            trips.map((trip) => (
+
+              <div
+                key={trip.id}
+                className="
+                  rounded-[20px]
+                  border
+                  border-[#e5e5e5]
+                  bg-white
+                  p-5
+                "
+              >
+
+                {/* =================================
+                    BOOKING HEADER
+                ================================== */}
+                <div
+                  className="
+                    flex
+                    items-start
+                    justify-between
+                    gap-4
+                  "
+                >
+
+                  <div>
+
+                    <p
+                      className="
+                        text-[10px]
+                        font-bold
+                        uppercase
+                        tracking-[0.08em]
+                        text-[#999999]
+                      "
+                    >
+                      Booking Reference
+                    </p>
+
+                    <h3
+                      className="
+                        mt-1
+                        text-[16px]
+                        font-extrabold
+                      "
+                    >
+                      BK-
+                      {trip.id
+                        .toString()
+                        .padStart(4, "0")}
+                    </h3>
+
+                  </div>
+
+
+                  {/* Status */}
+                  <span
+                    className={`
+                      shrink-0
+                      rounded-full
+                      px-3
+                      py-1.5
+                      text-[10px]
+                      font-bold
+
+                      ${
+                        trip.trip_status === "Waiting"
+                          ? "bg-[#f1f1f1] text-[#333333]"
+                          : trip.trip_status === "Accepted"
+                          ? "bg-[#eeeeee] text-[#111111]"
+                          : trip.trip_status === "In Progress"
+                          ? "bg-[#111111] text-white"
+                          : "bg-[#f1f1f1] text-[#333333]"
+                      }
+                    `}
+                  >
+                    {trip.trip_status}
+                  </span>
+
+                </div>
+
+
+                {/* =================================
+                    ROUTE
+                ================================== */}
+                <div className="mt-6">
+
+                  <div className="flex gap-4">
+
+                    {/* Route Line */}
+                    <div
+                      className="
+                        flex
+                        w-3
+                        shrink-0
+                        flex-col
+                        items-center
+                      "
+                    >
+
+                      <div
+                        className="
+                          mt-1
+                          h-2.5
+                          w-2.5
+                          rounded-full
+                          bg-[#111111]
+                        "
+                      />
+
+                      <div
+                        className="
+                          my-1
+                          h-10
+                          border-l
+                          border-dashed
+                          border-[#cccccc]
+                        "
+                      />
+
+                      <div
+                        className="
+                          h-2.5
+                          w-2.5
+                          rounded-full
+                          bg-teal-600
+                        "
+                      />
+
+                    </div>
+
+
+                    {/* Locations */}
+                    <div className="flex-1">
+
+                      {/* Pickup */}
+                      <div>
+
+                        <p
+                          className="
+                            text-[10px]
+                            font-bold
+                            uppercase
+                            tracking-wide
+                            text-[#999999]
+                          "
+                        >
+                          Pickup
+                        </p>
+
+                        <p
+                          className="
+                            mt-1
+                            text-[13px]
+                            font-semibold
+                            leading-relaxed
+                            text-[#333333]
+                          "
+                        >
+                          {trip.pickup_address}
+                        </p>
+
+                      </div>
+
+
+                      {/* Dropoff */}
+                      <div className="mt-6">
+
+                        <p
+                          className="
+                            text-[10px]
+                            font-bold
+                            uppercase
+                            tracking-wide
+                            text-[#999999]
+                          "
+                        >
+                          Dropoff
+                        </p>
+
+                        <p
+                          className="
+                            mt-1
+                            text-[13px]
+                            font-semibold
+                            leading-relaxed
+                            text-[#333333]
+                          "
+                        >
+                          {trip.dropoff_address}
+                        </p>
+
+                      </div>
+
+                    </div>
+
+                  </div>
+
+                </div>
+
+
+                {/* =================================
+                    TRIP INFORMATION
+                ================================== */}
+                <div
+                  className="
+                    mt-6
+                    border-t
+                    border-[#eeeeee]
+                    pt-5
+                  "
+                >
+
+                  <div className="grid grid-cols-2 gap-5">
+
+
+                    {/* Travel Date */}
+                    <div className="flex gap-2.5">
+
+                      <CalendarDays
+                        size={17}
+                        strokeWidth={2}
+                        className="mt-0.5 shrink-0 text-[#555555]"
+                      />
+
+                      <div>
+
+                        <p
+                          className="
+                            text-[10px]
+                            font-bold
+                            uppercase
+                            tracking-wide
+                            text-[#999999]
+                          "
+                        >
+                          Travel Date
+                        </p>
+
+                        <p
+                          className="
+                            mt-1
+                            text-[12px]
+                            font-semibold
+                          "
+                        >
+                          {new Date(
+                            trip.travel_date
+                          ).toLocaleDateString()}
+                        </p>
+
+                      </div>
+
+                    </div>
+
+
+                    {/* Driver */}
+                    <div className="flex gap-2.5">
+
+                      <UserRound
+                        size={17}
+                        strokeWidth={2}
+                        className="mt-0.5 shrink-0 text-[#555555]"
+                      />
+
+                      <div>
+
+                        <p
+                          className="
+                            text-[10px]
+                            font-bold
+                            uppercase
+                            tracking-wide
+                            text-[#999999]
+                          "
+                        >
+                          Driver
+                        </p>
+
+                        <p
+                          className="
+                            mt-1
+                            text-[12px]
+                            font-semibold
+                          "
+                        >
+                          {trip.driver_name || "Not assigned"}
+                        </p>
+
+                      </div>
+
+                    </div>
+
+                  </div>
+
+
+                  {/* =================================
+                      VEHICLE
+                  ================================== */}
+                  <div
+                    className="
+                      mt-5
+                      rounded-[16px]
+                      bg-[#f7f7f7]
+                      p-4
+                    "
+                  >
+
+                    <div className="flex items-center gap-3">
+
+                      <div
+                        className="
+                          flex
+                          h-9
+                          w-9
+                          items-center
+                          justify-center
+                          rounded-full
+                          bg-white
+                        "
+                      >
+
+                        <Car
+                          size={18}
+                          strokeWidth={2.2}
+                          className="text-[#111111]"
+                        />
+
+                      </div>
+
+
+                      <div>
+
+                        <p
+                          className="
+                            text-[10px]
+                            font-bold
+                            uppercase
+                            tracking-wide
+                            text-[#999999]
+                          "
+                        >
+                          Vehicle
+                        </p>
+
+                        <p
+                          className="
+                            mt-1
+                            text-[12px]
+                            font-bold
+                          "
+                        >
+                          {trip.vehicle_type ||
+                            "Not assigned"}
+                        </p>
+
+                      </div>
+
+                    </div>
+
+
+                    {/* Vehicle Details */}
+                    <div
+                      className="
+                        mt-4
+                        grid
+                        grid-cols-2
+                        gap-3
+                      "
+                    >
+
+                      <div className="flex items-center gap-2">
+
+                        <Palette
+                          size={14}
+                          strokeWidth={2}
+                          className="text-[#777777]"
+                        />
+
+                        <span
+                          className="
+                            text-[11px]
+                            font-medium
+                            text-[#555555]
+                          "
+                        >
+                          {trip.vehicle_color ||
+                            "—"}
+                        </span>
+
+                      </div>
+
+
+                      <div className="flex items-center gap-2">
+
+                        <CreditCard
+                          size={14}
+                          strokeWidth={2}
+                          className="text-[#777777]"
+                        />
+
+                        <span
+                          className="
+                            text-[11px]
+                            font-bold
+                            text-[#333333]
+                          "
+                        >
+                          {trip.license_plate ||
+                            "—"}
+                        </span>
+
+                      </div>
+
+                    </div>
+
+                  </div>
+
+                </div>
+
+              </div>
+
+            ))
+
+          )}
+
+        </section>
+
+
+        {/* =================================
+            FOOTER
+        ================================== */}
+        <footer className="mt-10 border-t border-[#eeeeee] pt-5 text-center">
+
+          <p
+            className="
+              text-[11px]
+              font-medium
+              text-[#aaaaaa]
+            "
+          >
+            Getting Upington Moving
+          </p>
+
+        </footer>
+
+      </div>
+
     </main>
   );
 }
