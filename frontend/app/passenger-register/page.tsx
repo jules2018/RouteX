@@ -52,7 +52,6 @@ export default function PassengerRegisterPage() {
       alert("Account created successfully");
 
       window.location.href = "/passenger-login";
-
     } catch (error) {
       console.error(error);
       alert("Registration failed");
@@ -62,116 +61,208 @@ export default function PassengerRegisterPage() {
   };
 
   return (
-    <main className="p-6 min-h-screen bg-gradient-to-br from-slate-100 via-white to-teal-50">
-      <div className="max-w-md mx-auto bg-white rounded-2xl shadow-lg p-6 border border-slate-200">
+    <main className="min-h-screen bg-white text-slate-900">
+      <div className="w-full max-w-md mx-auto px-6 py-8">
 
+        {/* Header */}
+        <div className="mb-10">
+          <a
+            href="/"
+            className="inline-block text-3xl font-bold tracking-tight"
+          >
+            Route<span className="text-teal-600">X</span>
+          </a>
 
-        <h1 className="text-3xl font-bold mb-2 text-slate-900">
+          <h1 className="text-3xl font-bold tracking-tight mt-10">
+            Create your account
+          </h1>
 
-Create Account
+          <p className="text-slate-500 mt-2">
+            Sign up to book rides with RouteX.
+          </p>
+        </div>
 
-</h1>
+        {/* Registration Form */}
+        <form onSubmit={handleSubmit} className="space-y-4">
 
-        <p className="text-slate-700 mb-6">
-          Join RouteX and book your next ride.
-        </p>
+          {/* Full Name */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+              Full name
+            </label>
 
-        <form
-          onSubmit={handleSubmit}
-          className="flex flex-col gap-4"
-        >
+            <input
+              type="text"
+              placeholder="Enter your full name"
+              value={form.full_name}
+              required
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  full_name: e.target.value,
+                })
+              }
+              className="w-full h-14 px-4 rounded-xl border border-slate-300
+              bg-white text-slate-900 placeholder:text-slate-400
+              outline-none transition
+              focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
+            />
+          </div>
 
-          <input
-            placeholder="Full Name"
-            value={form.full_name}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                full_name: e.target.value,
-              })
-            }
-            className="border border-slate-300 rounded-xl p-3 shadow-sm text-slate-900 placeholder:text-slate-500 bg-white"
-          />
+          {/* Phone */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+              Phone number
+            </label>
 
-          <input
-            placeholder="Phone Number"
-            value={form.phone}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                phone: e.target.value,
-              })
-            }
-            className="border border-slate-300 rounded-xl p-3 shadow-sm text-slate-900 placeholder:text-slate-500 bg-white"
-          />
+            <input
+              type="tel"
+              placeholder="e.g. 082 123 4567"
+              value={form.phone}
+              required
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  phone: e.target.value,
+                })
+              }
+              className="w-full h-14 px-4 rounded-xl border border-slate-300
+              bg-white text-slate-900 placeholder:text-slate-400
+              outline-none transition
+              focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
+            />
+          </div>
 
-          <input
-            type="email"
-            placeholder="Email Address"
-            value={form.email}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                email: e.target.value,
-              })
-            }
-            className="border border-slate-300 rounded-xl p-3 shadow-sm text-slate-900 placeholder:text-slate-500 bg-white"
-          />
-<input
-  type="password"
-  placeholder="Password"
-  value={form.password}
-  onChange={(e) =>
-    setForm({
-      ...form,
-      password: e.target.value,
-    })
-  }
-  className="border border-slate-300 rounded-xl p-3 shadow-sm text-slate-900 placeholder:text-slate-500 bg-white"
-/>
-          <input
-  type="password"
-  placeholder="Confirm Password"
-  value={form.confirmPassword}
-  onChange={(e) =>
-    setForm({
-      ...form,
-      confirmPassword: e.target.value,
-    })
-  }
-  className="border border-slate-300 rounded-xl p-3 shadow-sm text-slate-900 placeholder:text-slate-500 bg-white"
-/>
+          {/* Email */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+              Email address
+            </label>
 
-<input
-  type="text"
-  placeholder="Referral Code (Optional)"
-  value={form.referral_code}
-  onChange={(e) =>
-    setForm({
-      ...form,
-      referral_code: e.target.value,
-    })
-  }
-  className="border border-slate-300 rounded-xl p-3 shadow-sm text-slate-900 placeholder:text-slate-500 bg-white"
-/>
+            <input
+              type="email"
+              placeholder="you@example.com"
+              value={form.email}
+              required
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  email: e.target.value,
+                })
+              }
+              className="w-full h-14 px-4 rounded-xl border border-slate-300
+              bg-white text-slate-900 placeholder:text-slate-400
+              outline-none transition
+              focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
+            />
+          </div>
 
-<button
-  type="submit"
-  disabled={loading}
-  className="bg-teal-600 hover:bg-teal-700 text-white py-3 rounded-xl font-semibold shadow-md transition"
->
-  {loading ? "Creating Account..." : "Create Account"}
-</button>
+          {/* Password */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+              Password
+            </label>
 
-<p className="text-center text-sm text-slate-700">
-  Already have an account?
-</p>
+            <input
+              type="password"
+              placeholder="Create a password"
+              value={form.password}
+              required
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  password: e.target.value,
+                })
+              }
+              className="w-full h-14 px-4 rounded-xl border border-slate-300
+              bg-white text-slate-900 placeholder:text-slate-400
+              outline-none transition
+              focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
+            />
+          </div>
 
-<a href="/passenger-login"
-  className="text-blue-600 text-center font-semibold hover:underline">
-  Login
-</a>
+          {/* Confirm Password */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+              Confirm password
+            </label>
+
+            <input
+              type="password"
+              placeholder="Enter your password again"
+              value={form.confirmPassword}
+              required
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  confirmPassword: e.target.value,
+                })
+              }
+              className="w-full h-14 px-4 rounded-xl border border-slate-300
+              bg-white text-slate-900 placeholder:text-slate-400
+              outline-none transition
+              focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
+            />
+          </div>
+
+          {/* Referral */}
+          <div className="pt-2">
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+              Referral code
+              <span className="font-normal text-slate-400"> (optional)</span>
+            </label>
+
+            <input
+              type="text"
+              placeholder="Enter referral code"
+              value={form.referral_code}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  referral_code: e.target.value,
+                })
+              }
+              className="w-full h-14 px-4 rounded-xl border border-slate-300
+              bg-white text-slate-900 placeholder:text-slate-400
+              outline-none transition
+              focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
+            />
+          </div>
+
+          {/* Create Account */}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full h-14 mt-4 rounded-xl
+            bg-teal-600 hover:bg-teal-700
+            disabled:bg-teal-400
+            text-white font-semibold
+            transition duration-200
+            active:scale-[0.99]"
+          >
+            {loading ? "Creating account..." : "Create account"}
+          </button>
+
         </form>
+
+        {/* Login */}
+        <div className="text-center mt-8">
+          <span className="text-sm text-slate-500">
+            Already have an account?
+          </span>
+
+          <a
+            href="/passenger-login"
+            className="ml-1 text-sm font-semibold text-teal-600 hover:text-teal-700"
+          >
+            Log in
+          </a>
+        </div>
+
+        {/* Footer */}
+        <p className="text-center text-xs text-slate-400 mt-10">
+          By creating an account, you agree to use RouteX responsibly.
+        </p>
 
       </div>
     </main>
