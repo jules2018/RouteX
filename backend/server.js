@@ -1703,6 +1703,9 @@ app.post("/driver-login", async (req, res) => {
 
     const { phone, password } = req.body;
 
+    console.log("PHONE:", JSON.stringify(phone));
+    console.log("PASSWORD:", JSON.stringify(password));
+
     const result = await pool.query(
       `
       SELECT *
@@ -1725,7 +1728,7 @@ app.post("/driver-login", async (req, res) => {
 
     res.status(500).json({
       error: error.message
-    });   
+    });
 
   }
 });
