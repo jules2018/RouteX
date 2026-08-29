@@ -13,14 +13,14 @@ export default function AuthGuard({
     useState(false);
 
   useEffect(() => {
-    const user =
-      localStorage.getItem("user");
+   const driver =
+  localStorage.getItem("driver");
 
-    if (!user) {
-      router.push("/login");
-    } else {
-      setAuthorized(true);
-    }
+    if (!driver) {
+  router.push("/driver-login");
+} else {
+  setAuthorized(true);
+}
   }, [router]);
 
   if (!authorized) {
