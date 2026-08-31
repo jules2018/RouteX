@@ -20,6 +20,7 @@ export default function PassengerPortalPage() {
   const [passenger, setPassenger] = useState<any>(null);
   const [trips, setTrips] = useState<any[]>([]);
   const [onlineDrivers, setOnlineDrivers] = useState(0);
+  const [photo, setPhoto] = useState<File | null>(null);
 
   /* ================================
       LOAD PASSENGER TRIPS
@@ -108,53 +109,62 @@ export default function PassengerPortalPage() {
 
         </header>
 
+```tsx
+{/* =================================
+    WELCOME
+================================= */}
+<section className="pt-8">
 
-        {/* =================================
-            WELCOME
-        ================================= */}
-        <section className="pt-8">
+  <div className="flex items-center gap-4">
 
-          <p
-            className="
-              text-[11px]
-              font-bold
-              uppercase
-              tracking-[0.08em]
-              text-[#888888]
-            "
-          >
-            Passenger Portal
-          </p>
+    {/* Profile Photo */}
+    <div className="w-16 h-16 rounded-full overflow-hidden bg-slate-100 border border-slate-200 shrink-0">
 
-          <h2
-            className="
-              mt-2
-              text-[30px]
-              font-extrabold
-              leading-[1.05]
-              tracking-[-0.055em]
-            "
-          >
-            Welcome back
-            {passenger?.full_name
-              ? `, ${passenger.full_name.split(" ")[0]}`
-              : ""}
-          </h2>
+      {passenger?.profile_image ? (
 
-          <p
-            className="
-              mt-3
-              text-[13px]
-              font-medium
-              text-[#777777]
-            "
-          >
-            Manage your rides and bookings.
-          </p>
+        <img
+          src={`https://routex-smgu.onrender.com/uploads/${passenger.profile_image}`}
+          alt={passenger?.full_name || "Passenger"}
+          className="w-full h-full object-cover"
+        />
 
-        </section>
+      ) : (
+
+        <div className="w-full h-full flex items-center justify-center text-xl font-bold text-slate-400">
+          {passenger?.full_name?.charAt(0)?.toUpperCase() || "P"}
+        </div>
+
+      )}
+
+    </div>
 
 
+    {/* Passenger Information */}
+    <div>
+
+      <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-[#888888]">
+        Passenger Portal
+      </p>
+
+      <h2 className="mt-1 text-[24px] font-extrabold leading-tight">
+        Welcome back
+        {passenger?.full_name
+          ? `, ${passenger.full_name.split(" ")[0]}`
+          : ""}
+      </h2>
+
+      <p className="mt-1 text-[13px] font-medium text-[#777777]">
+        Manage your rides and bookings.
+      </p>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+       
         {/* =================================
             AVAILABILITY
         ================================== */}
