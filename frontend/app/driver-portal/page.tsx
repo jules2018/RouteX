@@ -385,7 +385,10 @@ export default function DriverPortalPage() {
 
     </div>
 <button
-  onClick={uploadPhoto}
+  onClick={() => {
+    alert("Button clicked");
+    uploadPhoto();
+  }}
   className="mt-3 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
 >
   Upload Photo
