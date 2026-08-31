@@ -386,16 +386,16 @@ export default function DriverPortalPage() {
       </span>
 
     </div>
-
-  </div>
-
-</section>
 <button
   onClick={uploadPhoto}
   className="mt-3 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
 >
   Upload Photo
 </button>
+  </div>
+
+</section>
+
 
           {/* CURRENT TRIP */}
           {myInProgressTrips.length > 0 && (
