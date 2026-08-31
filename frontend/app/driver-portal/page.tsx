@@ -68,27 +68,46 @@ export default function DriverPortalPage() {
     return () => clearInterval(interval);
   }, []);
 
-  const uploadPhoto = async () => {
-  if (!photo) return;
+ const uploadPhoto = async () => {
+  console.log("Upload function started");
+
+  if (!photo) {
+    alert("Please select a photo first");
+    return;
+  }
+
+  if (!driver) {
+    alert("Driver not found");
+    return;
+  }
+
+  alert(`Uploading for driver ${driver.id}`);
 
   const formData = new FormData();
   formData.append("photo", photo);
   formData.append("driverId", String(driver.id));
 
-  const response = await fetch(
-    "https://routex-smgu.onrender.com/driver/upload-photo",
-    {
-      method: "POST",
-      body: formData,
+  try {
+    const response = await fetch(
+      "https://routex-smgu.onrender.com/driver/upload-photo",
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
+
+    const data = await response.json();
+
+    console.log(data);
+
+    if (data.success) {
+      alert("Photo uploaded successfully!");
+    } else {
+      alert("Upload failed.");
     }
-  );
-
-  const data = await response.json();
-
-  if (data.success) {
-    alert("Photo uploaded successfully!");
-  } else {
-    alert("Upload failed.");
+  } catch (error) {
+    console.error(error);
+    alert("Error uploading photo");
   }
 };
 
