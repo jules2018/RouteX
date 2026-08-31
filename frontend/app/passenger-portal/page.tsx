@@ -74,7 +74,42 @@ export default function PassengerPortalPage() {
     }
   }, []);
 const uploadPhoto = async () => {
-  alert("Passenger upload clicked");
+  if (!photo) {
+    alert("Please select a photo first.");
+    return;
+  }
+
+  if (!passenger?.id) {
+    alert("Passenger not found.");
+    return;
+  }
+
+  const formData = new FormData();
+
+  formData.append("photo", photo);
+  formData.append("passengerId", String(passenger.id));
+
+  try {
+    const response = await fetch(
+      "https://routex-smgu.onrender.com/passenger/upload-photo",
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
+
+    const data = await response.json();
+
+    if (data.success) {
+      alert("Photo uploaded successfully!");
+    } else {
+      alert(data.error || "Upload failed.");
+    }
+
+  } catch (error) {
+    console.error(error);
+    alert("Error uploading photo.");
+  }
 };
   return (
     <main

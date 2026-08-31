@@ -400,7 +400,61 @@ app.post(
     }
   }
 );
+app.post(
+  "/passenger/upload-photo",
+  upload.single("photo"),
+  async (req, res) => {
+    try {
+      const { passengerId } = req.body;
 
+      if (!passengerId) {
+        return res.status(400).json({
+          success: false,
+          error: "Passenger ID is missing",
+        });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          error: "No photo uploaded",
+        });
+      }
+
+      const imagePath = req.file.filename;
+
+      const result = await pool.query(
+        `
+        UPDATE passengers
+        SET profile_image = $1
+        WHERE id = $2
+        RETURNING id, profile_image
+        `,
+        [imagePath, passengerId]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: "Passenger not found",
+        });
+      }
+
+      res.json({
+        success: true,
+        image: imagePath,
+      });
+
+    } catch (error) {
+      console.error("PASSENGER PHOTO ERROR:", error);
+
+      res.status(500).json({
+        success: false,
+        error: error.message,
+      });
+    }
+  }
+);
 app.post("/bookings", async (req, res) => {
   try {
     console.log("BOOKINGS ROUTE HIT");
