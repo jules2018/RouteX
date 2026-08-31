@@ -276,7 +276,7 @@ export default function DriverPortalPage() {
         {/* MAIN */}
         <div className="max-w-5xl mx-auto px-5 py-6">
 
-        ```tsx
+      
 {/* DRIVER STATUS */}
 <section className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm mb-6">
 
@@ -290,19 +290,17 @@ export default function DriverPortalPage() {
 
         <div className="w-16 h-16 rounded-full overflow-hidden bg-slate-100 border border-slate-200">
 
-          {driver?.profile_photo ? (
-            <img
-              src={driver.profile_photo}
-              alt={driver?.full_name || "Driver"}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-xl font-bold text-slate-400">
-              {driver?.full_name
-                ?.charAt(0)
-                ?.toUpperCase() || "D"}
-            </div>
-          )}
+          {driver?.profile_image ? (
+  <img
+    src={`https://routex-smgu.onrender.com/uploads/${driver.profile_image}`}
+    alt={driver?.full_name || "Driver"}
+    className="w-full h-full rounded-full object-cover"
+  />
+) : (
+  <div className="w-full h-full flex items-center justify-center text-xl font-bold text-slate-400">
+    {driver?.full_name?.charAt(0)?.toUpperCase() || "D"}
+  </div>
+)}
 
         </div>
 
