@@ -100,9 +100,25 @@ const uploadPhoto = async () => {
 
     const data = await response.json();
 
-    if (data.success) {
-      alert("Photo uploaded successfully!");
-    } else {
+ if (data.success) {
+  alert("Photo uploaded successfully!");
+
+  const updatedPassenger = {
+    ...passenger,
+    profile_image: data.image,
+  };
+
+  setPassenger(updatedPassenger);
+
+  localStorage.setItem(
+    "passenger",
+    JSON.stringify(updatedPassenger)
+  );
+
+  setPhoto(null);
+}
+    
+    else {
       alert(data.error || "Upload failed.");
     }
 
