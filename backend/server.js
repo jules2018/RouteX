@@ -3,6 +3,11 @@ const cors = require("cors");
 const pool = require("./db");
 const app = express();
 const multer = require("multer");
+const fs = require("fs");
+
+if (!fs.existsSync("uploads")) {
+  fs.mkdirSync("uploads", { recursive: true });
+}
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -14,6 +19,7 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({ storage });
+
 app.get("/hello", (req, res) => {
   res.send("HELLO ROUTEX");
 });
@@ -340,7 +346,7 @@ app.post(
     try {
       console.log("UPLOAD ROUTE HIT");
       const { driverId } = req.body;
-      
+
       console.log("Driver ID:", driverId);
       console.log("BODY:", req.body);
       console.log("FILE:", req.file);
@@ -388,9 +394,9 @@ app.post(
       console.error("UPLOAD PHOTO ERROR:", error);
 
       res.status(500).json({
-        success: false,
-        error: "Failed to upload image",
-      });
+  success: false,
+  error: error.message,
+});
     }
   }
 );
