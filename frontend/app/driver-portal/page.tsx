@@ -68,22 +68,19 @@ export default function DriverPortalPage() {
     return () => clearInterval(interval);
   }, []);
 
- const uploadPhoto = async () => {
-  console.log("Upload function started");
-
+const uploadPhoto = async () => {
   if (!photo) {
-    alert("Please select a photo first");
+    alert("Please select a photo first.");
     return;
   }
 
-  if (!driver) {
-    alert("Driver not found");
+  if (!driver?.id) {
+    alert("Driver not found.");
     return;
   }
-
-  alert(`Uploading for driver ${driver.id}`);
 
   const formData = new FormData();
+
   formData.append("photo", photo);
   formData.append("driverId", String(driver.id));
 
@@ -98,16 +95,38 @@ export default function DriverPortalPage() {
 
     const data = await response.json();
 
-    console.log(data);
+    console.log("Upload response:", data);
+
+    if (!response.ok) {
+      throw new Error(data.error || "Upload failed");
+    }
 
     if (data.success) {
       alert("Photo uploaded successfully!");
-    } else {
-      alert("Upload failed.");
+
+      const updatedDriver = {
+        ...driver,
+        profile_image: data.image,
+      };
+
+      setDriver(updatedDriver);
+
+      localStorage.setItem(
+        "driver",
+        JSON.stringify(updatedDriver)
+      );
+
+      setPhoto(null);
     }
+
   } catch (error) {
-    console.error(error);
-    alert("Error uploading photo");
+    console.error("Upload error:", error);
+
+    alert(
+      error instanceof Error
+        ? error.message
+        : "Error uploading photo"
+    );
   }
 };
 
@@ -374,45 +393,60 @@ export default function DriverPortalPage() {
   </div>
 
 
-  {/* Profile Photo Upload */}
-  <div className="mt-5 pt-5 border-t border-slate-100">
+ {/* Profile Photo Upload */}
+<div className="mt-5 pt-5 border-t border-slate-100">
 
-    <label className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-      Profile photo
+  <label className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+    Profile photo
+  </label>
+
+  <div className="mt-2 flex items-center gap-3">
+
+    <label className="cursor-pointer text-sm font-semibold text-teal-600 hover:text-teal-700">
+      Change photo
+
+      <input
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+
+          if (file) {
+            console.log("Selected photo:", file);
+            setPhoto(file);
+          }
+        }}
+        className="hidden"
+      />
     </label>
 
-    <div className="mt-2 flex items-center gap-3">
+    <span className="text-xs text-slate-400">
+      {photo ? photo.name : "JPG, PNG or WEBP"}
+    </span>
 
-      <label className="cursor-pointer text-sm font-semibold text-teal-600 hover:text-teal-700">
-        Change photo
+  </div>
 
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => {
-            if (e.target.files?.[0]) {
-              setPhoto(e.target.files[0]);
-            }
-          }}
-          className="hidden"
-        />
-      </label>
+  {photo && (
+    <div className="mt-3 flex items-center gap-3">
 
-      <span className="text-xs text-slate-400">
-        JPG or PNG
-      </span>
+      <img
+        src={URL.createObjectURL(photo)}
+        alt="Selected profile"
+        className="w-12 h-12 rounded-full object-cover border border-slate-200"
+      />
+
+      <button
+        type="button"
+        onClick={uploadPhoto}
+        className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg font-semibold transition"
+      >
+        Upload Photo
+      </button>
 
     </div>
-<button
-  onClick={() => {
-    alert("Button clicked");
-    uploadPhoto();
-  }}
-  className="mt-3 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
->
-  Upload Photo
-</button>
-  </div>
+  )}
+
+</div>
 
 </section>
 

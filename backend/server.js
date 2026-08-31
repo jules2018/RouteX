@@ -331,6 +331,7 @@ app.post("/trip-bookings", async (req, res) => {
 
   }
 });
+
 app.post(
   "/driver/upload-photo",
   upload.single("photo"),
@@ -338,23 +339,51 @@ app.post(
     try {
       const { driverId } = req.body;
 
+      // Check driver ID
+      if (!driverId) {
+        return res.status(400).json({
+          success: false,
+          error: "Driver ID is missing",
+        });
+      }
+
+      // Check uploaded file
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          error: "No photo uploaded",
+        });
+      }
+
       const imagePath = req.file.filename;
 
-      await pool.query(
+      // Update driver
+      const result = await pool.query(
         `
         UPDATE drivers
         SET profile_image = $1
         WHERE id = $2
+        RETURNING id, profile_image
         `,
         [imagePath, driverId]
       );
+
+      // Check that driver actually exists
+      if (result.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: "Driver not found",
+        });
+      }
 
       res.json({
         success: true,
         image: imagePath,
       });
+
     } catch (error) {
-      console.error(error);
+      console.error("UPLOAD PHOTO ERROR:", error);
+
       res.status(500).json({
         success: false,
         error: "Failed to upload image",
