@@ -338,11 +338,10 @@ app.post(
   async (req, res) => {
     try {
       const { driverId } = req.body;
+
       console.log("BODY:", req.body);
-console.log("FILE:", req.file);
+      console.log("FILE:", req.file);
 
-
-      // Check driver ID
       if (!driverId) {
         return res.status(400).json({
           success: false,
@@ -350,25 +349,16 @@ console.log("FILE:", req.file);
         });
       }
 
-      // Check uploaded file
       if (!req.file) {
+        console.log("NO FILE RECEIVED");
         return res.status(400).json({
           success: false,
-          error: "No photo uploaded",
+          error: "No file received",
         });
       }
 
-      if (!req.file) {
-  console.log("NO FILE RECEIVED");
-  return res.status(400).json({
-    success: false,
-    error: "No file received",
-  });
-}
+      const imagePath = req.file.filename;
 
-const imagePath = req.file.filename;
-
-      // Update driver
       const result = await pool.query(
         `
         UPDATE drivers
@@ -379,7 +369,6 @@ const imagePath = req.file.filename;
         [imagePath, driverId]
       );
 
-      // Check that driver actually exists
       if (result.rows.length === 0) {
         return res.status(404).json({
           success: false,
@@ -402,6 +391,7 @@ const imagePath = req.file.filename;
     }
   }
 );
+
 app.post("/bookings", async (req, res) => {
   try {
     console.log("BOOKINGS ROUTE HIT");
