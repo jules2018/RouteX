@@ -338,6 +338,9 @@ app.post(
   async (req, res) => {
     try {
       const { driverId } = req.body;
+      console.log("BODY:", req.body);
+console.log("FILE:", req.file);
+
 
       // Check driver ID
       if (!driverId) {
