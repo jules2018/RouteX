@@ -73,7 +73,9 @@ export default function PassengerPortalPage() {
       return () => clearInterval(interval);
     }
   }, []);
-
+const uploadPhoto = async () => {
+  alert("Passenger upload clicked");
+};
   return (
     <main
       className={`${jakarta.variable} min-h-[100dvh] bg-white text-[#111111]`}
@@ -168,40 +170,48 @@ export default function PassengerPortalPage() {
     PROFILE PHOTO
 ================================= */}
 <section className="mt-6">
-
   <div className="rounded-[20px] border border-slate-200 bg-white p-5">
 
     <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-[#888888]">
       Profile Photo
     </p>
 
-    <div className="mt-3 flex items-center gap-3">
+    <div className="mt-4">
+      <div className="flex items-center gap-3">
+        <label className="cursor-pointer text-sm font-semibold text-teal-600 hover:text-teal-700">
+          Change Photo
 
-      <label className="cursor-pointer text-sm font-semibold text-teal-600 hover:text-teal-700">
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/jpg"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
 
-        Change Photo
+              if (file) {
+                setPhoto(file);
+              }
+            }}
+            className="hidden"
+          />
+        </label>
 
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => {
-            if (e.target.files?.[0]) {
-              setPhoto(e.target.files[0]);
-            }
-          }}
-          className="hidden"
-        />
+        <span className="max-w-[200px] truncate text-xs text-slate-500">
+          {photo ? photo.name : "JPG or PNG"}
+        </span>
+      </div>
 
-      </label>
-
-      <span className="text-xs text-slate-500">
-        {photo ? photo.name : "JPG or PNG"}
-      </span>
-
+      {photo && (
+        <button
+          type="button"
+          onClick={uploadPhoto}
+          className="mt-4 rounded-lg bg-teal-600 px-4 py-2 font-semibold text-white transition hover:bg-teal-700"
+        >
+          Upload Photo
+        </button>
+      )}
     </div>
 
   </div>
-
 </section>
 
        
