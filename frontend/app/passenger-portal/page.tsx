@@ -166,66 +166,56 @@ const uploadPhoto = async () => {
 {/* =================================
     WELCOME
 ================================= */}
-<section className="pt-6">
-  <div className="rounded-[24px] border border-slate-200 bg-white p-5">
+<section className="pt-8">
 
-    <div className="flex items-center gap-4">
+  <div className="flex items-center gap-4">
 
-      <div className="h-20 w-20 overflow-hidden rounded-full border border-slate-200">
+    {/* Profile Photo */}
+    <div className="w-20 h-20 rounded-full overflow-hidden bg-slate-100 border border-slate-200 shrink-0">
 
-        {passenger?.profile_image ? (
-          <img
-            src={`https://routex-smgu.onrender.com/uploads/${passenger.profile_image}`}
-            alt="Profile"
-            className="h-full w-full object-cover"
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center text-2xl font-bold text-slate-400">
-            {passenger?.full_name?.charAt(0)?.toUpperCase() || "P"}
-          </div>
-        )}
+      {passenger?.profile_image ? (
 
-      </div>
+        <img
+          src={`https://routex-smgu.onrender.com/uploads/${passenger.profile_image}`}
+          alt={passenger?.full_name || "Passenger"}
+          className="w-full h-full object-cover"
+        />
 
-      <div className="flex-1">
+      ) : (
 
-        <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
-          Passenger Portal
-        </p>
+        <div className="w-full h-full flex items-center justify-center text-xl font-bold text-slate-400">
+          {passenger?.full_name?.charAt(0)?.toUpperCase() || "P"}
+        </div>
 
-        <h2 className="mt-1 text-3xl font-extrabold leading-tight">
-          Welcome back,
-        </h2>
-
-        <h3 className="text-2xl font-bold">
-          {passenger?.full_name?.split(" ")[0]}
-        </h3>
-
-        <p className="mt-1 text-sm text-slate-500">
-          Manage your rides and bookings.
-        </p>
-
-      </div>
+      )}
 
     </div>
 
-    <div className="mt-4 border-t border-slate-100 pt-4">
 
-      <label className="cursor-pointer text-sm font-semibold text-teal-600 hover:text-teal-700">
-        📷 Change Photo
+    {/* Passenger Information */}
+    <div>
 
-        <input
-          type="file"
-          accept="image/jpeg,image/png,image/jpg"
-          className="hidden"
-        />
+      <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-[#888888]">
+        Passenger Portal
+      </p>
 
-      </label>
+      <h2 className="mt-1 text-[24px] font-extrabold leading-tight">
+        Welcome back
+        {passenger?.full_name
+          ? `, ${passenger.full_name.split(" ")[0]}`
+          : ""}
+      </h2>
+
+      <p className="mt-1 text-[13px] font-medium text-[#777777]">
+        Manage your rides and bookings.
+      </p>
 
     </div>
 
   </div>
+
 </section>
+
 
 {/* =================================
     PROFILE PHOTO
@@ -279,40 +269,84 @@ const uploadPhoto = async () => {
         {/* =================================
             AVAILABILITY
         ================================== */}
-   
-<section className="mt-7">
-  <div className="rounded-[20px] bg-[#f5f5f5] p-5">
+        <section className="mt-7">
 
-    <div className="flex items-center gap-4">
+          <div
+            className="
+              rounded-[20px]
+              bg-[#f5f5f5]
+              p-5
+            "
+          >
 
-      {/* Icon */}
-      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white">
-        <Car
-          size={21}
-          strokeWidth={2.3}
-          className="text-[#111111]"
-        />
-      </div>
+            <div className="flex items-center gap-4">
 
-      {/* Text */}
-      <div className="flex-1">
-        <p className="text-xs uppercase tracking-wide text-slate-500">
-          RouteX Availability
-        </p>
+              {/* Icon */}
+              <div
+                className="
+                  flex
+                  h-11
+                  w-11
+                  shrink-0
+                  items-center
+                  justify-center
+                  rounded-full
+                  bg-white
+                "
+              >
+                <Car
+                  size={21}
+                  strokeWidth={2.3}
+                  className="text-[#111111]"
+                />
+              </div>
 
-        <h3 className="mt-1 text-xl font-bold">
-          🟢 {onlineDrivers} Drivers Online
-        </h3>
 
-        <p className="mt-1 text-sm text-slate-500">
-          Drivers ready nearby.
-        </p>
-      </div>
+              {/* Text */}
+              <div>
 
-    </div>
+                <p
+                  className="
+                    text-[11px]
+                    font-bold
+                    text-[#777777]
+                  "
+                >
+                  RouteX Availability
+                </p>
 
-  </div>
-</section>
+                <p
+                  className="
+                    mt-0.5
+                    text-[18px]
+                    font-extrabold
+                    tracking-[-0.03em]
+                  "
+                >
+                  {onlineDrivers} Drivers Online
+                </p>
+
+              </div>
+
+            </div>
+
+
+            <p
+              className="
+                mt-4
+                text-[12px]
+                font-medium
+                leading-relaxed
+                text-[#777777]
+              "
+            >
+              Available drivers ready to accept trips.
+            </p>
+
+          </div>
+
+        </section>
+
 
         {/* =================================
             ACCOUNT
