@@ -318,15 +318,16 @@ const uploadPhoto = async () => {
 {/* DRIVER STATUS */}
 <section className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm mb-6">
 
-  <div className="flex items-center justify-between gap-4">
+ <div className="flex flex-col sm:flex-row gap-4">
 
     {/* Driver information */}
-    <div className="flex items-center gap-4">
+    <div className="flex items-center gap-3 w-full">
+
 
       {/* Profile Photo */}
       <div className="relative shrink-0">
 
-        <div className="w-16 h-16 rounded-full overflow-hidden bg-slate-100 border border-slate-200">
+        <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden bg-slate-100 border border-slate-200">
 
           {driver?.profile_image ? (
   <img
@@ -361,7 +362,7 @@ const uploadPhoto = async () => {
           Welcome back
         </p>
 
-        <h1 className="text-xl sm:text-2xl font-bold mt-0.5">
+       <h1 className="text-lg sm:text-2xl font-bold mt-0.5 leading-tight">
           {driver?.full_name || "Driver"}
         </h1>
 
