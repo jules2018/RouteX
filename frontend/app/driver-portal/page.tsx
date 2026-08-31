@@ -94,6 +94,7 @@ const uploadPhoto = async () => {
     );
 
     const data = await response.json();
+    console.log("Passenger upload response:", data);
 
     console.log("Upload response:", data);
 
@@ -119,15 +120,17 @@ const uploadPhoto = async () => {
       setPhoto(null);
     }
 
-  } catch (error) {
-    console.error("Upload error:", error);
+  } 
+catch (error) {
+  console.error("PASSENGER PHOTO ERROR:", error);
 
-    alert(
-      error instanceof Error
-        ? error.message
-        : "Error uploading photo"
-    );
-  }
+  alert(
+    error instanceof Error
+      ? error.message
+      : "Error uploading photo."
+  );
+}
+
 };
 
   const toggleStatus = async () => {
