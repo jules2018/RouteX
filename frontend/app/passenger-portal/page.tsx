@@ -109,7 +109,7 @@ export default function PassengerPortalPage() {
 
         </header>
 
-```tsx
+
 {/* =================================
     WELCOME
 ================================= */}
@@ -163,6 +163,46 @@ export default function PassengerPortalPage() {
 
 </section>
 
+
+{/* =================================
+    PROFILE PHOTO
+================================= */}
+<section className="mt-6">
+
+  <div className="rounded-[20px] border border-slate-200 bg-white p-5">
+
+    <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-[#888888]">
+      Profile Photo
+    </p>
+
+    <div className="mt-3 flex items-center gap-3">
+
+      <label className="cursor-pointer text-sm font-semibold text-teal-600 hover:text-teal-700">
+
+        Change Photo
+
+        <input
+          type="file"
+          accept="image/*"
+          onChange={(e) => {
+            if (e.target.files?.[0]) {
+              setPhoto(e.target.files[0]);
+            }
+          }}
+          className="hidden"
+        />
+
+      </label>
+
+      <span className="text-xs text-slate-500">
+        {photo ? photo.name : "JPG or PNG"}
+      </span>
+
+    </div>
+
+  </div>
+
+</section>
 
        
         {/* =================================
