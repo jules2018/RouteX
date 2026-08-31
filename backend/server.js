@@ -336,9 +336,12 @@ app.post(
   "/driver/upload-photo",
   upload.single("photo"),
   async (req, res) => {
-    try {
-      const { driverId } = req.body;
 
+    try {
+      console.log("UPLOAD ROUTE HIT");
+      const { driverId } = req.body;
+      
+      console.log("Driver ID:", driverId);
       console.log("BODY:", req.body);
       console.log("FILE:", req.file);
 
