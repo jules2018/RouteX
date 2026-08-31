@@ -16,26 +16,34 @@ export default function AdminDashboardPage() {
     onlineDrivers: 0,
     pendingApplications: 0,
   });
+const loadDashboardData = () => {
+  fetch("https://routex-smgu.onrender.com/admin/stats")
+    .then((res) => res.json())
+    .then((data) => {
+      setStats(data);
+    })
+    .catch((error) => {
+      console.error("Error loading stats:", error);
+    });
 
-  useEffect(() => {
-    fetch("https://routex-smgu.onrender.com/admin/stats")
-      .then((res) => res.json())
-      .then((data) => {
-        setStats(data);
-      })
-      .catch((error) => {
-        console.error("Error loading stats:", error);
-      });
+  fetch("https://routex-smgu.onrender.com/admin/applications")
+    .then((res) => res.json())
+    .then((data) => {
+      setApplications(data);
+    })
+    .catch((error) => {
+      console.error("Error loading applications:", error);
+    });
+}; 
+useEffect(() => {
+  loadDashboardData();
 
-    fetch("https://routex-smgu.onrender.com/admin/applications")
-      .then((res) => res.json())
-      .then((data) => {
-        setApplications(data);
-      })
-      .catch((error) => {
-        console.error("Error loading applications:", error);
-      });
-  }, []);
+  const interval = setInterval(() => {
+    loadDashboardData();
+  }, 5000);
+
+  return () => clearInterval(interval);
+}, []);
 
   return (
     <main className="min-h-screen bg-slate-100 p-6">
@@ -150,7 +158,7 @@ export default function AdminDashboardPage() {
         { method: "POST" }
       );
 
-      window.location.reload();
+     loadDashboardData();
     }}
     className="bg-green-600 text-white px-4 py-2 rounded-lg"
   >
@@ -164,7 +172,7 @@ export default function AdminDashboardPage() {
         { method: "POST" }
       );
 
-      window.location.reload();
+     loadDashboardData();
     }}
     className="bg-red-600 text-white px-4 py-2 rounded-lg"
   >
