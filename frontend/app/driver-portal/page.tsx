@@ -14,6 +14,7 @@ export default function DriverPortalPage() {
   const [driver, setDriver] = useState<any>(null);
   const [status, setStatus] = useState("offline");
   const [loadingAction, setLoadingAction] = useState<number | null>(null);
+  const [photo, setPhoto] = useState<File | null>(null);
 
   const availableTrips = requests;
 
@@ -264,7 +265,22 @@ export default function DriverPortalPage() {
                 <h1 className="text-2xl font-bold mt-1">
                   {driver?.full_name || "Driver"}
                 </h1>
+<div className="bg-white rounded-2xl p-4 shadow-sm mb-4">
+  <h3 className="font-bold text-lg mb-2">
+    Profile Picture
+  </h3>
 
+  <input
+    type="file"
+    accept="image/*"
+    onChange={(e) => {
+      if (e.target.files?.[0]) {
+        setPhoto(e.target.files[0]);
+      }
+    }}
+    className="w-full"
+  />
+</div>
                 <p className="text-sm text-slate-500 mt-1">
                   {status === "available"
                     ? "You are available for trips."
