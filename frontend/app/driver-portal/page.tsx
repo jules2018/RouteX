@@ -68,6 +68,30 @@ export default function DriverPortalPage() {
     return () => clearInterval(interval);
   }, []);
 
+  const uploadPhoto = async () => {
+  if (!photo) return;
+
+  const formData = new FormData();
+  formData.append("photo", photo);
+  formData.append("driverId", String(driver.id));
+
+  const response = await fetch(
+    "https://routex-smgu.onrender.com/driver/upload-photo",
+    {
+      method: "POST",
+      body: formData,
+    }
+  );
+
+  const data = await response.json();
+
+  if (data.success) {
+    alert("Photo uploaded successfully!");
+  } else {
+    alert("Upload failed.");
+  }
+};
+
   const toggleStatus = async () => {
     const newStatus =
       status === "available"
@@ -252,57 +276,126 @@ export default function DriverPortalPage() {
         {/* MAIN */}
         <div className="max-w-5xl mx-auto px-5 py-6">
 
-          {/* DRIVER STATUS */}
-          <section className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm mb-6">
+        ```tsx
+{/* DRIVER STATUS */}
+<section className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm mb-6">
 
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5">
+  <div className="flex items-center justify-between gap-4">
 
-              <div>
-                <p className="text-sm text-slate-500">
-                  Welcome back
-                </p>
+    {/* Driver information */}
+    <div className="flex items-center gap-4">
 
-                <h1 className="text-2xl font-bold mt-1">
-                  {driver?.full_name || "Driver"}
-                </h1>
-<div className="bg-white rounded-2xl p-4 shadow-sm mb-4">
-  <h3 className="font-bold text-lg mb-2">
-    Profile Picture
-  </h3>
+      {/* Profile Photo */}
+      <div className="relative shrink-0">
 
-  <input
-    type="file"
-    accept="image/*"
-    onChange={(e) => {
-      if (e.target.files?.[0]) {
-        setPhoto(e.target.files[0]);
-      }
-    }}
-    className="w-full"
-  />
-</div>
-                <p className="text-sm text-slate-500 mt-1">
-                  {status === "available"
-                    ? "You are available for trips."
-                    : "You are currently offline."}
-                </p>
-              </div>
+        <div className="w-16 h-16 rounded-full overflow-hidden bg-slate-100 border border-slate-200">
 
-              <button
-                onClick={toggleStatus}
-                className={`w-full sm:w-auto px-6 py-3 rounded-xl font-semibold text-white transition ${
-                  status === "available"
-                    ? "bg-slate-900 hover:bg-slate-800"
-                    : "bg-teal-600 hover:bg-teal-700"
-                }`}
-              >
-                {status === "available"
-                  ? "Go Offline"
-                  : "Go Online"}
-              </button>
-
+          {driver?.profile_photo ? (
+            <img
+              src={driver.profile_photo}
+              alt={driver?.full_name || "Driver"}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-xl font-bold text-slate-400">
+              {driver?.full_name
+                ?.charAt(0)
+                ?.toUpperCase() || "D"}
             </div>
-          </section>
+          )}
+
+        </div>
+
+        {/* Online indicator */}
+        <span
+          className={`absolute bottom-0 right-0 w-4 h-4 rounded-full border-2 border-white ${
+            status === "available"
+              ? "bg-green-500"
+              : "bg-slate-400"
+          }`}
+        />
+
+      </div>
+
+
+      {/* Driver name */}
+      <div>
+
+        <p className="text-sm text-slate-500">
+          Welcome back
+        </p>
+
+        <h1 className="text-xl sm:text-2xl font-bold mt-0.5">
+          {driver?.full_name || "Driver"}
+        </h1>
+
+        <p className="text-sm text-slate-500 mt-1">
+          {status === "available"
+            ? "You are available for trips."
+            : "You are currently offline."}
+        </p>
+
+      </div>
+
+    </div>
+
+
+    {/* Online / Offline button */}
+    <button
+      onClick={toggleStatus}
+      className={`shrink-0 px-4 sm:px-6 py-3 rounded-xl font-semibold text-white transition ${
+        status === "available"
+          ? "bg-slate-900 hover:bg-slate-800"
+          : "bg-teal-600 hover:bg-teal-700"
+      }`}
+    >
+      {status === "available"
+        ? "Go Offline"
+        : "Go Online"}
+    </button>
+
+  </div>
+
+
+  {/* Profile Photo Upload */}
+  <div className="mt-5 pt-5 border-t border-slate-100">
+
+    <label className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+      Profile photo
+    </label>
+
+    <div className="mt-2 flex items-center gap-3">
+
+      <label className="cursor-pointer text-sm font-semibold text-teal-600 hover:text-teal-700">
+        Change photo
+
+        <input
+          type="file"
+          accept="image/*"
+          onChange={(e) => {
+            if (e.target.files?.[0]) {
+              setPhoto(e.target.files[0]);
+            }
+          }}
+          className="hidden"
+        />
+      </label>
+
+      <span className="text-xs text-slate-400">
+        JPG or PNG
+      </span>
+
+    </div>
+
+  </div>
+
+</section>
+<button
+  onClick={uploadPhoto}
+  className="mt-3 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+>
+  Upload Photo
+</button>
 
           {/* CURRENT TRIP */}
           {myInProgressTrips.length > 0 && (
