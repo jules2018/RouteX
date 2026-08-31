@@ -358,7 +358,15 @@ console.log("FILE:", req.file);
         });
       }
 
-      const imagePath = req.file.filename;
+      if (!req.file) {
+  console.log("NO FILE RECEIVED");
+  return res.status(400).json({
+    success: false,
+    error: "No file received",
+  });
+}
+
+const imagePath = req.file.filename;
 
       // Update driver
       const result = await pool.query(
