@@ -2,6 +2,18 @@ const express = require("express");
 const cors = require("cors");
 const pool = require("./db");
 const app = express();
+const multer = require("multer");
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/");
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + "-" + file.originalname);
+  },
+});
+
+const upload = multer({ storage });
 app.get("/hello", (req, res) => {
   res.send("HELLO ROUTEX");
 });
@@ -11,6 +23,7 @@ app.get("/hello", (req, res) => {
 
 app.use(cors());
 app.use(express.json());
+app.use("/uploads", express.static("uploads"));
 
 app.get("/", (req, res) => {
   res.json({
@@ -318,7 +331,37 @@ app.post("/trip-bookings", async (req, res) => {
 
   }
 });
+app.post(
+  "/driver/upload-photo",
+  upload.single("photo"),
+  async (req, res) => {
+    try {
+      const { driverId } = req.body;
 
+      const imagePath = req.file.filename;
+
+      await pool.query(
+        `
+        UPDATE drivers
+        SET profile_image = $1
+        WHERE id = $2
+        `,
+        [imagePath, driverId]
+      );
+
+      res.json({
+        success: true,
+        image: imagePath,
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to upload image",
+      });
+    }
+  }
+);
 app.post("/bookings", async (req, res) => {
   try {
     console.log("BOOKINGS ROUTE HIT");
