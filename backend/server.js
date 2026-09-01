@@ -1,9 +1,12 @@
 const express = require("express");
 const cors = require("cors");
 const pool = require("./db");
-const app = express();
 const multer = require("multer");
 const fs = require("fs");
+
+const app = express();
+
+
 
 if (!fs.existsSync("uploads")) {
   fs.mkdirSync("uploads", { recursive: true });
@@ -19,13 +22,6 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({ storage });
-
-app.get("/hello", (req, res) => {
-  res.send("HELLO ROUTEX");
-});
-app.get("/hello", (req, res) => {
-  res.send("HELLO ROUTEX");
-});
 
 app.use(cors());
 app.use(express.json());
@@ -2090,60 +2086,69 @@ app.post("/passenger-register", async (req, res) => {
 
   }
 });
-app.post("/driver-application", async (req, res) => {
-  try {
-
-    const {
-      full_name,
-      phone,
-      vehicle_type,
-      vehicle_color,
-      license_plate,
-      referral_code
-    } = req.body;
-
-    const result = await pool.query(
-      `
-      INSERT INTO driver_applications
-      (
+app.post(
+  "/driver-application",
+  upload.fields([
+    { name: "vehicle_photo", maxCount: 1 },
+    { name: "profile_photo", maxCount: 1 },
+  ]),
+  async (req, res) => {
+    try {
+      const {
         full_name,
         phone,
         vehicle_type,
         vehicle_color,
         license_plate,
-        referral_code
-      )
-      VALUES
-      (
-        $1,
-        $2,
-        $3,
-        $4,
-        $5,
-        $6
-      )
-      RETURNING *
-      `,
-      [
-        full_name,
-        phone,
-        vehicle_type,
-        vehicle_color,
-        license_plate,
-        referral_code
-      ]
-    );
+        referral_code,
+      } = req.body;
 
-    res.json(result.rows[0]);
+      const vehicleImage =
+        req.files?.vehicle_photo?.[0]?.filename || null;
 
-  } catch (error) {
+      const profileImage =
+        req.files?.profile_photo?.[0]?.filename || null;
 
-    res.status(500).json({
-      error: error.message
-    });
+      const result = await pool.query(
+        `
+        INSERT INTO driver_applications
+        (
+          full_name,
+          phone,
+          vehicle_type,
+          vehicle_color,
+          license_plate,
+          referral_code,
+          vehicle_image,
+          profile_image
+        )
+        VALUES
+        (
+          $1,$2,$3,$4,$5,$6,$7,$8
+        )
+        RETURNING *
+        `,
+        [
+          full_name,
+          phone,
+          vehicle_type,
+          vehicle_color,
+          license_plate,
+          referral_code,
+          vehicleImage,
+          profileImage,
+        ]
+      );
 
+      res.json(result.rows[0]);
+    } catch (error) {
+      res.status(500).json({
+        error: error.message,
+      });
+    }
   }
-});
+);
+
 app.get("/admin/stats", async (req, res) => {
   try {
 
