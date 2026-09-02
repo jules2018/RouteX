@@ -170,24 +170,29 @@ const uploadPhoto = async () => {
   <div className="flex items-center gap-4">
 
     {/* Profile Photo */}
-    <div className="h-20 w-20 shrink-0 overflow-hidden rounded-full border border-slate-200 bg-slate-100">
+ <div className="h-20 w-20 shrink-0 overflow-hidden rounded-full border border-slate-200 bg-slate-100">
 
-      {passenger?.profile_image ? (
-        <img
-          src={passenger.profile_image}
-          alt={passenger?.full_name || "Passenger"}
-          className="h-full w-full object-cover"
-          onError={(e) => {
-            e.currentTarget.style.display = "none";
-          }}
-        />
-      ) : (
-        <div className="flex h-full w-full items-center justify-center text-xl font-bold text-slate-400">
-          {passenger?.full_name?.charAt(0)?.toUpperCase() || "P"}
-        </div>
-      )}
+  <p className="text-[8px] break-all text-red-500">
+    {passenger?.profile_image}
+  </p>
 
+  {passenger?.profile_image ? (
+    <img
+      src={passenger.profile_image}
+      alt={passenger?.full_name || "Passenger"}
+      className="h-full w-full object-cover"
+      onError={(e) => {
+        console.log("IMAGE FAILED:", passenger.profile_image);
+        e.currentTarget.style.display = "none";
+      }}
+    />
+  ) : (
+    <div className="flex h-full w-full items-center justify-center text-xl font-bold text-slate-400">
+      {passenger?.full_name?.charAt(0)?.toUpperCase() || "P"}
     </div>
+  )}
+
+</div>
 
     {/* Passenger Information */}
     <div className="min-w-0">
