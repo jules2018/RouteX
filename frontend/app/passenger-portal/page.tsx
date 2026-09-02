@@ -221,95 +221,81 @@ const uploadPhoto = async () => {
 {/* =================================
     PROFILE PHOTO
 ================================= */}
-<section className="mt-6">
-  <div className="rounded-[20px] border border-slate-200 bg-white p-4">
 
-    <div className="flex items-center gap-4">
+<div className="relative h-20 w-20 shrink-0">
 
-      {/* Current / Preview Photo */}
-      <div className="h-16 w-16 shrink-0 overflow-hidden rounded-full border border-slate-200 bg-slate-100">
+  {/* Current / Preview Photo */}
+  <div className="h-20 w-20 overflow-hidden rounded-full border border-slate-200 bg-slate-100">
 
-        {photo ? (
-          <img
-            src={URL.createObjectURL(photo)}
-            alt="Selected profile photo"
-            className="h-full w-full object-cover"
-          />
-        ) : passenger?.profile_image ? (
-          <img
-            src={passenger.profile_image}
-            alt={passenger?.full_name || "Passenger"}
-            className="h-full w-full object-cover"
-            onError={(e) => {
-              e.currentTarget.style.display = "none";
-            }}
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center text-lg font-bold text-slate-400">
-            {passenger?.full_name?.charAt(0)?.toUpperCase() || "P"}
-          </div>
-        )}
-
+    {photo ? (
+      <img
+        src={URL.createObjectURL(photo)}
+        alt="Selected profile photo"
+        className="h-full w-full object-cover"
+      />
+    ) : passenger?.profile_image ? (
+      <img
+        src={passenger.profile_image}
+        alt={passenger?.full_name || "Passenger"}
+        className="h-full w-full object-cover"
+        onError={(e) => {
+          e.currentTarget.style.display = "none";
+        }}
+      />
+    ) : (
+      <div className="flex h-full w-full items-center justify-center text-xl font-bold text-slate-400">
+        {passenger?.full_name?.charAt(0)?.toUpperCase() || "P"}
       </div>
-
-      {/* Photo Information */}
-      <div className="min-w-0 flex-1">
-
-        <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-[#888888]">
-          Profile Photo
-        </p>
-
-        <p className="mt-1 truncate text-[13px] font-semibold text-[#222222]">
-          {photo?.name || "Add a profile photo"}
-        </p>
-
-        <label className="mt-2 inline-block cursor-pointer text-[13px] font-bold text-teal-600 hover:text-teal-700">
-          {photo ? "Choose different photo" : "Choose photo"}
-
-          <input
-            type="file"
-            accept="image/jpeg,image/png,image/jpg,image/webp"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-
-              if (!file) return;
-
-              // Maximum 5MB
-              if (file.size > 5 * 1024 * 1024) {
-                alert("Please choose an image smaller than 5MB.");
-                e.target.value = "";
-                return;
-              }
-
-              setPhoto(file);
-            }}
-            className="hidden"
-          />
-        </label>
-
-      </div>
-
-    </div>
-
-    {/* Upload Action */}
-    {photo && (
-      <button
-        type="button"
-        onClick={uploadPhoto}
-        className="mt-4 w-full rounded-[12px] bg-teal-600 px-4 py-3 text-[13px] font-bold text-white transition hover:bg-teal-700"
-      >
-        Upload New Photo
-      </button>
-    )}
-
-    {!photo && (
-      <p className="mt-3 text-[11px] font-medium text-slate-400">
-        JPG, PNG or WebP · Maximum 5MB
-      </p>
     )}
 
   </div>
-</section>
+
+  {/* Camera / Change Photo Button */}
+  <label
+    className="
+      absolute
+      bottom-0
+      right-0
+      flex
+      h-7
+      w-7
+      cursor-pointer
+      items-center
+      justify-center
+      rounded-full
+      border-2
+      border-white
+      bg-teal-600
+      text-white
+      shadow-sm
+      hover:bg-teal-700
+    "
+    title="Change profile photo"
+  >
+    <span className="text-[12px]">✎</span>
+
+    <input
+      type="file"
+      accept="image/jpeg,image/png,image/jpg,image/webp"
+      onChange={(e) => {
+        const file = e.target.files?.[0];
+
+        if (!file) return;
+
+        // Maximum 5MB
+        if (file.size > 5 * 1024 * 1024) {
+          alert("Please choose an image smaller than 5MB.");
+          e.target.value = "";
+          return;
+        }
+
+        setPhoto(file);
+      }}
+      className="hidden"
+    />
+  </label>
+
+</div>
 
        
         {/* =================================
