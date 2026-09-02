@@ -308,24 +308,27 @@ await pool.query(
 app.post("/trip-bookings", async (req, res) => {
   try {
     const {
-      trip_id,
-      passenger_id
-    } = req.body;
+  trip_id,
+  passenger_id,
+  promo_code
+} = req.body;
 
     const result = await pool.query(
       `
-      INSERT INTO trip_bookings
-      (
-        trip_id,
-        passenger_id
-      )
-      VALUES ($1,$2)
+    INSERT INTO trip_bookings
+(
+  trip_id,
+  passenger_id,
+  promo_code
+)
+VALUES ($1,$2,$3)
       RETURNING *
       `,
       [
-        trip_id,
-        passenger_id
-      ]
+  trip_id,
+  passenger_id,
+  promo_code || null
+]
     );
 
     res.status(201).json(result.rows[0]);

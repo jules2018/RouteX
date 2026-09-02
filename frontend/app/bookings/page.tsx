@@ -14,6 +14,7 @@ export default function BookRidePage() {
   const [pickupResults, setPickupResults] = useState<any[]>([]);
   const [dropoffResults, setDropoffResults] = useState<any[]>([]);
   const [areas, setAreas] = useState<any[]>([]);
+  const [promoCode, setPromoCode] = useState("");
 
   const [fare, setFare] = useState("");
 
@@ -164,14 +165,15 @@ console.log(text);
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            passenger_id: passenger?.id,
-            pickup_area: form.pickup_area,
-            dropoff_area: form.dropoff_area,
-            pickup_address: form.pickup_address,
-            dropoff_address: form.dropoff_address,
-            travel_date: form.travel_date,
-            fare_amount: fare,
-          }),
+  passenger_id: passenger?.id,
+  pickup_area: form.pickup_area,
+  dropoff_area: form.dropoff_area,
+  pickup_address: form.pickup_address,
+  dropoff_address: form.dropoff_address,
+  travel_date: form.travel_date,
+  fare_amount: fare,
+  promo_code: promoCode,
+}),
         }
       );
 
@@ -194,6 +196,7 @@ console.log(text);
         "✅ Booking Confirmed",
         "Your RouteX trip has been booked successfully."
       );
+      setPromoCode("");
 
       setForm({
         pickup_area: "",
@@ -715,7 +718,27 @@ console.log(text);
 
             </div>
           )}
+{/* PROMO CODE */}
 
+<div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-5">
+
+  <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">
+    Promo Code
+  </label>
+
+  <input
+    type="text"
+    value={promoCode}
+    onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+    placeholder="Enter promo code"
+    className="w-full bg-slate-50 border-0 rounded-xl px-4 py-3 text-slate-900 outline-none focus:ring-2 focus:ring-teal-500"
+  />
+
+  <p className="text-xs text-slate-500 mt-2">
+    Have a RouteX promo code? Enter it here.
+  </p>
+
+</div>
 
           {/* =========================
               CONFIRM BUTTON
