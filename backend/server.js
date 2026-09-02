@@ -587,6 +587,7 @@ app.get("/admin/passengers", async (req, res) => {
     res.status(500).json({ error: "Failed to load passengers" });
   }
 });
+
 app.post("/passenger-register", async (req, res) => {
   try {
 
