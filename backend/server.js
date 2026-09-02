@@ -573,6 +573,10 @@ res.status(201).json({
   }
 });
 
+app.get("/test-route", (req, res) => {
+  res.json({ message: "NEW CODE IS RUNNING" });
+});
+
 app.get("/admin/passengers", async (req, res) => {
   try {
     const result = await pool.query(`
