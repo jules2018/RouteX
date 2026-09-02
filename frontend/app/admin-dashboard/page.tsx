@@ -416,16 +416,31 @@ export default function AdminDashboardPage() {
           </p>
         </div>
 
-        <a
-          href={`https://wa.me/27${passenger.phone.slice(1)}?text=${encodeURIComponent(
-            `Hi ${passenger.full_name}, this is RouteX. How can we assist you?`
-          )}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="bg-green-600 text-white px-4 py-2 rounded-lg font-semibold"
-        >
-          WhatsApp
-        </a>
+       
+<a
+  href={`https://wa.me/27${passenger.phone.replace(/^0/, "")}?text=${encodeURIComponent(
+    `Hi ${passenger.full_name},
+
+As one of our first members, you've received R20 OFF your first ride.
+
+Use promo code:
+
+WELCOME20
+
+Simply enter the code when booking your trip.
+
+Book now:
+https://routex-smgu.onrender.com
+
+RouteX • Getting Upington Moving`
+  )}`}
+  target="_blank"
+  rel="noopener noreferrer"
+  className="bg-green-600 text-white px-4 py-2 rounded-lg font-semibold"
+>
+  WhatsApp
+</a>
+
 
       </div>
 
