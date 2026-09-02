@@ -200,27 +200,27 @@ const uploadPhoto = async () => {
       </div>
 
       {/* Change Photo Button */}
-      <label
-        className="
-          absolute
-          bottom-1
-          right-1
-          flex
-          h-7
-          w-7
-          cursor-pointer
-          items-center
-          justify-center
-          rounded-full
-          border-2
-          border-white
-          bg-teal-600
-          text-white
-          shadow-sm
-          hover:bg-teal-700
-        "
-        title="Change profile photo"
-      >
+     <label
+  className="
+    absolute
+    -bottom-1
+    -right-1
+    flex
+    h-7
+    w-7
+    cursor-pointer
+    items-center
+    justify-center
+    rounded-full
+    border-2
+    border-white
+    bg-teal-600
+    text-white
+    shadow-sm
+    hover:bg-teal-700
+  "
+  title="Change profile photo"
+>
         <span className="text-[12px]">✎</span>
 
         <input
