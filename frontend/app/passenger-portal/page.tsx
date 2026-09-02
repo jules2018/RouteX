@@ -90,8 +90,8 @@ const uploadPhoto = async () => {
   formData.append("passengerId", String(passenger.id));
 
   try {
-    const response = await fetch(
-      "https://routex-smgu.onrender.com/passenger/upload-photo",
+   const response = await fetch(
+  "https://routex-1-z1hf.onrender.com/passenger/upload-photo",
       {
         method: "POST",
         body: formData,
