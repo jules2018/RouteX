@@ -572,6 +572,21 @@ res.status(201).json({
 
   }
 });
+
+app.get("/admin/passengers", async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT id, full_name, phone
+      FROM passengers
+      ORDER BY full_name
+    `);
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error("PASSENGERS ERROR:", error);
+    res.status(500).json({ error: "Failed to load passengers" });
+  }
+});
 app.post("/passenger-register", async (req, res) => {
   try {
 
