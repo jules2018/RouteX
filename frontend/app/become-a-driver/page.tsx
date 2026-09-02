@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -12,20 +13,55 @@ export default function BecomeADriverPage() {
     referral_code: "",
   });
 
-  const handleSubmit = async () => {
+  const [vehiclePhoto, setVehiclePhoto] = useState<File | null>(null);
+  const [profilePhoto, setProfilePhoto] = useState<File | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+ const handleSubmit = async () => {
+  if (
+    !form.full_name ||
+    !form.phone ||
+    !form.vehicle_type ||
+    !form.vehicle_color ||
+    !form.license_plate
+  ) {
+    alert("Please complete all required fields.");
+    return;
+  }
+
+  if (!vehiclePhoto) {
+    alert("Please upload a photo of your vehicle.");
+    return;
+  }
+
+  try {
+    setSubmitting(true);
+
+    const formData = new FormData();
+
+    formData.append("full_name", form.full_name);
+    formData.append("phone", form.phone);
+    formData.append("vehicle_type", form.vehicle_type);
+    formData.append("vehicle_color", form.vehicle_color);
+    formData.append("license_plate", form.license_plate);
+    formData.append("referral_code", form.referral_code);
+
+    formData.append("vehicle_photo", vehiclePhoto);
+
+    if (profilePhoto) {
+      formData.append("profile_photo", profilePhoto);
+    }
+
     const response = await fetch(
       "https://routex-smgu.onrender.com/driver-application",
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(form),
+        body: formData,
       }
     );
 
     if (!response.ok) {
-      alert("Failed to submit application");
+      alert("Failed to submit application.");
       return;
     }
 
@@ -41,17 +77,26 @@ export default function BecomeADriverPage() {
       license_plate: "",
       referral_code: "",
     });
-  };
+
+    setVehiclePhoto(null);
+    setProfilePhoto(null);
+  } catch (error) {
+    console.error("Driver application error:", error);
+    alert("Something went wrong. Please try again.");
+  } finally {
+    setSubmitting(false);
+  }
+};
 
   return (
     <main className="min-h-screen bg-slate-100 p-6">
-      <div className="max-w-xl mx-auto bg-white p-6 rounded-2xl shadow-sm">
+      <div className="mx-auto max-w-xl rounded-2xl bg-white p-6 shadow-sm">
 
         <h1 className="text-2xl font-bold text-slate-800">
           Become a RouteX Driver
         </h1>
 
-        <p className="text-slate-600 mt-2 mb-6">
+        <p className="mt-2 mb-6 text-slate-600">
           Complete the form below and our team will review your application.
         </p>
 
@@ -64,10 +109,11 @@ export default function BecomeADriverPage() {
               full_name: e.target.value,
             })
           }
-          className="w-full border border-slate-300 rounded-lg p-3 mb-3 text-slate-800 placeholder-slate-500"
+          className="mb-3 w-full rounded-lg border border-slate-300 p-3 text-slate-800 placeholder-slate-500"
         />
 
         <input
+          type="tel"
           placeholder="Phone Number"
           value={form.phone}
           onChange={(e) =>
@@ -76,7 +122,7 @@ export default function BecomeADriverPage() {
               phone: e.target.value,
             })
           }
-          className="w-full border border-slate-300 rounded-lg p-3 mb-3 text-slate-800 placeholder-slate-500"
+          className="mb-3 w-full rounded-lg border border-slate-300 p-3 text-slate-800 placeholder-slate-500"
         />
 
         <input
@@ -88,7 +134,7 @@ export default function BecomeADriverPage() {
               vehicle_type: e.target.value,
             })
           }
-          className="w-full border border-slate-300 rounded-lg p-3 mb-3 text-slate-800 placeholder-slate-500"
+          className="mb-3 w-full rounded-lg border border-slate-300 p-3 text-slate-800 placeholder-slate-500"
         />
 
         <input
@@ -100,7 +146,7 @@ export default function BecomeADriverPage() {
               vehicle_color: e.target.value,
             })
           }
-          className="w-full border border-slate-300 rounded-lg p-3 mb-3 text-slate-800 placeholder-slate-500"
+          className="mb-3 w-full rounded-lg border border-slate-300 p-3 text-slate-800 placeholder-slate-500"
         />
 
         <input
@@ -112,8 +158,29 @@ export default function BecomeADriverPage() {
               license_plate: e.target.value,
             })
           }
-          className="w-full border border-slate-300 rounded-lg p-3 mb-3 text-slate-800 placeholder-slate-500"
+          className="mb-4 w-full rounded-lg border border-slate-300 p-3 text-slate-800 placeholder-slate-500"
         />
+
+        <div className="mb-4">
+          <label className="mb-2 block text-sm font-semibold text-slate-700">
+            Vehicle Photo
+          </label>
+
+          <input
+            type="file"
+            accept="image/*"
+           onChange={(e) =>
+  setVehiclePhoto(e.target.files?.[0] || null)
+}
+            className="w-full rounded-lg border border-slate-300 p-3 text-sm text-slate-700"
+          />
+
+         {vehiclePhoto && (
+  <p className="mt-2 text-sm text-slate-500">
+    Selected: {vehiclePhoto.name}
+  </p>
+)}
+        </div>
 
         <input
           placeholder="Referral Code (Optional)"
@@ -124,14 +191,31 @@ export default function BecomeADriverPage() {
               referral_code: e.target.value,
             })
           }
-          className="w-full border border-slate-300 rounded-lg p-3 mb-4 text-slate-800 placeholder-slate-500"
+          className="mb-4 w-full rounded-lg border border-slate-300 p-3 text-slate-800 placeholder-slate-500"
         />
+<div>
+  <label className="block text-sm font-medium mb-1">
+    Profile Photo (Optional)
+  </label>
+  <input
+    type="file"
+    accept="image/*"
+    onChange={(e) => setProfilePhoto(e.target.files?.[0] || null)}
+    className="w-full border rounded-lg p-2"
+  />
+  {profilePhoto && (
+  <p className="mt-2 text-sm text-slate-500">
+    Selected: {profilePhoto.name}
+  </p>
+)}
 
+</div>
         <button
           onClick={handleSubmit}
-          className="w-full bg-teal-600 text-white py-3 rounded-lg font-semibold"
+          disabled={submitting}
+          className="w-full rounded-lg bg-teal-600 py-3 font-semibold text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          Submit Application
+          {submitting ? "Submitting..." : "Submit Application"}
         </button>
 
       </div>

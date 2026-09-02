@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -14,7 +15,7 @@ export default function PassengerRegisterPage() {
 
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: any) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (form.password !== form.confirmPassword) {
@@ -53,16 +54,16 @@ export default function PassengerRegisterPage() {
 
       window.location.href = "/passenger-login";
     } catch (error) {
-      console.error(error);
-      alert("Registration failed");
+      console.error("Registration error:", error);
+      alert("Registration failed. Please try again.");
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
     <main className="min-h-screen bg-white text-slate-900">
-      <div className="w-full max-w-md mx-auto px-6 py-8">
+      <div className="mx-auto w-full max-w-md px-6 py-8">
 
         {/* Header */}
         <div className="mb-10">
@@ -73,11 +74,11 @@ export default function PassengerRegisterPage() {
             Route<span className="text-teal-600">X</span>
           </a>
 
-          <h1 className="text-3xl font-bold tracking-tight mt-10">
+          <h1 className="mt-10 text-3xl font-bold tracking-tight">
             Create your account
           </h1>
 
-          <p className="text-slate-500 mt-2">
+          <p className="mt-2 text-slate-500">
             Sign up to book rides with RouteX.
           </p>
         </div>
@@ -87,7 +88,7 @@ export default function PassengerRegisterPage() {
 
           {/* Full Name */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">
               Full name
             </label>
 
@@ -102,8 +103,8 @@ export default function PassengerRegisterPage() {
                   full_name: e.target.value,
                 })
               }
-              className="w-full h-14 px-4 rounded-xl border border-slate-300
-              bg-white text-slate-900 placeholder:text-slate-400
+              className="h-14 w-full rounded-xl border border-slate-300
+              bg-white px-4 text-slate-900 placeholder:text-slate-400
               outline-none transition
               focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
             />
@@ -111,7 +112,7 @@ export default function PassengerRegisterPage() {
 
           {/* Phone */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">
               Phone number
             </label>
 
@@ -126,8 +127,8 @@ export default function PassengerRegisterPage() {
                   phone: e.target.value,
                 })
               }
-              className="w-full h-14 px-4 rounded-xl border border-slate-300
-              bg-white text-slate-900 placeholder:text-slate-400
+              className="h-14 w-full rounded-xl border border-slate-300
+              bg-white px-4 text-slate-900 placeholder:text-slate-400
               outline-none transition
               focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
             />
@@ -135,7 +136,7 @@ export default function PassengerRegisterPage() {
 
           {/* Email */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">
               Email address
             </label>
 
@@ -150,8 +151,8 @@ export default function PassengerRegisterPage() {
                   email: e.target.value,
                 })
               }
-              className="w-full h-14 px-4 rounded-xl border border-slate-300
-              bg-white text-slate-900 placeholder:text-slate-400
+              className="h-14 w-full rounded-xl border border-slate-300
+              bg-white px-4 text-slate-900 placeholder:text-slate-400
               outline-none transition
               focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
             />
@@ -159,7 +160,7 @@ export default function PassengerRegisterPage() {
 
           {/* Password */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">
               Password
             </label>
 
@@ -174,8 +175,8 @@ export default function PassengerRegisterPage() {
                   password: e.target.value,
                 })
               }
-              className="w-full h-14 px-4 rounded-xl border border-slate-300
-              bg-white text-slate-900 placeholder:text-slate-400
+              className="h-14 w-full rounded-xl border border-slate-300
+              bg-white px-4 text-slate-900 placeholder:text-slate-400
               outline-none transition
               focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
             />
@@ -183,7 +184,7 @@ export default function PassengerRegisterPage() {
 
           {/* Confirm Password */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">
               Confirm password
             </label>
 
@@ -198,8 +199,8 @@ export default function PassengerRegisterPage() {
                   confirmPassword: e.target.value,
                 })
               }
-              className="w-full h-14 px-4 rounded-xl border border-slate-300
-              bg-white text-slate-900 placeholder:text-slate-400
+              className="h-14 w-full rounded-xl border border-slate-300
+              bg-white px-4 text-slate-900 placeholder:text-slate-400
               outline-none transition
               focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
             />
@@ -207,7 +208,7 @@ export default function PassengerRegisterPage() {
 
           {/* Referral */}
           <div className="pt-2">
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">
               Referral code
               <span className="font-normal text-slate-400"> (optional)</span>
             </label>
@@ -222,8 +223,8 @@ export default function PassengerRegisterPage() {
                   referral_code: e.target.value,
                 })
               }
-              className="w-full h-14 px-4 rounded-xl border border-slate-300
-              bg-white text-slate-900 placeholder:text-slate-400
+              className="h-14 w-full rounded-xl border border-slate-300
+              bg-white px-4 text-slate-900 placeholder:text-slate-400
               outline-none transition
               focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
             />
@@ -233,20 +234,20 @@ export default function PassengerRegisterPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full h-14 mt-4 rounded-xl
-            bg-teal-600 hover:bg-teal-700
-            disabled:bg-teal-400
-            text-white font-semibold
+            className="mt-4 h-14 w-full rounded-xl
+            bg-teal-600 font-semibold text-white
             transition duration-200
+            hover:bg-teal-700
+            disabled:cursor-not-allowed
+            disabled:bg-teal-400
             active:scale-[0.99]"
           >
             {loading ? "Creating account..." : "Create account"}
           </button>
-
         </form>
 
         {/* Login */}
-        <div className="text-center mt-8">
+        <div className="mt-8 text-center">
           <span className="text-sm text-slate-500">
             Already have an account?
           </span>
@@ -260,7 +261,7 @@ export default function PassengerRegisterPage() {
         </div>
 
         {/* Footer */}
-        <p className="text-center text-xs text-slate-400 mt-10">
+        <p className="mt-10 text-center text-xs text-slate-400">
           By creating an account, you agree to use RouteX responsibly.
         </p>
 
