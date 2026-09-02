@@ -8,6 +8,7 @@ export default function AdminDashboardPage() {
   const router = useRouter();
 
   const [applications, setApplications] = useState<any[]>([]);
+  const [passengers, setPassengers] = useState<any[]>([]);
   const [stats, setStats] = useState({
     passengers: 0,
     drivers: 0,
@@ -36,6 +37,14 @@ export default function AdminDashboardPage() {
         console.error("Error loading applications:", error);
       });
   };
+  fetch("https://routex-1-z1hf.onrender.com/admin/passengers")
+  .then((res) => res.json())
+  .then((data) => {
+    setPassengers(data);
+  })
+  .catch((error) => {
+    console.error("Error loading passengers:", error);
+  });
 
   useEffect(() => {
     loadDashboardData();
@@ -377,7 +386,54 @@ export default function AdminDashboardPage() {
           )}
 
         </section>
+{/* Passengers */}
+<section className="mt-10">
 
+  <h2 className="text-xl font-bold tracking-tight">
+    Passengers
+  </h2>
+
+  <p className="text-sm text-slate-500 mt-1 mb-4">
+    Contact registered RouteX passengers.
+  </p>
+
+  <div className="space-y-3">
+
+    {passengers.map((passenger) => (
+
+      <div
+        key={passenger.id}
+        className="bg-white border border-slate-200 rounded-xl p-4 flex items-center justify-between"
+      >
+
+        <div>
+          <p className="font-semibold">
+            {passenger.full_name}
+          </p>
+
+          <p className="text-sm text-slate-500">
+            {passenger.phone}
+          </p>
+        </div>
+
+        <a
+          href={`https://wa.me/27${passenger.phone.slice(1)}?text=${encodeURIComponent(
+            `Hi ${passenger.full_name}, this is RouteX. How can we assist you?`
+          )}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="bg-green-600 text-white px-4 py-2 rounded-lg font-semibold"
+        >
+          WhatsApp
+        </a>
+
+      </div>
+
+    ))}
+
+  </div>
+
+</section>
       </div>
 
     </main>
