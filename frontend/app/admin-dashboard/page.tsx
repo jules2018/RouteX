@@ -430,7 +430,7 @@ WELCOME20
 Simply enter the code when booking your trip.
 
 Book now:
-https://routex-smgu.onrender.com
+https://routex-frontend.onrender.com
 
 RouteX • Getting Upington Moving`
   )}`}
