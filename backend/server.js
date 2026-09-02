@@ -2,11 +2,16 @@ const express = require("express");
 const cors = require("cors");
 const pool = require("./db");
 const multer = require("multer");
+const { createClient } = require("@supabase/supabase-js");
 const fs = require("fs");
+require("dotenv").config();
 
 const app = express();
 
-
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
 if (!fs.existsSync("uploads")) {
   fs.mkdirSync("uploads", { recursive: true });
@@ -417,7 +422,24 @@ app.post(
         });
       }
 
-      const imagePath = req.file.filename;
+      const fileName =
+        Date.now() + "-" + req.file.originalname;
+
+      const { error: uploadError } = await supabase.storage
+        .from("profile-photos")
+        .upload(fileName, req.file.buffer, {
+          contentType: req.file.mimetype,
+        });
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      const { data } = supabase.storage
+        .from("profile-photos")
+        .getPublicUrl(fileName);
+
+      const imageUrl = data.publicUrl;
 
       const result = await pool.query(
         `
@@ -426,7 +448,7 @@ app.post(
         WHERE id = $2
         RETURNING id, profile_image
         `,
-        [imagePath, passengerId]
+        [imageUrl, passengerId]
       );
 
       if (result.rows.length === 0) {
@@ -438,7 +460,7 @@ app.post(
 
       res.json({
         success: true,
-        image: imagePath,
+        image: imageUrl,
       });
 
     } catch (error) {

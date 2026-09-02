@@ -170,27 +170,21 @@ const uploadPhoto = async () => {
 
   <div className="flex items-center gap-4">
 
-    {/* Profile Photo */}
-    <div className="w-20 h-20 rounded-full overflow-hidden bg-slate-100 border border-slate-200 shrink-0">
-
-      {passenger?.profile_image ? (
-
-        <img
-          src={`https://routex-smgu.onrender.com/uploads/${passenger.profile_image}`}
-          alt={passenger?.full_name || "Passenger"}
-          className="w-full h-full object-cover"
-        />
-
-      ) : (
-
-        <div className="w-full h-full flex items-center justify-center text-xl font-bold text-slate-400">
-          {passenger?.full_name?.charAt(0)?.toUpperCase() || "P"}
-        </div>
-
-      )}
-
+   ```jsx
+{/* Profile Photo */}
+<div className="w-20 h-20 rounded-full overflow-hidden bg-slate-100 border border-slate-200 shrink-0">
+  {passenger?.profile_image ? (
+    <img
+      src={passenger.profile_image}
+      alt={passenger?.full_name || "Passenger"}
+      className="w-full h-full object-cover"
+    />
+  ) : (
+    <div className="w-full h-full flex items-center justify-center text-xl font-bold text-slate-400">
+      {passenger?.full_name?.charAt(0)?.toUpperCase() || "P"}
     </div>
-
+  )}
+</div>
 
     {/* Passenger Information */}
     <div>
