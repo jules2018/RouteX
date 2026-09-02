@@ -166,88 +166,49 @@ const uploadPhoto = async () => {
 {/* =================================
     WELCOME
 ================================= */}
-{/* =================================
-    PROFILE PHOTO
-================================= */}
-<section className="mt-6">
-  <div className="rounded-[20px] border border-slate-200 bg-white p-4">
+<section className="pt-8">
 
-    <div className="flex items-center gap-4">
+  <div className="flex items-center gap-4">
 
-      {/* Current / Preview Photo */}
-      <div className="h-16 w-16 shrink-0 overflow-hidden rounded-full bg-slate-100 border border-slate-200">
+{/* Profile Photo */}
+<div className="w-20 h-20 rounded-full overflow-hidden bg-slate-100 border border-slate-200 shrink-0">
+  {passenger?.profile_image ? (
+    <img
+      src={passenger.profile_image}
+      alt={passenger?.full_name || "Passenger"}
+      className="w-full h-full object-cover"
+    />
+  ) : (
+    <div className="w-full h-full flex items-center justify-center text-xl font-bold text-slate-400">
+      {passenger?.full_name?.charAt(0)?.toUpperCase() || "P"}
+    </div>
+  )}
+</div>
 
-        {photo ? (
-          <img
-            src={URL.createObjectURL(photo)}
-            alt="Selected profile photo"
-            className="h-full w-full object-cover"
-          />
-        ) : passenger?.profile_image ? (
-          <img
-            src={passenger.profile_image}
-            alt={passenger?.full_name || "Passenger"}
-            className="h-full w-full object-cover"
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center text-lg font-bold text-slate-400">
-            {passenger?.full_name?.charAt(0)?.toUpperCase() || "P"}
-          </div>
-        )}
+    {/* Passenger Information */}
+    <div>
 
-      </div>
+      <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-[#888888]">
+        Passenger Portal
+      </p>
 
-      {/* Photo Information */}
-      <div className="min-w-0 flex-1">
+      <h2 className="mt-1 text-[24px] font-extrabold leading-tight">
+        Welcome back
+        {passenger?.full_name
+          ? `, ${passenger.full_name.split(" ")[0]}`
+          : ""}
+      </h2>
 
-        <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-[#888888]">
-          Profile Photo
-        </p>
-
-        <p className="mt-1 truncate text-[13px] font-semibold text-[#222222]">
-          {photo ? photo.name : "Add a profile photo"}
-        </p>
-
-        <label className="mt-2 inline-block cursor-pointer text-[13px] font-bold text-teal-600 hover:text-teal-700">
-          {photo ? "Choose different photo" : "Choose photo"}
-
-          <input
-            type="file"
-            accept="image/jpeg,image/png,image/jpg"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-
-              if (file) {
-                setPhoto(file);
-              }
-            }}
-            className="hidden"
-          />
-        </label>
-
-      </div>
+      <p className="mt-1 text-[13px] font-medium text-[#777777]">
+        Manage your rides and bookings.
+      </p>
 
     </div>
 
-    {/* Upload Action */}
-    {photo && (
-      <button
-        type="button"
-        onClick={uploadPhoto}
-        className="mt-4 w-full rounded-[12px] bg-teal-600 px-4 py-3 text-[13px] font-bold text-white transition hover:bg-teal-700"
-      >
-        Upload New Photo
-      </button>
-    )}
-
-    {!photo && (
-      <p className="mt-3 text-[11px] font-medium text-slate-400">
-        JPG or PNG · Choose a clear photo of yourself
-      </p>
-    )}
-
   </div>
+
 </section>
+
 
 {/* =================================
     PROFILE PHOTO
