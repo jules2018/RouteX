@@ -214,16 +214,46 @@ const uploadPhoto = async () => {
     PROFILE PHOTO
 ================================= */}
 <section className="mt-6">
-  <div className="rounded-[20px] border border-slate-200 bg-white p-5">
+  <div className="rounded-[20px] border border-slate-200 bg-white p-4">
 
-    <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-[#888888]">
-      Profile Photo
-    </p>
+    <div className="flex items-center gap-4">
 
-    <div className="mt-4">
-      <div className="flex items-center gap-3">
-        <label className="cursor-pointer text-sm font-semibold text-teal-600 hover:text-teal-700">
-          Change Photo
+      {/* Current / Preview Photo */}
+      <div className="h-16 w-16 shrink-0 overflow-hidden rounded-full bg-slate-100 border border-slate-200">
+
+        {photo ? (
+          <img
+            src={URL.createObjectURL(photo)}
+            alt="Selected profile photo"
+            className="h-full w-full object-cover"
+          />
+        ) : passenger?.profile_image ? (
+          <img
+            src={passenger.profile_image}
+            alt={passenger?.full_name || "Passenger"}
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-lg font-bold text-slate-400">
+            {passenger?.full_name?.charAt(0)?.toUpperCase() || "P"}
+          </div>
+        )}
+
+      </div>
+
+      {/* Photo Information */}
+      <div className="min-w-0 flex-1">
+
+        <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-[#888888]">
+          Profile Photo
+        </p>
+
+        <p className="mt-1 truncate text-[13px] font-semibold text-[#222222]">
+          {photo ? photo.name : "Add a profile photo"}
+        </p>
+
+        <label className="mt-2 inline-block cursor-pointer text-[13px] font-bold text-teal-600 hover:text-teal-700">
+          {photo ? "Choose different photo" : "Choose photo"}
 
           <input
             type="file"
@@ -239,21 +269,26 @@ const uploadPhoto = async () => {
           />
         </label>
 
-        <span className="max-w-[200px] truncate text-xs text-slate-500">
-          {photo ? photo.name : "JPG or PNG"}
-        </span>
       </div>
 
-      {photo && (
-        <button
-          type="button"
-          onClick={uploadPhoto}
-          className="mt-4 rounded-lg bg-teal-600 px-4 py-2 font-semibold text-white transition hover:bg-teal-700"
-        >
-          Upload Photo
-        </button>
-      )}
     </div>
+
+    {/* Upload Action */}
+    {photo && (
+      <button
+        type="button"
+        onClick={uploadPhoto}
+        className="mt-4 w-full rounded-[12px] bg-teal-600 px-4 py-3 text-[13px] font-bold text-white transition hover:bg-teal-700"
+      >
+        Upload New Photo
+      </button>
+    )}
+
+    {!photo && (
+      <p className="mt-3 text-[11px] font-medium text-slate-400">
+        JPG or PNG · Choose a clear photo of yourself
+      </p>
+    )}
 
   </div>
 </section>
