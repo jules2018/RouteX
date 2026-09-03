@@ -227,7 +227,7 @@ export default function PassengerPortalPage() {
     );
 
     alert("Fetch completed");
-    
+
     if (!response.ok) {
   const errorText = await response.text();
 
@@ -243,6 +243,9 @@ export default function PassengerPortalPage() {
 
 
     const data = await response.json();
+
+    alert(JSON.stringify(data));
+
 
     console.log("UPLOAD RESPONSE:", data);
     console.log("IMAGE RETURNED:", data.image);
