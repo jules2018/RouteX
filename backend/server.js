@@ -418,24 +418,52 @@ app.post(
         });
       }
 
-      const fileName =
-        Date.now() + "-" + req.file.originalname;
+      console.log("PHOTO UPLOAD");
+      console.log("Passenger:", passengerId);
+      console.log("File:", req.file.originalname);
+      console.log("Type:", req.file.mimetype);
+      console.log("Size:", req.file.size);
 
-      const { error: uploadError } = await supabase.storage
-        .from("profile-photos")
-        .upload(fileName, req.file.buffer, {
-          contentType: req.file.mimetype,
-        });
+      const fileName =
+        `passenger-${passengerId}-${Date.now()}-${req.file.originalname}`;
+
+      console.log(
+        "Uploading to Supabase:",
+        fileName
+      );
+
+      const { error: uploadError } =
+        await supabase.storage
+          .from("profile-photos")
+          .upload(
+            fileName,
+            req.file.buffer,
+            {
+              contentType: req.file.mimetype,
+            }
+          );
 
       if (uploadError) {
+        console.error(
+          "SUPABASE UPLOAD ERROR:",
+          uploadError
+        );
+
         throw uploadError;
       }
 
-      const { data } = supabase.storage
-        .from("profile-photos")
-        .getPublicUrl(fileName);
+      const { data: publicUrlData } =
+        supabase.storage
+          .from("profile-photos")
+          .getPublicUrl(fileName);
 
-      const imageUrl = data.publicUrl;
+      const imageUrl =
+        publicUrlData.publicUrl;
+
+      console.log(
+        "SUPABASE IMAGE URL:",
+        imageUrl
+      );
 
       const result = await pool.query(
         `
@@ -444,7 +472,10 @@ app.post(
         WHERE id = $2
         RETURNING id, profile_image
         `,
-        [imageUrl, passengerId]
+        [
+          imageUrl,
+          passengerId,
+        ]
       );
 
       if (result.rows.length === 0) {
@@ -454,21 +485,33 @@ app.post(
         });
       }
 
-      res.json({
+      console.log(
+        "DATABASE IMAGE URL:",
+        result.rows[0].profile_image
+      );
+
+      return res.json({
         success: true,
-        image: imageUrl,
+        image: result.rows[0].profile_image,
       });
 
     } catch (error) {
-      console.error("PASSENGER PHOTO ERROR:", error);
+      console.error(
+        "PASSENGER PHOTO ERROR:",
+        error
+      );
 
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
-        error: error.message,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Photo upload failed",
       });
     }
   }
 );
+
 app.post("/bookings", async (req, res) => {
   try {
     console.log("BOOKINGS ROUTE HIT");
