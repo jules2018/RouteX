@@ -478,6 +478,8 @@ app.post(
         ]
       );
 
+      console.log("UPDATED PASSENGER:", result.rows[0]);
+      
       if (result.rows.length === 0) {
         return res.status(404).json({
           success: false,
