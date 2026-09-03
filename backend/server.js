@@ -418,30 +418,48 @@ app.post(
         });
       }
 
-      console.log("PHOTO UPLOAD");
+      console.log("=================================");
+      console.log("PHOTO UPLOAD START");
       console.log("Passenger:", passengerId);
       console.log("File:", req.file.originalname);
       console.log("Type:", req.file.mimetype);
       console.log("Size:", req.file.size);
+      console.log("=================================");
+
+      // Create a safe filename
+      const extension =
+        req.file.originalname
+          .split(".")
+          .pop()
+          ?.toLowerCase() || "jpg";
 
       const fileName =
-        `passenger-${passengerId}-${Date.now()}-${req.file.originalname}`;
+        `passenger-${passengerId}-${Date.now()}.${extension}`;
 
       console.log(
-        "Uploading to Supabase:",
+        "Uploading to Supabase bucket:",
+        "profile-photos"
+      );
+
+      console.log(
+        "Supabase file path:",
         fileName
       );
 
-      const { error: uploadError } =
-        await supabase.storage
-          .from("profile-photos")
-          .upload(
-            fileName,
-            req.file.buffer,
-            {
-              contentType: req.file.mimetype,
-            }
-          );
+      // Upload to Supabase Storage
+      const {
+        data: uploadData,
+        error: uploadError,
+      } = await supabase.storage
+        .from("profile-photos")
+        .upload(
+          fileName,
+          req.file.buffer,
+          {
+            contentType: req.file.mimetype,
+            upsert: true,
+          }
+        );
 
       if (uploadError) {
         console.error(
@@ -449,22 +467,40 @@ app.post(
           uploadError
         );
 
-        throw uploadError;
+        return res.status(500).json({
+          success: false,
+          error: uploadError.message,
+        });
       }
 
-      const { data: publicUrlData } =
-        supabase.storage
-          .from("profile-photos")
-          .getPublicUrl(fileName);
+      console.log(
+        "SUPABASE UPLOAD SUCCESS:",
+        uploadData
+      );
+
+      // Get public URL
+      const {
+        data: publicUrlData,
+      } = supabase.storage
+        .from("profile-photos")
+        .getPublicUrl(fileName);
 
       const imageUrl =
-        publicUrlData.publicUrl;
+        publicUrlData?.publicUrl;
+
+      if (!imageUrl) {
+        return res.status(500).json({
+          success: false,
+          error: "Could not generate image URL",
+        });
+      }
 
       console.log(
         "SUPABASE IMAGE URL:",
         imageUrl
       );
 
+      // Save URL to passenger database
       const result = await pool.query(
         `
         UPDATE passengers
@@ -478,8 +514,6 @@ app.post(
         ]
       );
 
-      console.log("UPDATED PASSENGER:", result.rows[0]);
-      
       if (result.rows.length === 0) {
         return res.status(404).json({
           success: false,
@@ -488,9 +522,16 @@ app.post(
       }
 
       console.log(
+        "DATABASE UPDATED:",
+        result.rows[0]
+      );
+
+      console.log(
         "DATABASE IMAGE URL:",
         result.rows[0].profile_image
       );
+
+      console.log("PHOTO UPLOAD COMPLETE");
 
       return res.json({
         success: true,
@@ -513,7 +554,6 @@ app.post(
     }
   }
 );
-
 app.post("/bookings", async (req, res) => {
   try {
     console.log("BOOKINGS ROUTE HIT");

@@ -306,8 +306,8 @@ export default function PassengerPortalPage() {
      PROFILE IMAGE URL
   ======================================================= */
 
- const profileImageUrl =
-  passenger?.profile_image;
+const profileImageUrl =
+  getProfileImageUrl(passenger?.profile_image);
   /* =======================================================
      PAGE
   ======================================================= */
@@ -377,27 +377,21 @@ export default function PassengerPortalPage() {
       >
 
         {/* SELECTED PHOTO */}
+{/* PROFILE PHOTO */}
 
-        {photo ? (
-          <img
-            src={URL.createObjectURL(photo)}
-            alt="Selected profile photo"
-            className="block h-full w-full object-cover"
-          />
-        ) : passenger?.profile_image ? (
-
-          /* SAVED PROFILE PHOTO */
-
-          <img
-            src={passenger?.profile_image}
-            alt={
-              passenger?.full_name ||
-              "Passenger"
-            }
-            className="block h-full w-full object-cover"
-          />
-
-        ) : null}
+{photo ? (
+  <img
+    src={photoPreviewUrl}
+    alt="Selected profile photo"
+    className="block h-full w-full object-cover"
+  />
+) : profileImageUrl ? (
+  <img
+    src={profileImageUrl}
+    alt={passenger?.full_name || "Passenger"}
+    className="block h-full w-full object-cover"
+  />
+) : null}
 
         {/* FALLBACK INITIAL */}
 
