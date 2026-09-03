@@ -441,28 +441,33 @@ export default function PassengerPortalPage() {
           CHANGE PHOTO BUTTON
       ================================================= */}
 
-      <label
-        className="
-          absolute
-          -bottom-1
-          -right-1
-          z-10
-          flex
-          h-7
-          w-7
-          cursor-pointer
-          items-center
-          justify-center
-          rounded-full
-          border-2
-          border-white
-          bg-teal-600
-          text-white
-          shadow-md
-          hover:bg-teal-700
-        "
-        title="Change profile photo"
-      >
+    <label
+  className="
+    absolute
+    -bottom-1
+    -right-1
+    z-10
+    flex
+    h-7
+    w-7
+    cursor-pointer
+    items-center
+    justify-center
+    rounded-full
+    border-2
+    border-white
+    bg-teal-600
+    text-white
+    shadow-md
+    hover:bg-teal-700
+  "
+  title="Change photo"
+  onClick={() => {
+    console.log("CHANGE PHOTO BUTTON CLICKED");
+    alert("PHOTO BUTTON WORKS");
+  }}
+>
+
         <span className="text-[12px]">
           ✎
         </span>
