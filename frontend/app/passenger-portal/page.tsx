@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import {
   Car,
@@ -383,26 +383,24 @@ export default function PassengerPortalPage() {
                     NEW PHOTO PREVIEW
                 ------------------------------------------- */}
 
-                {photoPreviewUrl ? (
-                  <img
-                    src={photoPreviewUrl}
-                    alt="Selected profile photo"
-                    className="
-                      h-full
-                      w-full
-                      object-cover
-                    "
-                    onLoad={() => {
-                      console.log(
-                        "LOCAL PHOTO PREVIEW LOADED"
-                      );
-                    }}
-                    onError={() => {
-                      console.error(
-                        "LOCAL PHOTO PREVIEW FAILED"
-                      );
-                    }}
-                  />
+               {photo ? (
+  <img
+    src={URL.createObjectURL(photo)}
+    alt="Selected profile photo"
+    className="
+      block
+      h-full
+      w-full
+      object-cover
+    "
+    onLoad={() => {
+      console.log("SELECTED PHOTO LOADED");
+    }}
+    onError={() => {
+      console.error("SELECTED PHOTO FAILED TO LOAD");
+    }}
+  />
+
 
                 /* -------------------------------------------
                    SAVED PROFILE PHOTO
@@ -563,6 +561,7 @@ export default function PassengerPortalPage() {
                   }}
                   className="hidden"
                 />
+
               </label>
 
             </div>
