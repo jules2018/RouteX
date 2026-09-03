@@ -211,6 +211,7 @@ export default function PassengerPortalPage() {
     console.log("PHOTO:", file);
     console.log("PASSENGER ID:", passenger.id);
 
+    alert(PHOTO_API_URL);
     const response = await fetch(
       `${PHOTO_API_URL}/passenger/upload-photo`,
       {
