@@ -244,6 +244,7 @@ const uploadPhoto = async () => {
   }
 
   setPhoto(file);
+alert(file.name);
 
 }}
 
