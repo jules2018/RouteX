@@ -441,7 +441,7 @@ export default function PassengerPortalPage() {
           CHANGE PHOTO BUTTON
       ================================================= */}
 
-    <label
+<label
   className="
     absolute
     -bottom-1
@@ -462,10 +462,6 @@ export default function PassengerPortalPage() {
     hover:bg-teal-700
   "
   title="Change photo"
-  onClick={() => {
-    console.log("CHANGE PHOTO BUTTON CLICKED");
-    alert("PHOTO BUTTON WORKS");
-  }}
 >
 
         <span className="text-[12px]">
@@ -498,7 +494,8 @@ export default function PassengerPortalPage() {
 
             e.target.value = "";
           }}
-          className="hidden"
+        className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+
         />
       </label>
 
