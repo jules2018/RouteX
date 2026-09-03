@@ -465,7 +465,7 @@ export default function PassengerPortalPage() {
             setPhoto(file);
 
             /* UPLOAD AUTOMATICALLY */
-
+            alert("About to call uploadPhoto");
             await uploadPhoto(file);
 
             /* ALLOW SAME PHOTO TO BE SELECTED AGAIN */
