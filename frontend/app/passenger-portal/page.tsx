@@ -20,7 +20,8 @@ const jakarta = Plus_Jakarta_Sans({
 ========================================================= */
 
 const API_BASE_URL = "https://routex-smgu.onrender.com";
-const PHOTO_API_URL = "https://routex-1-z1hf.onrender.com";
+const PHOTO_API_URL = "https://routex-smgu.onrender.com";
+
 
 /* =========================================================
    IMAGE URL HELPER
