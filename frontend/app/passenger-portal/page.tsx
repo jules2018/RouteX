@@ -296,11 +296,8 @@ export default function PassengerPortalPage() {
      PROFILE IMAGE URL
   ======================================================= */
 
-  const profileImageUrl =
-    getProfileImageUrl(
-      passenger?.profile_image
-    );
-
+ const profileImageUrl =
+  passenger?.profile_image;
   /* =======================================================
      PAGE
   ======================================================= */
@@ -377,36 +374,17 @@ export default function PassengerPortalPage() {
             alt="Selected profile photo"
             className="block h-full w-full object-cover"
           />
-        ) : profileImageUrl ? (
+        ) : passenger?.profile_image ? (
 
           /* SAVED PROFILE PHOTO */
 
           <img
-            src={profileImageUrl}
+            src={passenger?.profile_image}
             alt={
               passenger?.full_name ||
               "Passenger"
             }
             className="block h-full w-full object-cover"
-            onLoad={() => {
-              console.log(
-                "PROFILE IMAGE LOADED:",
-                profileImageUrl
-              );
-            }}
-            onError={(e) => {
-              console.error(
-                "PROFILE IMAGE FAILED:",
-                profileImageUrl
-              );
-
-              e.currentTarget.style.display =
-                "none";
-
-              e.currentTarget.nextElementSibling?.classList.remove(
-                "hidden"
-              );
-            }}
           />
 
         ) : null}
