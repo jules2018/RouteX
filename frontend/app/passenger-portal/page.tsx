@@ -267,7 +267,7 @@ export default function PassengerPortalPage() {
     );
 
     // Upload succeeded, so remove the temporary preview
-    setPhoto(null);
+    //setPhoto(null);
 
     console.log("PHOTO UPLOAD COMPLETE");
 
