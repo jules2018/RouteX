@@ -179,11 +179,13 @@ const uploadPhoto = async () => {
 
         {photo ? (
           <img
-            src={URL.createObjectURL(photo)}
+           src={photo ? URL.createObjectURL(photo) : ""}
+           onLoad={() => console.log("PHOTO PREVIEW LOADED")}
             alt="Selected profile photo"
             className="h-full w-full object-cover"
           />
         ) : passenger?.profile_image ? (
+          
           <img
             src={passenger.profile_image}
             alt={passenger?.full_name || "Passenger"}
@@ -252,11 +254,7 @@ alert(file.name);
           className="hidden"
         />
       </label>
-{photo && (
-  <p className="text-xs text-green-600">
-    Photo selected
-  </p>
-)}
+
     </div>
 
     {/* Passenger Information */}
