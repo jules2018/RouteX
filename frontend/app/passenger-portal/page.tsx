@@ -210,13 +210,14 @@ export default function PassengerPortalPage() {
   );
 
   alert("FormData created");
-  
+
   try {
     console.log("Uploading photo...");
     console.log("PHOTO:", file);
     console.log("PASSENGER ID:", passenger.id);
 
-   
+   alert("About to fetch");
+
     const response = await fetch(
       `${PHOTO_API_URL}/passenger/upload-photo`,
       {
@@ -225,6 +226,8 @@ export default function PassengerPortalPage() {
       }
     );
 
+    alert("Fetch completed");
+    
     if (!response.ok) {
   const errorText = await response.text();
 
