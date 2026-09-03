@@ -462,16 +462,6 @@ export default function PassengerPortalPage() {
               return;
             }
 
-            /* FILE SIZE */
-
-            if (file.size > 5 * 1024 * 1024) {
-              alert(
-                "Please choose an image smaller than 5MB."
-              );
-
-              e.target.value = "";
-              return;
-            }
 
             /* FILE TYPE */
 
