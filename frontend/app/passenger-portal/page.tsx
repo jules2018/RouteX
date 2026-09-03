@@ -197,6 +197,8 @@ export default function PassengerPortalPage() {
     return;
   }
 
+  alert("Inside uploadPhoto");
+  
   setUploadingPhoto(true);
 
   const formData = new FormData();
