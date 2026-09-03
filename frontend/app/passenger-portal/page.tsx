@@ -232,19 +232,24 @@ const uploadPhoto = async () => {
         <input
           type="file"
           accept="image/jpeg,image/png,image/jpg,image/webp"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
+         onChange={async (e) => {
+  const file = e.target.files?.[0];
 
-            if (!file) return;
+  if (!file) return;
 
-            if (file.size > 5 * 1024 * 1024) {
-              alert("Please choose an image smaller than 5MB.");
-              e.target.value = "";
-              return;
-            }
+  if (file.size > 5 * 1024 * 1024) {
+    alert("Please choose an image smaller than 5MB.");
+    return;
+  }
 
-            setPhoto(file);
-          }}
+  setPhoto(file);
+
+setTimeout(() => {
+  uploadPhoto();
+}, 100);
+
+}}
+
           className="hidden"
         />
       </label>
