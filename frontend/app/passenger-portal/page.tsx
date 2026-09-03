@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import {
   Car,
-  MapPin,
   CalendarDays,
   UserRound,
   Palette,
@@ -16,49 +15,155 @@ const jakarta = Plus_Jakarta_Sans({
   variable: "--font-jakarta",
 });
 
+/* =========================================================
+   API CONFIGURATION
+========================================================= */
+
+const API_BASE_URL = "https://routex-smgu.onrender.com";
+const PHOTO_API_URL = "https://routex-1-z1hf.onrender.com";
+
+/* =========================================================
+   IMAGE URL HELPER
+========================================================= */
+
+function getProfileImageUrl(image: string | null | undefined) {
+  if (!image) {
+    return "";
+  }
+
+  // Already a complete HTTPS URL
+  if (image.startsWith("https://")) {
+    return image;
+  }
+
+  // Convert HTTP to HTTPS
+  // This is important when your website is opened over HTTPS.
+  if (image.startsWith("http://")) {
+    return image.replace("http://", "https://");
+  }
+
+  // Backend returned something like:
+  // /uploads/profile.jpg
+  //
+  // or:
+  // uploads/profile.jpg
+  return `${PHOTO_API_URL}${
+    image.startsWith("/") ? "" : "/"
+  }${image}`;
+}
+
+/* =========================================================
+   PAGE
+========================================================= */
+
 export default function PassengerPortalPage() {
   const [passenger, setPassenger] = useState<any>(null);
   const [trips, setTrips] = useState<any[]>([]);
   const [onlineDrivers, setOnlineDrivers] = useState(0);
+
   const [photo, setPhoto] = useState<File | null>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
-  /* ================================
-      LOAD PASSENGER TRIPS
-  ================================= */
-  const loadTrips = (passengerId: number) => {
-    fetch(
-      `https://routex-smgu.onrender.com/passenger-bookings/${passengerId}`
-    )
-      .then((res) => res.json())
-      .then((data) => {
-        setTrips(data);
-        console.log(data);
-      });
+  /* =======================================================
+     LOCAL PHOTO PREVIEW
+  ======================================================= */
+
+  const photoPreviewUrl = useMemo(() => {
+    if (!photo) {
+      return "";
+    }
+
+    return URL.createObjectURL(photo);
+  }, [photo]);
+
+  /* =======================================================
+     CLEAN UP PHOTO PREVIEW
+  ======================================================= */
+
+  useEffect(() => {
+    return () => {
+      if (photoPreviewUrl) {
+        URL.revokeObjectURL(photoPreviewUrl);
+      }
+    };
+  }, [photoPreviewUrl]);
+
+  /* =======================================================
+     LOAD PASSENGER TRIPS
+  ======================================================= */
+
+  const loadTrips = async (passengerId: number) => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/passenger-bookings/${passengerId}`
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `Failed to load trips: ${response.status}`
+        );
+      }
+
+      const data = await response.json();
+
+      setTrips(Array.isArray(data) ? data : []);
+
+      console.log("TRIPS:", data);
+    } catch (error) {
+      console.error("Error loading trips:", error);
+    }
   };
 
-  /* ================================
-      LOAD ONLINE DRIVERS
-  ================================= */
-  const loadOnlineDrivers = () => {
-    fetch(
-      "https://routex-smgu.onrender.com/online-drivers"
-    )
-      .then((res) => res.json())
-      .then((data) => {
-        setOnlineDrivers(Number(data.total));
-      });
+  /* =======================================================
+     LOAD ONLINE DRIVERS
+  ======================================================= */
+
+  const loadOnlineDrivers = async () => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/online-drivers`
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `Failed to load drivers: ${response.status}`
+        );
+      }
+
+      const data = await response.json();
+
+      setOnlineDrivers(Number(data.total) || 0);
+
+      console.log("ONLINE DRIVERS:", data);
+    } catch (error) {
+      console.error(
+        "Error loading online drivers:",
+        error
+      );
+    }
   };
 
-  /* ================================
-      LOAD DATA
-  ================================= */
+  /* =======================================================
+     LOAD PASSENGER
+  ======================================================= */
+
   useEffect(() => {
     const storedPassenger =
       localStorage.getItem("passenger");
 
-    if (storedPassenger) {
+    if (!storedPassenger) {
+      console.log("No passenger found in localStorage.");
+      return;
+    }
+
+    try {
       const passengerData =
         JSON.parse(storedPassenger);
+
+      console.log(
+        "PASSENGER FROM LOCAL STORAGE:",
+        passengerData
+      );
 
       setPassenger(passengerData);
 
@@ -70,85 +175,164 @@ export default function PassengerPortalPage() {
         loadOnlineDrivers();
       }, 5000);
 
-      return () => clearInterval(interval);
+      return () => {
+        clearInterval(interval);
+      };
+    } catch (error) {
+      console.error(
+        "Could not parse passenger data:",
+        error
+      );
     }
   }, []);
 
-  console.log("Uploading photo...");
-  console.log("PHOTO STATE:", photo);
+  /* =======================================================
+     UPLOAD PROFILE PHOTO
+  ======================================================= */
 
   const uploadPhoto = async () => {
-  if (!photo) {
-    alert("Please select a photo first.");
-    return;
-  }
-
-  if (!passenger?.id) {
-    alert("Passenger not found.");
-    return;
-  }
-
-  const formData = new FormData();
-
-  formData.append("photo", photo);
-  formData.append("passengerId", String(passenger.id));
-
-  try {
-   const response = await fetch(
-  "https://routex-1-z1hf.onrender.com/passenger/upload-photo",
-      {
-        method: "POST",
-        body: formData,
-      }
-    );
-
-    const data = await response.json();
-    alert(JSON.stringify(data));
-
- if (data.success) {
-  alert("Photo uploaded successfully!");
-
-  const updatedPassenger = {
-    ...passenger,
-    profile_image: data.image,
-  };
-
-  setPassenger(updatedPassenger);
-
-  localStorage.setItem(
-    "passenger",
-    JSON.stringify(updatedPassenger)
-  );
-
-  setPhoto(null);
-}
-    
-    else {
-      alert(data.error || "Upload failed.");
+    if (!photo) {
+      alert("Please select a photo first.");
+      return;
     }
 
-  } catch (error) {
-    console.error(error);
-    alert("Error uploading photo.");
-  }
-};
+    if (!passenger?.id) {
+      alert("Passenger not found.");
+      return;
+    }
+
+    setUploadingPhoto(true);
+
+    const formData = new FormData();
+
+    formData.append("photo", photo);
+    formData.append(
+      "passengerId",
+      String(passenger.id)
+    );
+
+    try {
+      console.log("Uploading photo...");
+      console.log("PHOTO:", photo);
+      console.log(
+        "PASSENGER ID:",
+        passenger.id
+      );
+
+      const response = await fetch(
+        `${PHOTO_API_URL}/passenger/upload-photo`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `Upload failed with status ${response.status}`
+        );
+      }
+
+      const data = await response.json();
+
+      console.log(
+        "UPLOAD RESPONSE:",
+        data
+      );
+
+      console.log(
+        "IMAGE RETURNED:",
+        data.image
+      );
+
+      const finalImageUrl =
+        getProfileImageUrl(data.image);
+
+      console.log(
+        "FINAL IMAGE URL:",
+        finalImageUrl
+      );
+
+      if (!data.success) {
+        alert(
+          data.error ||
+            "Photo upload failed."
+        );
+
+        return;
+      }
+
+      /* -----------------------------------------------
+         UPDATE PASSENGER
+      ------------------------------------------------ */
+
+      const updatedPassenger = {
+        ...passenger,
+        profile_image: finalImageUrl,
+      };
+
+      setPassenger(updatedPassenger);
+
+      localStorage.setItem(
+        "passenger",
+        JSON.stringify(updatedPassenger)
+      );
+
+      /* -----------------------------------------------
+         REMOVE LOCAL PREVIEW
+      ------------------------------------------------ */
+
+      setPhoto(null);
+
+      alert(
+        "Photo uploaded successfully!"
+      );
+    } catch (error) {
+      console.error(
+        "PHOTO UPLOAD ERROR:",
+        error
+      );
+
+      alert(
+        "Error uploading photo. Please try again."
+      );
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
+  /* =======================================================
+     PROFILE IMAGE URL
+  ======================================================= */
+
+  const profileImageUrl =
+    getProfileImageUrl(
+      passenger?.profile_image
+    );
+
+  /* =======================================================
+     PAGE
+  ======================================================= */
+
   return (
     <main
       className={`${jakarta.variable} min-h-[100dvh] bg-white text-[#111111]`}
-      style={{ fontFamily: "var(--font-jakarta)" }}
+      style={{
+        fontFamily:
+          "var(--font-jakarta)",
+      }}
     >
-
-      {/* =================================
+      {/* =================================================
           MAIN CONTAINER
-      ================================== */}
+      ================================================= */}
+
       <div className="mx-auto w-full max-w-md px-5 pb-10">
 
-
-        {/* =================================
+        {/* =================================================
             ROUTEX BRAND
-        ================================= */}
-        <header className="pt-7">
+        ================================================= */}
 
+        <header className="pt-7">
           <h1
             className="
               text-[25px]
@@ -164,130 +348,338 @@ export default function PassengerPortalPage() {
               X
             </span>
           </h1>
-
         </header>
 
+        {/* =================================================
+            WELCOME
+        ================================================= */}
 
-{/* =================================
-    WELCOME
-================================= */}
+        <section className="pt-8">
+          <div className="flex items-center gap-4">
 
-<section className="pt-8">
-  <div className="flex items-center gap-4">
+            {/* =================================================
+                PROFILE PHOTO
+            ================================================= */}
 
-    {/* Profile Photo */}
-    <div className="relative h-20 w-20 shrink-0">
+            <div className="relative h-20 w-20 shrink-0">
 
-      {/* Photo Circle */}
-      <div className="h-20 w-20 overflow-hidden rounded-full border border-slate-200 bg-slate-100">
+              {/* ---------------------------------------------
+                  PHOTO CIRCLE
+              --------------------------------------------- */}
 
-        {photo ? (
-          <img
-           src={photo ? URL.createObjectURL(photo) : ""}
-           onLoad={() => console.log("PHOTO PREVIEW LOADED")}
-            alt="Selected profile photo"
-            className="h-full w-full object-cover"
-          />
-        ) : passenger?.profile_image ? (
-          
-          <img
-            src={passenger.profile_image}
-            alt={passenger?.full_name || "Passenger"}
-            className="h-full w-full object-cover"
-            onError={(e) => {
-              e.currentTarget.style.display = "none";
-              e.currentTarget.nextElementSibling?.classList.remove("hidden");
-            }}
-          />
-        ) : null}
+              <div
+                className="
+                  h-20
+                  w-20
+                  overflow-hidden
+                  rounded-full
+                  border
+                  border-slate-200
+                  bg-slate-100
+                "
+              >
 
-        {/* Fallback Initial */}
-        <div
-          className={`absolute inset-0 flex items-center justify-center text-xl font-bold text-slate-400 ${
-            photo || passenger?.profile_image ? "hidden" : ""
-          }`}
-        >
-          {passenger?.full_name?.charAt(0)?.toUpperCase() || "P"}
-        </div>
-      </div>
+                {/* -------------------------------------------
+                    NEW PHOTO PREVIEW
+                ------------------------------------------- */}
 
-      {/* Change Photo Button */}
-      <label
-        className="
-          absolute
-          -bottom-1
-          -right-1
-          z-10
-          flex
-          h-7
-          w-7
-          cursor-pointer
-          items-center
-          justify-center
-          rounded-full
-          border-2
-          border-white
-          bg-teal-600
-          text-white
-          shadow-md
-          hover:bg-teal-700
-        "
-        title="Change profile photo"
-      >
-        <span className="text-[12px]">✎</span>
+                {photoPreviewUrl ? (
+                  <img
+                    src={photoPreviewUrl}
+                    alt="Selected profile photo"
+                    className="
+                      h-full
+                      w-full
+                      object-cover
+                    "
+                    onLoad={() => {
+                      console.log(
+                        "LOCAL PHOTO PREVIEW LOADED"
+                      );
+                    }}
+                    onError={() => {
+                      console.error(
+                        "LOCAL PHOTO PREVIEW FAILED"
+                      );
+                    }}
+                  />
 
-        <input
-          type="file"
-          accept="image/jpeg,image/png,image/jpg,image/webp"
-         onChange={async (e) => {
-  const file = e.target.files?.[0];
+                /* -------------------------------------------
+                   SAVED PROFILE PHOTO
+                ------------------------------------------- */
 
-  if (!file) return;
+                ) : profileImageUrl ? (
+                  <img
+                    src={profileImageUrl}
+                    alt={
+                      passenger?.full_name ||
+                      "Passenger"
+                    }
+                    className="
+                      h-full
+                      w-full
+                      object-cover
+                    "
+                    onLoad={() => {
+                      console.log(
+                        "PROFILE IMAGE LOADED:",
+                        profileImageUrl
+                      );
+                    }}
+                    onError={(e) => {
+                      console.error(
+                        "PROFILE IMAGE FAILED:",
+                        profileImageUrl
+                      );
 
-  if (file.size > 5 * 1024 * 1024) {
-    alert("Please choose an image smaller than 5MB.");
-    return;
-  }
+                      e.currentTarget.style.display =
+                        "none";
 
+                      e.currentTarget.nextElementSibling?.classList.remove(
+                        "hidden"
+                      );
+                    }}
+                  />
+                ) : null}
 
-setPhoto(file);
+                {/* -------------------------------------------
+                    FALLBACK INITIAL
+                ------------------------------------------- */}
 
+                <div
+                  className={`
+                    absolute
+                    inset-0
+                    flex
+                    items-center
+                    justify-center
+                    text-xl
+                    font-bold
+                    text-slate-400
+                    ${
+                      photoPreviewUrl ||
+                      profileImageUrl
+                        ? "hidden"
+                        : ""
+                    }
+                  `}
+                >
+                  {passenger?.full_name
+                    ?.charAt(0)
+                    ?.toUpperCase() ||
+                    "P"}
+                </div>
 
-}}
+              </div>
 
-          className="hidden"
-        />
-      </label>
+              {/* =================================================
+                  CHANGE PHOTO BUTTON
+              ================================================= */}
 
-    </div>
+              <label
+                className="
+                  absolute
+                  -bottom-1
+                  -right-1
+                  z-10
+                  flex
+                  h-7
+                  w-7
+                  cursor-pointer
+                  items-center
+                  justify-center
+                  rounded-full
+                  border-2
+                  border-white
+                  bg-teal-600
+                  text-white
+                  shadow-md
+                  hover:bg-teal-700
+                "
+                title="Change profile photo"
+              >
+                <span className="text-[12px]">
+                  ✎
+                </span>
 
-    {/* Passenger Information */}
-    <div className="min-w-0">
+                <input
+                  type="file"
+                  accept="
+                    image/jpeg,
+                    image/png,
+                    image/jpg,
+                    image/webp
+                  "
+                  onChange={(e) => {
+                    const file =
+                      e.target.files?.[0];
 
-      <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-[#888888]">
-        Passenger Portal
-      </p>
+                    if (!file) {
+                      return;
+                    }
 
-      <h2 className="mt-1 text-[24px] font-extrabold leading-tight">
-        Welcome back
-        {passenger?.full_name
-          ? `, ${passenger.full_name.trim().split(/\s+/)[0]}`
-          : ""}
-      </h2>
+                    /* -----------------------------------------
+                       FILE SIZE
+                    ----------------------------------------- */
 
-      <p className="mt-1 text-[13px] font-medium text-[#777777]">
-        Manage your rides and bookings.
-      </p>
+                    if (
+                      file.size >
+                      5 * 1024 * 1024
+                    ) {
+                      alert(
+                        "Please choose an image smaller than 5MB."
+                      );
 
-    </div>
+                      e.target.value = "";
+                      return;
+                    }
 
-  </div>
-</section>
+                    /* -----------------------------------------
+                       FILE TYPE
+                    ----------------------------------------- */
 
-       
-        {/* =================================
+                    if (
+                      ![
+                        "image/jpeg",
+                        "image/png",
+                        "image/jpg",
+                        "image/webp",
+                      ].includes(file.type)
+                    ) {
+                      alert(
+                        "Please choose a JPG, PNG, or WebP image."
+                      );
+
+                      e.target.value = "";
+                      return;
+                    }
+
+                    console.log(
+                      "PHOTO SELECTED:",
+                      file
+                    );
+
+                    setPhoto(file);
+                  }}
+                  className="hidden"
+                />
+              </label>
+
+            </div>
+
+            {/* =================================================
+                PASSENGER INFORMATION
+            ================================================= */}
+
+            <div className="min-w-0">
+
+              <p
+                className="
+                  text-[11px]
+                  font-bold
+                  uppercase
+                  tracking-[0.08em]
+                  text-[#888888]
+                "
+              >
+                Passenger Portal
+              </p>
+
+              <h2
+                className="
+                  mt-1
+                  text-[24px]
+                  font-extrabold
+                  leading-tight
+                "
+              >
+                Welcome back
+                {passenger?.full_name
+                  ? `, ${passenger.full_name
+                      .trim()
+                      .split(/\s+/)[0]}`
+                  : ""}
+              </h2>
+
+              <p
+                className="
+                  mt-1
+                  text-[13px]
+                  font-medium
+                  text-[#777777]
+                "
+              >
+                Manage your rides and bookings.
+              </p>
+
+            </div>
+
+          </div>
+
+          {/* =================================================
+              UPLOAD BUTTON
+              
+              This appears only after selecting a photo.
+          ================================================= */}
+
+          {photo && (
+            <div className="mt-4 flex items-center gap-3">
+
+              <button
+                type="button"
+                onClick={uploadPhoto}
+                disabled={uploadingPhoto}
+                className="
+                  rounded-full
+                  bg-teal-600
+                  px-4
+                  py-2
+                  text-[12px]
+                  font-bold
+                  text-white
+                  shadow-sm
+                  transition
+                  hover:bg-teal-700
+                  disabled:cursor-not-allowed
+                  disabled:opacity-50
+                "
+              >
+                {uploadingPhoto
+                  ? "Uploading..."
+                  : "Save Photo"}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setPhoto(null);
+                }}
+                disabled={uploadingPhoto}
+                className="
+                  rounded-full
+                  border
+                  border-[#dddddd]
+                  bg-white
+                  px-4
+                  py-2
+                  text-[12px]
+                  font-bold
+                  text-[#555555]
+                  hover:bg-[#f5f5f5]
+                "
+              >
+                Cancel
+              </button>
+
+            </div>
+          )}
+
+        </section>
+
+        {/* =================================================
             AVAILABILITY
-        ================================== */}
+        ================================================= */}
+
         <section className="mt-7">
 
           <div
@@ -301,6 +693,7 @@ setPhoto(file);
             <div className="flex items-center gap-4">
 
               {/* Icon */}
+
               <div
                 className="
                   flex
@@ -320,8 +713,8 @@ setPhoto(file);
                 />
               </div>
 
-
               {/* Text */}
+
               <div>
 
                 <p
@@ -349,7 +742,6 @@ setPhoto(file);
 
             </div>
 
-
             <p
               className="
                 mt-4
@@ -366,10 +758,10 @@ setPhoto(file);
 
         </section>
 
-
-        {/* =================================
+        {/* =================================================
             ACCOUNT
-        ================================== */}
+        ================================================= */}
+
         <section className="mt-5">
 
           <div
@@ -409,10 +801,10 @@ setPhoto(file);
 
         </section>
 
-
-        {/* =================================
+        {/* =================================================
             TRIPS HEADER
-        ================================== */}
+        ================================================= */}
+
         <section className="mt-9">
 
           <h2
@@ -434,22 +826,26 @@ setPhoto(file);
             "
           >
             {trips.length} booking
-            {trips.length !== 1 ? "s" : ""} tracked
+            {trips.length !== 1
+              ? "s"
+              : ""}{" "}
+            tracked
           </p>
 
         </section>
 
-
-        {/* =================================
+        {/* =================================================
             TRIPS
-        ================================== */}
+        ================================================= */}
+
         <section className="mt-5 space-y-4">
 
           {trips.length === 0 ? (
 
-            /* =================================
+            /* =================================================
                 NO TRIPS
-            ================================== */
+            ================================================= */
+
             <div
               className="
                 rounded-[20px]
@@ -503,9 +899,10 @@ setPhoto(file);
 
           ) : (
 
-            /* =================================
+            /* =================================================
                 TRIP CARDS
-            ================================== */
+            ================================================= */
+
             trips.map((trip) => (
 
               <div
@@ -519,9 +916,10 @@ setPhoto(file);
                 "
               >
 
-                {/* =================================
+                {/* =================================================
                     BOOKING HEADER
-                ================================== */}
+                ================================================= */}
+
                 <div
                   className="
                     flex
@@ -560,8 +958,8 @@ setPhoto(file);
 
                   </div>
 
-
                   {/* Status */}
+
                   <span
                     className={`
                       shrink-0
@@ -570,13 +968,15 @@ setPhoto(file);
                       py-1.5
                       text-[10px]
                       font-bold
-
                       ${
-                        trip.trip_status === "Waiting"
+                        trip.trip_status ===
+                        "Waiting"
                           ? "bg-[#f1f1f1] text-[#333333]"
-                          : trip.trip_status === "Accepted"
+                          : trip.trip_status ===
+                            "Accepted"
                           ? "bg-[#eeeeee] text-[#111111]"
-                          : trip.trip_status === "In Progress"
+                          : trip.trip_status ===
+                            "In Progress"
                           ? "bg-[#111111] text-white"
                           : "bg-[#f1f1f1] text-[#333333]"
                       }
@@ -587,15 +987,16 @@ setPhoto(file);
 
                 </div>
 
-
-                {/* =================================
+                {/* =================================================
                     ROUTE
-                ================================== */}
+                ================================================= */}
+
                 <div className="mt-6">
 
                   <div className="flex gap-4">
 
                     {/* Route Line */}
+
                     <div
                       className="
                         flex
@@ -637,11 +1038,12 @@ setPhoto(file);
 
                     </div>
 
-
                     {/* Locations */}
+
                     <div className="flex-1">
 
                       {/* Pickup */}
+
                       <div>
 
                         <p
@@ -670,8 +1072,8 @@ setPhoto(file);
 
                       </div>
 
-
                       {/* Dropoff */}
+
                       <div className="mt-6">
 
                         <p
@@ -706,10 +1108,10 @@ setPhoto(file);
 
                 </div>
 
-
-                {/* =================================
+                {/* =================================================
                     TRIP INFORMATION
-                ================================== */}
+                ================================================= */}
+
                 <div
                   className="
                     mt-6
@@ -721,14 +1123,18 @@ setPhoto(file);
 
                   <div className="grid grid-cols-2 gap-5">
 
-
                     {/* Travel Date */}
+
                     <div className="flex gap-2.5">
 
                       <CalendarDays
                         size={17}
                         strokeWidth={2}
-                        className="mt-0.5 shrink-0 text-[#555555]"
+                        className="
+                          mt-0.5
+                          shrink-0
+                          text-[#555555]
+                        "
                       />
 
                       <div>
@@ -761,14 +1167,18 @@ setPhoto(file);
 
                     </div>
 
-
                     {/* Driver */}
+
                     <div className="flex gap-2.5">
 
                       <UserRound
                         size={17}
                         strokeWidth={2}
-                        className="mt-0.5 shrink-0 text-[#555555]"
+                        className="
+                          mt-0.5
+                          shrink-0
+                          text-[#555555]
+                        "
                       />
 
                       <div>
@@ -792,7 +1202,8 @@ setPhoto(file);
                             font-semibold
                           "
                         >
-                          {trip.driver_name || "Not assigned"}
+                          {trip.driver_name ||
+                            "Not assigned"}
                         </p>
 
                       </div>
@@ -801,10 +1212,10 @@ setPhoto(file);
 
                   </div>
 
-
-                  {/* =================================
+                  {/* =================================================
                       VEHICLE
-                  ================================== */}
+                  ================================================= */}
+
                   <div
                     className="
                       mt-5
@@ -836,7 +1247,6 @@ setPhoto(file);
 
                       </div>
 
-
                       <div>
 
                         <p
@@ -866,8 +1276,8 @@ setPhoto(file);
 
                     </div>
 
-
                     {/* Vehicle Details */}
+
                     <div
                       className="
                         mt-4
@@ -876,6 +1286,8 @@ setPhoto(file);
                         gap-3
                       "
                     >
+
+                      {/* Color */}
 
                       <div className="flex items-center gap-2">
 
@@ -898,6 +1310,7 @@ setPhoto(file);
 
                       </div>
 
+                      {/* License */}
 
                       <div className="flex items-center gap-2">
 
@@ -934,11 +1347,19 @@ setPhoto(file);
 
         </section>
 
-
-        {/* =================================
+        {/* =================================================
             FOOTER
-        ================================== */}
-        <footer className="mt-10 border-t border-[#eeeeee] pt-5 text-center">
+        ================================================= */}
+
+        <footer
+          className="
+            mt-10
+            border-t
+            border-[#eeeeee]
+            pt-5
+            text-center
+          "
+        >
 
           <p
             className="
