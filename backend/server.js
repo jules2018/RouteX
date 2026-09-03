@@ -533,10 +533,10 @@ app.post(
 
       console.log("PHOTO UPLOAD COMPLETE");
 
-      return res.json({
-        success: true,
-        image: result.rows[0].profile_image,
-      });
+    return res.json({
+  success: true,
+  passenger: result.rows[0],
+});
 
     } catch (error) {
       console.error(
