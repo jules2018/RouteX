@@ -73,8 +73,11 @@ export default function PassengerPortalPage() {
       return () => clearInterval(interval);
     }
   }, []);
+
+  console.log("Uploading photo...");
   console.log("PHOTO STATE:", photo);
-const uploadPhoto = async () => {
+
+  const uploadPhoto = async () => {
   if (!photo) {
     alert("Please select a photo first.");
     return;
@@ -100,6 +103,7 @@ const uploadPhoto = async () => {
     );
 
     const data = await response.json();
+    alert(JSON.stringify(data));
 
  if (data.success) {
   alert("Photo uploaded successfully!");
@@ -245,9 +249,9 @@ const uploadPhoto = async () => {
     return;
   }
 
-console.log(file);
+
 setPhoto(file);
-alert(file.name);
+
 
 }}
 
