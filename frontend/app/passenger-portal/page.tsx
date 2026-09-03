@@ -198,7 +198,7 @@ export default function PassengerPortalPage() {
   }
 
   alert("Inside uploadPhoto");
-  
+
   setUploadingPhoto(true);
 
   const formData = new FormData();
@@ -209,6 +209,8 @@ export default function PassengerPortalPage() {
     String(passenger.id)
   );
 
+  alert("FormData created");
+  
   try {
     console.log("Uploading photo...");
     console.log("PHOTO:", file);
