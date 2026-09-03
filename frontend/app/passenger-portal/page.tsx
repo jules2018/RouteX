@@ -243,7 +243,8 @@ const uploadPhoto = async () => {
     return;
   }
 
-  setPhoto(file);
+console.log(file);
+setPhoto(file);
 alert(file.name);
 
 }}
@@ -251,7 +252,11 @@ alert(file.name);
           className="hidden"
         />
       </label>
-
+{photo && (
+  <p className="text-xs text-green-600">
+    Photo selected
+  </p>
+)}
     </div>
 
     {/* Passenger Information */}
