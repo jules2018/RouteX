@@ -166,61 +166,67 @@ const uploadPhoto = async () => {
 {/* =================================
     WELCOME
 ================================= */}
+
 <section className="pt-8">
   <div className="flex items-center gap-4">
 
     {/* Profile Photo */}
-    <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-full border border-slate-200 bg-slate-100">
+    <div className="relative h-20 w-20 shrink-0">
 
-      {photo ? (
-        <img
-          src={URL.createObjectURL(photo)}
-          alt="Selected profile photo"
-          className="h-full w-full object-cover"
-        />
-      ) : passenger?.profile_image ? (
-        <img
-          src={passenger.profile_image}
-          alt={passenger?.full_name || "Passenger"}
-          className="h-full w-full object-cover"
-          onError={(e) => {
-            e.currentTarget.style.display = "none";
-            e.currentTarget.nextElementSibling?.classList.remove("hidden");
-          }}
-        />
-      ) : null}
+      {/* Photo Circle */}
+      <div className="h-20 w-20 overflow-hidden rounded-full border border-slate-200 bg-slate-100">
 
-      {/* Fallback Initial */}
-      <div
-        className={`absolute inset-0 flex items-center justify-center text-xl font-bold text-slate-400 ${
-          photo || passenger?.profile_image ? "hidden" : ""
-        }`}
-      >
-        {passenger?.full_name?.charAt(0)?.toUpperCase() || "P"}
+        {photo ? (
+          <img
+            src={URL.createObjectURL(photo)}
+            alt="Selected profile photo"
+            className="h-full w-full object-cover"
+          />
+        ) : passenger?.profile_image ? (
+          <img
+            src={passenger.profile_image}
+            alt={passenger?.full_name || "Passenger"}
+            className="h-full w-full object-cover"
+            onError={(e) => {
+              e.currentTarget.style.display = "none";
+              e.currentTarget.nextElementSibling?.classList.remove("hidden");
+            }}
+          />
+        ) : null}
+
+        {/* Fallback Initial */}
+        <div
+          className={`absolute inset-0 flex items-center justify-center text-xl font-bold text-slate-400 ${
+            photo || passenger?.profile_image ? "hidden" : ""
+          }`}
+        >
+          {passenger?.full_name?.charAt(0)?.toUpperCase() || "P"}
+        </div>
       </div>
 
       {/* Change Photo Button */}
-     <label
-  className="
-    absolute
-    -bottom-1
-    -right-1
-    flex
-    h-7
-    w-7
-    cursor-pointer
-    items-center
-    justify-center
-    rounded-full
-    border-2
-    border-white
-    bg-teal-600
-    text-white
-    shadow-sm
-    hover:bg-teal-700
-  "
-  title="Change profile photo"
->
+      <label
+        className="
+          absolute
+          -bottom-1
+          -right-1
+          z-10
+          flex
+          h-7
+          w-7
+          cursor-pointer
+          items-center
+          justify-center
+          rounded-full
+          border-2
+          border-white
+          bg-teal-600
+          text-white
+          shadow-md
+          hover:bg-teal-700
+        "
+        title="Change profile photo"
+      >
         <span className="text-[12px]">✎</span>
 
         <input
@@ -267,6 +273,7 @@ const uploadPhoto = async () => {
 
   </div>
 </section>
+
        
         {/* =================================
             AVAILABILITY
