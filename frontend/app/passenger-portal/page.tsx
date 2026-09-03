@@ -220,10 +220,18 @@ export default function PassengerPortalPage() {
     );
 
     if (!response.ok) {
-      throw new Error(
-        `Upload failed with status ${response.status}`
-      );
-    }
+  const errorText = await response.text();
+
+  console.error(
+    "UPLOAD SERVER ERROR:",
+    errorText
+  );
+
+  throw new Error(
+    `Upload failed (${response.status}): ${errorText}`
+  );
+}
+
 
     const data = await response.json();
 
@@ -267,9 +275,14 @@ export default function PassengerPortalPage() {
       error
     );
 
-    alert(
-      "Error uploading photo. Please try again."
-    );
+   alert(
+  `Error uploading photo: ${
+    error instanceof Error
+      ? error.message
+      : "Unknown error"
+  }`
+);
+
 
   } finally {
     setUploadingPhoto(false);
