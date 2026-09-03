@@ -190,116 +190,92 @@ export default function PassengerPortalPage() {
      UPLOAD PROFILE PHOTO
   ======================================================= */
 
-  const uploadPhoto = async () => {
-    if (!photo) {
-      alert("Please select a photo first.");
-      return;
-    }
+ const uploadPhoto = async (file: File) => {
+  if (!passenger?.id) {
+    alert("Passenger not found.");
+    return;
+  }
 
-    if (!passenger?.id) {
-      alert("Passenger not found.");
-      return;
-    }
+  setUploadingPhoto(true);
 
-    setUploadingPhoto(true);
+  const formData = new FormData();
 
-    const formData = new FormData();
+  formData.append("photo", file);
+  formData.append(
+    "passengerId",
+    String(passenger.id)
+  );
 
-    formData.append("photo", photo);
-    formData.append(
-      "passengerId",
-      String(passenger.id)
+  try {
+    console.log("Uploading photo...");
+    console.log("PHOTO:", file);
+    console.log("PASSENGER ID:", passenger.id);
+
+    const response = await fetch(
+      `${PHOTO_API_URL}/passenger/upload-photo`,
+      {
+        method: "POST",
+        body: formData,
+      }
     );
 
-    try {
-      console.log("Uploading photo...");
-      console.log("PHOTO:", photo);
-      console.log(
-        "PASSENGER ID:",
-        passenger.id
+    if (!response.ok) {
+      throw new Error(
+        `Upload failed with status ${response.status}`
       );
-
-      const response = await fetch(
-        `${PHOTO_API_URL}/passenger/upload-photo`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(
-          `Upload failed with status ${response.status}`
-        );
-      }
-
-      const data = await response.json();
-
-      console.log(
-        "UPLOAD RESPONSE:",
-        data
-      );
-
-      console.log(
-        "IMAGE RETURNED:",
-        data.image
-      );
-
-      const finalImageUrl =
-        getProfileImageUrl(data.image);
-
-      console.log(
-        "FINAL IMAGE URL:",
-        finalImageUrl
-      );
-
-      if (!data.success) {
-        alert(
-          data.error ||
-            "Photo upload failed."
-        );
-
-        return;
-      }
-
-      /* -----------------------------------------------
-         UPDATE PASSENGER
-      ------------------------------------------------ */
-
-      const updatedPassenger = {
-        ...passenger,
-        profile_image: finalImageUrl,
-      };
-
-      setPassenger(updatedPassenger);
-
-      localStorage.setItem(
-        "passenger",
-        JSON.stringify(updatedPassenger)
-      );
-
-      /* -----------------------------------------------
-         REMOVE LOCAL PREVIEW
-      ------------------------------------------------ */
-
-      setPhoto(null);
-
-      alert(
-        "Photo uploaded successfully!"
-      );
-    } catch (error) {
-      console.error(
-        "PHOTO UPLOAD ERROR:",
-        error
-      );
-
-      alert(
-        "Error uploading photo. Please try again."
-      );
-    } finally {
-      setUploadingPhoto(false);
     }
-  };
+
+    const data = await response.json();
+
+    console.log("UPLOAD RESPONSE:", data);
+    console.log("IMAGE RETURNED:", data.image);
+
+    if (!data.success) {
+      throw new Error(
+        data.error || "Photo upload failed."
+      );
+    }
+
+    const finalImageUrl =
+      getProfileImageUrl(data.image);
+
+    console.log(
+      "FINAL IMAGE URL:",
+      finalImageUrl
+    );
+
+    const updatedPassenger = {
+      ...passenger,
+      profile_image: finalImageUrl,
+    };
+
+    setPassenger(updatedPassenger);
+
+    localStorage.setItem(
+      "passenger",
+      JSON.stringify(updatedPassenger)
+    );
+
+    // Upload succeeded, so remove the temporary preview
+    setPhoto(null);
+
+    console.log("PHOTO UPLOAD COMPLETE");
+
+  } catch (error) {
+    console.error(
+      "PHOTO UPLOAD ERROR:",
+      error
+    );
+
+    alert(
+      "Error uploading photo. Please try again."
+    );
+
+  } finally {
+    setUploadingPhoto(false);
+  }
+};
+
 
   /* =======================================================
      PROFILE IMAGE URL
@@ -351,329 +327,243 @@ export default function PassengerPortalPage() {
         </header>
 
         {/* =================================================
-            WELCOME
-        ================================================= */}
+    WELCOME
+================================================= */}
 
-        <section className="pt-8">
-          <div className="flex items-center gap-4">
+<section className="pt-8">
+  <div className="flex items-center gap-4">
 
-            {/* =================================================
-                PROFILE PHOTO
-            ================================================= */}
+    {/* =================================================
+        PROFILE PHOTO
+    ================================================= */}
 
-            <div className="relative h-20 w-20 shrink-0">
+    <div className="relative h-20 w-20 shrink-0">
 
-              {/* ---------------------------------------------
-                  PHOTO CIRCLE
-              --------------------------------------------- */}
+      {/* PHOTO CIRCLE */}
 
-              <div
-                className="
-                  h-20
-                  w-20
-                  overflow-hidden
-                  rounded-full
-                  border
-                  border-slate-200
-                  bg-slate-100
-                "
-              >
+      <div
+        className="
+          relative
+          h-20
+          w-20
+          overflow-hidden
+          rounded-full
+          border
+          border-slate-200
+          bg-slate-100
+        "
+      >
 
-                {/* -------------------------------------------
-                    NEW PHOTO PREVIEW
-                ------------------------------------------- */}
+        {/* SELECTED PHOTO */}
 
-               {photo ? (
-  <img
-    src={URL.createObjectURL(photo)}
-    alt="Selected profile photo"
-    className="
-      block
-      h-full
-      w-full
-      object-cover
-    "
-    onLoad={() => {
-      console.log("SELECTED PHOTO LOADED");
-    }}
-    onError={() => {
-      console.error("SELECTED PHOTO FAILED TO LOAD");
-    }}
-  />
+        {photo ? (
+          <img
+            src={URL.createObjectURL(photo)}
+            alt="Selected profile photo"
+            className="block h-full w-full object-cover"
+          />
+        ) : profileImageUrl ? (
 
+          /* SAVED PROFILE PHOTO */
 
-                /* -------------------------------------------
-                   SAVED PROFILE PHOTO
-                ------------------------------------------- */
+          <img
+            src={profileImageUrl}
+            alt={
+              passenger?.full_name ||
+              "Passenger"
+            }
+            className="block h-full w-full object-cover"
+            onLoad={() => {
+              console.log(
+                "PROFILE IMAGE LOADED:",
+                profileImageUrl
+              );
+            }}
+            onError={(e) => {
+              console.error(
+                "PROFILE IMAGE FAILED:",
+                profileImageUrl
+              );
 
-                ) : profileImageUrl ? (
-                  <img
-                    src={profileImageUrl}
-                    alt={
-                      passenger?.full_name ||
-                      "Passenger"
-                    }
-                    className="
-                      h-full
-                      w-full
-                      object-cover
-                    "
-                    onLoad={() => {
-                      console.log(
-                        "PROFILE IMAGE LOADED:",
-                        profileImageUrl
-                      );
-                    }}
-                    onError={(e) => {
-                      console.error(
-                        "PROFILE IMAGE FAILED:",
-                        profileImageUrl
-                      );
+              e.currentTarget.style.display =
+                "none";
 
-                      e.currentTarget.style.display =
-                        "none";
+              e.currentTarget.nextElementSibling?.classList.remove(
+                "hidden"
+              );
+            }}
+          />
 
-                      e.currentTarget.nextElementSibling?.classList.remove(
-                        "hidden"
-                      );
-                    }}
-                  />
-                ) : null}
+        ) : null}
 
-                {/* -------------------------------------------
-                    FALLBACK INITIAL
-                ------------------------------------------- */}
+        {/* FALLBACK INITIAL */}
 
-                <div
-                  className={`
-                    absolute
-                    inset-0
-                    flex
-                    items-center
-                    justify-center
-                    text-xl
-                    font-bold
-                    text-slate-400
-                    ${
-                      photoPreviewUrl ||
-                      profileImageUrl
-                        ? "hidden"
-                        : ""
-                    }
-                  `}
-                >
-                  {passenger?.full_name
-                    ?.charAt(0)
-                    ?.toUpperCase() ||
-                    "P"}
-                </div>
+        <div
+          className={`
+            absolute
+            inset-0
+            flex
+            items-center
+            justify-center
+            text-xl
+            font-bold
+            text-slate-400
+            ${
+              photo || profileImageUrl
+                ? "hidden"
+                : ""
+            }
+          `}
+        >
+          {passenger?.full_name
+            ?.charAt(0)
+            ?.toUpperCase() || "P"}
+        </div>
 
-              </div>
+      </div>
 
-              {/* =================================================
-                  CHANGE PHOTO BUTTON
-              ================================================= */}
+      {/* =================================================
+          CHANGE PHOTO BUTTON
+      ================================================= */}
 
-              <label
-                className="
-                  absolute
-                  -bottom-1
-                  -right-1
-                  z-10
-                  flex
-                  h-7
-                  w-7
-                  cursor-pointer
-                  items-center
-                  justify-center
-                  rounded-full
-                  border-2
-                  border-white
-                  bg-teal-600
-                  text-white
-                  shadow-md
-                  hover:bg-teal-700
-                "
-                title="Change profile photo"
-              >
-                <span className="text-[12px]">
-                  ✎
-                </span>
+      <label
+        className="
+          absolute
+          -bottom-1
+          -right-1
+          z-10
+          flex
+          h-7
+          w-7
+          cursor-pointer
+          items-center
+          justify-center
+          rounded-full
+          border-2
+          border-white
+          bg-teal-600
+          text-white
+          shadow-md
+          hover:bg-teal-700
+        "
+        title="Change profile photo"
+      >
+        <span className="text-[12px]">
+          ✎
+        </span>
 
-                <input
-                  type="file"
-                  accept="
-                    image/jpeg,
-                    image/png,
-                    image/jpg,
-                    image/webp
-                  "
-                  onChange={(e) => {
-                    const file =
-                      e.target.files?.[0];
+        <input
+          type="file"
+          accept="image/jpeg,image/png,image/jpg,image/webp"
+          onChange={async (e) => {
+            const file = e.target.files?.[0];
 
-                    if (!file) {
-                      return;
-                    }
+            if (!file) {
+              return;
+            }
 
-                    /* -----------------------------------------
-                       FILE SIZE
-                    ----------------------------------------- */
+            /* FILE SIZE */
 
-                    if (
-                      file.size >
-                      5 * 1024 * 1024
-                    ) {
-                      alert(
-                        "Please choose an image smaller than 5MB."
-                      );
+            if (file.size > 5 * 1024 * 1024) {
+              alert(
+                "Please choose an image smaller than 5MB."
+              );
 
-                      e.target.value = "";
-                      return;
-                    }
+              e.target.value = "";
+              return;
+            }
 
-                    /* -----------------------------------------
-                       FILE TYPE
-                    ----------------------------------------- */
+            /* FILE TYPE */
 
-                    if (
-                      ![
-                        "image/jpeg",
-                        "image/png",
-                        "image/jpg",
-                        "image/webp",
-                      ].includes(file.type)
-                    ) {
-                      alert(
-                        "Please choose a JPG, PNG, or WebP image."
-                      );
+            if (
+              ![
+                "image/jpeg",
+                "image/png",
+                "image/jpg",
+                "image/webp",
+              ].includes(file.type)
+            ) {
+              alert(
+                "Please choose a JPG, PNG, or WebP image."
+              );
 
-                      e.target.value = "";
-                      return;
-                    }
+              e.target.value = "";
+              return;
+            }
 
-                    console.log(
-                      "PHOTO SELECTED:",
-                      file
-                    );
+            console.log(
+              "PHOTO SELECTED:",
+              file
+            );
 
-                    setPhoto(file);
-                  }}
-                  className="hidden"
-                />
+            /* SHOW PHOTO IMMEDIATELY */
 
-              </label>
+            setPhoto(file);
 
-            </div>
+            /* UPLOAD AUTOMATICALLY */
 
-            {/* =================================================
-                PASSENGER INFORMATION
-            ================================================= */}
+            await uploadPhoto(file);
 
-            <div className="min-w-0">
+            /* ALLOW SAME PHOTO TO BE SELECTED AGAIN */
 
-              <p
-                className="
-                  text-[11px]
-                  font-bold
-                  uppercase
-                  tracking-[0.08em]
-                  text-[#888888]
-                "
-              >
-                Passenger Portal
-              </p>
+            e.target.value = "";
+          }}
+          className="hidden"
+        />
+      </label>
 
-              <h2
-                className="
-                  mt-1
-                  text-[24px]
-                  font-extrabold
-                  leading-tight
-                "
-              >
-                Welcome back
-                {passenger?.full_name
-                  ? `, ${passenger.full_name
-                      .trim()
-                      .split(/\s+/)[0]}`
-                  : ""}
-              </h2>
+    </div>
 
-              <p
-                className="
-                  mt-1
-                  text-[13px]
-                  font-medium
-                  text-[#777777]
-                "
-              >
-                Manage your rides and bookings.
-              </p>
+    {/* =================================================
+        PASSENGER INFORMATION
+    ================================================= */}
 
-            </div>
+    <div className="min-w-0">
 
-          </div>
+      <p
+        className="
+          text-[11px]
+          font-bold
+          uppercase
+          tracking-[0.08em]
+          text-[#888888]
+        "
+      >
+        Passenger Portal
+      </p>
 
-          {/* =================================================
-              UPLOAD BUTTON
-              
-              This appears only after selecting a photo.
-          ================================================= */}
+      <h2
+        className="
+          mt-1
+          text-[24px]
+          font-extrabold
+          leading-tight
+        "
+      >
+        Welcome back
+        {passenger?.full_name
+          ? `, ${passenger.full_name
+              .trim()
+              .split(/\s+/)[0]}`
+          : ""}
+      </h2>
 
-          {photo && (
-            <div className="mt-4 flex items-center gap-3">
+      <p
+        className="
+          mt-1
+          text-[13px]
+          font-medium
+          text-[#777777]
+        "
+      >
+        Manage your rides and bookings.
+      </p>
 
-              <button
-                type="button"
-                onClick={uploadPhoto}
-                disabled={uploadingPhoto}
-                className="
-                  rounded-full
-                  bg-teal-600
-                  px-4
-                  py-2
-                  text-[12px]
-                  font-bold
-                  text-white
-                  shadow-sm
-                  transition
-                  hover:bg-teal-700
-                  disabled:cursor-not-allowed
-                  disabled:opacity-50
-                "
-              >
-                {uploadingPhoto
-                  ? "Uploading..."
-                  : "Save Photo"}
-              </button>
+    </div>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setPhoto(null);
-                }}
-                disabled={uploadingPhoto}
-                className="
-                  rounded-full
-                  border
-                  border-[#dddddd]
-                  bg-white
-                  px-4
-                  py-2
-                  text-[12px]
-                  font-bold
-                  text-[#555555]
-                  hover:bg-[#f5f5f5]
-                "
-              >
-                Cancel
-              </button>
+  </div>
+</section>
 
-            </div>
-          )}
-
-        </section>
 
         {/* =================================================
             AVAILABILITY
