@@ -465,39 +465,19 @@ export default function PassengerPortalPage() {
           ✎
         </span>
 
-        <input
-          type="file"
-          accept="image/jpeg,image/png,image/jpg,image/webp"
-          onChange={async (e) => {
-            const file = e.target.files?.[0];
+       <input
+  type="file"
+  accept="image/*"
+  onChange={async (e) => {
+    const file = e.target.files?.[0];
 
-            if (!file) {
-              return;
-            }
+    if (!file) {
+      return;
+    }
 
-
-            /* FILE TYPE */
-
-            if (
-              ![
-                "image/jpeg",
-                "image/png",
-                "image/jpg",
-                "image/webp",
-              ].includes(file.type)
-            ) {
-              alert(
-                "Please choose a JPG, PNG, or WebP image."
-              );
-
-              e.target.value = "";
-              return;
-            }
-
-            console.log(
-              "PHOTO SELECTED:",
-              file
-            );
+            console.log("PHOTO SELECTED:", file);
+            console.log("PHOTO TYPE:", file.type);
+            console.log("PHOTO SIZE:", file.size);
 
             /* SHOW PHOTO IMMEDIATELY */
 
