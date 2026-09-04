@@ -2658,6 +2658,32 @@ app.get("/passenger-trips/:id", async (req, res) => {
   }
 });
 
+
+app.get("/passenger-bookings/:id", async (req, res) => {
+  try {
+    const passengerId = req.params.id;
+
+    const result = await pool.query(
+      `
+      SELECT *
+      FROM trip_bookings
+      WHERE passenger_id = $1
+      ORDER BY id DESC
+      `,
+      [passengerId]
+    );
+
+    res.json(result.rows);
+
+  } catch (error) {
+    console.error("PASSENGER BOOKINGS ERROR:", error);
+
+    res.status(500).json({
+      error: error.message
+    });
+  }
+});
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
