@@ -2546,12 +2546,20 @@ baseFare = fare;
 
   fare = fareResult.rows[0].fare;
   baseFare = fare;
-  
+
 }
 
 let discount = 0;
 
 fare = fare - discount;
+
+console.log("Fare response", {
+  pickup_category: pickupCategory,
+  dropoff_category: dropoffCategory,
+  base_fare: baseFare,
+  discount,
+  fare
+});
 
 res.json({
   pickup_category: pickupCategory,
