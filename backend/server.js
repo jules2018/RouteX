@@ -2523,12 +2523,13 @@ const pickupCategory =
 
 const dropoffCategory =
   dropoffResult.rows[0].category;
-
 let fare;
+let baseFare;
 
 if (pickup_area === dropoff_area) {
-  fare = 50;
-  const baseFare = fare;
+fare = 50;
+baseFare = fare;
+
 } else {
   const fareResult = await pool.query(
     `
@@ -2544,7 +2545,8 @@ if (pickup_area === dropoff_area) {
   );
 
   fare = fareResult.rows[0].fare;
-  const baseFare = fare;
+  baseFare = fare;
+  
 }
 
 let discount = 0;
