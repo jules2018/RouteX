@@ -607,15 +607,18 @@ app.post(
 app.post("/bookings", async (req, res) => {
   try {
     console.log("BOOKINGS ROUTE HIT");
-  const {
+
+ const {
   passenger_id,
   pickup_area,
   dropoff_area,
   pickup_address,
   dropoff_address,
   travel_date,
-  fare_amount
+  fare_amount,
+  promo_code
 } = req.body;
+
 console.log("Pickup Area:", pickup_area);
 console.log("Dropoff Area:", dropoff_area);
 
@@ -659,6 +662,19 @@ const destinationLat =
 const destinationLng =
   dropoffAreaResult.rows[0]?.longitude;
 
+  let finalFare = Number(fare_amount);
+
+if (
+  promo_code &&
+  promo_code.trim().toUpperCase() === "WELCOME20"
+) {
+  finalFare = Math.max(0, finalFare - 20);
+}
+
+console.log("Original Fare:", fare_amount);
+console.log("Promo Code:", promo_code);
+console.log("Final Fare:", finalFare);
+
 const bookingResult = await pool.query(
   `
 INSERT INTO trip_bookings
@@ -679,7 +695,7 @@ RETURNING *
   `,
  [
   passenger_id,
-  fare_amount,
+  finalFare,
   pickup_address,
   dropoff_address,
   travel_date,

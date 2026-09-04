@@ -15,6 +15,7 @@ export default function BookRidePage() {
   const [dropoffResults, setDropoffResults] = useState<any[]>([]);
   const [areas, setAreas] = useState<any[]>([]);
   const [promoCode, setPromoCode] = useState("");
+  const API_BASE_URL = "https://routex-1-z1hf.onrender.com";
 
   const [fare, setFare] = useState("");
 
@@ -48,7 +49,7 @@ export default function BookRidePage() {
     const loadAreas = async () => {
       try {
         const response = await fetch(
-          "https://routex-smgu.onrender.com/areas"
+          "https://routex-1-z1hf.onrender.com/areas"
         );
 
         const text = await response.text();
@@ -116,7 +117,7 @@ console.log(text);
 
     try {
       const response = await fetch(
-        `https://routex-smgu.onrender.com/calculate-fare?pickup_area=${encodeURIComponent(
+        `https://routex-1-z1hf.onrender.com/calculate-fare?pickup_area=${encodeURIComponent(
           pickupArea
         )}&dropoff_area=${encodeURIComponent(
           dropoffArea
@@ -127,11 +128,14 @@ console.log(text);
 
       console.log("Fare data:", data);
 
-     setFare(data.fare);
+      const calculatedFare = Number(data.fare);
 
-console.log("Base Fare:", data.base_fare);
-console.log("Discount:", data.discount);
-console.log("Final Fare:", data.fare);
+      setFare(data.fare);
+
+      console.log("Base Fare:", calculatedFare);
+      console.log("Discount:", 0);
+      console.log("Final Fare:", calculatedFare);
+
     } catch (error) {
       console.error(
         "Fare calculation failed",
@@ -164,7 +168,7 @@ console.log("Final Fare:", data.fare);
 
     try {
       const response = await fetch(
-        "https://routex-smgu.onrender.com/bookings",
+        "https://routex-1-z1hf.onrender.com/bookings",
         {
           method: "POST",
           headers: {
@@ -386,7 +390,7 @@ console.log("Final Fare:", data.fare);
                         try {
                           const response =
                             await fetch(
-                              `https://routex-smgu.onrender.com/addresses/search?q=${value}`
+                              `https://routex-1-z1hf.onrender.com/addresses/search?q=${value}`
                             );
 
                           const data =
@@ -512,7 +516,7 @@ console.log("Final Fare:", data.fare);
                         try {
                           const response =
                             await fetch(
-                              `https://routex-smgu.onrender.com/addresses/search?q=${value}`
+                              `https://routex-1-z1hf.onrender.com/addresses/search?q=${value}`
                             );
 
                           const data =
