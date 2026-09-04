@@ -2528,6 +2528,7 @@ let fare;
 
 if (pickup_area === dropoff_area) {
   fare = 50;
+  const baseFare = fare;
 } else {
   const fareResult = await pool.query(
     `
@@ -2543,10 +2544,18 @@ if (pickup_area === dropoff_area) {
   );
 
   fare = fareResult.rows[0].fare;
+  const baseFare = fare;
 }
+
+let discount = 0;
+
+fare = fare - discount;
+
 res.json({
   pickup_category: pickupCategory,
   dropoff_category: dropoffCategory,
+  base_fare: baseFare,
+  discount,
   fare
 });
   } catch (error) {

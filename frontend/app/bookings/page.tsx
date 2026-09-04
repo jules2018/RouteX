@@ -125,7 +125,13 @@ console.log(text);
 
       const data = await response.json();
 
-      setFare(data.fare);
+      console.log("Fare data:", data);
+
+     setFare(data.fare);
+
+console.log("Base Fare:", data.base_fare);
+console.log("Discount:", data.discount);
+console.log("Final Fare:", data.fare);
     } catch (error) {
       console.error(
         "Fare calculation failed",
@@ -178,6 +184,7 @@ console.log(text);
       );
 
       const data = await response.json();
+      
 
       if (!response.ok) {
         alert(
