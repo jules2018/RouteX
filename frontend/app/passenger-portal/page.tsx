@@ -356,6 +356,7 @@ const profileImageUrl =
   />
 ) : profileImageUrl ? (
   <img
+    key={passenger?.profile_image}
     src={profileImageUrl}
     alt={passenger?.full_name || "Passenger"}
     className="block h-full w-full object-cover"
