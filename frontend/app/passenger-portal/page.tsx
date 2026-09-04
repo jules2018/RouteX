@@ -64,6 +64,7 @@ export default function PassengerPortalPage() {
 
   const [photo, setPhoto] = useState<File | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [photoVersion, setPhotoVersion] = useState(0);
 
   /* =======================================================
      LOCAL PHOTO PREVIEW
@@ -240,36 +241,35 @@ export default function PassengerPortalPage() {
 
       const finalImageUrl = getProfileImageUrl(savedImage);
 
-      if (!finalImageUrl) {
-        throw new Error("The saved photo URL is invalid.");
-      }
+if (!finalImageUrl) {
+  throw new Error("The saved photo URL is invalid.");
+}
 
-      const updatedPassenger = {
-        ...passenger,
-        profile_image: finalImageUrl,
-      };
+const updatedPassenger = {
+  ...passenger,
+  profile_image: finalImageUrl,
+};
 
-      // Update the page immediately.
-      setPassenger(updatedPassenger);
+setPassenger(updatedPassenger);
 
-      // Persist the permanent Supabase URL.
-      localStorage.setItem(
-        "passenger",
-        JSON.stringify(updatedPassenger)
-      );
+localStorage.setItem(
+  "passenger",
+  JSON.stringify(updatedPassenger)
+);
 
-      // The permanent URL is now being used, so remove the
-      // temporary local object URL.
-      setPhoto(null);
+// Force the displayed image to reload
+setPhotoVersion(Date.now());
 
-      console.log("PHOTO UPLOAD COMPLETE:", finalImageUrl);
-    } catch (error) {
-      console.error("PHOTO UPLOAD ERROR:", error);
-    } finally {
-      setUploadingPhoto(false);
-    }
-  };
+setPhoto(null);
 
+console.log("PHOTO UPLOAD COMPLETE:", finalImageUrl);
+
+} catch (error) {
+  console.error("PHOTO UPLOAD ERROR:", error);
+} finally {
+  setUploadingPhoto(false);
+}
+};
 
   /* =======================================================
      PROFILE IMAGE URL
@@ -356,8 +356,10 @@ const profileImageUrl =
   />
 ) : profileImageUrl ? (
   <img
-    key={passenger?.profile_image}
-    src={profileImageUrl}
+    key={`${passenger?.profile_image}-${photoVersion}`}
+    src={`${profileImageUrl}${
+      profileImageUrl.includes("?") ? "&" : "?"
+    }v=${photoVersion}`}
     alt={passenger?.full_name || "Passenger"}
     className="block h-full w-full object-cover"
   />
