@@ -680,18 +680,32 @@ const destinationLat =
 const destinationLng =
   dropoffAreaResult.rows[0]?.longitude;
 
-  let finalFare = Number(fare_amount);
+  const baseFare = Number(fare_amount);
+
+let discountAmount = 0;
 
 if (
   promo_code &&
   promo_code.trim().toUpperCase() === "WELCOME20"
 ) {
-  finalFare = Math.max(0, finalFare - 20);
+  discountAmount = 20;
 }
+
+const passengerAmount = Math.max(
+  0,
+  baseFare - discountAmount
+);
+
+console.log("Base Fare:", baseFare);
+console.log("Discount:", discountAmount);
+console.log("Passenger Pays:", passengerAmount);
+console.log("Driver Fare:", baseFare);
+
+
 
 console.log("Original Fare:", fare_amount);
 console.log("Promo Code:", promo_code);
-console.log("Final Fare:", finalFare);
+console.log("Passenger Pays:", passengerAmount);
 
 const bookingResult = await pool.query(
   `
@@ -699,6 +713,9 @@ INSERT INTO trip_bookings
 (
   passenger_id,
   fare_amount,
+  discount_amount,
+  passenger_amount,
+  promo_code,
   pickup_address,
   dropoff_address,
   travel_date,
@@ -708,12 +725,15 @@ INSERT INTO trip_bookings
   destination_lat,
   destination_lng
 )
-VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
 RETURNING *
   `,
  [
   passenger_id,
-  finalFare,
+  baseFare,
+  discountAmount,
+  passengerAmount,
+  promo_code || null,
   pickup_address,
   dropoff_address,
   travel_date,
@@ -2654,33 +2674,29 @@ res.json(result.rows);
 
 app.get("/passenger-trips/:id", async (req, res) => {
   try {
-
     const passengerId = req.params.id;
 
     const result = await pool.query(
-  `
-  SELECT
-    p.*,
-    d.full_name AS driver_name
-  FROM passengers p
-  LEFT JOIN drivers d
-    ON p.assigned_driver_id = d.id
-  WHERE p.id = $1
-  `,
-  [passengerId]
-);
-
+      `
+      SELECT *
+      FROM trip_bookings
+      WHERE passenger_id = $1
+      ORDER BY id DESC
+      `,
+      [passengerId]
+    );
 
     res.json(result.rows);
 
   } catch (error) {
+    console.error("PASSENGER TRIPS ERROR:", error);
 
     res.status(500).json({
       error: error.message
     });
-
   }
 });
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
