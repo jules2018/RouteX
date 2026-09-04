@@ -191,92 +191,84 @@ export default function PassengerPortalPage() {
      UPLOAD PROFILE PHOTO
   ======================================================= */
 
-const uploadPhoto = async (file: File) => {
-  if (!passenger?.id) {
-    console.error("Passenger not found.");
-    return;
-  }
+  const uploadPhoto = async (file: File) => {
+    if (!passenger?.id) {
+      console.error("Passenger not found.");
+      return;
+    }
 
-  setUploadingPhoto(true);
+    setUploadingPhoto(true);
 
-  const formData = new FormData();
+    const formData = new FormData();
+    formData.append("photo", file);
+    formData.append("passengerId", String(passenger.id));
 
-  formData.append("photo", file);
-  formData.append(
-    "passengerId",
-    String(passenger.id)
-  );
+    try {
+      const response = await fetch(
+        `${PHOTO_API_URL}/passenger/upload-photo`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
 
-  try {
-    console.log("Uploading photo...");
-    console.log("PHOTO:", file);
-    console.log("PASSENGER ID:", passenger.id);
-
-    const response = await fetch(
-      `${PHOTO_API_URL}/passenger/upload-photo`,
-      {
-        method: "POST",
-        body: formData,
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("UPLOAD SERVER ERROR:", errorText);
+        throw new Error(
+          `Upload failed (${response.status}): ${errorText}`
+        );
       }
-    );
 
-    if (!response.ok) {
-      const errorText = await response.text();
+      const data = await response.json();
 
-      console.error(
-        "UPLOAD SERVER ERROR:",
-        errorText
+      console.log("UPLOAD RESPONSE:", data);
+
+      if (!data.success) {
+        throw new Error(data.error || "Photo upload failed.");
+      }
+
+      // The backend saves the permanent Supabase URL in
+      // data.passenger.profile_image.
+      const savedImage = data.passenger?.profile_image;
+
+      if (!savedImage) {
+        throw new Error(
+          "The server did not return the saved photo URL."
+        );
+      }
+
+      const finalImageUrl = getProfileImageUrl(savedImage);
+
+      if (!finalImageUrl) {
+        throw new Error("The saved photo URL is invalid.");
+      }
+
+      const updatedPassenger = {
+        ...passenger,
+        profile_image: finalImageUrl,
+      };
+
+      // Update the page immediately.
+      setPassenger(updatedPassenger);
+
+      // Persist the permanent Supabase URL.
+      localStorage.setItem(
+        "passenger",
+        JSON.stringify(updatedPassenger)
       );
 
-      throw new Error(
-        `Upload failed (${response.status}): ${errorText}`
-      );
+      // The permanent URL is now being used, so remove the
+      // temporary local object URL.
+      setPhoto(null);
+
+      console.log("PHOTO UPLOAD COMPLETE:", finalImageUrl);
+    } catch (error) {
+      console.error("PHOTO UPLOAD ERROR:", error);
+    } finally {
+      setUploadingPhoto(false);
     }
-
-    const data = await response.json();
-
-    console.log("UPLOAD RESPONSE:", data);
-    console.log("IMAGE RETURNED:", data.image);
-
-    if (!data.success) {
-      throw new Error(
-        data.error || "Photo upload failed."
-      );
-    }
-
-    const finalImageUrl =
-      getProfileImageUrl(data.image);
-
-    console.log(
-      "FINAL IMAGE URL:",
-      finalImageUrl
-    );
-
-    const updatedPassenger = {
-      ...passenger,
-      profile_image: finalImageUrl,
-    };
-
-    setPassenger(updatedPassenger);
-
-    localStorage.setItem(
-      "passenger",
-      JSON.stringify(updatedPassenger)
-    );
-
-    console.log("PHOTO UPLOAD COMPLETE");
-
-  } catch (error) {
-    console.error(
-      "PHOTO UPLOAD ERROR:",
-      error
-    );
-
-    // No popup or alert
-  } finally {
-    setUploadingPhoto(false);
-  }
-};
+  };
 
 
   /* =======================================================
@@ -430,26 +422,28 @@ const profileImageUrl =
        <input
   type="file"
   accept="image/*"
- onChange={async (e) => {
-  const file = e.target.files?.[0];
+  onChange={async (e) => {
+    const file = e.target.files?.[0];
 
-  if (!file) {
-    return;
-  }
+    if (!file) {
+      return;
+    }
 
-  console.log("PHOTO SELECTED:", file);
-  console.log("PHOTO TYPE:", file.type);
-  console.log("PHOTO SIZE:", file.size);
+            console.log("PHOTO SELECTED:", file);
+            console.log("PHOTO TYPE:", file.type);
+            console.log("PHOTO SIZE:", file.size);
 
-  // Show photo immediately
-  setPhoto(file);
+            /* SHOW PHOTO IMMEDIATELY */
 
-  // Upload automatically
-  await uploadPhoto(file);
+            setPhoto(file);
 
-  // Allow the same photo to be selected again
-  e.target.value = "";
-}}
+            /* UPLOAD AUTOMATICALLY */
+            await uploadPhoto(file);
+
+            /* ALLOW SAME PHOTO TO BE SELECTED AGAIN */
+
+            e.target.value = "";
+          }}
         className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
 
         />

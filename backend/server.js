@@ -19,6 +19,20 @@ if (!fs.existsSync("uploads")) {
 
 const upload = multer({
   storage: multer.memoryStorage(),
+
+  limits: {
+    fileSize: 5 * 1024 * 1024,
+  },
+
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith("image/")) {
+      cb(null, true);
+    } else {
+      cb(
+        new Error("Only image files are allowed.")
+      );
+    }
+  },
 });
 
 app.use(cors());
@@ -397,69 +411,97 @@ app.post(
     }
   }
 );
+/* =========================================================
+   PASSENGER PROFILE PHOTO
+========================================================= */
+
 app.post(
   "/passenger/upload-photo",
   upload.single("photo"),
   async (req, res) => {
     try {
       const { passengerId } = req.body;
+      const file = req.file;
+
+      console.log("PASSENGER PHOTO UPLOAD START");
+      console.log("Passenger ID:", passengerId);
+
+      // -----------------------------------------------------
+      // VALIDATE PASSENGER
+      // -----------------------------------------------------
 
       if (!passengerId) {
         return res.status(400).json({
           success: false,
-          error: "Passenger ID is missing",
+          error: "Passenger ID is required.",
         });
       }
 
-      if (!req.file) {
+      // -----------------------------------------------------
+      // VALIDATE FILE
+      // -----------------------------------------------------
+
+      if (!file) {
         return res.status(400).json({
           success: false,
-          error: "No photo uploaded",
+          error: "No photo was uploaded.",
         });
       }
 
-      console.log("=================================");
-      console.log("PHOTO UPLOAD START");
-      console.log("Passenger:", passengerId);
-      console.log("File:", req.file.originalname);
-      console.log("Type:", req.file.mimetype);
-      console.log("Size:", req.file.size);
-      console.log("=================================");
+      console.log("File name:", file.originalname);
+      console.log("File type:", file.mimetype);
+      console.log("File size:", file.size);
 
-      // Create a safe filename
+      // -----------------------------------------------------
+      // CHECK PASSENGER EXISTS
+      // -----------------------------------------------------
+
+      const passengerCheck = await pool.query(
+        `
+        SELECT id
+        FROM passengers
+        WHERE id = $1
+        `,
+        [passengerId]
+      );
+
+      if (passengerCheck.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: "Passenger not found.",
+        });
+      }
+
+      // -----------------------------------------------------
+      // CREATE SAFE FILE NAME
+      // -----------------------------------------------------
+
       const extension =
-        req.file.originalname
+        file.originalname
           .split(".")
           .pop()
           ?.toLowerCase() || "jpg";
 
       const fileName =
-        `passenger-${passengerId}-${Date.now()}.${extension}`;
+        `passengers/${passengerId}-${Date.now()}.${extension}`;
 
-      console.log(
-        "Uploading to Supabase bucket:",
-        "profile-photos"
-      );
+      console.log("Uploading to Supabase:", fileName);
 
-      console.log(
-        "Supabase file path:",
-        fileName
-      );
+      // -----------------------------------------------------
+      // UPLOAD TO SUPABASE STORAGE
+      // -----------------------------------------------------
 
-      // Upload to Supabase Storage
-      const {
-        data: uploadData,
-        error: uploadError,
-      } = await supabase.storage
-        .from("profile-photos")
-        .upload(
-          fileName,
-          req.file.buffer,
-          {
-            contentType: req.file.mimetype,
-            upsert: true,
-          }
-        );
+      const { error: uploadError } =
+        await supabase.storage
+          .from("profile-photos")
+          .upload(
+            fileName,
+            file.buffer,
+            {
+              contentType: file.mimetype,
+              upsert: true,
+            }
+          );
 
       if (uploadError) {
         console.error(
@@ -473,74 +515,79 @@ app.post(
         });
       }
 
-      console.log(
-        "SUPABASE UPLOAD SUCCESS:",
-        uploadData
-      );
+      // -----------------------------------------------------
+      // GET PUBLIC PHOTO URL
+      // -----------------------------------------------------
 
-      // Get public URL
-      const {
-        data: publicUrlData,
-      } = supabase.storage
-        .from("profile-photos")
-        .getPublicUrl(fileName);
+      const { data: publicUrlData } =
+        supabase.storage
+          .from("profile-photos")
+          .getPublicUrl(fileName);
 
       const imageUrl =
         publicUrlData?.publicUrl;
 
       if (!imageUrl) {
+        console.error(
+          "Could not create public image URL."
+        );
+
         return res.status(500).json({
           success: false,
-          error: "Could not generate image URL",
+          error:
+            "Could not create profile photo URL.",
         });
       }
 
       console.log(
-        "SUPABASE IMAGE URL:",
+        "PROFILE IMAGE URL:",
         imageUrl
       );
 
-      // Save URL to passenger database
+      // -----------------------------------------------------
+      // SAVE URL TO POSTGRESQL
+      // -----------------------------------------------------
+
       const result = await pool.query(
         `
         UPDATE passengers
         SET profile_image = $1
         WHERE id = $2
-        RETURNING id, profile_image
+        RETURNING *
         `,
-        [
-          imageUrl,
-          passengerId,
-        ]
+        [imageUrl, passengerId]
       );
 
       if (result.rows.length === 0) {
         return res.status(404).json({
           success: false,
-          error: "Passenger not found",
+          error: "Passenger not found.",
         });
       }
 
       console.log(
-        "DATABASE UPDATED:",
-        result.rows[0]
+        "PASSENGER PHOTO SAVED"
       );
 
-      console.log(
-        "DATABASE IMAGE URL:",
-        result.rows[0].profile_image
-      );
+      // -----------------------------------------------------
+      // RETURN SAVED PASSENGER + IMAGE
+      // -----------------------------------------------------
 
-      console.log("PHOTO UPLOAD COMPLETE");
+      return res.json({
+        success: true,
 
-    return res.json({
-  success: true,
-  passenger: result.rows[0],
-});
+        // Makes data.image available
+        image:
+          result.rows[0].profile_image,
+
+        // Also returns updated passenger
+        passenger:
+          result.rows[0],
+      });
 
     } catch (error) {
       console.error(
-        "PASSENGER PHOTO ERROR:",
+        "PASSENGER PHOTO UPLOAD ERROR:",
         error
       );
 
@@ -549,11 +596,12 @@ app.post(
         error:
           error instanceof Error
             ? error.message
-            : "Photo upload failed",
+            : "Failed to upload profile photo.",
       });
     }
   }
 );
+
 app.post("/bookings", async (req, res) => {
   try {
     console.log("BOOKINGS ROUTE HIT");
