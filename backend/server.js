@@ -47,6 +47,24 @@ app.get("/", (req, res) => {
   });
 });
 
+app.get("/areas", async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT area_name
+      FROM areas
+      ORDER BY area_name
+    `);
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error("AREAS ERROR:", error);
+
+    res.status(500).json({
+      error: "Failed to load areas",
+    });
+  }
+});
+
 app.get("/test-db", async (req, res) => {
   try {
     const result = await pool.query("SELECT NOW()");
