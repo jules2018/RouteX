@@ -1,5 +1,7 @@
 const express = require("express");
 const cors = require("cors");
+console.log("SERVER VERSION: DISCOUNT TEST");
+
 const pool = require("./db");
 const multer = require("multer");
 const { createClient } = require("@supabase/supabase-js");
