@@ -34,7 +34,7 @@ export default function DriverPortalPage() {
   fetch("https://routex-1-z1hf.onrender.com/trip-requests")
   .then((res) => res.json())
   .then((data) => setRequests(data));
-
+};
   useEffect(() => {
     const storedDriver = localStorage.getItem("driver");
 
@@ -660,10 +660,11 @@ const uploadPhoto = async () => {
                           Fare
                         </p>
 
-                        <p className="text-xl font-bold text-teal-600 mt-1">
-                          R{request.fare_amount}
-                        </p>
-                        {Number(request.discount_amount || 0) > 0 && (
+   <p className="text-xl font-bold text-teal-600 mt-1">
+  R{request.fare_amount}
+</p>
+
+{Number(request.discount_amount || 0) > 0 && (
   <div className="mt-2 rounded-xl bg-slate-50 px-3 py-2">
     <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">
       RouteX Promo
