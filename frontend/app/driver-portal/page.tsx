@@ -664,6 +664,21 @@ const uploadPhoto = async () => {
                         <p className="text-xl font-bold text-teal-600 mt-1">
                           R{request.fare_amount}
                         </p>
+                        {Number(request.discount_amount || 0) > 0 && (
+  <div className="mt-2 rounded-xl bg-slate-50 px-3 py-2">
+    <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">
+      RouteX Promo
+    </p>
+
+    <p className="mt-1 text-sm font-semibold text-slate-900">
+      RouteX covers R{Number(request.discount_amount).toFixed(2)}
+    </p>
+
+    <p className="mt-1 text-xs text-slate-500">
+      Your full fare remains R{Number(request.fare_amount).toFixed(2)}
+    </p>
+  </div>
+)}
                       </div>
 
                     </div>
