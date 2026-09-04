@@ -950,7 +950,36 @@ const profileImageUrl =
                   "
                 >
 
-                  <div className="grid grid-cols-2 gap-5">
+                 <div className="grid grid-cols-3 gap-5">
+
+  {/* Fare */}
+
+  <div>
+    <p
+      className="
+        text-[10px]
+        font-bold
+        uppercase
+        tracking-wide
+        text-[#999999]
+      "
+    >
+      Fare
+    </p>
+
+    <p
+      className="
+        mt-1
+        text-[14px]
+        font-bold
+        text-[#111111]
+      "
+    >
+      R{Number(trip.fare_amount || 0).toFixed(2)}
+    </p>
+  </div>
+
+ 
 
                     {/* Travel Date */}
 
