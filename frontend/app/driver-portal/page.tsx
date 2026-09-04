@@ -19,22 +19,21 @@ export default function DriverPortalPage() {
   const availableTrips = requests;
 
   const loadTrips = () => {
-    fetch("https://routex-smgu.onrender.com/accepted-trips")
+    fetch("https://routex-1-z1hf.onrender.com/accepted-trips")
       .then((res) => res.json())
       .then((data) => setAcceptedTrips(data));
 
-    fetch("https://routex-smgu.onrender.com/in-progress-trips")
+    fetch("https://routex-1-z1hf.onrender.com/in-progress-trips")
       .then((res) => res.json())
       .then((data) => setInProgressTrips(data));
 
-    fetch("https://routex-smgu.onrender.com/completed-trips")
+    fetch("https://routex-1-z1hf.onrender.com/completed-trips")
       .then((res) => res.json())
       .then((data) => setCompletedTrips(data));
 
-    fetch("https://routex-smgu.onrender.com/trip-requests")
-      .then((res) => res.json())
-      .then((data) => setRequests(data));
-  };
+  fetch("https://routex-1-z1hf.onrender.com/trip-requests")
+  .then((res) => res.json())
+  .then((data) => setRequests(data));
 
   useEffect(() => {
     const storedDriver = localStorage.getItem("driver");
@@ -43,7 +42,7 @@ export default function DriverPortalPage() {
       const parsedDriver = JSON.parse(storedDriver);
       setDriver(parsedDriver);
 
-      fetch("https://routex-smgu.onrender.com/driver-list")
+      fetch("https://routex-1-z1hf.onrender.com/driver-list")
         .then((res) => res.json())
         .then((data) => {
           const currentDriver = data.find(
@@ -86,7 +85,7 @@ const uploadPhoto = async () => {
 
   try {
     const response = await fetch(
-      "https://routex-smgu.onrender.com/driver/upload-photo",
+      "https://routex-1-z1hf.onrender.com/driver/upload-photo",
       {
         method: "POST",
         body: formData,
@@ -139,7 +138,7 @@ const uploadPhoto = async () => {
 
     try {
       const response = await fetch(
-        `https://routex-smgu.onrender.com/drivers/${driver?.id}/status`,
+        `https://routex-1-z1hf.onrender.com/drivers/${driver?.id}/status`,
         {
           method: "POST",
           headers: {
@@ -171,7 +170,7 @@ const uploadPhoto = async () => {
 
     try {
       const response = await fetch(
-        `https://routex-smgu.onrender.com/trip-requests/${tripId}/accept`,
+        `https://routex-1-z1hf.onrender.com/trip-requests/${tripId}/accept`,
         {
           method: "POST",
           headers: {
@@ -206,7 +205,7 @@ const uploadPhoto = async () => {
 
     try {
       const response = await fetch(
-        `https://routex-smgu.onrender.com/trip-requests/${tripId}/start`,
+        `https://routex-1-z1hf.onrender.com/trip-requests/${tripId}/start`,
         {
           method: "POST",
         }
@@ -230,7 +229,7 @@ const uploadPhoto = async () => {
 
     try {
       const response = await fetch(
-        `https://routex-smgu.onrender.com/trip-requests/${tripId}/complete`,
+        `https://routex-1-z1hf.onrender.com/trip-requests/${tripId}/complete`,
         {
           method: "POST",
         }
@@ -332,7 +331,7 @@ const uploadPhoto = async () => {
 
           {driver?.profile_image ? (
   <img
-    src={`https://routex-smgu.onrender.com/uploads/${driver.profile_image}`}
+    src={`https://routex-1-z1hf.onrender.com/uploads/${driver.profile_image}`}
     alt={driver?.full_name || "Driver"}
     className="w-full h-full rounded-full object-cover"
   />
