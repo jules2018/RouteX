@@ -191,13 +191,11 @@ export default function PassengerPortalPage() {
      UPLOAD PROFILE PHOTO
   ======================================================= */
 
- const uploadPhoto = async (file: File) => {
+const uploadPhoto = async (file: File) => {
   if (!passenger?.id) {
-    alert("Passenger not found.");
+    console.error("Passenger not found.");
     return;
   }
-
-  alert("Inside uploadPhoto");
 
   setUploadingPhoto(true);
 
@@ -209,14 +207,10 @@ export default function PassengerPortalPage() {
     String(passenger.id)
   );
 
-  alert("FormData created");
-
   try {
     console.log("Uploading photo...");
     console.log("PHOTO:", file);
     console.log("PASSENGER ID:", passenger.id);
-
-   alert("About to fetch");
 
     const response = await fetch(
       `${PHOTO_API_URL}/passenger/upload-photo`,
@@ -226,26 +220,20 @@ export default function PassengerPortalPage() {
       }
     );
 
-    alert("Fetch completed");
-
     if (!response.ok) {
-  const errorText = await response.text();
+      const errorText = await response.text();
 
-  console.error(
-    "UPLOAD SERVER ERROR:",
-    errorText
-  );
+      console.error(
+        "UPLOAD SERVER ERROR:",
+        errorText
+      );
 
-  throw new Error(
-    `Upload failed (${response.status}): ${errorText}`
-  );
-}
-
+      throw new Error(
+        `Upload failed (${response.status}): ${errorText}`
+      );
+    }
 
     const data = await response.json();
-
-    alert(JSON.stringify(data));
-
 
     console.log("UPLOAD RESPONSE:", data);
     console.log("IMAGE RETURNED:", data.image);
@@ -276,9 +264,6 @@ export default function PassengerPortalPage() {
       JSON.stringify(updatedPassenger)
     );
 
-    // Upload succeeded, so remove the temporary preview
-    //setPhoto(null);
-
     console.log("PHOTO UPLOAD COMPLETE");
 
   } catch (error) {
@@ -287,15 +272,7 @@ export default function PassengerPortalPage() {
       error
     );
 
-   alert(
-  `Error uploading photo: ${
-    error instanceof Error
-      ? error.message
-      : "Unknown error"
-  }`
-);
-
-
+    // No popup or alert
   } finally {
     setUploadingPhoto(false);
   }
@@ -453,29 +430,26 @@ const profileImageUrl =
        <input
   type="file"
   accept="image/*"
-  onChange={async (e) => {
-    const file = e.target.files?.[0];
+ onChange={async (e) => {
+  const file = e.target.files?.[0];
 
-    if (!file) {
-      return;
-    }
+  if (!file) {
+    return;
+  }
 
-            console.log("PHOTO SELECTED:", file);
-            console.log("PHOTO TYPE:", file.type);
-            console.log("PHOTO SIZE:", file.size);
+  console.log("PHOTO SELECTED:", file);
+  console.log("PHOTO TYPE:", file.type);
+  console.log("PHOTO SIZE:", file.size);
 
-            /* SHOW PHOTO IMMEDIATELY */
+  // Show photo immediately
+  setPhoto(file);
 
-            setPhoto(file);
+  // Upload automatically
+  await uploadPhoto(file);
 
-            /* UPLOAD AUTOMATICALLY */
-            alert("About to call uploadPhoto");
-            await uploadPhoto(file);
-
-            /* ALLOW SAME PHOTO TO BE SELECTED AGAIN */
-
-            e.target.value = "";
-          }}
+  // Allow the same photo to be selected again
+  e.target.value = "";
+}}
         className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
 
         />
