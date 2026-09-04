@@ -688,7 +688,23 @@ if (
   promo_code &&
   promo_code.trim().toUpperCase() === "WELCOME20"
 ) {
-  discountAmount = 20;
+  const promoCheck = await pool.query(
+    `
+    SELECT id
+    FROM trip_bookings
+    WHERE passenger_id = $1
+      AND UPPER(promo_code) = 'WELCOME20'
+      AND discount_amount > 0
+    LIMIT 1
+    `,
+    [passenger_id]
+  );
+
+  if (promoCheck.rows.length === 0) {
+    discountAmount = 20;
+  } else {
+    discountAmount = 0;
+  }
 }
 
 const passengerAmount = Math.max(
