@@ -688,22 +688,50 @@ if (
   promo_code &&
   promo_code.trim().toUpperCase() === "WELCOME20"
 ) {
-  const promoCheck = await pool.query(
+  // Check if this passenger has already used WELCOME20
+  const existingPassengerPromo = await pool.query(
     `
     SELECT id
     FROM trip_bookings
     WHERE passenger_id = $1
-      AND UPPER(promo_code) = 'WELCOME20'
+      AND UPPER(TRIM(promo_code)) = 'WELCOME20'
       AND discount_amount > 0
     LIMIT 1
     `,
     [passenger_id]
   );
 
-  if (promoCheck.rows.length === 0) {
+  // Check how many times WELCOME20 has been used in total
+  const totalPromoUses = await pool.query(
+    `
+    SELECT COUNT(*)::int AS total
+    FROM trip_bookings
+    WHERE UPPER(TRIM(promo_code)) = 'WELCOME20'
+      AND discount_amount > 0
+    `
+  );
+
+  const promoUses = totalPromoUses.rows[0]?.total || 0;
+
+  if (existingPassengerPromo.rows.length > 0) {
+  return res.status(400).json({
+    error: "You have already used WELCOME20."
+  });
+}
+  if (promoUses >= 10) {
+  return res.status(400).json({
+    error: "WELCOME20 has reached its 10-person limit."
+  });
+}
+
+  // Apply discount only if:
+  // 1. Passenger has never used it
+  // 2. Fewer than 10 people have used it
+  if (
+    existingPassengerPromo.rows.length === 0 &&
+    promoUses < 10
+  ) {
     discountAmount = 20;
-  } else {
-    discountAmount = 0;
   }
 }
 
