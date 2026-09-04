@@ -975,7 +975,9 @@ const profileImageUrl =
         text-[#111111]
       "
     >
-      R{Number(trip.fare_amount || 0).toFixed(2)}
+     R{Number(
+  trip.passenger_amount ?? trip.fare_amount ?? 0
+).toFixed(2)}
     </p>
   </div>
 

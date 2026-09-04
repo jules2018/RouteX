@@ -2633,45 +2633,6 @@ res.json({
   }
 });
 
-app.get("/passenger-bookings/:id", async (req, res) => {
-  try {
-
-    const passengerId = req.params.id;  
-    const result = await pool.query(
-  `
-  SELECT
-    tb.id,
-    tb.trip_id,
-    tb.created_at,
-    tb.pickup_address,
-    tb.dropoff_address,
-    tb.travel_date,
-    tb.trip_status,
-    d.full_name AS driver_name,
-    d.vehicle_type,
-    d.vehicle_color,
-    d.license_plate
-
-FROM trip_bookings tb
-JOIN passengers p
-    ON tb.passenger_id = p.id
-LEFT JOIN drivers d
-    ON tb.assigned_driver_id = d.id
-WHERE tb.passenger_id = $1
-ORDER BY tb.id DESC
-  `,
-  [passengerId]
-);
-res.json(result.rows);
-  } catch (error) {
-
-    res.status(500).json({
-      error: error.message
-    });
-
-  }
-});
-
 app.get("/passenger-trips/:id", async (req, res) => {
   try {
     const passengerId = req.params.id;
