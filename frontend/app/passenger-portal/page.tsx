@@ -1195,6 +1195,38 @@ const profileImageUrl =
 
                     </div>
 
+                            {trip.driver_phone && (
+  <a
+    href={`https://wa.me/27${String(trip.driver_phone)
+      .replace(/\D/g, "")
+      .replace(/^0/, "")}?text=${encodeURIComponent(
+        `Hi, this is your RouteX passenger for booking BK-${trip.id
+          .toString()
+          .padStart(4, "0")}.`
+      )}`}
+    target="_blank"
+    rel="noopener noreferrer"
+    className="
+      mt-4
+      flex
+      w-full
+      items-center
+      justify-center
+      rounded-xl
+      bg-green-600
+      px-4
+      py-3
+      text-sm
+      font-semibold
+      text-white
+      transition
+      hover:bg-green-700
+    "
+  >
+    WhatsApp Driver
+  </a>
+)}
+
                   </div>
 
                 </div>

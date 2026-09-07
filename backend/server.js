@@ -2709,6 +2709,7 @@ app.get("/passenger-bookings/:id", async (req, res) => {
       SELECT
         tb.*,
         d.full_name AS driver_name,
+        d.phone AS driver_phone,
         d.vehicle_type,
         d.vehicle_color,
         d.license_plate

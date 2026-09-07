@@ -8,7 +8,7 @@ export default function PassengersPage() {
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    fetch("https://routex-smgu.onrender.com/passengers")
+    fetch("https:/https://routex-1-z1hf.onrender.com/passengers")
       .then((res) => res.json())
       .then((data) => {
         setPassengers(data);
@@ -130,7 +130,7 @@ export default function PassengersPage() {
                         className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow"
                         onClick={() => {
                           fetch(
-                            `https://routex-smgu.onrender.com/passengers/${passenger.id}/pay`,
+                            `https://https://routex-1-z1hf.onrender.com/passengers/${passenger.id}/pay`,
                             {
                               method: "POST",
                             }

@@ -21,7 +21,7 @@ const totalPassengers = trips.reduce(
 );
 
   useEffect(() => {
-   fetch("https://routex-smgu.onrender.com/trips")
+   fetch("https://https://routex-1-z1hf.onrender.com/trips")
       .then((res) => res.json())
       .then((data) => {
         setTrips(data);

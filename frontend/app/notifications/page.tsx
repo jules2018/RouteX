@@ -13,7 +13,7 @@ export default function NotificationsPage() {
     if (!passenger?.id) return;
 
     fetch(
-      `https://routex-smgu.onrender.com/notifications/${passenger.id}`
+      `https://https://routex-1-z1hf.onrender.com/notifications/${passenger.id}`
     )
       .then((res) => res.json())
       .then((data) => setNotifications(data));
