@@ -1848,55 +1848,49 @@ app.post(
   "/trip-requests/:id/accept",
   async (req, res) => {
     try {
-
       const bookingId = req.params.id;
       const { driverId } = req.body;
 
       const result = await pool.query(
-  `
-  UPDATE trip_bookings
-  SET
-    booking_status = 'Accepted',
-    trip_status = 'Accepted',
-    assigned_driver_id = $2
-  WHERE id = $1
-  RETURNING *
-  `,
-  [bookingId, driverId]
-);
+        `
+        UPDATE trip_bookings
+        SET
+          booking_status = 'Accepted',
+          trip_status = 'Accepted',
+          assigned_driver_id = $2
+        WHERE id = $1
+        RETURNING *
+        `,
+        [bookingId, driverId]
+      );
 
-const booking = result.rows[0];
+      const booking = result.rows[0];
 
-await pool.query(
-  `
-  INSERT INTO notifications
-  (user_type, user_id, title, message)
-  VALUES ($1, $2, $3, $4)
-  `,
-  [
-    "passenger",
-    booking.passenger_id,
-    "🚖 Driver Assigned",
-    "Your driver is on the way to collect you."
-  ]
-);
-
-res.json({
-  message: "Trip accepted",
-  booking
-});
+      await pool.query(
+        `
+        INSERT INTO notifications
+        (user_type, user_id, title, message)
+        VALUES ($1, $2, $3, $4)
+        `,
+        [
+          "passenger",
+          booking.passenger_id,
+          "🚖 Driver Assigned",
+          "Your driver is on the way to collect you."
+        ]
+      );
 
       res.json({
-  message: "Trip accepted",
-  booking: result.rows[0]
-});
+        message: "Trip accepted",
+        booking
+      });
 
     } catch (error) {
+      console.error("ACCEPT TRIP ERROR:", error);
 
       res.status(500).json({
         error: error.message
       });
-
     }
   }
 );
@@ -2712,10 +2706,17 @@ app.get("/passenger-bookings/:id", async (req, res) => {
 
     const result = await pool.query(
       `
-      SELECT *
-      FROM trip_bookings
-      WHERE passenger_id = $1
-      ORDER BY id DESC
+      SELECT
+        tb.*,
+        d.full_name AS driver_name,
+        d.vehicle_type,
+        d.vehicle_color,
+        d.license_plate
+      FROM trip_bookings tb
+      LEFT JOIN drivers d
+        ON tb.assigned_driver_id = d.id
+      WHERE tb.passenger_id = $1
+      ORDER BY tb.id DESC
       `,
       [passengerId]
     );
