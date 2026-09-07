@@ -373,14 +373,10 @@ app.post(
   "/driver/upload-photo",
   upload.single("photo"),
   async (req, res) => {
-
     try {
-      console.log("UPLOAD ROUTE HIT");
-      const { driverId } = req.body;
+      console.log("DRIVER UPLOAD ROUTE HIT");
 
-      console.log("Driver ID:", driverId);
-      console.log("BODY:", req.body);
-      console.log("FILE:", req.file);
+      const { driverId } = req.body;
 
       if (!driverId) {
         return res.status(400).json({
@@ -390,14 +386,38 @@ app.post(
       }
 
       if (!req.file) {
-        console.log("NO FILE RECEIVED");
         return res.status(400).json({
           success: false,
           error: "No file received",
         });
       }
 
-      const imagePath = req.file.filename;
+      const fileExt =
+        req.file.originalname.split(".").pop() || "jpg";
+
+      const fileName = `drivers/${driverId}-${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("profile-photos")
+        .upload(fileName, req.file.buffer, {
+          contentType: req.file.mimetype,
+          upsert: true,
+        });
+
+      if (uploadError) {
+        console.error("SUPABASE UPLOAD ERROR:", uploadError);
+
+        return res.status(500).json({
+          success: false,
+          error: "Failed to upload driver photo",
+        });
+      }
+
+      const { data: publicUrlData } = supabase.storage
+        .from("profile-photos")
+        .getPublicUrl(fileName);
+
+      const imageUrl = publicUrlData.publicUrl;
 
       const result = await pool.query(
         `
@@ -406,7 +426,7 @@ app.post(
         WHERE id = $2
         RETURNING id, profile_image
         `,
-        [imagePath, driverId]
+        [imageUrl, driverId]
       );
 
       if (result.rows.length === 0) {
@@ -418,16 +438,17 @@ app.post(
 
       res.json({
         success: true,
-        image: imagePath,
+        image: imageUrl,
+        driver: result.rows[0],
       });
 
     } catch (error) {
-      console.error("UPLOAD PHOTO ERROR:", error);
+      console.error("DRIVER UPLOAD PHOTO ERROR:", error);
 
       res.status(500).json({
-  success: false,
-  error: error.message,
-});
+        success: false,
+        error: error.message,
+      });
     }
   }
 );
