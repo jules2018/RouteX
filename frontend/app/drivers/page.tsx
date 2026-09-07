@@ -6,7 +6,7 @@ export default function DriversPage() {
   const [drivers, setDrivers] = useState<any[]>([]);
 
   useEffect(() => {
-    fetch("https://https://routex-1-z1hf.onrender.com/drivers")
+    fetch("https://routex-1-z1hf.onrender.com/drivers")
       .then((res) => res.json())
       .then((data) => {
         setDrivers(data);

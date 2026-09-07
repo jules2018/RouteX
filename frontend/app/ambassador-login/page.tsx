@@ -10,7 +10,7 @@ export default function AmbassadorLoginPage() {
 
   const handleLogin = async () => {
     const response = await fetch(
-      "https://routex-smgu.onrender.com/ambassador-login",
+      "https:/https://routex-1-z1hf.onrender.com/ambassador-login",
       {
         method: "POST",
         headers: {

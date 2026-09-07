@@ -27,7 +27,7 @@ export default function PassengerRegisterPage() {
 
     try {
       const response = await fetch(
-        "https://https://routex-1-z1hf.onrender.com/passenger-register",
+        "https://routex-1-z1hf.onrender.com/passenger-register",
         {
           method: "POST",
           headers: {

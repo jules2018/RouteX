@@ -14,11 +14,11 @@ export default function NewTripPage() {
   const [vehicleId, setVehicleId] = useState("");
 
   useEffect(() => {
-    fetch("https://https://routex-1-z1hf.onrender.com/available-drivers")
+    fetch("https://routex-1-z1hf.onrender.com/available-drivers")
       .then((res) => res.json())
       .then((data) => setDrivers(data));
 
-    fetch("https://https://routex-1-z1hf.onrender.com/available-vehicles")
+    fetch("https://routex-1-z1hf.onrender.com/available-vehicles")
       .then((res) => res.json())
       .then((data) => setVehicles(data));
   }, []);
@@ -29,7 +29,7 @@ export default function NewTripPage() {
     e.preventDefault();
 
     const response = await fetch(
-      "https://https://routex-1-z1hf.onrender.com/trips",
+      "https://routex-1-z1hf.onrender.com/trips",
       {
         method: "POST",
         headers: {

@@ -130,7 +130,7 @@ export default function PassengersPage() {
                         className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow"
                         onClick={() => {
                           fetch(
-                            `https://https://routex-1-z1hf.onrender.com/passengers/${passenger.id}/pay`,
+                            `https://routex-1-z1hf.onrender.com/passengers/${passenger.id}/pay`,
                             {
                               method: "POST",
                             }

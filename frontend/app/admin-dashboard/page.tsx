@@ -19,7 +19,7 @@ export default function AdminDashboardPage() {
   });
 
   const loadDashboardData = () => {
-    fetch("https://routex-smgu.onrender.com/admin/stats")
+    fetch("https://routex-1-z1hf.onrender.com/admin/stats")
       .then((res) => res.json())
       .then((data) => {
         setStats(data);
@@ -28,7 +28,7 @@ export default function AdminDashboardPage() {
         console.error("Error loading stats:", error);
       });
 
-    fetch("https://routex-smgu.onrender.com/admin/applications")
+    fetch("https://routex-1-z1hf.onrender.com/admin/applications")
       .then((res) => res.json())
       .then((data) => {
         setApplications(data);
@@ -347,7 +347,7 @@ export default function AdminDashboardPage() {
                       <button
                         onClick={async () => {
                           await fetch(
-                            `https://routex-smgu.onrender.com/admin/applications/${app.id}/approve`,
+                            `https://routex-1-z1hf.onrender.com/admin/applications/${app.id}/approve`,
                             { method: "POST" }
                           );
 
@@ -362,7 +362,7 @@ export default function AdminDashboardPage() {
                       <button
                         onClick={async () => {
                           await fetch(
-                            `https://routex-smgu.onrender.com/admin/applications/${app.id}/reject`,
+                            `https://routex-1-z1hf.onrender.com/admin/applications/${app.id}/reject`,
                             { method: "POST" }
                           );
 

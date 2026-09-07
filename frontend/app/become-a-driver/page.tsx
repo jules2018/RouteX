@@ -53,7 +53,7 @@ export default function BecomeADriverPage() {
     }
 
     const response = await fetch(
-      "https://routex-smgu.onrender.com/driver-application",
+      "https://https://routex-1-z1hf.onrender.com/driver-application",
       {
         method: "POST",
         body: formData,

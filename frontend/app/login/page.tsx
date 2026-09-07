@@ -13,7 +13,7 @@ export default function LoginPage() {
     e.preventDefault();
 
     const response = await fetch(
-      "https://https://routex-1-z1hf.onrender.com/login",
+      "https://routex-1-z1hf.onrender.com/login",
       {
         method: "POST",
         headers: {

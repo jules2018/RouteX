@@ -14,7 +14,7 @@ export default function TripDetailsPage() {
   if (!id) return;
 
   fetch(
-    `https://https://routex-1-z1hf.onrender.com/trips/${id}/driver-manifest`
+    `https://routex-1-z1hf.onrender.com/trips/${id}/driver-manifest`
   )
     .then((res) => res.json())
     .then((data) => {
@@ -22,7 +22,7 @@ export default function TripDetailsPage() {
     });
 
   fetch(
-    `https://https://routex-1-z1hf.onrender.com/trips/${id}/passengers`
+    `https://routex-1-z1hf.onrender.com/trips/${id}/passengers`
   )
     .then((res) => res.json())
     .then((data) => {
@@ -40,7 +40,7 @@ if (!trip || !trip.trip) {
 
 const departTrip = async () => {
   await fetch(
-    `https://https://routex-1-z1hf.onrender.com/trips/${id}/depart`,
+    `https://routex-1-z1hf.onrender.com/trips/${id}/depart`,
     {
       method: "POST",
     }
@@ -51,7 +51,7 @@ const departTrip = async () => {
 
 const completeTrip = async () => {
   await fetch(
-    `https://https://routex-1-z1hf.onrender.com/trips/${id}/complete`,
+    `https://routex-1-z1hf.onrender.com/trips/${id}/complete`,
     {
       method: "POST",
     }

@@ -27,7 +27,7 @@ export default function PassengerLoginPage() {
 
   const login = async () => {
     const response = await fetch(
-      "https://https://routex-1-z1hf.onrender.com/passenger-login",
+      "https://routex-1-z1hf.onrender.com/passenger-login",
       {
         method: "POST",
         headers: {
