@@ -4,6 +4,31 @@
 import { useEffect, useRef, useState } from "react";
 import { showNotification } from "../lib/notifications";
 
+function calculateDistanceKm(
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number
+) {
+  const R = 6371;
+
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2);
+
+  const c = 2 * Math.atan2(
+    Math.sqrt(a),
+    Math.sqrt(1 - a)
+  );
+
+  return R * c;
+}
 export default function BookRidePage() {
   const [loading, setLoading] = useState(false);
   const [passenger, setPassenger] = useState<any>(null);
@@ -20,15 +45,22 @@ export default function BookRidePage() {
 
   const [fare, setFare] = useState("");
 
-  const [form, setForm] = useState({
-    pickup_area: "",
-    dropoff_area: "",
-    pickup_town: "",
-    pickup_address: "",
-    dropoff_town: "",
-    dropoff_address: "",
-    travel_date: new Date().toISOString().split("T")[0],
-  });
+ const [form, setForm] = useState({
+  pickup_area: "",
+  dropoff_area: "",
+
+  pickup_town: "",
+  pickup_address: "",
+  pickup_lat: null as number | null,
+  pickup_lng: null as number | null,
+
+  dropoff_town: "",
+  dropoff_address: "",
+  dropoff_lat: null as number | null,
+  dropoff_lng: null as number | null,
+
+  travel_date: new Date().toISOString().split("T")[0],
+});
 
   /* =========================
      LOAD PASSENGER
@@ -123,39 +155,60 @@ const results = data;
   ]);
 
   const calculateFare = async (
-    pickupArea: string,
-    dropoffArea: string
-  ) => {
-    if (!pickupArea || !dropoffArea) return;
+  pickupArea: string,
+  dropoffArea: string
+) => {
+  if (!pickupArea || !dropoffArea) return;
 
-    try {
-      const response = await fetch(
-        `https://routex-development.onrender.com/calculate-fare?pickup_area=${encodeURIComponent(
-          pickupArea
-        )}&dropoff_area=${encodeURIComponent(
-          dropoffArea
-        )}`
-      );
+  try {
+  const params = new URLSearchParams({
+    pickup_area: pickupArea,
+    dropoff_area: dropoffArea,
+  });
 
-      const data = await response.json();
+  if (
+    form.pickup_lat !== null &&
+    form.pickup_lng !== null &&
+    form.dropoff_lat !== null &&
+    form.dropoff_lng !== null
+  ) {
+    params.append("pickup_lat", String(form.pickup_lat));
+    params.append("pickup_lng", String(form.pickup_lng));
+    params.append("dropoff_lat", String(form.dropoff_lat));
+    params.append("dropoff_lng", String(form.dropoff_lng));
+  }
 
-      console.log("Fare data:", data);
+  const response = await fetch(
+    `https://routex-development.onrender.com/calculate-fare?${params.toString()}`
+  );
 
-      const calculatedFare = Number(data.fare);
+  const data = await response.json();
 
-      setFare(data.fare);
+  console.log("Fare data:", data);
 
-      console.log("Base Fare:", calculatedFare);
-      console.log("Discount:", 0);
-      console.log("Final Fare:", calculatedFare);
+  if (!response.ok) {
+    console.error("Fare API error:", data);
+    return;
+  }
 
-    } catch (error) {
-      console.error(
-        "Fare calculation failed",
-        error
-      );
-    }
-  };
+  const calculatedFare = Number(data.fare);
+
+  setFare(String(data.fare));
+
+  console.log("Pricing method:", data.pricing_method);
+  console.log("Road distance:", data.distance_km);
+  console.log("Base Fare:", calculatedFare);
+  console.log("Discount:", data.discount ?? 0);
+  console.log("Final Fare:", calculatedFare);
+}
+  
+  catch (error) {
+    console.error(
+      "Fare calculation failed",
+      error
+    );
+  }
+};
 
   /* =========================
      BOOK RIDE
@@ -222,15 +275,22 @@ const results = data;
       );
       setPromoCode("");
 
-      setForm({
-        pickup_area: "",
-        dropoff_area: "",
-        pickup_town: "",
-        pickup_address: "",
-        dropoff_town: "",
-        dropoff_address: "",
-        travel_date: "",
-      });
+     setForm({
+  pickup_area: "",
+  dropoff_area: "",
+
+  pickup_town: "",
+  pickup_address: "",
+  pickup_lat: null,
+  pickup_lng: null,
+
+  dropoff_town: "",
+  dropoff_address: "",
+  dropoff_lat: null,
+  dropoff_lng: null,
+
+  travel_date: new Date().toISOString().split("T")[0],
+});
 
       setFare("");
     } catch (error) {
@@ -405,15 +465,17 @@ const results = data;
                                   <button
                                     key={`${item.address}-${index}`}
                               type="button"
-                             onClick={() => {
-                                  setForm({
-                                    ...form,
-                                    pickup_address: item.address,
-                                    pickup_area: item.area_name || "",
-                                  });
+                           onClick={() => {
+                            setForm({
+                              ...form,
+                              pickup_address: item.address,
+                              pickup_area: item.area_name || "",
+                              pickup_lat: item.lat ?? null,
+                              pickup_lng: item.lng ?? null,
+                            });
 
-                                  setPickupSuggestions([]);
-                                }}
+                            setPickupSuggestions([]);
+                          }}
                               className="w-full text-left px-4 py-3 hover:bg-slate-50 border-b last:border-b-0"
                             >
                               <div className="font-medium text-slate-900">
@@ -501,14 +563,16 @@ const results = data;
 
                               type="button"
                               onClick={() => {
-                              setForm({
-                                ...form,
-                                dropoff_address: item.address,
-                                dropoff_area: item.area_name || "",
-                              });
+                                setForm({
+                                  ...form,
+                                  dropoff_address: item.address,
+                                  dropoff_area: item.area_name || "",
+                                  dropoff_lat: item.lat ?? null,
+                                  dropoff_lng: item.lng ?? null,
+                                });
 
-                              setDropoffSuggestions([]);
-                            }}
+                                setDropoffSuggestions([]);
+                              }}
                               className="w-full text-left px-4 py-3 hover:bg-slate-50 border-b last:border-b-0"
                             >
                               <div className="font-medium text-slate-900">
