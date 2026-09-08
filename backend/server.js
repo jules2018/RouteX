@@ -1288,6 +1288,20 @@ if (place) {
       place.address
     );
 
+    return res.json([
+  {
+    address: place.address,
+    full_address:
+      place.full_address ||
+      place.address,
+    area_name: place.area_name,
+    place_type: place.place_type,
+    lat: null,
+    lng: null,
+    source: "local-no-coordinates",
+  },
+]);
+
   } catch (geocodeError) {
     console.error(
       "LOCAL PLACE GEOCODING FAILED:",
