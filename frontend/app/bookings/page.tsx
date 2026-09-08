@@ -447,31 +447,25 @@ const results = data;
                       Drop-off
                     </label>
 
-                    <select
+                                      <select
                       value={form.dropoff_area}
                       onChange={(e) =>
                         setForm({
                           ...form,
-                          dropoff_area:
-                            e.target.value,
+                          dropoff_area: e.target.value,
                         })
                       }
-                      className="w-full bg-slate-50 border-0 rounded-xl px-4 py-3 text-slate-900 outline-none focus:ring-2 focus:ring-teal-500"
                     >
-                      <option value="">
-                        Select drop-off area
-                      </option>
+                      <option value="">Select drop-off area</option>
 
-                      {areaOptions.map(
-                        (area) => (
-                          <option
-                            key={area}
-                            value={area}
-                          >
-                            {area}
-                          </option>
-                        )
-                      )}
+                      {areas.map((area: any) => (
+                        <option
+                          key={area.id}
+                          value={area.area_name}
+                        >
+                          {area.area_name}
+                        </option>
+                      ))}
                     </select>
 
                     <input
