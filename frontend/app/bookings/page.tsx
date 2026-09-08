@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { showNotification } from "../lib/notifications";
 
 export default function BookRidePage() {
@@ -13,6 +13,7 @@ export default function BookRidePage() {
 
   const [pickupResults, setPickupResults] = useState<any[]>([]);
   const [dropoffResults, setDropoffResults] = useState<any[]>([]);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [areas, setAreas] = useState<any[]>([]);
   const [promoCode, setPromoCode] = useState("");
  const API_BASE_URL = "https://routex-development.onrender.com";
@@ -378,16 +379,22 @@ const results = data;
                       value={
                         form.pickup_address
                       }
-                    onChange={(e) => {
-                      const value = e.target.value;
+                              onChange={(e) => {
+                              const value = e.target.value;
 
-                      setForm({
-                        ...form,
-                        pickup_address: value,
-                      });
+                              setForm({
+                                ...form,
+                                pickup_address: value,
+                              });
 
-                      searchAddress(value, "pickup");
-                    }}
+                              if (searchTimeoutRef.current) {
+                                clearTimeout(searchTimeoutRef.current);
+                              }
+
+                              searchTimeoutRef.current = setTimeout(() => {
+                                searchAddress(value, "pickup");
+                              }, 700);
+                            }}
                       className="w-full mt-2 bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-900 outline-none focus:border-teal-500"
                     />
 
@@ -480,7 +487,13 @@ const results = data;
                           dropoff_address: value,
                         });
 
-                        searchAddress(value, "dropoff");
+                        if (searchTimeoutRef.current) {
+                          clearTimeout(searchTimeoutRef.current);
+                        }
+
+                        searchTimeoutRef.current = setTimeout(() => {
+                          searchAddress(value, "dropoff");
+                        }, 700);
                       }}
                       className="w-full mt-2 bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-900 outline-none focus:border-teal-500"
                     />
