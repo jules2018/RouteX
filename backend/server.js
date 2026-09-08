@@ -1203,12 +1203,15 @@ app.get("/addresses/search", async (req, res) => {
         item.longitude === null
       )
   );
+if (place) {
+  try {
+    const geocodeQueries = [
+      `${place.full_address}, South Africa`,
+      `${place.address}, ${place.area_name}, Upington, South Africa`,
+      `${place.address}, Upington, South Africa`,
+    ];
 
-  if (place) {
-    try {
-      const geocodeQuery =
-        `${place.full_address}, South Africa`;
-
+    for (const geocodeQuery of geocodeQueries) {
       const geocodeUrl =
         `https://nominatim.openstreetmap.org/search` +
         `?q=${encodeURIComponent(geocodeQuery)}` +
@@ -1226,61 +1229,72 @@ app.get("/addresses/search", async (req, res) => {
         }
       );
 
-      if (geocodeResponse.ok) {
-        const geocodeData =
-          await geocodeResponse.json();
-
-        if (geocodeData.length > 0) {
-          const lat = Number(
-            geocodeData[0].lat
-          );
-
-          const lng = Number(
-            geocodeData[0].lon
-          );
-
-          // Save coordinates so we only
-          // need to geocode this place once
-          await pool.query(
-            `
-            UPDATE public.addresses
-            SET
-              latitude = $1,
-              longitude = $2
-            WHERE id = $3
-            `,
-            [lat, lng, place.id]
-          );
-
-          console.log(
-            "GEOCODED LOCAL PLACE:",
-            place.address,
-            lat,
-            lng
-          );
-
-          return res.json([
-            {
-              address: place.address,
-              full_address:
-                place.full_address ||
-                place.address,
-              area_name: place.area_name,
-              place_type: place.place_type,
-              lat,
-              lng,
-              source: "local-geocoded",
-            },
-          ]);
-        }
+      if (!geocodeResponse.ok) {
+        continue;
       }
-    } catch (geocodeError) {
-      console.error(
-        "LOCAL PLACE GEOCODING FAILED:",
-        geocodeError.message
+
+      const geocodeData =
+        await geocodeResponse.json();
+
+      if (geocodeData.length === 0) {
+        continue;
+      }
+
+      const lat = Number(
+        geocodeData[0].lat
       );
+
+      const lng = Number(
+        geocodeData[0].lon
+      );
+
+      await pool.query(
+        `
+        UPDATE public.addresses
+        SET
+          latitude = $1,
+          longitude = $2
+        WHERE id = $3
+        `,
+        [lat, lng, place.id]
+      );
+
+      console.log(
+        "GEOCODED LOCAL PLACE:",
+        place.address,
+        lat,
+        lng,
+        "USING:",
+        geocodeQuery
+      );
+
+      return res.json([
+        {
+          address: place.address,
+          full_address:
+            place.full_address ||
+            place.address,
+          area_name: place.area_name,
+          place_type: place.place_type,
+          lat,
+          lng,
+          source: "local-geocoded",
+        },
+      ]);
     }
+
+    console.log(
+      "COULD NOT GEOCODE LOCAL PLACE:",
+      place.address
+    );
+
+  } catch (geocodeError) {
+    console.error(
+      "LOCAL PLACE GEOCODING FAILED:",
+      geocodeError.message
+    );
   }
+}
 }
 
     // 2. Only use OpenStreetMap if local database found nothing
