@@ -1212,18 +1212,63 @@ app.get("/addresses/search", async (req, res) => {
     const results = data.map((item) => {
       const address = item.address || {};
 
-      const areaName =
-        address.suburb ||
-        address.neighbourhood ||
-        address.residential ||
-        address.quarter ||
-        address.village ||
-        address.town ||
-        address.city_district ||
-        "";
+     const areaName =
+  address.suburb ||
+  address.neighbourhood ||
+  address.residential ||
+  address.village ||
+  address.quarter ||
+  address.city_district ||
+  address.town ||
+  "";
 
         let normalizedArea = areaName;
 
+const knownAreas = [
+  "Bellvue",
+  "Blydeville",
+  "Die Rand",
+  "Flora Park",
+  "Keidebees",
+  "Klippunt",
+  "Laboria",
+  "Lemoendraai",
+  "Louisvale",
+  "Louisvale Weg",
+  "Middelpos",
+  "Morning Glory",
+  "Nuwerus",
+  "Oosterville",
+  "Paballelo",
+  "Progress",
+  "Raaswater",
+  "Rosedale",
+  "Ses Brugge",
+  "Straussburg",
+  "Swartkop",
+  "Upington Central",
+  "Vaalkroek",
+];
+
+for (const knownArea of knownAreas) {
+  if (
+    item.display_name
+      .toLowerCase()
+      .includes(knownArea.toLowerCase())
+  ) {
+    normalizedArea = knownArea;
+    break;
+  }
+}
+
+const fullAddress = item.display_name.toLowerCase();
+
+if (
+  fullAddress.includes("extension 1") ||
+  fullAddress.includes("extension 2")
+) {
+  normalizedArea = "Rosedale";
+}
 if (areaName === "Louisvale - Upington") {
   normalizedArea = "Louisvale";
 }
