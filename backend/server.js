@@ -1238,6 +1238,7 @@ const knownAreas = [
   "Middelpos",
   "Morning Glory",
   "Nuwerus",
+  "Olyfvenhoudtsdrift",
   "Oosterville",
   "Paballelo",
   "Progress",
