@@ -448,8 +448,8 @@ const results = data;
                               }
 
                               searchTimeoutRef.current = setTimeout(() => {
-                                searchAddress(value, "pickup");
-                              }, 700);
+  searchAddress(value, "pickup");
+}, 250);
                             }}
                       className="w-full mt-2 bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-900 outline-none focus:border-teal-500"
                     />
@@ -543,9 +543,9 @@ const results = data;
                           clearTimeout(searchTimeoutRef.current);
                         }
 
-                        searchTimeoutRef.current = setTimeout(() => {
-                          searchAddress(value, "dropoff");
-                        }, 700);
+                       searchTimeoutRef.current = setTimeout(() => {
+  searchAddress(value, "pickup");
+}, 250);
                       }}
                       className="w-full mt-2 bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-900 outline-none focus:border-teal-500"
                     />
