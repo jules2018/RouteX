@@ -1148,44 +1148,140 @@ app.get("/addresses/search", async (req, res) => {
     }
 
     // 1. Search RouteX's own address table first
-    const localResult = await pool.query(
-      `
-   SELECT
-  address,
-  full_address,
-  area_name,
-  latitude,
-  longitude,
-  place_type
-FROM addresses
-WHERE address ILIKE $1
-AND latitude IS NOT NULL
-AND longitude IS NOT NULL
-ORDER BY address
-LIMIT 10
-      `,
-      [`%${query}%`]
-    );
-
-    if (localResult.rows.length > 0) {
-    return res.json(
-  localResult.rows.map((item) => ({
-    address: item.address,
-   full_address: item.full_address || item.address,
-    area_name: item.area_name,
-    place_type: item.place_type,
-    lat:
-      item.latitude !== null
-        ? Number(item.latitude)
-        : null,
-    lng:
-      item.longitude !== null
-        ? Number(item.longitude)
-        : null,
-    source: "local",
-  }))
+   const localResult = await pool.query(
+  `
+  SELECT
+    id,
+    address,
+    full_address,
+    area_name,
+    latitude,
+    longitude,
+    place_type
+  FROM public.addresses
+  WHERE
+    address ILIKE $1
+    OR full_address ILIKE $1
+  ORDER BY address
+  LIMIT 10
+  `,
+  [`%${query}%`]
 );
+
+   if (localResult.rows.length > 0) {
+
+  // First check whether any matching local result
+  // already has coordinates
+  const localWithCoordinates = localResult.rows.filter(
+    (item) =>
+      item.latitude !== null &&
+      item.longitude !== null
+  );
+
+  if (localWithCoordinates.length > 0) {
+    return res.json(
+      localWithCoordinates.map((item) => ({
+        address: item.address,
+        full_address:
+          item.full_address || item.address,
+        area_name: item.area_name,
+        place_type: item.place_type,
+        lat: Number(item.latitude),
+        lng: Number(item.longitude),
+        source: "local",
+      }))
+    );
+  }
+
+  // A local place was found, but it has no coordinates.
+  // Try to geocode its full physical address.
+  const place = localResult.rows.find(
+    (item) =>
+      item.full_address &&
+      (
+        item.latitude === null ||
+        item.longitude === null
+      )
+  );
+
+  if (place) {
+    try {
+      const geocodeQuery =
+        `${place.full_address}, South Africa`;
+
+      const geocodeUrl =
+        `https://nominatim.openstreetmap.org/search` +
+        `?q=${encodeURIComponent(geocodeQuery)}` +
+        `&format=jsonv2` +
+        `&limit=1` +
+        `&countrycodes=za`;
+
+      const geocodeResponse = await fetch(
+        geocodeUrl,
+        {
+          headers: {
+            "User-Agent": "RouteX/1.0",
+            "Accept-Language": "en",
+          },
+        }
+      );
+
+      if (geocodeResponse.ok) {
+        const geocodeData =
+          await geocodeResponse.json();
+
+        if (geocodeData.length > 0) {
+          const lat = Number(
+            geocodeData[0].lat
+          );
+
+          const lng = Number(
+            geocodeData[0].lon
+          );
+
+          // Save coordinates so we only
+          // need to geocode this place once
+          await pool.query(
+            `
+            UPDATE public.addresses
+            SET
+              latitude = $1,
+              longitude = $2
+            WHERE id = $3
+            `,
+            [lat, lng, place.id]
+          );
+
+          console.log(
+            "GEOCODED LOCAL PLACE:",
+            place.address,
+            lat,
+            lng
+          );
+
+          return res.json([
+            {
+              address: place.address,
+              full_address:
+                place.full_address ||
+                place.address,
+              area_name: place.area_name,
+              place_type: place.place_type,
+              lat,
+              lng,
+              source: "local-geocoded",
+            },
+          ]);
+        }
+      }
+    } catch (geocodeError) {
+      console.error(
+        "LOCAL PLACE GEOCODING FAILED:",
+        geocodeError.message
+      );
     }
+  }
+}
 
     // 2. Only use OpenStreetMap if local database found nothing
     const searchQuery = `${query}, Upington, South Africa`;
