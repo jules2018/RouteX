@@ -1185,12 +1185,25 @@ app.get("/addresses/search", async (req, res) => {
         address.city_district ||
         "";
 
-      return {
-        address: item.display_name,
-        area_name: areaName,
-        lat: Number(item.lat),
-        lng: Number(item.lon),
-      };
+      const street =
+  address.road ||
+  address.pedestrian ||
+  address.residential ||
+  query;
+
+const houseNumber = address.house_number || "";
+
+const shortAddress = houseNumber
+  ? `${houseNumber} ${street}`
+  : street;
+
+return {
+  address: shortAddress,
+  full_address: item.display_name,
+  area_name: areaName,
+  lat: Number(item.lat),
+  lng: Number(item.lon),
+};
     });
 
     res.json(results);
