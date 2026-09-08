@@ -1292,26 +1292,33 @@ app.get("/addresses/search", async (req, res) => {
       : street;
 
     // Save recognised address locally
-    if (shortAddress && normalizedArea) {
-      try {
-        await pool.query(
-          `
-          INSERT INTO public.addresses (
-            address,
-            area_name
-          )
-          VALUES ($1, $2)
-          ON CONFLICT DO NOTHING
-          `,
-          [shortAddress, normalizedArea]
-        );
-      } catch (saveError) {
-        console.error(
-          "FAILED TO SAVE ADDRESS:",
-          saveError.message
-        );
-      }
-    }
+ // Save recognised address locally
+// only if the area is a valid RouteX fare area
+if (
+  shortAddress &&
+  normalizedArea &&
+  knownAreas.includes(normalizedArea)
+) {
+  try {
+    await pool.query(
+      `
+      INSERT INTO public.addresses (
+        address,
+        area_name
+      )
+      VALUES ($1, $2)
+      ON CONFLICT DO NOTHING
+      `,
+      [shortAddress, normalizedArea]
+    );
+  } catch (saveError) {
+    console.error(
+      "FAILED TO SAVE ADDRESS:",
+      saveError.message
+    );
+  }
+}
+
 
     return {
       address: shortAddress,
