@@ -1150,8 +1150,9 @@ app.get("/addresses/search", async (req, res) => {
     // 1. Search RouteX's own address table first
     const localResult = await pool.query(
       `
-     SELECT
+   SELECT
   address,
+  full_address,
   area_name,
   latitude,
   longitude,
@@ -1170,7 +1171,7 @@ LIMIT 10
     return res.json(
   localResult.rows.map((item) => ({
     address: item.address,
-    full_address: item.address,
+   full_address: item.full_address || item.address,
     area_name: item.area_name,
     place_type: item.place_type,
     lat:
@@ -1333,18 +1334,20 @@ if (
   try {
     await pool.query(
       `
-     INSERT INTO public.addresses (
+ INSERT INTO public.addresses (
   address,
+  full_address,
   area_name,
   latitude,
   longitude,
   place_type
 )
-VALUES ($1, $2, $3, $4, $5)
+VALUES ($1, $2, $3, $4, $5, $6)
       ON CONFLICT DO NOTHING
       `,
-     [
+ [
   shortAddress,
+  item.display_name,
   normalizedArea,
   Number(item.lat),
   Number(item.lon),
