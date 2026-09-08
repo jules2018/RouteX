@@ -347,32 +347,26 @@ const results = data;
                       Pickup
                     </label>
 
-                    <select
-                      value={form.pickup_area}
-                      onChange={(e) =>
-                        setForm({
-                          ...form,
-                          pickup_area:
-                            e.target.value,
-                        })
-                      }
-                      className="w-full bg-slate-50 border-0 rounded-xl px-4 py-3 text-slate-900 outline-none focus:ring-2 focus:ring-teal-500"
-                    >
-                      <option value="">
-                        Select pickup area
-                      </option>
+                                <select
+                    value={form.pickup_area}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        pickup_area: e.target.value,
+                      })
+                    }
+                  >
+                    <option value="">Select pickup area</option>
 
-                      {areaOptions.map(
-                        (area) => (
-                          <option
-                            key={area}
-                            value={area}
-                          >
-                            {area}
-                          </option>
-                        )
-                      )}
-                    </select>
+                    {areas.map((area: any) => (
+                      <option
+                        key={area.id}
+                        value={area.area_name}
+                      >
+                        {area.area_name}
+                      </option>
+                    ))}
+                  </select>
 
                     <input
                       placeholder="House number, street or landmark"
