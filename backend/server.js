@@ -1154,7 +1154,8 @@ app.get("/addresses/search", async (req, res) => {
   address,
   area_name,
   latitude,
-  longitude
+  longitude,
+  place_type
 FROM addresses
 WHERE address ILIKE $1
 AND latitude IS NOT NULL
@@ -1171,6 +1172,7 @@ LIMIT 10
     address: item.address,
     full_address: item.address,
     area_name: item.area_name,
+    place_type: item.place_type,
     lat:
       item.latitude !== null
         ? Number(item.latitude)
@@ -1331,21 +1333,23 @@ if (
   try {
     await pool.query(
       `
-      INSERT INTO public.addresses (
-        address,
-        area_name,
-        latitude,
-        longitude
-      )
-      VALUES ($1, $2, $3, $4)
+     INSERT INTO public.addresses (
+  address,
+  area_name,
+  latitude,
+  longitude,
+  place_type
+)
+VALUES ($1, $2, $3, $4, $5)
       ON CONFLICT DO NOTHING
       `,
-      [
-        shortAddress,
-        normalizedArea,
-        Number(item.lat),
-        Number(item.lon)
-      ]
+     [
+  shortAddress,
+  normalizedArea,
+  Number(item.lat),
+  Number(item.lon),
+  item.type || item.category || null
+]
     );
   } catch (saveError) {
     console.error(
