@@ -34,7 +34,7 @@ export default function AmbassadorDashboardPage() {
   setAmbassador(parsedAmbassador);
 
   fetch(
-    `https://https://routex-1-z1hf.onrender.com/ambassador/${parsedAmbassador.referral_code}/stats`
+    `https://routex-1-z1hf.onrender.com/ambassador/${parsedAmbassador.referral_code}/stats`
   )
     .then((res) => res.json())
     .then((data) => {
@@ -46,7 +46,7 @@ setBookings(
   data.bookings
 );
 fetch(
-  `https://https://routex-1-z1hf.onrender.com/ambassador/${parsedAmbassador.referral_code}/referrals`
+  `https://routex-1-z1hf.onrender.com/ambassador/${parsedAmbassador.referral_code}/referrals`
 )
   .then((res) => res.json())
   .then((data) => {

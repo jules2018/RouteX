@@ -360,7 +360,7 @@ const results = data;
 
                     {areas.map((area: any) => (
                       <option
-                        key={area.id}
+                        key={area.area_name}
                         value={area.area_name}
                       >
                         {area.area_name}
@@ -454,7 +454,7 @@ const results = data;
 
                       {areas.map((area: any) => (
                         <option
-                          key={area.id}
+                         key={area.area_name}
                           value={area.area_name}
                         >
                           {area.area_name}
