@@ -1157,6 +1157,8 @@ app.get("/addresses/search", async (req, res) => {
   longitude
 FROM addresses
 WHERE address ILIKE $1
+AND latitude IS NOT NULL
+AND longitude IS NOT NULL
 ORDER BY address
 LIMIT 10
       `,
