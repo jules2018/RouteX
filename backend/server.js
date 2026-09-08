@@ -1222,6 +1222,11 @@ app.get("/addresses/search", async (req, res) => {
         address.city_district ||
         "";
 
+        let normalizedArea = areaName;
+
+if (areaName === "Louisvale - Upington") {
+  normalizedArea = "Louisvale";
+}
       const street =
         address.road ||
         address.pedestrian ||
@@ -1237,7 +1242,7 @@ app.get("/addresses/search", async (req, res) => {
       return {
         address: shortAddress,
         full_address: item.display_name,
-        area_name: areaName,
+        area_name: normalizedArea,
         lat: Number(item.lat),
         lng: Number(item.lon),
         source: "osm",
@@ -2719,11 +2724,21 @@ WHERE area_name = $1
   `,
   [dropoff_area]
 );
+if (
+  pickupResult.rows.length === 0 ||
+  dropoffResult.rows.length === 0
+) {
+  return res.status(400).json({
+    error: "Pickup or drop-off area was not recognised",
+  });
+}
+
 const pickupCategory =
   pickupResult.rows[0].category;
 
 const dropoffCategory =
   dropoffResult.rows[0].category;
+
 let fare;
 let baseFare;
 
