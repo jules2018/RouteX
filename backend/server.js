@@ -1147,14 +1147,42 @@ app.get("/addresses/search", async (req, res) => {
       return res.json([]);
     }
 
-    const searchQuery = `${query}, Upington, Northern Cape, South Africa`;
+    // 1. Search RouteX's own address table first
+    const localResult = await pool.query(
+      `
+      SELECT
+        address,
+        area_name
+      FROM addresses
+      WHERE address ILIKE $1
+      ORDER BY address
+      LIMIT 10
+      `,
+      [`%${query}%`]
+    );
+
+    if (localResult.rows.length > 0) {
+      return res.json(
+        localResult.rows.map((item) => ({
+          address: item.address,
+          full_address: item.address,
+          area_name: item.area_name,
+          lat: null,
+          lng: null,
+          source: "local",
+        }))
+      );
+    }
+
+    // 2. Only use OpenStreetMap if local database found nothing
+    const searchQuery = `${query}, Upington, South Africa`;
 
     const url =
       `https://nominatim.openstreetmap.org/search` +
       `?q=${encodeURIComponent(searchQuery)}` +
       `&format=jsonv2` +
       `&addressdetails=1` +
-      `&limit=8` +
+      `&limit=6` +
       `&countrycodes=za`;
 
     const response = await fetch(url, {
@@ -1164,10 +1192,19 @@ app.get("/addresses/search", async (req, res) => {
       },
     });
 
+    // If Nominatim rate-limits us, don't crash the frontend
+    if (response.status === 429) {
+      console.log("Nominatim rate limited");
+      return res.json([]);
+    }
+
     if (!response.ok) {
-      throw new Error(
-        `Address search failed with status ${response.status}`
+      console.log(
+        "Nominatim search failed:",
+        response.status
       );
+
+      return res.json([]);
     }
 
     const data = await response.json();
@@ -1186,24 +1223,25 @@ app.get("/addresses/search", async (req, res) => {
         "";
 
       const street =
-  address.road ||
-  address.pedestrian ||
-  address.residential ||
-  query;
+        address.road ||
+        address.pedestrian ||
+        address.residential ||
+        query;
 
-const houseNumber = address.house_number || "";
+      const houseNumber = address.house_number || "";
 
-const shortAddress = houseNumber
-  ? `${houseNumber} ${street}`
-  : street;
+      const shortAddress = houseNumber
+        ? `${houseNumber} ${street}`
+        : street;
 
-return {
-  address: shortAddress,
-  full_address: item.display_name,
-  area_name: areaName,
-  lat: Number(item.lat),
-  lng: Number(item.lon),
-};
+      return {
+        address: shortAddress,
+        full_address: item.display_name,
+        area_name: areaName,
+        lat: Number(item.lat),
+        lng: Number(item.lon),
+        source: "osm",
+      };
     });
 
     res.json(results);
