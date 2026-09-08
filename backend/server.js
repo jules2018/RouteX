@@ -1141,33 +1141,65 @@ app.get("/trips/:id/route-manifest", async (req, res) => {
 });
 app.get("/addresses/search", async (req, res) => {
   try {
-    const query = req.query.q;
+    const query = String(req.query.q || "").trim();
 
-    if (!query) {
+    if (query.length < 2) {
       return res.json([]);
     }
 
-    const result = await pool.query(
-      `
-      SELECT
-        address,
-        area_name
-      FROM addresses
-      WHERE address ILIKE $1
-      ORDER BY address
-      LIMIT 10
-      `,
-      [`%${query}%`]
-    );
+    const searchQuery = `${query}, Upington, Northern Cape, South Africa`;
 
-    res.json(result.rows);
+    const url =
+      `https://nominatim.openstreetmap.org/search` +
+      `?q=${encodeURIComponent(searchQuery)}` +
+      `&format=jsonv2` +
+      `&addressdetails=1` +
+      `&limit=8` +
+      `&countrycodes=za`;
 
-  } catch (error) {
-
-    res.status(500).json({
-      error: error.message
+    const response = await fetch(url, {
+      headers: {
+        "User-Agent": "RouteX/1.0",
+        "Accept-Language": "en",
+      },
     });
 
+    if (!response.ok) {
+      throw new Error(
+        `Address search failed with status ${response.status}`
+      );
+    }
+
+    const data = await response.json();
+
+    const results = data.map((item) => {
+      const address = item.address || {};
+
+      const areaName =
+        address.suburb ||
+        address.neighbourhood ||
+        address.residential ||
+        address.quarter ||
+        address.village ||
+        address.town ||
+        address.city_district ||
+        "";
+
+      return {
+        address: item.display_name,
+        area_name: areaName,
+        lat: Number(item.lat),
+        lng: Number(item.lon),
+      };
+    });
+
+    res.json(results);
+  } catch (error) {
+    console.error("ADDRESS SEARCH ERROR:", error);
+
+    res.status(500).json({
+      error: error.message,
+    });
   }
 });
 app.get("/dashboard", async (req, res) => {

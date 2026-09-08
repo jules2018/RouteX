@@ -15,7 +15,7 @@ export default function BookRidePage() {
   const [dropoffResults, setDropoffResults] = useState<any[]>([]);
   const [areas, setAreas] = useState<any[]>([]);
   const [promoCode, setPromoCode] = useState("");
-  const API_BASE_URL = "https://routex-1-z1hf.onrender.com";
+ const API_BASE_URL = "https://routex-development.onrender.com";
 
   const [fare, setFare] = useState("");
 
@@ -49,7 +49,7 @@ export default function BookRidePage() {
     const loadAreas = async () => {
       try {
         const response = await fetch(
-          "https://routex-1-z1hf.onrender.com/areas"
+          "https://routex-development.onrender.com/areas"
         );
 
         const text = await response.text();
@@ -69,29 +69,39 @@ console.log(text);
   ========================= */
 
   const searchAddress = async (
-    query: string,
-    type: "pickup" | "dropoff"
-  ) => {
-    if (!query) return;
-
-    try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
-          query
-        )}&format=jsonv2`
-      );
-
-      const data = await response.json();
-
-      if (type === "pickup") {
-        setPickupResults(data);
-      } else {
-        setDropoffResults(data);
-      }
-    } catch (error) {
-      console.error("Address search failed", error);
+  query: string,
+  type: "pickup" | "dropoff"
+) => {
+  if (query.trim().length < 3) {
+    if (type === "pickup") {
+      setPickupSuggestions([]);
+    } else {
+      setDropoffSuggestions([]);
     }
-  };
+    return;
+  }
+
+  try {
+    const searchQuery =
+      `${query}, Upington, Northern Cape, South Africa`;
+
+    const response = await fetch(
+  `${API_BASE_URL}/addresses/search?q=${encodeURIComponent(query)}`
+);
+
+const data = await response.json();
+
+const results = data;
+
+    if (type === "pickup") {
+      setPickupSuggestions(results);
+    } else {
+      setDropoffSuggestions(results);
+    }
+  } catch (error) {
+    console.error("Address search failed:", error);
+  }
+};
 
   /* =========================
      FARE CALCULATION
@@ -117,7 +127,7 @@ console.log(text);
 
     try {
       const response = await fetch(
-        `https://routex-1-z1hf.onrender.com/calculate-fare?pickup_area=${encodeURIComponent(
+        `https://routex-development.onrender.com/calculate-fare?pickup_area=${encodeURIComponent(
           pickupArea
         )}&dropoff_area=${encodeURIComponent(
           dropoffArea
@@ -168,7 +178,7 @@ console.log(text);
 
     try {
       const response = await fetch(
-        "https://routex-1-z1hf.onrender.com/bookings",
+        "https://routex-development.onrender.com/bookings",
         {
           method: "POST",
           headers: {
@@ -368,44 +378,16 @@ console.log(text);
                       value={
                         form.pickup_address
                       }
-                      onChange={async (e) => {
-                        const value =
-                          e.target.value;
+                    onChange={(e) => {
+                      const value = e.target.value;
 
-                        setForm({
-                          ...form,
-                          pickup_address:
-                            value,
-                        });
+                      setForm({
+                        ...form,
+                        pickup_address: value,
+                      });
 
-                        if (
-                          value.length < 2
-                        ) {
-                          setPickupSuggestions(
-                            []
-                          );
-                          return;
-                        }
-
-                        try {
-                          const response =
-                            await fetch(
-                              `https://routex-1-z1hf.onrender.com/addresses/search?q=${value}`
-                            );
-
-                          const data =
-                            await response.json();
-
-                          setPickupSuggestions(
-                            data
-                          );
-                        } catch (error) {
-                          console.error(
-                            "Pickup address search failed",
-                            error
-                          );
-                        }
-                      }}
+                      searchAddress(value, "pickup");
+                    }}
                       className="w-full mt-2 bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-900 outline-none focus:border-teal-500"
                     />
 
@@ -416,23 +398,19 @@ console.log(text);
                       <div className="mt-2 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden">
 
                         {pickupSuggestions.map(
-                          (item) => (
-                            <button
-                              key={
-                                item.address
-                              }
+                                (item, index) => (
+                                  <button
+                                    key={`${item.address}-${index}`}
                               type="button"
-                              onClick={() => {
-                                setForm({
-                                  ...form,
-                                  pickup_address:
-                                    item.address,
-                                });
+                             onClick={() => {
+                                  setForm({
+                                    ...form,
+                                    pickup_address: item.address,
+                                    pickup_area: item.area_name || "",
+                                  });
 
-                                setPickupSuggestions(
-                                  []
-                                );
-                              }}
+                                  setPickupSuggestions([]);
+                                }}
                               className="w-full text-left px-4 py-3 hover:bg-slate-50 border-b last:border-b-0"
                             >
                               <div className="font-medium text-slate-900">
@@ -494,43 +472,15 @@ console.log(text);
                       value={
                         form.dropoff_address
                       }
-                      onChange={async (e) => {
-                        const value =
-                          e.target.value;
+                      onChange={(e) => {
+                        const value = e.target.value;
 
                         setForm({
                           ...form,
-                          dropoff_address:
-                            value,
+                          dropoff_address: value,
                         });
 
-                        if (
-                          value.length < 2
-                        ) {
-                          setDropoffSuggestions(
-                            []
-                          );
-                          return;
-                        }
-
-                        try {
-                          const response =
-                            await fetch(
-                              `https://routex-1-z1hf.onrender.com/addresses/search?q=${value}`
-                            );
-
-                          const data =
-                            await response.json();
-
-                          setDropoffSuggestions(
-                            data
-                          );
-                        } catch (error) {
-                          console.error(
-                            "Dropoff address search failed",
-                            error
-                          );
-                        }
+                        searchAddress(value, "dropoff");
                       }}
                       className="w-full mt-2 bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-900 outline-none focus:border-teal-500"
                     />
@@ -542,23 +492,20 @@ console.log(text);
                       <div className="mt-2 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden">
 
                         {dropoffSuggestions.map(
-                          (item) => (
+                          (item, index) => (
                             <button
-                              key={
-                                item.address
-                              }
+                              key={`${item.address}-${index}`}
+
                               type="button"
                               onClick={() => {
-                                setForm({
-                                  ...form,
-                                  dropoff_address:
-                                    item.address,
-                                });
+                              setForm({
+                                ...form,
+                                dropoff_address: item.address,
+                                dropoff_area: item.area_name || "",
+                              });
 
-                                setDropoffSuggestions(
-                                  []
-                                );
-                              }}
+                              setDropoffSuggestions([]);
+                            }}
                               className="w-full text-left px-4 py-3 hover:bg-slate-50 border-b last:border-b-0"
                             >
                               <div className="font-medium text-slate-900">
