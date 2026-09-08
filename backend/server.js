@@ -1209,93 +1209,120 @@ app.get("/addresses/search", async (req, res) => {
 
     const data = await response.json();
 
-    const results = data.map((item) => {
-      const address = item.address || {};
+    const results = await Promise.all(
+  data.map(async (item) => {
+    const address = item.address || {};
 
-     const areaName =
-  address.suburb ||
-  address.neighbourhood ||
-  address.residential ||
-  address.village ||
-  address.quarter ||
-  address.city_district ||
-  address.town ||
-  "";
+    const areaName =
+      address.suburb ||
+      address.neighbourhood ||
+      address.residential ||
+      address.village ||
+      address.quarter ||
+      address.city_district ||
+      address.town ||
+      "";
 
-        let normalizedArea = areaName;
+    let normalizedArea = areaName;
 
-const knownAreas = [
-  "Bellvue",
-  "Blydeville",
-  "Die Rand",
-  "Flora Park",
-  "Hillside",
-  "Keidebees",
-  "Klippunt",
-  "Laboria",
-  "Lemoendraai",
-  "Louisvale Weg",
-  "Louisvale",
-  "Middelpos",
-  "Morning Glory",
-  "Nuwerus",
-  "Olyfvenhoudtsdrift",
-  "Oosterville",
-  "Paballelo",
-  "Progress",
-  "Raaswater",
-  "Rosedale",
-  "Ses Brugge",
-  "Straussburg",
-  "Mountain View",
-  "Swartkop",
-  "Upington Central",
-  "Vaalkroek",
-];
+    const knownAreas = [
+      "Augrabies Park",
+      "Bellvue",
+      "Blydeville",
+      "Die Rand",
+      "Flora Park",
+      "Hillside",
+      "Keidebees",
+      "Klippunt",
+      "Laboria",
+      "Lemoendraai",
+      "Louisvale Weg",
+      "Louisvale",
+      "Middelpos",
+      "Morning Glory",
+      "Mountain View",
+      "Nuwerus",
+      "Olyfvenhoudtsdrift",
+      "Oosterville",
+      "Paballelo",
+      "Progress",
+      "Raaswater",
+      "Rosedale",
+      "Ses Brugge",
+      "Straussburg",
+      "Swartkop",
+      "Upington Central",
+      "Vaalkroek",
+    ];
 
-for (const knownArea of knownAreas) {
-  if (
-    item.display_name
-      .toLowerCase()
-      .includes(knownArea.toLowerCase())
-  ) {
-    normalizedArea = knownArea;
-    break;
-  }
-}
+    for (const knownArea of knownAreas) {
+      if (
+        item.display_name
+          .toLowerCase()
+          .includes(knownArea.toLowerCase())
+      ) {
+        normalizedArea = knownArea;
+        break;
+      }
+    }
 
-const fullAddress = item.display_name.toLowerCase();
+    const fullAddress = item.display_name.toLowerCase();
 
-if (
-  fullAddress.includes("extension 1") ||
-  fullAddress.includes("extension 2")
-) {
-  normalizedArea = "Rosedale";
-}
-if (areaName === "Louisvale - Upington") {
-  normalizedArea = "Louisvale";
-}
-      const street =
-        address.road ||
-        address.pedestrian ||
-        address.residential ||
-        query;
+    if (
+      fullAddress.includes("extension 1") ||
+      fullAddress.includes("extension 2")
+    ) {
+      normalizedArea = "Rosedale";
+    }
 
-      const houseNumber = address.house_number || "";
+    if (areaName === "Louisvale - Upington") {
+      normalizedArea = "Louisvale";
+    }
 
-      const shortAddress = houseNumber
-        ? `${houseNumber} ${street}`
-        : street;
+    const street =
+      address.road ||
+      address.pedestrian ||
+      address.residential ||
+      query;
 
-      return {
-        address: shortAddress,
-        full_address: item.display_name,
-        area_name: normalizedArea,
-        lat: Number(item.lat),
-        lng: Number(item.lon),
-        source: "osm",
-      };
-    });
+    const houseNumber = address.house_number || "";
+
+    const shortAddress = houseNumber
+      ? `${houseNumber} ${street}`
+      : street;
+
+    // Save recognised address locally
+    if (shortAddress && normalizedArea) {
+      try {
+        await pool.query(
+          `
+          INSERT INTO public.addresses (
+            address,
+            area_name
+          )
+          VALUES ($1, $2)
+          ON CONFLICT DO NOTHING
+          `,
+          [shortAddress, normalizedArea]
+        );
+      } catch (saveError) {
+        console.error(
+          "FAILED TO SAVE ADDRESS:",
+          saveError.message
+        );
+      }
+    }
+
+    return {
+      address: shortAddress,
+      full_address: item.display_name,
+      area_name: normalizedArea,
+      lat: Number(item.lat),
+      lng: Number(item.lon),
+      source: "osm",
+    };
+  })
+);
 
     res.json(results);
   } catch (error) {
