@@ -1229,6 +1229,7 @@ const knownAreas = [
   "Blydeville",
   "Die Rand",
   "Flora Park",
+  "Hillside",
   "Keidebees",
   "Klippunt",
   "Laboria",
