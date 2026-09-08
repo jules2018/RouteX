@@ -2806,89 +2806,185 @@ app.post("/admin/applications/:id/reject", async (req, res) => {
 app.get("/calculate-fare", async (req, res) => {
   try {
     const pickup_area = req.query.pickup_area;
-const dropoff_area = req.query.dropoff_area;
-const pickupResult = await pool.query(
-  `
-  SELECT category
-FROM public.areas
-WHERE area_name = $1
-  `,
-  [pickup_area]
-);
-const dropoffResult = await pool.query(
-  `
-  SELECT category
-FROM public.areas
-WHERE area_name = $1
-  `,
-  [dropoff_area]
-);
-if (
-  pickupResult.rows.length === 0 ||
-  dropoffResult.rows.length === 0
-) {
-  return res.status(400).json({
-    error: "Pickup or drop-off area was not recognised",
-  });
-}
+    const dropoff_area = req.query.dropoff_area;
 
-const pickupCategory =
-  pickupResult.rows[0].category;
+    const pickup_lat = Number(req.query.pickup_lat);
+    const pickup_lng = Number(req.query.pickup_lng);
+    const dropoff_lat = Number(req.query.dropoff_lat);
+    const dropoff_lng = Number(req.query.dropoff_lng);
 
-const dropoffCategory =
-  dropoffResult.rows[0].category;
+    const hasCoordinates =
+      Number.isFinite(pickup_lat) &&
+      Number.isFinite(pickup_lng) &&
+      Number.isFinite(dropoff_lat) &&
+      Number.isFinite(dropoff_lng);
 
-let fare;
-let baseFare;
+    // =========================================
+    // 1. ROAD DISTANCE PRICING
+    // =========================================
 
-if (pickup_area === dropoff_area) {
-fare = 50;
-baseFare = fare;
+    if (hasCoordinates) {
+      const routeUrl =
+        `https://router.project-osrm.org/route/v1/driving/` +
+        `${pickup_lng},${pickup_lat};${dropoff_lng},${dropoff_lat}` +
+        `?overview=false`;
 
-} else {
-  const fareResult = await pool.query(
-    `
-    SELECT fare
-    FROM public.fare_matrix
-    WHERE from_category = $1
-    AND to_category = $2
-    `,
-    [
-      pickupCategory,
-      dropoffCategory
-    ]
-  );
+      const routeResponse = await fetch(routeUrl);
 
-  fare = fareResult.rows[0].fare;
-  baseFare = fare;
+      if (routeResponse.ok) {
+        const routeData = await routeResponse.json();
 
-}
+        if (
+          routeData.code === "Ok" &&
+          routeData.routes &&
+          routeData.routes.length > 0
+        ) {
+          const distanceKm =
+            routeData.routes[0].distance / 1000;
 
-let discount = 0;
+          let fare;
 
-fare = fare - discount;
+          if (distanceKm <= 3) {
+            fare = 55;
+          } else if (distanceKm <= 5) {
+            fare = 65;
+          } else if (distanceKm <= 7) {
+            fare = 75;
+          } else if (distanceKm <= 9) {
+            fare = 85;
+          } else if (distanceKm <= 12) {
+            fare = 100;
+          } else if (distanceKm <= 15) {
+            fare = 115;
+          } else if (distanceKm <= 20) {
+            fare = 135;
+          } else if (distanceKm <= 25) {
+            fare = 160;
+          } else {
+            // Temporary rule for trips over 25 km
+            fare = 160 + Math.ceil(distanceKm - 25) * 6;
+          }
 
-console.log("Fare response", {
-  pickup_category: pickupCategory,
-  dropoff_category: dropoffCategory,
-  base_fare: baseFare,
-  discount,
-  fare
-});
+          const discount = 0;
+          const finalFare = fare - discount;
 
-res.json({
-  pickup_category: pickupCategory,
-  dropoff_category: dropoffCategory,
-  base_fare: baseFare,
-  discount,
-  fare
-});
-  } catch (error) {
+          console.log("Distance fare response", {
+            distance_km: distanceKm,
+            base_fare: fare,
+            discount,
+            fare: finalFare,
+          });
 
-    res.status(500).json({
-      error: error.message
+          return res.json({
+            pricing_method: "distance",
+            distance_km: Number(distanceKm.toFixed(2)),
+            base_fare: fare,
+            discount,
+            fare: finalFare,
+          });
+        }
+      }
+
+      console.log(
+        "Road distance unavailable - using area fare fallback"
+      );
+    }
+
+    // =========================================
+    // 2. AREA MATRIX FALLBACK
+    // =========================================
+
+    const pickupResult = await pool.query(
+      `
+      SELECT category
+      FROM public.areas
+      WHERE area_name = $1
+      `,
+      [pickup_area]
+    );
+
+    const dropoffResult = await pool.query(
+      `
+      SELECT category
+      FROM public.areas
+      WHERE area_name = $1
+      `,
+      [dropoff_area]
+    );
+
+    if (
+      pickupResult.rows.length === 0 ||
+      dropoffResult.rows.length === 0
+    ) {
+      return res.status(400).json({
+        error: "Pickup or drop-off area was not recognised",
+      });
+    }
+
+    const pickupCategory =
+      pickupResult.rows[0].category;
+
+    const dropoffCategory =
+      dropoffResult.rows[0].category;
+
+    let fare;
+    let baseFare;
+
+    if (pickup_area === dropoff_area) {
+      fare = 50;
+      baseFare = fare;
+    } else {
+      const fareResult = await pool.query(
+        `
+        SELECT fare
+        FROM public.fare_matrix
+        WHERE from_category = $1
+        AND to_category = $2
+        `,
+        [
+          pickupCategory,
+          dropoffCategory
+        ]
+      );
+
+      if (fareResult.rows.length === 0) {
+        return res.status(400).json({
+          error: "Fare not configured for this route",
+        });
+      }
+
+      fare = Number(fareResult.rows[0].fare);
+      baseFare = fare;
+    }
+
+    const discount = 0;
+
+    fare = fare - discount;
+
+    console.log("Area fare response", {
+      pricing_method: "area",
+      pickup_category: pickupCategory,
+      dropoff_category: dropoffCategory,
+      base_fare: baseFare,
+      discount,
+      fare,
     });
 
+    res.json({
+      pricing_method: "area",
+      pickup_category: pickupCategory,
+      dropoff_category: dropoffCategory,
+      base_fare: baseFare,
+      discount,
+      fare,
+    });
+
+  } catch (error) {
+    console.error("CALCULATE FARE ERROR:", error);
+
+    res.status(500).json({
+      error: error.message,
+    });
   }
 });
 
