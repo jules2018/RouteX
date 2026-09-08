@@ -1289,45 +1289,64 @@ LIMIT 10
       normalizedArea = "Louisvale";
     }
 
-    const street =
-      address.road ||
-      address.pedestrian ||
-      address.residential ||
-      query;
+   const street =
+  address.road ||
+  address.pedestrian ||
+  address.residential ||
+  "";
 
-    const houseNumber = address.house_number || "";
+const houseNumber =
+  address.house_number || "";
 
-    const shortAddress = houseNumber
-      ? `${houseNumber} ${street}`
-      : street;
+// Named places such as Shoprite, KFC,
+// doctors, restaurants, hospitals, etc.
+const placeName =
+  item.name ||
+  address.amenity ||
+  address.shop ||
+  address.office ||
+  address.tourism ||
+  address.healthcare ||
+  address.leisure ||
+  "";
 
-    // Save recognised address locally
- // Save recognised address locally
-// only if the area is a valid RouteX fare area
+// Normal street address
+const streetAddress = houseNumber
+  ? `${houseNumber} ${street}`.trim()
+  : street;
+
+// Prefer the place name when one exists.
+// Otherwise use the normal street address.
+const shortAddress =
+  placeName ||
+  streetAddress ||
+  query;
+
+// Save recognised places/addresses locally
 if (
   shortAddress &&
   normalizedArea &&
   knownAreas.includes(normalizedArea)
 ) {
   try {
-  await pool.query(
-    `
-    INSERT INTO public.addresses (
-      address,
-      area_name,
-      latitude,
-      longitude
-    )
-    VALUES ($1, $2, $3, $4)
-    ON CONFLICT DO NOTHING
-    `,
-    [
-      shortAddress,
-      normalizedArea,
-      Number(item.lat),
-      Number(item.lon)
-    ]
-  );
+    await pool.query(
+      `
+      INSERT INTO public.addresses (
+        address,
+        area_name,
+        latitude,
+        longitude
+      )
+      VALUES ($1, $2, $3, $4)
+      ON CONFLICT DO NOTHING
+      `,
+      [
+        shortAddress,
+        normalizedArea,
+        Number(item.lat),
+        Number(item.lon)
+      ]
+    );
   } catch (saveError) {
     console.error(
       "FAILED TO SAVE ADDRESS:",
@@ -1336,15 +1355,14 @@ if (
   }
 }
 
-
-    return {
-      address: shortAddress,
-      full_address: item.display_name,
-      area_name: normalizedArea,
-      lat: Number(item.lat),
-      lng: Number(item.lon),
-      source: "osm",
-    };
+return {
+  address: shortAddress,
+  full_address: item.display_name,
+  area_name: normalizedArea,
+  lat: Number(item.lat),
+  lng: Number(item.lon),
+  source: "osm",
+}; 
   })
 );
 
