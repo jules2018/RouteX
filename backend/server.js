@@ -1150,28 +1150,36 @@ app.get("/addresses/search", async (req, res) => {
     // 1. Search RouteX's own address table first
     const localResult = await pool.query(
       `
-      SELECT
-        address,
-        area_name
-      FROM addresses
-      WHERE address ILIKE $1
-      ORDER BY address
-      LIMIT 10
+     SELECT
+  address,
+  area_name,
+  latitude,
+  longitude
+FROM addresses
+WHERE address ILIKE $1
+ORDER BY address
+LIMIT 10
       `,
       [`%${query}%`]
     );
 
     if (localResult.rows.length > 0) {
-      return res.json(
-        localResult.rows.map((item) => ({
-          address: item.address,
-          full_address: item.address,
-          area_name: item.area_name,
-          lat: null,
-          lng: null,
-          source: "local",
-        }))
-      );
+    return res.json(
+  localResult.rows.map((item) => ({
+    address: item.address,
+    full_address: item.address,
+    area_name: item.area_name,
+    lat:
+      item.latitude !== null
+        ? Number(item.latitude)
+        : null,
+    lng:
+      item.longitude !== null
+        ? Number(item.longitude)
+        : null,
+    source: "local",
+  }))
+);
     }
 
     // 2. Only use OpenStreetMap if local database found nothing
@@ -1300,17 +1308,24 @@ if (
   knownAreas.includes(normalizedArea)
 ) {
   try {
-    await pool.query(
-      `
-      INSERT INTO public.addresses (
-        address,
-        area_name
-      )
-      VALUES ($1, $2)
-      ON CONFLICT DO NOTHING
-      `,
-      [shortAddress, normalizedArea]
-    );
+  await pool.query(
+    `
+    INSERT INTO public.addresses (
+      address,
+      area_name,
+      latitude,
+      longitude
+    )
+    VALUES ($1, $2, $3, $4)
+    ON CONFLICT DO NOTHING
+    `,
+    [
+      shortAddress,
+      normalizedArea,
+      Number(item.lat),
+      Number(item.lon)
+    ]
+  );
   } catch (saveError) {
     console.error(
       "FAILED TO SAVE ADDRESS:",
