@@ -53,8 +53,10 @@ export default function BookRidePage() {
           "https://routex-development.onrender.com/areas"
         );
 
-        const text = await response.text();
-console.log(text);
+        const data = await response.json();
+        console.log(data);
+
+        setAreas(data);
 
        // setAreas(data);
       } catch (error) {
@@ -367,7 +369,7 @@ const results = data;
                       </option>
                     ))}
                   </select>
-
+   
                     <input
                       placeholder="House number, street or landmark"
                       value={
