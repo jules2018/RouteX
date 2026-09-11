@@ -53,63 +53,107 @@ useEffect(() => {
   return null;
 }
   return (
-    <nav className="bg-white border-b border-slate-200 px-6 py-4">
-      <div className="flex gap-4 items-center text-sm font-medium">
+  <nav className="border-b border-[#eeeeee] bg-white">
+    <div
+      className="
+        mx-auto
+        flex
+        w-full
+        max-w-md
+        items-center
+        justify-between
+        px-5
+        py-3
+      "
+    >
 
-        {isAdmin && (<a href="/" className="text-slate-500 hover:text-slate-900">
-          Dashboard
-        </a>)}
+      {/* LEFT SIDE */}
+      <div className="flex items-center gap-5">
 
-        {isAdmin && (<a href="/trips" className="text-slate-500 hover:text-slate-900">
-          Trips
-        </a>)}
+        {/* ADMIN LINKS */}
+        {isAdmin && (
+          <>
+            <a
+              href="/"
+              className="text-[12px] font-bold text-[#666666] hover:text-[#111111]"
+            >
+              Dashboard
+            </a>
 
-        {isAdmin && (<a href="/trips/new" className="text-slate-500 hover:text-slate-900">
-          New Trip
-        </a>)}
+            <a
+              href="/trips"
+              className="text-[12px] font-bold text-[#666666] hover:text-[#111111]"
+            >
+              Trips
+            </a>
 
-        {isAdmin && (<a href="/passengers" className="text-slate-500 hover:text-slate-900">
-          Passengers
-        </a>)}
+            <a
+              href="/trips/new"
+              className="text-[12px] font-bold text-[#666666] hover:text-[#111111]"
+            >
+              New Trip
+            </a>
 
-        {isAdmin && (<a href="/vehicles" className="text-slate-500 hover:text-slate-900">
-          Vehicles
-        </a>)}
+            <a
+              href="/passengers"
+              className="text-[12px] font-bold text-[#666666] hover:text-[#111111]"
+            >
+              Passengers
+            </a>
 
-         {isAdmin && (<a href="/drivers" className="text-slate-500 hover:text-slate-900">
-          Drivers
-        </a>)}
+            <a
+              href="/vehicles"
+              className="text-[12px] font-bold text-[#666666] hover:text-[#111111]"
+            >
+              Vehicles
+            </a>
 
-        {isAdmin && (<a href="/bookings" className="text-slate-500 hover:text-slate-900">
-          New Booking
-        </a>)}
+            <a
+              href="/drivers"
+              className="text-[12px] font-bold text-[#666666] hover:text-[#111111]"
+            >
+              Drivers
+            </a>
 
-        {isDriver && !isAdmin && (<a href="/driver-portal" className="text-slate-500 hover:text-slate-900">
-          Driver Portal
-        </a>)}
+            <a
+              href="/bookings"
+              className="text-[12px] font-bold text-[#666666] hover:text-[#111111]"
+            >
+              New Booking
+            </a>
+          </>
+        )}
 
-       {isPassenger && !isAdmin && (
-  <a
-    href="/passenger-portal"
-    className="text-teal-700 font-bold text-base hover:text-teal-800 transition">
-          Home
-        </a>)}
+
+       
+
+        {/* PASSENGER */}
         {isPassenger && !isAdmin && (
-  <a
-    href="/bookings"
-    className="text-teal-700 font-bold text-base hover:text-teal-800 transition">
-    Book Ride
-  </a>
-)}
-
-     {isLoggedIn && (
-  <div className="ml-auto">
-    <LogoutButton />
-  </div>
-)}
-
+          <a
+            href="/passenger-portal"
+            className="
+              text-[12px]
+              font-bold
+              text-[#111111]
+              transition
+              hover:text-[#ff6a00]
+            "
+          >
+            Home
+          </a>
+        )}
 
       </div>
-    </nav>
-  );
+
+
+      {/* LOGOUT */}
+      {isLoggedIn && (
+        <div className="ml-auto">
+          <LogoutButton />
+        </div>
+      )}
+
+    </div>
+  </nav>
+);
 }

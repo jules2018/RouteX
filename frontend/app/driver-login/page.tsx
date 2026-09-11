@@ -69,35 +69,68 @@ export default function DriverLoginPage() {
   };
 
   return (
-    <main className="min-h-screen bg-white text-slate-900">
-      <div className="w-full max-w-md mx-auto px-6 py-8">
+  <main className="min-h-screen bg-white text-[#111111]">
+    <div className="mx-auto w-full max-w-md px-5 py-6">
 
-        {/* Header */}
-        <div className="mb-12">
+      {/* HEADER */}
+      <div className="flex items-center justify-between">
+        <a
+          href="/"
+          className="text-[24px] font-extrabold tracking-tight"
+        >
+          Route<span className="text-[#ff6a00]">X</span>
+        </a>
 
-          <a
-            href="/"
-            className="inline-block text-3xl font-bold tracking-tight"
-          >
-            Route<span className="text-teal-600">X</span>
-          </a>
+        <span
+          className="
+            rounded-full
+            bg-[#fff3e8]
+            px-3
+            py-1.5
+            text-[10px]
+            font-bold
+            uppercase
+            tracking-[0.08em]
+            text-[#ff6a00]
+          "
+        >
+          Driver
+        </span>
+      </div>
 
-          <h1 className="text-3xl font-bold tracking-tight mt-12">
-            Welcome back
-          </h1>
 
-          <p className="text-slate-500 mt-2">
-            Sign in to manage your RouteX trips.
-          </p>
+      {/* INTRO */}
+      <div className="mt-12">
+        <div className="mb-4 h-1 w-10 rounded-full bg-[#ff6a00]" />
 
-        </div>
+        <h1 className="text-[30px] font-extrabold tracking-tight">
+          Welcome back
+        </h1>
 
-        {/* Login Form */}
+        <p className="mt-2 text-[14px] leading-6 text-[#777777]">
+          Sign in to manage your rides and availability.
+        </p>
+      </div>
+
+
+      {/* LOGIN CARD */}
+      <div
+        className="
+          mt-8
+          rounded-[22px]
+          border
+          border-[#eeeeee]
+          bg-white
+          p-5
+          shadow-[0_12px_35px_rgba(0,0,0,0.05)]
+        "
+      >
+
         <div className="space-y-5">
 
-          {/* Phone */}
+          {/* PHONE */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+            <label className="mb-2 block text-[12px] font-bold text-[#444444]">
               Phone number
             </label>
 
@@ -111,20 +144,30 @@ export default function DriverLoginPage() {
                   login();
                 }
               }}
-              className="w-full h-14 px-4 rounded-xl
-              border border-slate-300
-              bg-white
-              text-slate-900
-              placeholder:text-slate-400
-              outline-none transition
-              focus:border-teal-600
-              focus:ring-2 focus:ring-teal-100"
+              className="
+                h-14
+                w-full
+                rounded-xl
+                border
+                border-[#dddddd]
+                bg-white
+                px-4
+                text-[14px]
+                text-[#111111]
+                outline-none
+                transition
+                placeholder:text-[#aaaaaa]
+                focus:border-[#ff6a00]
+                focus:ring-2
+                focus:ring-[#ff6a00]/10
+              "
             />
           </div>
 
-          {/* Password */}
+
+          {/* PASSWORD */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+            <label className="mb-2 block text-[12px] font-bold text-[#444444]">
               Password
             </label>
 
@@ -138,73 +181,91 @@ export default function DriverLoginPage() {
                   login();
                 }
               }}
-              className="w-full h-14 px-4 rounded-xl
-              border border-slate-300
-              bg-white
-              text-slate-900
-              placeholder:text-slate-400
-              outline-none transition
-              focus:border-teal-600
-              focus:ring-2 focus:ring-teal-100"
+              className="
+                h-14
+                w-full
+                rounded-xl
+                border
+                border-[#dddddd]
+                bg-white
+                px-4
+                text-[14px]
+                text-[#111111]
+                outline-none
+                transition
+                placeholder:text-[#aaaaaa]
+                focus:border-[#ff6a00]
+                focus:ring-2
+                focus:ring-[#ff6a00]/10
+              "
             />
           </div>
 
-          {/* Sign In */}
+
+          {/* SIGN IN */}
           <button
             onClick={login}
             disabled={loading}
-            className="w-full h-14 mt-2 rounded-xl
-            bg-teal-600
-            hover:bg-teal-700
-            disabled:bg-teal-400
-            text-white
-            font-semibold
-            transition duration-200
-            active:scale-[0.99]"
+            className="
+              mt-1
+              flex
+              h-14
+              w-full
+              items-center
+              justify-center
+              rounded-xl
+              bg-[#111111]
+              text-[14px]
+              font-bold
+              text-white
+              transition
+              hover:bg-[#222222]
+              active:scale-[0.99]
+              disabled:cursor-not-allowed
+              disabled:opacity-60
+            "
           >
-            {loading ? "Signing in..." : "Sign in"}
+            {loading ? "Signing in..." : "Sign in →"}
           </button>
 
         </div>
+      </div>
 
-        {/* Driver Application */}
-        <div className="mt-10 pt-8 border-t border-slate-200 text-center">
 
-          <p className="text-sm text-slate-500">
-            Not a RouteX driver yet?
-          </p>
-
+      {/* BECOME A DRIVER */}
+      <div className="mt-8 text-center">
+        <p className="text-[13px] text-[#777777]">
+          Not a RouteX driver yet?{" "}
           <a
             href="/driver-register"
-            className="inline-block mt-2 text-sm font-semibold text-teal-600 hover:text-teal-700"
+            className="font-bold text-[#ff6a00]"
           >
             Become a driver
           </a>
+        </p>
+      </div>
 
-        </div>
 
-        {/* Passenger Login */}
-        <div className="text-center mt-6">
-
-          <span className="text-sm text-slate-500">
-            Looking to book a ride?
-          </span>
-
+      {/* PASSENGER */}
+      <div className="mt-4 text-center">
+        <p className="text-[13px] text-[#777777]">
+          Looking to book a ride?{" "}
           <a
             href="/passenger-login"
-            className="ml-1 text-sm font-semibold text-teal-600 hover:text-teal-700"
+            className="font-bold text-[#111111] hover:text-[#ff6a00]"
           >
             Passenger login
           </a>
-
-        </div>
-
-        {/* Footer */}
-        <p className="text-center text-xs text-slate-400 mt-12">
-          RouteX Driver Portal
         </p>
-
       </div>
-    </main>
-  );
+
+
+      {/* FOOTER */}
+      <p className="mt-12 text-center text-[10px] font-medium text-[#aaaaaa]">
+        RouteX Driver Portal
+      </p>
+
+    </div>
+  </main>
+);
 }

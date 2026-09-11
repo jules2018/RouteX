@@ -5,20 +5,27 @@ import { useRouter } from "next/navigation";
 export default function LogoutButton() {
   const router = useRouter();
 
- const logout = () => {
-  localStorage.removeItem("user");
-  localStorage.removeItem("driver");
-  localStorage.removeItem("passenger");
+  const logout = () => {
+    localStorage.removeItem("user");
+    localStorage.removeItem("driver");
+    localStorage.removeItem("passenger");
 
-  router.push("/");
-};
+    router.push("/");
+  };
 
   return (
     <button
       onClick={logout}
-      className="bg-slate-100 text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-200 transition"
+      className="
+        text-[12px]
+        font-bold
+        text-[#777777]
+        transition
+        hover:text-[#ff6a00]
+        active:scale-[0.97]
+      "
     >
-      Logout
+      Log out
     </button>
   );
 }

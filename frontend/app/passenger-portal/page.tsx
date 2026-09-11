@@ -282,654 +282,692 @@ const profileImageUrl =
   ======================================================= */
 
   return (
-    <main
-      className={`${jakarta.variable} min-h-[100dvh] bg-white text-[#111111]`}
-      style={{
-        fontFamily:
-          "var(--font-jakarta)",
-      }}
-    >
-      {/* =================================================
-          MAIN CONTAINER
-      ================================================= */}
+  <main
+    className={`${jakarta.variable} min-h-[100dvh] bg-white text-[#111111]`}
+    style={{
+      fontFamily: "var(--font-jakarta)",
+    }}
+  >
+    <div className="mx-auto w-full max-w-md px-5 pb-8">
 
-      <div className="mx-auto w-full max-w-md px-5 pb-10">
+      {/* =================================
+          HEADER
+      ================================= */}
+      <header className="flex items-center justify-between pt-5">
 
-        {/* =================================================
-            ROUTEX BRAND
-        ================================================= */}
+        <h1 className="text-[24px] font-extrabold tracking-[-0.055em]">
+          Route<span className="text-[#ff6a00]">X</span>
+        </h1>
 
-        <header className="pt-7">
-          <h1
-            className="
-              text-[25px]
-              font-extrabold
-              tracking-[-0.06em]
-            "
-          >
-            <span className="text-[#111111]">
-              Route
+        <div className="flex items-center gap-3">
+
+          {/* DRIVER AVAILABILITY */}
+          <div className="flex items-center gap-1.5">
+            <span
+              className={`h-2 w-2 rounded-full ${
+                onlineDrivers > 0
+                  ? "bg-[#ff6a00]"
+                  : "bg-[#cccccc]"
+              }`}
+            />
+
+            <span className="text-[10px] font-bold text-[#777777]">
+              {onlineDrivers} online
             </span>
-
-            <span className="text-teal-600">
-              X
-            </span>
-          </h1>
-        </header>
-
-        {/* =================================================
-    WELCOME
-================================================= */}
-
-<section className="pt-8">
-  <div className="flex items-center gap-4">
-
-    {/* =================================================
-        PROFILE PHOTO
-    ================================================= */}
-
-    <div className="relative h-20 w-20 shrink-0">
-
-      {/* PHOTO CIRCLE */}
-
-      <div
-        className="
-          relative
-          h-20
-          w-20
-          overflow-hidden
-          rounded-full
-          border
-          border-slate-200
-          bg-slate-100
-        "
-      >
-
-        {/* SELECTED PHOTO */}
-{/* PROFILE PHOTO */}
-
-{photo ? (
-  <img
-    src={photoPreviewUrl}
-    alt="Selected profile photo"
-    className="block h-full w-full object-cover"
-  />
-) : profileImageUrl ? (
-  <img
-    key={`${passenger?.profile_image}-${photoVersion}`}
-    src={`${profileImageUrl}${
-      profileImageUrl.includes("?") ? "&" : "?"
-    }v=${photoVersion}`}
-    alt={passenger?.full_name || "Passenger"}
-    className="block h-full w-full object-cover"
-  />
-) : null}
-
-        {/* FALLBACK INITIAL */}
-
-        <div
-          className={`
-            absolute
-            inset-0
-            flex
-            items-center
-            justify-center
-            text-xl
-            font-bold
-            text-slate-400
-            ${
-              photo || profileImageUrl
-                ? "hidden"
-                : ""
-            }
-          `}
-        >
-          {passenger?.full_name
-            ?.charAt(0)
-            ?.toUpperCase() || "P"}
-        </div>
-
-      </div>
-
-      {/* =================================================
-          CHANGE PHOTO BUTTON
-      ================================================= */}
-
-<label
-  className="
-    absolute
-    -bottom-1
-    -right-1
-    z-10
-    flex
-    h-7
-    w-7
-    cursor-pointer
-    items-center
-    justify-center
-    rounded-full
-    border-2
-    border-white
-    bg-teal-600
-    text-white
-    shadow-md
-    hover:bg-teal-700
-  "
-  title="Change photo"
->
-
-        <span className="text-[12px]">
-          ✎
-        </span>
-
-       <input
-  type="file"
-  accept="image/*"
-  onChange={async (e) => {
-    const file = e.target.files?.[0];
-
-    if (!file) {
-      return;
-    }
-
-            console.log("PHOTO SELECTED:", file);
-            console.log("PHOTO TYPE:", file.type);
-            console.log("PHOTO SIZE:", file.size);
-
-            /* SHOW PHOTO IMMEDIATELY */
-
-            setPhoto(file);
-
-            /* UPLOAD AUTOMATICALLY */
-            await uploadPhoto(file);
-
-            /* ALLOW SAME PHOTO TO BE SELECTED AGAIN */
-
-            e.target.value = "";
-          }}
-        className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-
-        />
-      </label>
-
-    </div>
-
-    {/* =================================================
-        PASSENGER INFORMATION
-    ================================================= */}
-
-    <div className="min-w-0">
-
-      <p
-        className="
-          text-[11px]
-          font-bold
-          uppercase
-          tracking-[0.08em]
-          text-[#888888]
-        "
-      >
-        Passenger Portal
-      </p>
-
-      <h2
-        className="
-          mt-1
-          text-[24px]
-          font-extrabold
-          leading-tight
-        "
-      >
-        Welcome back
-        {passenger?.full_name
-          ? `, ${passenger.full_name
-              .trim()
-              .split(/\s+/)[0]}`
-          : ""}
-      </h2>
-
-      <p
-        className="
-          mt-1
-          text-[13px]
-          font-medium
-          text-[#777777]
-        "
-      >
-        Manage your rides and bookings.
-      </p>
-
-    </div>
-
-  </div>
-</section>
-
-
-        {/* =================================================
-            AVAILABILITY
-        ================================================= */}
-
-        <section className="mt-7">
-
-          <div
-            className="
-              rounded-[20px]
-              bg-[#f5f5f5]
-              p-5
-            "
-          >
-
-            <div className="flex items-center gap-4">
-
-              {/* Icon */}
-
-              <div
-                className="
-                  flex
-                  h-11
-                  w-11
-                  shrink-0
-                  items-center
-                  justify-center
-                  rounded-full
-                  bg-white
-                "
-              >
-                <Car
-                  size={21}
-                  strokeWidth={2.3}
-                  className="text-[#111111]"
-                />
-              </div>
-
-              {/* Text */}
-
-              <div>
-
-                <p
-                  className="
-                    text-[11px]
-                    font-bold
-                    text-[#777777]
-                  "
-                >
-                  RouteX Availability
-                </p>
-
-                <p
-                  className="
-                    mt-0.5
-                    text-[18px]
-                    font-extrabold
-                    tracking-[-0.03em]
-                  "
-                >
-                  {onlineDrivers} Drivers Online
-                </p>
-
-              </div>
-
-            </div>
-
-            <p
-              className="
-                mt-4
-                text-[12px]
-                font-medium
-                leading-relaxed
-                text-[#777777]
-              "
-            >
-              Available drivers ready to accept trips.
-            </p>
-
           </div>
 
-        </section>
+        </div>
 
-        {/* =================================================
-            ACCOUNT
-        ================================================= */}
+      </header>
 
-        <section className="mt-5">
 
-          <div
-            className="
-              rounded-[20px]
-              border
-              border-[#e5e5e5]
-              bg-white
-              p-5
-            "
-          >
+      {/* =================================
+          WELCOME
+      ================================= */}
+      <section className="pt-7">
+
+        <div className="flex items-center justify-between gap-4">
+
+          <div className="min-w-0">
 
             <p
               className="
                 text-[10px]
-                font-bold
+                font-extrabold
                 uppercase
-                tracking-[0.08em]
-                text-[#999999]
+                tracking-[0.12em]
+                text-[#ff6a00]
               "
             >
-              Account
+              Passenger Portal
             </p>
+
+            <h2
+              className="
+                mt-1
+                text-[24px]
+                font-extrabold
+                leading-tight
+                tracking-[-0.04em]
+              "
+            >
+              Hi
+              {passenger?.full_name
+                ? `, ${passenger.full_name
+                    .trim()
+                    .split(/\s+/)[0]}`
+                : ""}
+            </h2>
 
             <p
               className="
-                mt-2
-                text-[14px]
-                font-bold
-                text-[#222222]
+                mt-1
+                text-[12px]
+                font-medium
+                text-[#777777]
               "
             >
-              {passenger?.email}
+              Where are you going today?
             </p>
 
           </div>
 
-        </section>
 
-        {/* =================================================
-            TRIPS HEADER
-        ================================================= */}
-
-        <section className="mt-9">
-
-          <h2
-            className="
-              text-[22px]
-              font-extrabold
-              tracking-[-0.04em]
-            "
-          >
-            Your Trips
-          </h2>
-
-          <p
-            className="
-              mt-1
-              text-[12px]
-              font-medium
-              text-[#777777]
-            "
-          >
-            {trips.length} booking
-            {trips.length !== 1
-              ? "s"
-              : ""}{" "}
-            tracked
-          </p>
-
-        </section>
-
-        {/* =================================================
-            TRIPS
-        ================================================= */}
-
-        <section className="mt-5 space-y-4">
-
-          {trips.length === 0 ? (
-
-            /* =================================================
-                NO TRIPS
-            ================================================= */
+          {/* PROFILE PHOTO */}
+          <div className="relative h-[68px] w-[68px] shrink-0">
 
             <div
               className="
-                rounded-[20px]
-                bg-[#f5f5f5]
-                p-7
-                text-center
+                relative
+                h-[68px]
+                w-[68px]
+                overflow-hidden
+                rounded-full
+                border
+                border-[#e8e8e8]
+                bg-[#f7f7f7]
               "
             >
 
+              {photo ? (
+                <img
+                  src={photoPreviewUrl}
+                  alt="Selected profile photo"
+                  className="block h-full w-full object-cover"
+                />
+              ) : profileImageUrl ? (
+                <img
+                  key={`${passenger?.profile_image}-${photoVersion}`}
+                  src={`${profileImageUrl}${
+                    profileImageUrl.includes("?") ? "&" : "?"
+                  }v=${photoVersion}`}
+                  alt={passenger?.full_name || "Passenger"}
+                  className="block h-full w-full object-cover"
+                />
+              ) : null}
+
               <div
-                className="
-                  mx-auto
+                className={`
+                  absolute
+                  inset-0
                   flex
-                  h-12
-                  w-12
                   items-center
                   justify-center
-                  rounded-full
-                  bg-white
-                "
-              >
-                <Car
-                  size={21}
-                  strokeWidth={2}
-                  className="text-[#555555]"
-                />
-              </div>
-
-              <p
-                className="
-                  mt-4
-                  text-[14px]
+                  text-[16px]
                   font-extrabold
-                "
+                  text-[#999999]
+                  ${
+                    photo || profileImageUrl
+                      ? "hidden"
+                      : ""
+                  }
+                `}
               >
-                No trips yet
-              </p>
-
-              <p
-                className="
-                  mt-1
-                  text-[12px]
-                  font-medium
-                  text-[#777777]
-                "
-              >
-                You have no trips scheduled.
-              </p>
+                {passenger?.full_name
+                  ?.charAt(0)
+                  ?.toUpperCase() || "P"}
+              </div>
 
             </div>
 
-          ) : (
 
-            /* =================================================
-                TRIP CARDS
-            ================================================= */
+            {/* CHANGE PHOTO */}
+            <label
+              className="
+                absolute
+                -bottom-1
+                -right-1
+                flex
+                h-6
+                w-6
+                cursor-pointer
+                items-center
+                justify-center
+                rounded-full
+                border-2
+                border-white
+                bg-[#ff6a00]
+                text-white
+                shadow-sm
+              "
+              title="Change photo"
+            >
+              <span className="text-[10px]">
+                ✎
+              </span>
 
-            trips.map((trip) => (
+              <input
+                type="file"
+                accept="image/*"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
 
-              <div
-                key={trip.id}
-                className="
-                  rounded-[20px]
-                  border
-                  border-[#e5e5e5]
-                  bg-white
-                  p-5
-                "
-              >
+                  if (!file) {
+                    return;
+                  }
 
-                {/* =================================================
-                    BOOKING HEADER
-                ================================================= */}
+                  setPhoto(file);
+                  await uploadPhoto(file);
+                  e.target.value = "";
+                }}
+                className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+              />
+            </label>
 
-                <div
-                  className="
-                    flex
-                    items-start
-                    justify-between
-                    gap-4
-                  "
-                >
+          </div>
 
-                  <div>
+        </div>
 
-                    <p
-                      className="
-                        text-[10px]
-                        font-bold
-                        uppercase
-                        tracking-[0.08em]
-                        text-[#999999]
-                      "
-                    >
-                      Booking Reference
-                    </p>
+      </section>
 
-                    <h3
-                      className="
-                        mt-1
-                        text-[16px]
-                        font-extrabold
-                      "
-                    >
-                      BK-
-                      {trip.id
-                        .toString()
-                        .padStart(4, "0")}
-                    </h3>
 
-                  </div>
+      {/* =================================
+          BOOK RIDE
+      ================================= */}
+      <a
+        href="/bookings"
+        className="
+          mt-6
+          flex
+          w-full
+          items-center
+          justify-between
+          rounded-[18px]
+          border
+          border-[#eeeeee]
+          bg-[#fafafa]
+          px-4
+          py-4
+          transition
+          active:scale-[0.98]
+        "
+      >
 
-                  {/* Status */}
+        <div className="flex items-center gap-3">
 
-                  <span
-                    className={`
-                      shrink-0
-                      rounded-full
-                      px-3
-                      py-1.5
-                      text-[10px]
+          <div
+            className="
+              flex
+              h-10
+              w-10
+              items-center
+              justify-center
+              rounded-full
+              bg-[#fff1e8]
+              text-[#ff6a00]
+            "
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z" />
+              <circle cx="12" cy="10" r="2.5" />
+            </svg>
+          </div>
+
+          <div>
+
+            <p className="text-[15px] font-extrabold">
+              Book a ride
+            </p>
+
+            <p className="mt-0.5 text-[11px] font-medium text-[#888888]">
+              Enter your destination
+            </p>
+
+          </div>
+
+        </div>
+
+
+        <div
+          className="
+            flex
+            h-9
+            w-9
+            items-center
+            justify-center
+            rounded-full
+            bg-[#111111]
+            text-white
+          "
+        >
+          <span className="text-[17px]">→</span>
+        </div>
+
+      </a>
+
+
+      {/* =================================
+          AVAILABILITY
+      ================================= */}
+      <section
+        className="
+          mt-4
+          flex
+          items-center
+          gap-2
+          border-b
+          border-[#eeeeee]
+          pb-4
+        "
+      >
+
+        <span
+          className={`h-2 w-2 rounded-full ${
+            onlineDrivers > 0
+              ? "bg-[#ff6a00]"
+              : "bg-[#cccccc]"
+          }`}
+        />
+
+        <p className="text-[11px] font-semibold text-[#666666]">
+          {onlineDrivers > 0
+            ? `${onlineDrivers} driver${
+                onlineDrivers !== 1 ? "s" : ""
+              } available now`
+            : "No drivers currently online"}
+        </p>
+
+      </section>
+
+
+      {/* =================================
+          RIDES HEADER
+      ================================= */}
+      <section className="mt-7">
+
+        <div className="flex items-end justify-between">
+
+          <div>
+
+            <p
+              className="
+                text-[10px]
+                font-extrabold
+                uppercase
+                tracking-[0.12em]
+                text-[#ff6a00]
+              "
+            >
+              Your rides
+            </p>
+
+            <h2
+              className="
+                mt-1
+                text-[20px]
+                font-extrabold
+                tracking-[-0.035em]
+              "
+            >
+              Recent bookings
+            </h2>
+
+          </div>
+
+          <p className="text-[10px] font-bold text-[#999999]">
+            {trips.length} booking
+            {trips.length !== 1 ? "s" : ""}
+          </p>
+
+        </div>
+
+      </section>
+
+
+      {/* =================================
+          TRIPS
+      ================================= */}
+      <section className="mt-4 space-y-3">
+
+        {trips.length === 0 ? (
+
+          /* NO TRIPS */
+          <div
+            className="
+              rounded-[20px]
+              border
+              border-[#eeeeee]
+              bg-[#fafafa]
+              px-5
+              py-7
+              text-center
+            "
+          >
+
+            <div
+              className="
+                mx-auto
+                flex
+                h-11
+                w-11
+                items-center
+                justify-center
+                rounded-full
+                bg-[#fff1e8]
+                text-[#ff6a00]
+              "
+            >
+              <Car
+                size={20}
+                strokeWidth={2.2}
+              />
+            </div>
+
+            <p className="mt-3 text-[14px] font-extrabold">
+              No rides booked yet
+            </p>
+
+            <p className="mt-1 text-[11px] font-medium text-[#888888]">
+              Your RouteX trips will appear here.
+            </p>
+
+          </div>
+
+        ) : (
+
+          trips.map((trip) => (
+
+            <div
+              key={trip.id}
+              className="
+                rounded-[20px]
+                border
+                border-[#e8e8e8]
+                bg-white
+                p-4
+              "
+            >
+
+              {/* TOP */}
+              <div className="flex items-start justify-between gap-3">
+
+                <div>
+
+                  <p
+                    className="
+                      text-[9px]
                       font-bold
-                      ${
-                        trip.trip_status ===
-                        "Waiting"
-                          ? "bg-[#f1f1f1] text-[#333333]"
-                          : trip.trip_status ===
-                            "Accepted"
-                          ? "bg-[#eeeeee] text-[#111111]"
-                          : trip.trip_status ===
-                            "In Progress"
-                          ? "bg-[#111111] text-white"
-                          : "bg-[#f1f1f1] text-[#333333]"
-                      }
-                    `}
+                      uppercase
+                      tracking-[0.1em]
+                      text-[#999999]
+                    "
                   >
-                    {trip.trip_status}
-                  </span>
+                    Booking
+                  </p>
+
+                  <h3 className="mt-1 text-[14px] font-extrabold">
+                    BK-
+                    {trip.id
+                      .toString()
+                      .padStart(4, "0")}
+                  </h3>
 
                 </div>
 
-                {/* =================================================
-                    ROUTE
-                ================================================= */}
 
-                <div className="mt-6">
+                {/* STATUS */}
+                <span
+                  className={`
+                    shrink-0
+                    rounded-full
+                    px-2.5
+                    py-1
+                    text-[9px]
+                    font-extrabold
+                    ${
+                      trip.trip_status === "In Progress"
+                        ? "bg-[#111111] text-white"
+                        : trip.trip_status === "Accepted"
+                        ? "bg-[#fff1e8] text-[#e65f00]"
+                        : "bg-[#f2f2f2] text-[#555555]"
+                    }
+                  `}
+                >
+                  {trip.trip_status}
+                </span>
 
-                  <div className="flex gap-4">
+              </div>
 
-                    {/* Route Line */}
+
+              {/* ROUTE */}
+              <div className="mt-5 flex gap-3">
+
+                {/* ROUTE LINE */}
+                <div className="flex w-3 shrink-0 flex-col items-center">
+
+                  <div className="mt-1 h-2.5 w-2.5 rounded-full bg-[#111111]" />
+
+                  <div
+                    className="
+                      my-1
+                      h-9
+                      border-l
+                      border-dashed
+                      border-[#cccccc]
+                    "
+                  />
+
+                  <div className="h-2.5 w-2.5 rounded-full bg-[#ff6a00]" />
+
+                </div>
+
+
+                {/* ADDRESSES */}
+                <div className="min-w-0 flex-1">
+
+                  <div>
+                    <p
+                      className="
+                        text-[9px]
+                        font-bold
+                        uppercase
+                        tracking-wide
+                        text-[#aaaaaa]
+                      "
+                    >
+                      Pickup
+                    </p>
+
+                    <p
+                      className="
+                        mt-1
+                        line-clamp-1
+                        text-[12px]
+                        font-semibold
+                        text-[#333333]
+                      "
+                    >
+                      {trip.pickup_address}
+                    </p>
+                  </div>
+
+
+                  <div className="mt-4">
+
+                    <p
+                      className="
+                        text-[9px]
+                        font-bold
+                        uppercase
+                        tracking-wide
+                        text-[#aaaaaa]
+                      "
+                    >
+                      Destination
+                    </p>
+
+                    <p
+                      className="
+                        mt-1
+                        line-clamp-1
+                        text-[12px]
+                        font-semibold
+                        text-[#333333]
+                      "
+                    >
+                      {trip.dropoff_address}
+                    </p>
+
+                  </div>
+
+                </div>
+
+              </div>
+
+
+              {/* TRIP SUMMARY */}
+              <div
+                className="
+                  mt-5
+                  grid
+                  grid-cols-3
+                  gap-3
+                  border-t
+                  border-[#eeeeee]
+                  pt-4
+                "
+              >
+
+                {/* FARE */}
+                <div>
+
+                  <p className="text-[9px] font-bold uppercase text-[#aaaaaa]">
+                    Fare
+                  </p>
+
+                  <p className="mt-1 text-[12px] font-extrabold">
+                    R
+                    {Number(
+                      trip.passenger_amount ??
+                        trip.fare_amount ??
+                        0
+                    ).toFixed(2)}
+                  </p>
+
+                </div>
+
+
+                {/* DATE */}
+                <div>
+
+                  <p className="text-[9px] font-bold uppercase text-[#aaaaaa]">
+                    Date
+                  </p>
+
+                  <p className="mt-1 text-[11px] font-bold">
+                    {new Date(
+                      trip.travel_date
+                    ).toLocaleDateString()}
+                  </p>
+
+                </div>
+
+
+                {/* DRIVER */}
+                <div>
+
+                  <p className="text-[9px] font-bold uppercase text-[#aaaaaa]">
+                    Driver
+                  </p>
+
+                  <p
+                    className="
+                      mt-1
+                      truncate
+                      text-[11px]
+                      font-bold
+                    "
+                  >
+                    {trip.driver_name ||
+                      "Not assigned"}
+                  </p>
+
+                </div>
+
+              </div>
+
+
+              {/* DRIVER / VEHICLE DETAILS */}
+              {(trip.driver_name ||
+                trip.vehicle_type ||
+                trip.license_plate) && (
+
+                <div
+                  className="
+                    mt-4
+                    rounded-[14px]
+                    bg-[#fafafa]
+                    px-3
+                    py-3
+                  "
+                >
+
+                  <div className="flex items-center gap-3">
 
                     <div
                       className="
                         flex
-                        w-3
+                        h-8
+                        w-8
                         shrink-0
-                        flex-col
                         items-center
+                        justify-center
+                        rounded-full
+                        bg-[#fff1e8]
+                        text-[#ff6a00]
                       "
                     >
-
-                      <div
-                        className="
-                          mt-1
-                          h-2.5
-                          w-2.5
-                          rounded-full
-                          bg-[#111111]
-                        "
+                      <Car
+                        size={16}
+                        strokeWidth={2.2}
                       />
-
-                      <div
-                        className="
-                          my-1
-                          h-10
-                          border-l
-                          border-dashed
-                          border-[#cccccc]
-                        "
-                      />
-
-                      <div
-                        className="
-                          h-2.5
-                          w-2.5
-                          rounded-full
-                          bg-teal-600
-                        "
-                      />
-
                     </div>
 
-                    {/* Locations */}
 
-                    <div className="flex-1">
+                    <div className="min-w-0 flex-1">
 
-                      {/* Pickup */}
+                      <p className="text-[10px] font-extrabold">
+                        {trip.vehicle_type ||
+                          "Vehicle not assigned"}
+                      </p>
 
-                      <div>
-
-                        <p
-                          className="
-                            text-[10px]
-                            font-bold
-                            uppercase
-                            tracking-wide
-                            text-[#999999]
-                          "
-                        >
-                          Pickup
-                        </p>
-
-                        <p
-                          className="
-                            mt-1
-                            text-[13px]
-                            font-semibold
-                            leading-relaxed
-                            text-[#333333]
-                          "
-                        >
-                          {trip.pickup_address}
-                        </p>
-
-                      </div>
-
-                      {/* Dropoff */}
-
-                      <div className="mt-6">
-
-                        <p
-                          className="
-                            text-[10px]
-                            font-bold
-                            uppercase
-                            tracking-wide
-                            text-[#999999]
-                          "
-                        >
-                          Dropoff
-                        </p>
-
-                        <p
-                          className="
-                            mt-1
-                            text-[13px]
-                            font-semibold
-                            leading-relaxed
-                            text-[#333333]
-                          "
-                        >
-                          {trip.dropoff_address}
-                        </p>
-
-                      </div>
+                      <p className="mt-0.5 text-[9px] font-medium text-[#888888]">
+                        {trip.vehicle_color || ""}
+                        {trip.vehicle_color &&
+                        trip.license_plate
+                          ? " • "
+                          : ""}
+                        {trip.license_plate || ""}
+                      </p>
 
                     </div>
 
@@ -937,336 +975,74 @@ const profileImageUrl =
 
                 </div>
 
-                {/* =================================================
-                    TRIP INFORMATION
-                ================================================= */}
+              )}
 
-                <div
+
+              {/* WHATSAPP DRIVER */}
+              {trip.driver_phone && (
+
+                <a
+                  href={`https://wa.me/27${String(
+                    trip.driver_phone
+                  )
+                    .replace(/\D/g, "")
+                    .replace(/^0/, "")}?text=${encodeURIComponent(
+                    `Hi, this is your RouteX passenger for booking BK-${trip.id
+                      .toString()
+                      .padStart(4, "0")}.`
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="
-                    mt-6
-                    border-t
-                    border-[#eeeeee]
-                    pt-5
+                    mt-3
+                    flex
+                    w-full
+                    items-center
+                    justify-center
+                    rounded-[12px]
+                    border
+                    border-[#e6e6e6]
+                    bg-white
+                    py-2.5
+                    text-[10px]
+                    font-extrabold
+                    text-[#333333]
+                    transition
+                    active:scale-[0.98]
                   "
                 >
+                  WhatsApp Driver
+                </a>
 
-                 <div className="grid grid-cols-3 gap-5">
+              )}
 
-  {/* Fare */}
+            </div>
 
-  <div>
-    <p
-      className="
-        text-[10px]
-        font-bold
-        uppercase
-        tracking-wide
-        text-[#999999]
-      "
-    >
-      Fare
-    </p>
+          ))
 
-    <p
-      className="
-        mt-1
-        text-[14px]
-        font-bold
-        text-[#111111]
-      "
-    >
-     R{Number(
-  trip.passenger_amount ?? trip.fare_amount ?? 0
-).toFixed(2)}
-    </p>
-  </div>
+        )}
 
- 
+      </section>
 
-                    {/* Travel Date */}
 
-                    <div className="flex gap-2.5">
+      {/* =================================
+          FOOTER
+      ================================= */}
+      <footer
+        className="
+          mt-8
+          border-t
+          border-[#eeeeee]
+          pt-4
+          text-center
+        "
+      >
+        <p className="text-[9px] font-medium text-[#aaaaaa]">
+          RouteX • Getting Upington Moving
+        </p>
+      </footer>
 
-                      <CalendarDays
-                        size={17}
-                        strokeWidth={2}
-                        className="
-                          mt-0.5
-                          shrink-0
-                          text-[#555555]
-                        "
-                      />
-
-                      <div>
-
-                        <p
-                          className="
-                            text-[10px]
-                            font-bold
-                            uppercase
-                            tracking-wide
-                            text-[#999999]
-                          "
-                        >
-                          Travel Date
-                        </p>
-
-                        <p
-                          className="
-                            mt-1
-                            text-[12px]
-                            font-semibold
-                          "
-                        >
-                          {new Date(
-                            trip.travel_date
-                          ).toLocaleDateString()}
-                        </p>
-
-                      </div>
-
-                    </div>
-
-                    {/* Driver */}
-
-                    <div className="flex gap-2.5">
-
-                      <UserRound
-                        size={17}
-                        strokeWidth={2}
-                        className="
-                          mt-0.5
-                          shrink-0
-                          text-[#555555]
-                        "
-                      />
-
-                      <div>
-
-                        <p
-                          className="
-                            text-[10px]
-                            font-bold
-                            uppercase
-                            tracking-wide
-                            text-[#999999]
-                          "
-                        >
-                          Driver
-                        </p>
-
-                        <p
-                          className="
-                            mt-1
-                            text-[12px]
-                            font-semibold
-                          "
-                        >
-                          {trip.driver_name ||
-                            "Not assigned"}
-                        </p>
-
-                      </div>
-
-                    </div>
-
-                  </div>
-
-                  {/* =================================================
-                      VEHICLE
-                  ================================================= */}
-
-                  <div
-                    className="
-                      mt-5
-                      rounded-[16px]
-                      bg-[#f7f7f7]
-                      p-4
-                    "
-                  >
-
-                    <div className="flex items-center gap-3">
-
-                      <div
-                        className="
-                          flex
-                          h-9
-                          w-9
-                          items-center
-                          justify-center
-                          rounded-full
-                          bg-white
-                        "
-                      >
-
-                        <Car
-                          size={18}
-                          strokeWidth={2.2}
-                          className="text-[#111111]"
-                        />
-
-                      </div>
-
-                      <div>
-
-                        <p
-                          className="
-                            text-[10px]
-                            font-bold
-                            uppercase
-                            tracking-wide
-                            text-[#999999]
-                          "
-                        >
-                          Vehicle
-                        </p>
-
-                        <p
-                          className="
-                            mt-1
-                            text-[12px]
-                            font-bold
-                          "
-                        >
-                          {trip.vehicle_type ||
-                            "Not assigned"}
-                        </p>
-
-                      </div>
-
-                    </div>
-
-                    {/* Vehicle Details */}
-
-                    <div
-                      className="
-                        mt-4
-                        grid
-                        grid-cols-2
-                        gap-3
-                      "
-                    >
-
-                      {/* Color */}
-
-                      <div className="flex items-center gap-2">
-
-                        <Palette
-                          size={14}
-                          strokeWidth={2}
-                          className="text-[#777777]"
-                        />
-
-                        <span
-                          className="
-                            text-[11px]
-                            font-medium
-                            text-[#555555]
-                          "
-                        >
-                          {trip.vehicle_color ||
-                            "—"}
-                        </span>
-
-                      </div>
-
-                      {/* License */}
-
-                      <div className="flex items-center gap-2">
-
-                        <CreditCard
-                          size={14}
-                          strokeWidth={2}
-                          className="text-[#777777]"
-                        />
-
-                        <span
-                          className="
-                            text-[11px]
-                            font-bold
-                            text-[#333333]
-                          "
-                        >
-                          {trip.license_plate ||
-                            "—"}
-                        </span>
-
-                      </div>
-
-                    </div>
-
-                            {trip.driver_phone && (
-  <a
-    href={`https://wa.me/27${String(trip.driver_phone)
-      .replace(/\D/g, "")
-      .replace(/^0/, "")}?text=${encodeURIComponent(
-        `Hi, this is your RouteX passenger for booking BK-${trip.id
-          .toString()
-          .padStart(4, "0")}.`
-      )}`}
-    target="_blank"
-    rel="noopener noreferrer"
-    className="
-      mt-4
-      flex
-      w-full
-      items-center
-      justify-center
-      rounded-xl
-      bg-green-600
-      px-4
-      py-3
-      text-sm
-      font-semibold
-      text-white
-      transition
-      hover:bg-green-700
-    "
-  >
-    WhatsApp Driver
-  </a>
-)}
-
-                  </div>
-
-                </div>
-
-              </div>
-
-            ))
-
-          )}
-
-        </section>
-
-        {/* =================================================
-            FOOTER
-        ================================================= */}
-
-        <footer
-          className="
-            mt-10
-            border-t
-            border-[#eeeeee]
-            pt-5
-            text-center
-          "
-        >
-
-          <p
-            className="
-              text-[11px]
-              font-medium
-              text-[#aaaaaa]
-            "
-          >
-            Getting Upington Moving
-          </p>
-
-        </footer>
-
-      </div>
-
-    </main>
-  );
+    </div>
+  </main>
+);
 }

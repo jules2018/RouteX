@@ -2223,19 +2223,18 @@ app.post(
 
       const booking = result.rows[0];
 
-      await pool.query(
-        `
-        INSERT INTO notifications
-        (user_type, user_id, title, message)
-        VALUES ($1, $2, $3, $4)
-        `,
-        [
-          "passenger",
-          booking.passenger_id,
-          "🚖 Driver Assigned",
-          "Your driver is on the way to collect you."
-        ]
-      );
+    await pool.query(
+  `
+  INSERT INTO notifications
+  (user_id, title, message)
+  VALUES ($1, $2, $3)
+  `,
+  [
+    booking.passenger_id,
+    "Driver Assigned",
+    "Your driver is on the way to collect you."
+  ]
+);
 
       res.json({
         message: "Trip accepted",
@@ -2251,6 +2250,7 @@ app.post(
     }
   }
 );
+
 app.get("/notifications/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
@@ -2259,8 +2259,7 @@ app.get("/notifications/:userId", async (req, res) => {
       `
       SELECT *
       FROM notifications
-      WHERE user_type = 'passenger'
-      AND user_id = $1
+      WHERE user_id = $1
       ORDER BY created_at DESC
       `,
       [userId]
@@ -2268,11 +2267,13 @@ app.get("/notifications/:userId", async (req, res) => {
 
     res.json(result.rows);
   } catch (error) {
+    console.error("NOTIFICATIONS ERROR:", error);
     res.status(500).json({
-      error: error.message,
+      error: "Failed to load notifications",
     });
   }
 });
+
 app.post(
   "/trip-requests/:id/start",
   async (req, res) => {

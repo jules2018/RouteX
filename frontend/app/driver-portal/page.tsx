@@ -182,9 +182,17 @@ const uploadPhoto = async () => {
         }
       );
 
-      if (!response.ok) {
-        throw new Error("Unable to accept trip");
-      }
+     if (!response.ok) {
+  const errorText = await response.text();
+
+  console.error("ACCEPT TRIP BACKEND ERROR:", errorText);
+
+  alert(
+    errorText || "Unable to accept this ride."
+  );
+
+  return;
+}
 
       showNotification(
         "Trip Accepted",
@@ -263,739 +271,1435 @@ const uploadPhoto = async () => {
       Number(trip.assigned_driver_id) === Number(driver?.id)
   );
 
-  return (
-    <AuthGuard>
-      <main className="min-h-screen bg-slate-50 text-slate-900">
+ return (
+  <AuthGuard>
+    <main className="min-h-screen bg-white text-[#111111]">
 
-        {/* HEADER */}
-        <header className="bg-white border-b border-slate-200 sticky top-0 z-30">
-          <div className="max-w-5xl mx-auto px-5 py-4">
+      <div className="mx-auto w-full max-w-md px-5 pb-12">
 
-            <div className="flex items-center justify-between">
+        {/* =================================
+            HEADER
+        ================================= */}
+        <header className="flex items-center justify-between pt-6">
 
-              <div>
-                <a
-                  href="/"
-                  className="text-2xl font-bold tracking-tight"
-                >
-                  Route<span className="text-teal-600">X</span>
-                </a>
+          <a
+            href="/"
+            className="text-[24px] font-extrabold tracking-tight"
+          >
+            Route<span className="text-[#ff6a00]">X</span>
+          </a>
 
-                <p className="text-xs text-slate-500 mt-1">
-                  Driver
+          <div
+            className={`
+              flex items-center gap-2
+              rounded-full
+              px-3 py-1.5
+              text-[11px]
+              font-bold
+              ${
+                status === "available"
+                  ? "bg-[#fff3e8] text-[#ff6a00]"
+                  : "bg-[#f4f4f4] text-[#777777]"
+              }
+            `}
+          >
+            <span
+              className={`
+                h-2 w-2 rounded-full
+                ${
+                  status === "available"
+                    ? "bg-[#ff6a00]"
+                    : "bg-[#aaaaaa]"
+                }
+              `}
+            />
+
+            {status === "available" ? "Online" : "Offline"}
+          </div>
+
+        </header>
+
+
+        {/* =================================
+            DRIVER PROFILE
+        ================================= */}
+        <section className="pt-9">
+
+          <div className="flex items-center gap-4">
+
+            {/* PROFILE PHOTO */}
+            <div className="relative h-[68px] w-[68px] shrink-0">
+
+              <div
+                className="
+                  h-[68px]
+                  w-[68px]
+                  overflow-hidden
+                  rounded-full
+                  border
+                  border-[#e8e8e8]
+                  bg-[#f7f7f7]
+                "
+              >
+                {driver?.profile_image ? (
+                  <img
+                    src={`https://routex-1-z1hf.onrender.com/uploads/${driver.profile_image}`}
+                    alt={driver?.full_name || "Driver"}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div
+                    className="
+                      flex
+                      h-full
+                      w-full
+                      items-center
+                      justify-center
+                      text-xl
+                      font-bold
+                      text-[#aaaaaa]
+                    "
+                  >
+                    {driver?.full_name?.charAt(0)?.toUpperCase() || "D"}
+                  </div>
+                )}
+              </div>
+
+
+              {/* CHANGE PHOTO */}
+              <label
+                className="
+                  absolute
+                  -bottom-1
+                  -right-1
+                  flex
+                  h-7
+                  w-7
+                  cursor-pointer
+                  items-center
+                  justify-center
+                  rounded-full
+                  border-2
+                  border-white
+                  bg-[#ff6a00]
+                  text-[14px]
+                  font-bold
+                  text-white
+                  shadow-sm
+                "
+              >
+                +
+
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+
+                    if (file) {
+                      setPhoto(file);
+                    }
+                  }}
+                  className="hidden"
+                />
+              </label>
+
+            </div>
+
+
+            {/* DRIVER DETAILS */}
+            <div className="min-w-0 flex-1">
+
+              <p
+                className="
+                  text-[10px]
+                  font-bold
+                  uppercase
+                  tracking-[0.08em]
+                  text-[#ff6a00]
+                "
+              >
+                Driver Portal
+              </p>
+
+              <h1
+                className="
+                  mt-1
+                  truncate
+                  text-[22px]
+                  font-extrabold
+                  tracking-tight
+                "
+              >
+                Hi, {driver?.full_name?.split(" ")[0] || "Driver"}
+              </h1>
+
+              <p className="mt-1 text-[12px] text-[#777777]">
+                {status === "available"
+                  ? "You're ready to receive ride requests."
+                  : "Go online when you're ready to drive."}
+              </p>
+
+            </div>
+
+          </div>
+
+
+          {/* PHOTO UPLOAD */}
+          {photo && (
+            <div
+              className="
+                mt-4
+                flex
+                items-center
+                justify-between
+                rounded-xl
+                border
+                border-[#eeeeee]
+                bg-[#fafafa]
+                px-4
+                py-3
+              "
+            >
+              <div className="min-w-0">
+                <p className="text-[11px] font-bold">
+                  New profile photo
+                </p>
+
+                <p className="mt-0.5 truncate text-[10px] text-[#888888]">
+                  {photo.name}
                 </p>
               </div>
 
-              <div
-                className={`flex items-center gap-2 px-3 py-2 rounded-full text-sm font-medium ${
-                  status === "available"
-                    ? "bg-green-50 text-green-700"
-                    : "bg-slate-100 text-slate-500"
-                }`}
+              <button
+                type="button"
+                onClick={uploadPhoto}
+                className="
+                  ml-3
+                  shrink-0
+                  rounded-lg
+                  bg-[#111111]
+                  px-4
+                  py-2
+                  text-[11px]
+                  font-bold
+                  text-white
+                "
               >
+                Save
+              </button>
+            </div>
+          )}
+
+        </section>
+
+
+        {/* =================================
+            AVAILABILITY
+        ================================= */}
+        <section
+          className={`
+            mt-7
+            rounded-[22px]
+            border
+            p-5
+            transition
+            ${
+              status === "available"
+                ? "border-[#ffd9bd] bg-[#fff8f3]"
+                : "border-[#eeeeee] bg-[#fafafa]"
+            }
+          `}
+        >
+
+          <div className="flex items-start justify-between gap-4">
+
+            <div>
+
+              <p
+                className="
+                  text-[10px]
+                  font-bold
+                  uppercase
+                  tracking-[0.08em]
+                  text-[#888888]
+                "
+              >
+                Availability
+              </p>
+
+              <div className="mt-2 flex items-center gap-2">
+
                 <span
-                  className={`w-2 h-2 rounded-full ${
-                    status === "available"
-                      ? "bg-green-500"
-                      : "bg-slate-400"
-                  }`}
+                  className={`
+                    h-2.5 w-2.5 rounded-full
+                    ${
+                      status === "available"
+                        ? "bg-[#ff6a00]"
+                        : "bg-[#aaaaaa]"
+                    }
+                  `}
                 />
 
+                <h2 className="text-[18px] font-extrabold">
+                  {status === "available"
+                    ? "You're online"
+                    : "You're offline"}
+                </h2>
+
+              </div>
+
+              <p className="mt-2 max-w-[220px] text-[12px] leading-5 text-[#777777]">
                 {status === "available"
-                  ? "Online"
-                  : "Offline"}
+                  ? "New RouteX ride requests can appear below."
+                  : "Go online to start receiving new ride requests."}
+              </p>
+
+            </div>
+
+
+            {/* STATUS BUTTON */}
+            <button
+              onClick={toggleStatus}
+              className={`
+                shrink-0
+                rounded-xl
+                px-4
+                py-3
+                text-[12px]
+                font-bold
+                transition
+                active:scale-[0.98]
+                ${
+                  status === "available"
+                    ? "border border-[#dddddd] bg-white text-[#111111]"
+                    : "bg-[#111111] text-white"
+                }
+              `}
+            >
+              {status === "available"
+                ? "Go offline"
+                : "Go online"}
+            </button>
+
+          </div>
+
+        </section>
+
+
+         {/* =================================
+    CURRENT TRIP
+================================= */}
+{myInProgressTrips.length > 0 && (
+  <section className="mt-8 mb-8">
+
+    {/* HEADER */}
+    <div className="mb-4">
+
+      <div className="flex items-center justify-between">
+
+        <p
+          className="
+            text-[10px]
+            font-bold
+            uppercase
+            tracking-[0.08em]
+            text-[#ff6a00]
+          "
+        >
+          Current ride
+        </p>
+
+        <span
+          className="
+            rounded-full
+            bg-[#fff3e8]
+            px-3
+            py-1.5
+            text-[9px]
+            font-bold
+            uppercase
+            tracking-[0.05em]
+            text-[#ff6a00]
+          "
+        >
+          In progress
+        </span>
+
+      </div>
+
+      <h2 className="mt-1 text-[20px] font-extrabold tracking-tight">
+        Ride in progress
+      </h2>
+
+      <p className="mt-1 text-[12px] text-[#777777]">
+        Take the passenger to their destination.
+      </p>
+
+    </div>
+
+
+    <div className="space-y-4">
+
+      {myInProgressTrips.map((trip) => (
+
+        <div
+          key={trip.id}
+          className="
+            overflow-hidden
+            rounded-[22px]
+            border
+            border-[#ffd9bd]
+            bg-white
+            shadow-[0_12px_35px_rgba(0,0,0,0.06)]
+          "
+        >
+
+          {/* ORANGE ACCENT */}
+          <div className="h-1.5 w-full bg-[#ff6a00]" />
+
+
+          <div className="p-5">
+
+            {/* PASSENGER + BOOKING */}
+            <div className="flex items-start justify-between gap-4">
+
+              <div className="min-w-0">
+
+                <p
+                  className="
+                    text-[9px]
+                    font-bold
+                    uppercase
+                    tracking-[0.08em]
+                    text-[#999999]
+                  "
+                >
+                  Passenger
+                </p>
+
+                <h3 className="mt-1 truncate text-[17px] font-extrabold">
+                  {trip.full_name || "Passenger"}
+                </h3>
+
+                <p className="mt-1 text-[11px] text-[#777777]">
+                  {trip.phone}
+                </p>
+
+              </div>
+
+
+              <div className="shrink-0 text-right">
+
+                <p
+                  className="
+                    text-[9px]
+                    font-bold
+                    uppercase
+                    tracking-[0.08em]
+                    text-[#999999]
+                  "
+                >
+                  Booking
+                </p>
+
+                <p className="mt-1 text-[12px] font-bold">
+                  BK-{trip.id.toString().padStart(4, "0")}
+                </p>
+
+              </div>
+
+            </div>
+
+
+            {/* ROUTE */}
+            <div className="mt-6 flex gap-3">
+
+              <div className="flex flex-col items-center pt-1">
+
+                <span
+                  className="
+                    h-2.5
+                    w-2.5
+                    rounded-full
+                    border-[3px]
+                    border-[#111111]
+                    bg-white
+                  "
+                />
+
+                <span className="my-1 h-10 w-px bg-[#dddddd]" />
+
+                <span className="h-2.5 w-2.5 rounded-full bg-[#ff6a00]" />
+
+              </div>
+
+
+              <div className="min-w-0 flex-1">
+
+                <div className="mb-4">
+
+                  <p
+                    className="
+                      text-[9px]
+                      font-bold
+                      uppercase
+                      tracking-[0.08em]
+                      text-[#999999]
+                    "
+                  >
+                    Pickup
+                  </p>
+
+                  <p className="mt-1 text-[12px] font-semibold leading-5">
+                    {trip.pickup_address}
+                  </p>
+
+                </div>
+
+
+                <div>
+
+                  <p
+                    className="
+                      text-[9px]
+                      font-bold
+                      uppercase
+                      tracking-[0.08em]
+                      text-[#999999]
+                    "
+                  >
+                    Destination
+                  </p>
+
+                  <p className="mt-1 text-[12px] font-semibold leading-5">
+                    {trip.dropoff_address}
+                  </p>
+
+                </div>
+
+              </div>
+
+            </div>
+
+
+            {/* DESTINATION ACTION */}
+            <button
+              onClick={() =>
+                openNavigation(
+                  trip.destination_lat,
+                  trip.destination_lng
+                )
+              }
+              className="
+                mt-6
+                flex
+                min-h-[52px]
+                w-full
+                items-center
+                justify-center
+                rounded-xl
+                bg-[#111111]
+                px-4
+                text-[12px]
+                font-bold
+                text-white
+                transition
+                hover:bg-[#222222]
+                active:scale-[0.99]
+              "
+            >
+              Navigate to destination →
+            </button>
+
+
+            {/* COMPLETE */}
+            <button
+              onClick={() => completeTrip(trip.id)}
+              disabled={loadingAction === trip.id}
+              className="
+                mt-3
+                flex
+                min-h-[52px]
+                w-full
+                items-center
+                justify-center
+                rounded-xl
+                border
+                border-[#ff6a00]
+                bg-[#fff8f3]
+                px-4
+                text-[12px]
+                font-bold
+                text-[#ff6a00]
+                transition
+                hover:bg-[#fff3e8]
+                active:scale-[0.99]
+                disabled:cursor-not-allowed
+                disabled:opacity-50
+              "
+            >
+              {loadingAction === trip.id
+                ? "Completing..."
+                : "Complete ride"}
+            </button>
+
+          </div>
+
+        </div>
+
+      ))}
+
+    </div>
+
+  </section>
+)}
+
+         {/* =================================
+    AVAILABLE TRIPS
+================================= */}
+<section className="mt-6 mb-8">
+
+  {/* SECTION HEADER */}
+  <div className="mb-4">
+
+    <div className="flex items-center justify-between">
+
+      <p
+        className="
+          text-[10px]
+          font-bold
+          uppercase
+          tracking-[0.08em]
+          text-[#ff6a00]
+        "
+      >
+        Ride requests
+      </p>
+
+      <span
+        className="
+          flex
+          min-w-[26px]
+          items-center
+          justify-center
+          rounded-full
+          bg-[#fff3e8]
+          px-2
+          py-1
+          text-[10px]
+          font-bold
+          text-[#ff6a00]
+        "
+      >
+        {availableTrips.length}
+      </span>
+
+    </div>
+
+
+    <h2 className="mt-1 text-[20px] font-extrabold tracking-tight">
+      Available rides
+    </h2>
+
+    <p className="mt-1 text-[12px] text-[#777777]">
+      New ride requests will appear here.
+    </p>
+
+  </div>
+
+
+  {/* EMPTY STATE */}
+  {availableTrips.length === 0 && (
+    <div
+      className="
+        rounded-[18px]
+        border
+        border-[#eeeeee]
+        bg-[#fafafa]
+        px-5
+        py-5
+      "
+    >
+
+      <div className="flex items-center gap-3">
+
+        <div
+          className="
+            flex
+            h-9
+            w-9
+            shrink-0
+            items-center
+            justify-center
+            rounded-full
+            bg-white
+            border
+            border-[#eeeeee]
+          "
+        >
+          <span className="h-2 w-2 rounded-full bg-[#ff6a00]" />
+        </div>
+
+
+        <div>
+          <h3 className="text-[13px] font-bold">
+            No ride requests yet
+          </h3>
+
+          <p className="mt-1 text-[11px] leading-4 text-[#888888]">
+            {status === "available"
+              ? "Stay online — new rides will appear automatically."
+              : "Go online to start receiving ride requests."}
+          </p>
+        </div>
+
+      </div>
+
+    </div>
+  )}
+
+
+  {/* RIDE REQUESTS */}
+  <div className="space-y-4">
+
+    {availableTrips.map((request) => (
+
+      <div
+        key={request.id}
+        className="
+          overflow-hidden
+          rounded-[20px]
+          border
+          border-[#eeeeee]
+          bg-white
+          shadow-[0_8px_30px_rgba(0,0,0,0.04)]
+        "
+      >
+
+        {/* TOP */}
+        <div className="p-5">
+
+          <div className="flex items-start justify-between gap-4">
+
+            {/* PASSENGER */}
+            <div className="min-w-0">
+
+              <p
+                className="
+                  text-[9px]
+                  font-bold
+                  uppercase
+                  tracking-[0.08em]
+                  text-[#888888]
+                "
+              >
+                Passenger
+              </p>
+
+              <h3 className="mt-1 truncate text-[17px] font-extrabold">
+                {request.full_name}
+              </h3>
+
+              <p className="mt-1 text-[11px] text-[#777777]">
+                {request.phone}
+              </p>
+
+            </div>
+
+
+            {/* FARE */}
+            <div className="shrink-0 text-right">
+
+              <p
+                className="
+                  text-[9px]
+                  font-bold
+                  uppercase
+                  tracking-[0.08em]
+                  text-[#888888]
+                "
+              >
+                Fare
+              </p>
+
+              <p className="mt-1 text-[24px] font-extrabold tracking-tight text-[#111111]">
+                R{request.fare_amount}
+              </p>
+
+            </div>
+
+          </div>
+
+
+          {/* PROMO */}
+          {Number(request.discount_amount || 0) > 0 && (
+            <div
+              className="
+                mt-4
+                rounded-xl
+                border
+                border-[#ffd9bd]
+                bg-[#fff8f3]
+                px-4
+                py-3
+              "
+            >
+              <p
+                className="
+                  text-[9px]
+                  font-bold
+                  uppercase
+                  tracking-[0.08em]
+                  text-[#ff6a00]
+                "
+              >
+                RouteX Promo
+              </p>
+
+              <p className="mt-1 text-[12px] font-bold text-[#111111]">
+                RouteX covers R
+                {Number(request.discount_amount).toFixed(2)}
+              </p>
+
+              <p className="mt-1 text-[10px] text-[#777777]">
+                Your full fare remains R
+                {Number(request.fare_amount).toFixed(2)}
+              </p>
+            </div>
+          )}
+
+
+          {/* ROUTE */}
+          <div className="mt-5">
+
+            <div className="flex gap-3">
+
+              {/* ROUTE LINE */}
+              <div className="flex flex-col items-center pt-1">
+
+                <span
+                  className="
+                    h-2.5
+                    w-2.5
+                    rounded-full
+                    border-[3px]
+                    border-[#111111]
+                    bg-white
+                  "
+                />
+
+                <span className="my-1 h-9 w-px bg-[#dddddd]" />
+
+                <span className="h-2.5 w-2.5 rounded-full bg-[#ff6a00]" />
+
+              </div>
+
+
+              {/* LOCATIONS */}
+              <div className="min-w-0 flex-1">
+
+                <div className="mb-4">
+
+                  <p
+                    className="
+                      text-[9px]
+                      font-bold
+                      uppercase
+                      tracking-[0.08em]
+                      text-[#999999]
+                    "
+                  >
+                    Pickup
+                  </p>
+
+                  <p className="mt-1 text-[12px] font-semibold leading-5">
+                    {request.pickup_address}
+                  </p>
+
+                </div>
+
+
+                <div>
+
+                  <p
+                    className="
+                      text-[9px]
+                      font-bold
+                      uppercase
+                      tracking-[0.08em]
+                      text-[#999999]
+                    "
+                  >
+                    Destination
+                  </p>
+
+                  <p className="mt-1 text-[12px] font-semibold leading-5">
+                    {request.dropoff_address}
+                  </p>
+
+                </div>
+
               </div>
 
             </div>
 
           </div>
-        </header>
-
-        {/* MAIN */}
-        <div className="max-w-5xl mx-auto px-5 py-6">
-
-      
-{/* DRIVER STATUS */}
-<section className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm mb-6">
-
- <div className="flex flex-col sm:flex-row gap-4">
-
-    {/* Driver information */}
-    <div className="flex items-center gap-3 w-full">
 
 
-      {/* Profile Photo */}
-      <div className="relative shrink-0">
+          {/* DATE */}
+          <div
+            className="
+              mt-5
+              flex
+              items-center
+              justify-between
+              border-t
+              border-[#eeeeee]
+              pt-4
+            "
+          >
 
-        <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden bg-slate-100 border border-slate-200">
+            <p className="text-[10px] font-medium text-[#888888]">
+              Travel date
+            </p>
 
-          {driver?.profile_image ? (
-  <img
-    src={`https://routex-1-z1hf.onrender.com/uploads/${driver.profile_image}`}
-    alt={driver?.full_name || "Driver"}
-    className="w-full h-full rounded-full object-cover"
-  />
-) : (
-  <div className="w-full h-full flex items-center justify-center text-xl font-bold text-slate-400">
-    {driver?.full_name?.charAt(0)?.toUpperCase() || "D"}
-  </div>
-)}
+            <p className="text-[11px] font-bold">
+              {new Date(request.travel_date).toLocaleDateString(
+                "en-ZA",
+                {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                }
+              )}
+            </p>
+
+          </div>
+
+
+          {/* ACCEPT */}
+          <button
+            onClick={() => acceptTrip(request.id)}
+            disabled={loadingAction === request.id}
+            className="
+              mt-5
+              flex
+              h-13
+              w-full
+              items-center
+              justify-center
+              rounded-xl
+              bg-[#111111]
+              px-4
+              py-3.5
+              text-[12px]
+              font-bold
+              text-white
+              transition
+              hover:bg-[#222222]
+              active:scale-[0.99]
+              disabled:cursor-not-allowed
+              disabled:opacity-50
+            "
+          >
+            {loadingAction === request.id
+              ? "Accepting..."
+              : "Accept ride →"}
+          </button>
 
         </div>
 
-        {/* Online indicator */}
-        <span
-          className={`absolute bottom-0 right-0 w-4 h-4 rounded-full border-2 border-white ${
-            status === "available"
-              ? "bg-green-500"
-              : "bg-slate-400"
-          }`}
-        />
-
       </div>
 
+    ))}
 
-      {/* Driver name */}
-      <div>
+  </div>
 
-        <p className="text-sm text-slate-500">
-          Welcome back
-        </p>
+</section>
+          {/* =================================
+    ACCEPTED TRIPS
+================================= */}
+<section className="mb-8">
 
-       <h1 className="text-lg sm:text-2xl font-bold mt-0.5 leading-tight">
-          {driver?.full_name || "Driver"}
-        </h1>
+  {/* HEADER */}
+  <div className="mb-4">
 
-        <p className="text-sm text-slate-500 mt-1">
-          {status === "available"
-            ? "You are available for trips."
-            : "You are currently offline."}
-        </p>
+    <div className="flex items-center justify-between">
 
-      </div>
+      <p className="
+        text-[10px]
+        font-bold
+        uppercase
+        tracking-[0.08em]
+        text-[#ff6a00]
+      ">
+        Upcoming
+      </p>
+
+      {myAcceptedTrips.length > 0 && (
+        <span className="
+          rounded-full
+          bg-[#fff3e8]
+          px-2.5
+          py-1
+          text-[10px]
+          font-bold
+          text-[#ff6a00]
+        ">
+          {myAcceptedTrips.length}
+        </span>
+      )}
 
     </div>
 
+    <h2 className="mt-1 text-[20px] font-extrabold tracking-tight">
+      Accepted rides
+    </h2>
 
-    {/* Online / Offline button */}
-    <button
-      onClick={toggleStatus}
-      className={`shrink-0 px-4 sm:px-6 py-3 rounded-xl font-semibold text-white transition ${
-        status === "available"
-          ? "bg-slate-900 hover:bg-slate-800"
-          : "bg-teal-600 hover:bg-teal-700"
-      }`}
-    >
-      {status === "available"
-        ? "Go Offline"
-        : "Go Online"}
-    </button>
+    <p className="mt-1 text-[12px] text-[#777777]">
+      Rides you've accepted and are ready to start.
+    </p>
 
   </div>
 
 
- {/* Profile Photo Upload */}
-<div className="mt-5 pt-5 border-t border-slate-100">
-
-  <label className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-    Profile photo
-  </label>
-
-  <div className="mt-2 flex items-center gap-3">
-
-    <label className="cursor-pointer text-sm font-semibold text-teal-600 hover:text-teal-700">
-      Change photo
-
-      <input
-        type="file"
-        accept="image/jpeg,image/png,image/webp"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-
-          if (file) {
-            console.log("Selected photo:", file);
-            setPhoto(file);
-          }
-        }}
-        className="hidden"
-      />
-    </label>
-
-    <span className="text-xs text-slate-400">
-      {photo ? photo.name : "JPG, PNG or WEBP"}
-    </span>
-
-  </div>
-
-  {photo && (
-    <div className="mt-3 flex items-center gap-3">
-
-      <img
-        src={URL.createObjectURL(photo)}
-        alt="Selected profile"
-        className="w-12 h-12 rounded-full object-cover border border-slate-200"
-      />
-
-      <button
-        type="button"
-        onClick={uploadPhoto}
-        className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg font-semibold transition"
-      >
-        Upload Photo
-      </button>
-
+  {/* EMPTY STATE */}
+  {myAcceptedTrips.length === 0 && (
+    <div className="
+      rounded-[18px]
+      border
+      border-[#eeeeee]
+      bg-[#fafafa]
+      px-5
+      py-4
+    ">
+      <p className="text-[12px] text-[#777777]">
+        You have no accepted rides yet.
+      </p>
     </div>
   )}
 
-</div>
+
+  {/* ACCEPTED RIDE CARDS */}
+  <div className="space-y-4">
+
+    {myAcceptedTrips.map((trip) => (
+
+      <div
+        key={trip.id}
+        className="
+          overflow-hidden
+          rounded-[20px]
+          border
+          border-[#eeeeee]
+          bg-white
+          shadow-[0_8px_30px_rgba(0,0,0,0.04)]
+        "
+      >
+
+        <div className="p-5">
+
+          {/* BOOKING + STATUS */}
+          <div className="flex items-start justify-between gap-4">
+
+            <div>
+
+              <p className="
+                text-[9px]
+                font-bold
+                uppercase
+                tracking-[0.08em]
+                text-[#888888]
+              ">
+                Booking
+              </p>
+
+              <h3 className="mt-1 text-[15px] font-extrabold">
+                BK-{trip.id.toString().padStart(4, "0")}
+              </h3>
+
+            </div>
+
+
+            <span className="
+              rounded-full
+              bg-[#fff3e8]
+              px-3
+              py-1.5
+              text-[9px]
+              font-bold
+              uppercase
+              tracking-[0.05em]
+              text-[#ff6a00]
+            ">
+              Accepted
+            </span>
+
+          </div>
+
+
+          {/* PASSENGER */}
+          <div className="mt-5">
+
+            <p className="
+              text-[9px]
+              font-bold
+              uppercase
+              tracking-[0.08em]
+              text-[#999999]
+            ">
+              Passenger
+            </p>
+
+            <p className="mt-1 text-[14px] font-bold">
+              {trip.full_name || "Passenger"}
+            </p>
+
+            <p className="mt-0.5 text-[11px] text-[#777777]">
+              {trip.phone}
+            </p>
+
+          </div>
+
+
+          {/* ROUTE */}
+          <div className="mt-5 flex gap-3">
+
+            {/* ROUTE LINE */}
+            <div className="flex flex-col items-center pt-1">
+
+              <span className="
+                h-2.5
+                w-2.5
+                rounded-full
+                border-[3px]
+                border-[#111111]
+                bg-white
+              " />
+
+              <span className="my-1 h-10 w-px bg-[#dddddd]" />
+
+              <span className="h-2.5 w-2.5 rounded-full bg-[#ff6a00]" />
+
+            </div>
+
+
+            {/* LOCATIONS */}
+            <div className="min-w-0 flex-1">
+
+              <div className="mb-4">
+
+                <p className="
+                  text-[9px]
+                  font-bold
+                  uppercase
+                  tracking-[0.08em]
+                  text-[#999999]
+                ">
+                  Pickup
+                </p>
+
+                <p className="mt-1 text-[12px] font-semibold leading-5">
+                  {trip.pickup_address}
+                </p>
+
+              </div>
+
+
+              <div>
+
+                <p className="
+                  text-[9px]
+                  font-bold
+                  uppercase
+                  tracking-[0.08em]
+                  text-[#999999]
+                ">
+                  Destination
+                </p>
+
+                <p className="mt-1 text-[12px] font-semibold leading-5">
+                  {trip.dropoff_address}
+                </p>
+
+              </div>
+
+            </div>
+
+          </div>
+
+
+          {/* ACTIONS */}
+          <div className="mt-6 grid grid-cols-2 gap-3">
+
+            <button
+              onClick={() =>
+                openNavigation(
+                  trip.pickup_lat,
+                  trip.pickup_lng
+                )
+              }
+              className="
+                min-h-[50px]
+                rounded-xl
+                border
+                border-[#dddddd]
+                bg-white
+                px-3
+                text-[11px]
+                font-bold
+                text-[#111111]
+                transition
+                hover:bg-[#fafafa]
+                active:scale-[0.98]
+              "
+            >
+              Navigate to pickup
+            </button>
+
+
+            <button
+              onClick={() => startTrip(trip.id)}
+              disabled={loadingAction === trip.id}
+              className="
+                min-h-[50px]
+                rounded-xl
+                bg-[#111111]
+                px-3
+                text-[11px]
+                font-bold
+                text-white
+                transition
+                hover:bg-[#222222]
+                active:scale-[0.98]
+                disabled:cursor-not-allowed
+                disabled:opacity-50
+              "
+            >
+              {loadingAction === trip.id
+                ? "Starting..."
+                : "Start ride →"}
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    ))}
+
+  </div>
 
 </section>
+         {/* =================================
+    COMPLETED TRIPS
+================================= */}
+<section className="pb-10">
 
+  {/* HEADER */}
+  <div className="mb-4">
 
-          {/* CURRENT TRIP */}
-          {myInProgressTrips.length > 0 && (
-            <section className="mb-8">
+    <div className="flex items-center justify-between">
 
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-teal-600">
-                    Current trip
-                  </p>
+      <p
+        className="
+          text-[10px]
+          font-bold
+          uppercase
+          tracking-[0.08em]
+          text-[#888888]
+        "
+      >
+        History
+      </p>
 
-                  <h2 className="text-xl font-bold mt-1">
-                    Trip in progress
-                  </h2>
-                </div>
+      {myCompletedTrips.length > 0 && (
+        <span
+          className="
+            rounded-full
+            bg-[#f4f4f4]
+            px-2.5
+            py-1
+            text-[10px]
+            font-bold
+            text-[#666666]
+          "
+        >
+          {myCompletedTrips.length}
+        </span>
+      )}
 
-                <span className="bg-orange-50 text-orange-700 px-3 py-1 rounded-full text-xs font-semibold">
-                  IN PROGRESS
-                </span>
-              </div>
+    </div>
 
-              <div className="space-y-4">
+    <h2 className="mt-1 text-[20px] font-extrabold tracking-tight">
+      Completed rides
+    </h2>
 
-                {myInProgressTrips.map((trip) => (
-                  <div
-                    key={trip.id}
-                    className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden"
-                  >
-
-                    {/* Passenger */}
-                    <div className="p-5 border-b border-slate-100">
-
-                      <div className="flex items-center justify-between">
-
-                        <div>
-                          <p className="text-xs text-slate-500 uppercase tracking-wide">
-                            Passenger
-                          </p>
-
-                          <h3 className="text-lg font-bold mt-1">
-                            {trip.full_name}
-                          </h3>
-                        </div>
-
-                        <div className="text-right">
-                          <p className="text-xs text-slate-500">
-                            Booking
-                          </p>
-
-                          <p className="font-semibold">
-                            BK-{trip.id
-                              .toString()
-                              .padStart(4, "0")}
-                          </p>
-                        </div>
-
-                      </div>
-
-                      <p className="text-sm text-slate-500 mt-2">
-                        {trip.phone}
-                      </p>
-
-                    </div>
-
-                    {/* Route */}
-                    <div className="p-5">
-
-                      <div className="relative pl-7">
-
-                        <div className="absolute left-1.5 top-2 bottom-2 w-px bg-slate-300" />
-
-                        <div className="relative mb-6">
-                          <span className="absolute -left-7 top-1 w-3 h-3 rounded-full bg-teal-600" />
-
-                          <p className="text-xs uppercase tracking-wide text-slate-500">
-                            Pickup
-                          </p>
-
-                          <p className="font-medium mt-1">
-                            {trip.pickup_address}
-                          </p>
-                        </div>
-
-                        <div className="relative">
-                          <span className="absolute -left-7 top-1 w-3 h-3 rounded-full bg-slate-900" />
-
-                          <p className="text-xs uppercase tracking-wide text-slate-500">
-                            Destination
-                          </p>
-
-                          <p className="font-medium mt-1">
-                            {trip.dropoff_address}
-                          </p>
-                        </div>
-
-                      </div>
-
-                      {/* Navigation */}
-                      <button
-                        onClick={() =>
-                          openNavigation(
-                            trip.destination_lat,
-                            trip.destination_lng
-                          )
-                        }
-                        className="w-full mt-6 h-14 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold transition"
-                      >
-                        Navigate to Destination
-                      </button>
-
-                      <button
-                        onClick={() =>
-                          completeTrip(trip.id)
-                        }
-                        disabled={loadingAction === trip.id}
-                        className="w-full mt-3 h-14 rounded-xl bg-teal-600 hover:bg-teal-700 disabled:bg-teal-400 text-white font-semibold transition"
-                      >
-                        {loadingAction === trip.id
-                          ? "Completing..."
-                          : "Complete Trip"}
-                      </button>
-
-                    </div>
-
-                  </div>
-                ))}
-
-              </div>
-            </section>
-          )}
-
-          {/* AVAILABLE TRIPS */}
-          <section className="mb-8">
-
-            <div className="mb-4">
-              <div className="flex items-center justify-between">
-
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-teal-600">
-                    Ride requests
-                  </p>
-
-                  <h2 className="text-xl font-bold mt-1">
-                    Available trips
-                  </h2>
-                </div>
-
-                {availableTrips.length > 0 && (
-                  <span className="bg-teal-50 text-teal-700 px-3 py-1 rounded-full text-xs font-semibold">
-                    {availableTrips.length}
-                  </span>
-                )}
-
-              </div>
-
-              <p className="text-sm text-slate-500 mt-1">
-                Trips waiting for driver acceptance.
-              </p>
-            </div>
-
-            {availableTrips.length === 0 && (
-              <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center">
-
-                <div className="w-12 h-12 mx-auto rounded-full bg-slate-100 flex items-center justify-center text-slate-400 text-xl">
-                  —
-                </div>
-
-                <h3 className="font-semibold mt-4">
-                  No available trips
-                </h3>
-
-                <p className="text-sm text-slate-500 mt-1">
-                  New ride requests will appear here automatically.
-                </p>
-
-              </div>
-            )}
-
-            <div className="space-y-4">
-
-              {availableTrips.map((request) => (
-                <div
-                  key={request.id}
-                  className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden"
-                >
-
-                  <div className="p-5">
-
-                    <div className="flex items-start justify-between gap-4">
-
-                      <div>
-                        <p className="text-xs uppercase tracking-wide text-slate-400">
-                          Passenger
-                        </p>
-
-                        <h3 className="text-lg font-bold mt-1">
-                          {request.full_name}
-                        </h3>
-
-                        <p className="text-sm text-slate-500 mt-1">
-                          {request.phone}
-                        </p>
-                      </div>
-
-                      <div className="text-right">
-                        <p className="text-xs uppercase tracking-wide text-slate-400">
-                          Fare
-                        </p>
-
-   <p className="text-xl font-bold text-teal-600 mt-1">
-  R{request.fare_amount}
-</p>
-
-{Number(request.discount_amount || 0) > 0 && (
-  <div className="mt-2 rounded-xl bg-slate-50 px-3 py-2">
-    <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">
-      RouteX Promo
+    <p className="mt-1 text-[12px] text-[#777777]">
+      Your recent RouteX ride history.
     </p>
 
-    <p className="mt-1 text-sm font-semibold text-slate-900">
-      RouteX covers R{Number(request.discount_amount).toFixed(2)}
-    </p>
-
-    <p className="mt-1 text-xs text-slate-500">
-      Your full fare remains R{Number(request.fare_amount).toFixed(2)}
-    </p>
   </div>
-)}
-                      </div>
 
-                    </div>
 
-                    {/* Route */}
-                    <div className="mt-5 bg-slate-50 rounded-xl p-4">
+  {/* EMPTY */}
+  {myCompletedTrips.length === 0 && (
+    <div
+      className="
+        rounded-[18px]
+        border
+        border-[#eeeeee]
+        bg-[#fafafa]
+        px-5
+        py-4
+      "
+    >
+      <p className="text-[12px] text-[#777777]">
+        No completed rides yet.
+      </p>
+    </div>
+  )}
 
-                      <div className="flex gap-3">
 
-                        <div className="flex flex-col items-center pt-1">
+  {/* HISTORY */}
+  <div className="space-y-3">
 
-                          <span className="w-3 h-3 rounded-full bg-teal-600" />
+    {myCompletedTrips.map((trip) => (
 
-                          <span className="w-px h-8 bg-slate-300" />
+      <div
+        key={trip.id}
+        className="
+          rounded-[18px]
+          border
+          border-[#eeeeee]
+          bg-white
+          p-4
+        "
+      >
 
-                          <span className="w-3 h-3 rounded-full bg-slate-900" />
+        {/* TOP */}
+        <div className="flex items-center justify-between gap-3">
 
-                        </div>
+          <div>
+            <p
+              className="
+                text-[9px]
+                font-bold
+                uppercase
+                tracking-[0.08em]
+                text-[#999999]
+              "
+            >
+              Booking
+            </p>
 
-                        <div className="flex-1">
+            <p className="mt-1 text-[13px] font-bold">
+              BK-{trip.id.toString().padStart(4, "0")}
+            </p>
+          </div>
 
-                          <div className="mb-4">
-                            <p className="text-xs text-slate-500">
-                              Pickup
-                            </p>
 
-                            <p className="text-sm font-medium mt-1">
-                              {request.pickup_address}
-                            </p>
-                          </div>
+          <span
+            className="
+              rounded-full
+              bg-[#f4f4f4]
+              px-3
+              py-1.5
+              text-[9px]
+              font-bold
+              uppercase
+              tracking-[0.05em]
+              text-[#666666]
+            "
+          >
+            Completed
+          </span>
 
-                          <div>
-                            <p className="text-xs text-slate-500">
-                              Dropoff
-                            </p>
+        </div>
 
-                            <p className="text-sm font-medium mt-1">
-                              {request.dropoff_address}
-                            </p>
-                          </div>
 
-                        </div>
+        {/* ROUTE */}
+        <div className="mt-4 flex gap-3">
 
-                      </div>
+          <div className="flex flex-col items-center pt-1">
 
-                    </div>
+            <span
+              className="
+                h-2
+                w-2
+                rounded-full
+                border-2
+                border-[#111111]
+                bg-white
+              "
+            />
 
-                    {/* Date */}
-                    <div className="mt-4 flex items-center justify-between">
+            <span className="my-1 h-8 w-px bg-[#dddddd]" />
 
-                      <p className="text-sm text-slate-500">
-                        Travel date
-                      </p>
+            <span className="h-2 w-2 rounded-full bg-[#ff6a00]" />
 
-                      <p className="text-sm font-medium">
-                        {new Date(
-                          request.travel_date
-                        ).toLocaleDateString("en-ZA", {
-                          day: "numeric",
-                          month: "short",
-                          year: "numeric",
-                        })}
-                      </p>
+          </div>
 
-                    </div>
 
-                    <button
-                      onClick={() =>
-                        acceptTrip(request.id)
-                      }
-                      disabled={loadingAction === request.id}
-                      className="w-full h-14 mt-5 rounded-xl bg-teal-600 hover:bg-teal-700 disabled:bg-teal-400 text-white font-semibold transition"
-                    >
-                      {loadingAction === request.id
-                        ? "Accepting..."
-                        : "Accept Trip"}
-                    </button>
+          <div className="min-w-0 flex-1">
 
-                  </div>
+            <div className="mb-3">
 
-                </div>
-              ))}
-
-            </div>
-
-          </section>
-
-          {/* ACCEPTED TRIPS */}
-          <section className="mb-8">
-
-            <div className="mb-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Upcoming
+              <p className="text-[9px] font-bold uppercase text-[#999999]">
+                Pickup
               </p>
 
-              <h2 className="text-xl font-bold mt-1">
-                My accepted trips
-              </h2>
-
-              <p className="text-sm text-slate-500 mt-1">
-                Trips you have accepted and are waiting to start.
-              </p>
-            </div>
-
-            {myAcceptedTrips.length === 0 && (
-              <div className="bg-white border border-slate-200 rounded-2xl p-6">
-                <p className="text-sm text-slate-500">
-                  You have no accepted trips yet.
-                </p>
-              </div>
-            )}
-
-            <div className="space-y-4">
-
-              {myAcceptedTrips.map((trip) => (
-                <div
-                  key={trip.id}
-                  className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5"
-                >
-
-                  <div className="flex items-center justify-between mb-5">
-
-                    <div>
-                      <p className="text-xs uppercase tracking-wide text-slate-400">
-                        Booking reference
-                      </p>
-
-                      <h3 className="font-bold mt-1">
-                        BK-{trip.id
-                          .toString()
-                          .padStart(4, "0")}
-                      </h3>
-                    </div>
-
-                    <span className="bg-teal-50 text-teal-700 px-3 py-1 rounded-full text-xs font-semibold">
-                      ACCEPTED
-                    </span>
-
-                  </div>
-
-                  <div className="space-y-4">
-
-                    <div>
-                      <p className="text-xs uppercase tracking-wide text-slate-500">
-                        Passenger
-                      </p>
-
-                      <p className="font-medium mt-1">
-                        {trip.full_name || "Passenger"}
-                      </p>
-
-                      <p className="text-sm text-slate-500">
-                        {trip.phone}
-                      </p>
-                    </div>
-
-                    <div className="relative pl-6">
-
-                      <div className="absolute left-1 top-2 bottom-2 w-px bg-slate-300" />
-
-                      <div className="relative mb-5">
-                        <span className="absolute -left-6 top-1 w-3 h-3 rounded-full bg-teal-600" />
-
-                        <p className="text-xs text-slate-500">
-                          Pickup
-                        </p>
-
-                        <p className="text-sm font-medium mt-1">
-                          {trip.pickup_address}
-                        </p>
-                      </div>
-
-                      <div className="relative">
-                        <span className="absolute -left-6 top-1 w-3 h-3 rounded-full bg-slate-900" />
-
-                        <p className="text-xs text-slate-500">
-                          Dropoff
-                        </p>
-
-                        <p className="text-sm font-medium mt-1">
-                          {trip.dropoff_address}
-                        </p>
-                      </div>
-
-                    </div>
-
-                  </div>
-
-                  <div className="grid sm:grid-cols-2 gap-3 mt-6">
-
-                    <button
-                      onClick={() =>
-                        openNavigation(
-                          trip.pickup_lat,
-                          trip.pickup_lng
-                        )
-                      }
-                      className="h-12 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold transition"
-                    >
-                      Navigate to Pickup
-                    </button>
-
-                    <button
-                      onClick={() =>
-                        startTrip(trip.id)
-                      }
-                      disabled={loadingAction === trip.id}
-                      className="h-12 rounded-xl bg-teal-600 hover:bg-teal-700 disabled:bg-teal-400 text-white font-semibold transition"
-                    >
-                      {loadingAction === trip.id
-                        ? "Starting..."
-                        : "Start Trip"}
-                    </button>
-
-                  </div>
-
-                </div>
-              ))}
-
-            </div>
-
-          </section>
-
-          {/* COMPLETED */}
-          <section className="pb-10">
-
-            <div className="mb-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                History
+              <p className="mt-1 text-[11px] font-medium leading-4">
+                {trip.pickup_address}
               </p>
 
-              <h2 className="text-xl font-bold mt-1">
-                Completed trips
-              </h2>
+            </div>
 
-              <p className="text-sm text-slate-500 mt-1">
-                Your completed RouteX trips.
+
+            <div>
+
+              <p className="text-[9px] font-bold uppercase text-[#999999]">
+                Destination
               </p>
-            </div>
 
-            {myCompletedTrips.length === 0 && (
-              <div className="bg-white border border-slate-200 rounded-2xl p-6">
-                <p className="text-sm text-slate-500">
-                  No completed trips yet.
-                </p>
-              </div>
-            )}
-
-            <div className="space-y-3">
-
-              {myCompletedTrips.map((trip) => (
-                <div
-                  key={trip.id}
-                  className="bg-white border border-slate-200 rounded-2xl p-5"
-                >
-
-                  <div className="flex items-start justify-between gap-4">
-
-                    <div>
-                      <p className="text-xs uppercase tracking-wide text-slate-400">
-                        Booking
-                      </p>
-
-                      <h3 className="font-semibold mt-1">
-                        BK-{trip.id
-                          .toString()
-                          .padStart(4, "0")}
-                      </h3>
-                    </div>
-
-                    <span className="bg-green-50 text-green-700 px-3 py-1 rounded-full text-xs font-semibold">
-                      COMPLETED
-                    </span>
-
-                  </div>
-
-                  <div className="mt-5 space-y-3">
-
-                    <div>
-                      <p className="text-xs text-slate-500">
-                        Pickup
-                      </p>
-
-                      <p className="text-sm font-medium mt-1">
-                        {trip.pickup_address}
-                      </p>
-                    </div>
-
-                    <div>
-                      <p className="text-xs text-slate-500">
-                        Dropoff
-                      </p>
-
-                      <p className="text-sm font-medium mt-1">
-                        {trip.dropoff_address}
-                      </p>
-                    </div>
-
-                    <div>
-                      <p className="text-xs text-slate-500">
-                        Passenger
-                      </p>
-
-                      <p className="text-sm font-medium mt-1">
-                        {trip.phone}
-                      </p>
-                    </div>
-
-                  </div>
-
-                </div>
-              ))}
+              <p className="mt-1 text-[11px] font-medium leading-4">
+                {trip.dropoff_address}
+              </p>
 
             </div>
 
-          </section>
+          </div>
 
+        </div>
+
+
+        {/* PASSENGER */}
+        <div
+          className="
+            mt-4
+            border-t
+            border-[#eeeeee]
+            pt-3
+          "
+        >
+          <p className="text-[10px] text-[#888888]">
+            Passenger
+          </p>
+
+          <p className="mt-1 text-[11px] font-semibold">
+            {trip.phone}
+          </p>
+        </div>
+
+      </div>
+
+    ))}
+
+  </div>
+
+</section>
         </div>
       </main>
     </AuthGuard>
