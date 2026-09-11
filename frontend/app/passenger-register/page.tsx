@@ -14,6 +14,15 @@ export default function PassengerRegisterPage() {
   });
 
   const [loading, setLoading] = useState(false);
+  
+  const handlePhoneChange = (value: string) => {
+  const cleaned = value.replace(/\s/g, "");
+
+  setForm((prev) => ({
+    ...prev,
+    phone: cleaned,
+  }));
+};
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -62,210 +71,300 @@ export default function PassengerRegisterPage() {
   };
 
   return (
-    <main className="min-h-screen bg-white text-slate-900">
-      <div className="mx-auto w-full max-w-md px-6 py-8">
+  <main className="min-h-screen bg-white text-[#111111]">
+    <div className="mx-auto w-full max-w-md px-5 pb-10 pt-6">
 
-        {/* Header */}
-        <div className="mb-10">
-          <a
-            href="/"
-            className="inline-block text-3xl font-bold tracking-tight"
-          >
-            Route<span className="text-teal-600">X</span>
-          </a>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="text-[22px] font-extrabold tracking-tight">
+          Route<span className="text-[#ff6a00]">X</span>
+        </div>
 
-          <h1 className="mt-10 text-3xl font-bold tracking-tight">
-            Create your account
-          </h1>
+        <span
+          className="
+            rounded-full
+            bg-[#fff3eb]
+            px-3
+            py-1.5
+            text-[10px]
+            font-extrabold
+            uppercase
+            tracking-[0.08em]
+            text-[#ff6a00]
+          "
+        >
+          Passenger
+        </span>
+      </div>
 
-          <p className="mt-2 text-slate-500">
-            Sign up to book rides with RouteX.
+      {/* Intro */}
+      <section className="mt-10">
+        <div className="h-1 w-8 rounded-full bg-[#ff6a00]" />
+
+        <h1 className="mt-5 text-[28px] font-extrabold tracking-tight">
+          Create your account
+        </h1>
+
+        <p className="mt-2 text-[14px] leading-6 text-[#777777]">
+          Join RouteX and start booking local rides in Upington.
+        </p>
+      </section>
+
+      {/* Form */}
+      <form onSubmit={handleSubmit} className="mt-7 space-y-5">
+
+        {/* Full Name */}
+        <div>
+          <label className="text-[12px] font-bold text-[#333333]">
+            Full name
+          </label>
+
+          <input
+            type="text"
+            value={form.full_name}
+            onChange={(e) =>
+              setForm({
+                ...form,
+                full_name: e.target.value,
+              })
+            }
+            placeholder="Your full name"
+            required
+            className="
+              mt-2
+              w-full
+              rounded-xl
+              border
+              border-[#dddddd]
+              bg-white
+              px-4
+              py-3.5
+              text-[15px]
+              outline-none
+              transition
+              placeholder:text-[#aaaaaa]
+              focus:border-[#ff6a00]
+            "
+          />
+        </div>
+
+        {/* Phone */}
+        <div>
+          <label className="text-[12px] font-bold text-[#333333]">
+            Phone number
+          </label>
+
+          <input
+            type="tel"
+            value={form.phone}
+            onChange={(e) => handlePhoneChange(e.target.value)}
+            placeholder="0821234567"
+            inputMode="numeric"
+            autoComplete="tel"
+            required
+            className="
+              mt-2
+              w-full
+              rounded-xl
+              border
+              border-[#dddddd]
+              bg-white
+              px-4
+              py-3.5
+              text-[15px]
+              outline-none
+              transition
+              placeholder:text-[#aaaaaa]
+              focus:border-[#ff6a00]
+            "
+          />
+
+          <p className="mt-1.5 text-[11px] text-[#999999]">
+            Enter your number without spaces.
           </p>
         </div>
 
-        {/* Registration Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Email */}
+        <div>
+          <label className="text-[12px] font-bold text-[#333333]">
+            Email address
+          </label>
 
-          {/* Full Name */}
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700">
-              Full name
-            </label>
-
-            <input
-              type="text"
-              placeholder="Enter your full name"
-              value={form.full_name}
-              required
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  full_name: e.target.value,
-                })
-              }
-              className="h-14 w-full rounded-xl border border-slate-300
-              bg-white px-4 text-slate-900 placeholder:text-slate-400
-              outline-none transition
-              focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
-            />
-          </div>
-
-          {/* Phone */}
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700">
-              Phone number
-            </label>
-
-            <input
-              type="tel"
-              placeholder="e.g. 082 123 4567"
-              value={form.phone}
-              required
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  phone: e.target.value,
-                })
-              }
-              className="h-14 w-full rounded-xl border border-slate-300
-              bg-white px-4 text-slate-900 placeholder:text-slate-400
-              outline-none transition
-              focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
-            />
-          </div>
-
-          {/* Email */}
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700">
-              Email address
-            </label>
-
-            <input
-              type="email"
-              placeholder="you@example.com"
-              value={form.email}
-              required
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  email: e.target.value,
-                })
-              }
-              className="h-14 w-full rounded-xl border border-slate-300
-              bg-white px-4 text-slate-900 placeholder:text-slate-400
-              outline-none transition
-              focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
-            />
-          </div>
-
-          {/* Password */}
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700">
-              Password
-            </label>
-
-            <input
-              type="password"
-              placeholder="Create a password"
-              value={form.password}
-              required
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  password: e.target.value,
-                })
-              }
-              className="h-14 w-full rounded-xl border border-slate-300
-              bg-white px-4 text-slate-900 placeholder:text-slate-400
-              outline-none transition
-              focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
-            />
-          </div>
-
-          {/* Confirm Password */}
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700">
-              Confirm password
-            </label>
-
-            <input
-              type="password"
-              placeholder="Enter your password again"
-              value={form.confirmPassword}
-              required
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  confirmPassword: e.target.value,
-                })
-              }
-              className="h-14 w-full rounded-xl border border-slate-300
-              bg-white px-4 text-slate-900 placeholder:text-slate-400
-              outline-none transition
-              focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
-            />
-          </div>
-
-          {/* Referral */}
-          <div className="pt-2">
-            <label className="mb-1.5 block text-sm font-medium text-slate-700">
-              Referral code
-              <span className="font-normal text-slate-400"> (optional)</span>
-            </label>
-
-            <input
-              type="text"
-              placeholder="Enter referral code"
-              value={form.referral_code}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  referral_code: e.target.value,
-                })
-              }
-              className="h-14 w-full rounded-xl border border-slate-300
-              bg-white px-4 text-slate-900 placeholder:text-slate-400
-              outline-none transition
-              focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
-            />
-          </div>
-
-          {/* Create Account */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="mt-4 h-14 w-full rounded-xl
-            bg-teal-600 font-semibold text-white
-            transition duration-200
-            hover:bg-teal-700
-            disabled:cursor-not-allowed
-            disabled:bg-teal-400
-            active:scale-[0.99]"
-          >
-            {loading ? "Creating account..." : "Create account"}
-          </button>
-        </form>
-
-        {/* Login */}
-        <div className="mt-8 text-center">
-          <span className="text-sm text-slate-500">
-            Already have an account?
-          </span>
-
-          <a
-            href="/passenger-login"
-            className="ml-1 text-sm font-semibold text-teal-600 hover:text-teal-700"
-          >
-            Log in
-          </a>
+          <input
+            type="email"
+            value={form.email}
+            onChange={(e) =>
+              setForm({
+                ...form,
+                email: e.target.value,
+              })
+            }
+            placeholder="you@example.com"
+            required
+            className="
+              mt-2
+              w-full
+              rounded-xl
+              border
+              border-[#dddddd]
+              bg-white
+              px-4
+              py-3.5
+              text-[15px]
+              outline-none
+              transition
+              placeholder:text-[#aaaaaa]
+              focus:border-[#ff6a00]
+            "
+          />
         </div>
 
-        {/* Footer */}
-        <p className="mt-10 text-center text-xs text-slate-400">
-          By creating an account, you agree to use RouteX responsibly.
-        </p>
+        {/* Password */}
+        <div>
+          <label className="text-[12px] font-bold text-[#333333]">
+            Password
+          </label>
 
+          <input
+            type="password"
+            value={form.password}
+            onChange={(e) =>
+              setForm({
+                ...form,
+                password: e.target.value,
+              })
+            }
+            placeholder="Create a password"
+            required
+            className="
+              mt-2
+              w-full
+              rounded-xl
+              border
+              border-[#dddddd]
+              bg-white
+              px-4
+              py-3.5
+              text-[15px]
+              outline-none
+              transition
+              placeholder:text-[#aaaaaa]
+              focus:border-[#ff6a00]
+            "
+          />
+        </div>
+
+        {/* Confirm Password */}
+        <div>
+          <label className="text-[12px] font-bold text-[#333333]">
+            Confirm password
+          </label>
+
+          <input
+            type="password"
+            value={form.confirmPassword}
+            onChange={(e) =>
+              setForm({
+                ...form,
+                confirmPassword: e.target.value,
+              })
+            }
+            placeholder="Repeat your password"
+            required
+            className="
+              mt-2
+              w-full
+              rounded-xl
+              border
+              border-[#dddddd]
+              bg-white
+              px-4
+              py-3.5
+              text-[15px]
+              outline-none
+              transition
+              placeholder:text-[#aaaaaa]
+              focus:border-[#ff6a00]
+            "
+          />
+        </div>
+
+        {/* Referral */}
+        <div>
+          <label className="text-[12px] font-bold text-[#333333]">
+            Referral code
+            <span className="ml-1 font-medium text-[#999999]">
+              Optional
+            </span>
+          </label>
+
+          <input
+            type="text"
+            value={form.referral_code}
+            onChange={(e) =>
+              setForm({
+                ...form,
+                referral_code: e.target.value,
+              })
+            }
+            placeholder="Enter referral code"
+            className="
+              mt-2
+              w-full
+              rounded-xl
+              border
+              border-[#dddddd]
+              bg-white
+              px-4
+              py-3.5
+              text-[15px]
+              uppercase
+              outline-none
+              transition
+              placeholder:normal-case
+              placeholder:text-[#aaaaaa]
+              focus:border-[#ff6a00]
+            "
+          />
+        </div>
+
+        {/* Create Account */}
+        <button
+          type="submit"
+          disabled={loading}
+          className="
+            mt-2
+            w-full
+            rounded-xl
+            bg-[#111111]
+            px-4
+            py-4
+            text-[14px]
+            font-extrabold
+            text-white
+            transition
+            active:scale-[0.98]
+            disabled:opacity-60
+          "
+        >
+          {loading ? "Creating account..." : "Create account →"}
+        </button>
+      </form>
+
+      {/* Login */}
+      <div className="mt-7 text-center">
+        <p className="text-[13px] text-[#777777]">
+          Already have an account?{" "}
+          <a
+            href="/passenger-login"
+            className="font-bold text-[#ff6a00]"
+          >
+            Sign in
+          </a>
+        </p>
       </div>
-    </main>
-  );
+
+    </div>
+  </main>
+);
 }

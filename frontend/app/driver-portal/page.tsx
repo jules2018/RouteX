@@ -170,7 +170,7 @@ const uploadPhoto = async () => {
 
     try {
       const response = await fetch(
-        `https://routex-1-z1hf.onrender.com/trip-requests/${tripId}/accept`,
+        `https://routex-development.onrender.com/trip-requests/${tripId}/accept`,
         {
           method: "POST",
           headers: {
