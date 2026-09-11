@@ -2223,13 +2223,14 @@ app.post(
 
       const booking = result.rows[0];
 
-    await pool.query(
+await pool.query(
   `
   INSERT INTO notifications
-  (user_id, title, message)
-  VALUES ($1, $2, $3)
+  (recipient_type, recipient_id, title, message)
+  VALUES ($1, $2, $3, $4)
   `,
   [
+    "passenger",
     booking.passenger_id,
     "Driver Assigned",
     "Your driver is on the way to collect you."
@@ -2258,9 +2259,10 @@ app.get("/notifications/:userId", async (req, res) => {
     const result = await pool.query(
       `
       SELECT *
-      FROM notifications
-      WHERE user_id = $1
-      ORDER BY created_at DESC
+        FROM notifications
+        WHERE recipient_type = 'passenger'
+        AND recipient_id = $1
+        ORDER BY created_at DESC
       `,
       [userId]
     );
@@ -2272,7 +2274,7 @@ app.get("/notifications/:userId", async (req, res) => {
       error: "Failed to load notifications",
     });
   }
-});
+})
 
 app.post(
   "/trip-requests/:id/start",

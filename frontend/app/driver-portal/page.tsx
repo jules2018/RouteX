@@ -19,7 +19,7 @@ export default function DriverPortalPage() {
   const availableTrips = requests;
 
   const loadTrips = () => {
-    fetch("https://routex-1-z1hf.onrender.com/accepted-trips")
+    fetch("https://routex-development.onrender.com/accepted-trips")
       .then((res) => res.json())
       .then((data) => setAcceptedTrips(data));
 
