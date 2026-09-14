@@ -1100,25 +1100,63 @@ const profileImageUrl =
 
                 {/* DRIVER */}
                 <div>
+  <p className="text-[10px] font-bold uppercase text-[#aaaaaa]">
+    Driver
+  </p>
 
-                  <p className="text-[11px] font-bold uppercase text-[#aaaaaa]">
-                    Driver
-                  </p>
+  <div className="mt-2 flex items-center gap-2">
 
-                  <p
-                    className="
-                      mt-1
-                      truncate
-                      text-[13px]
-                      font-bold
-                    "
-                  >
-                    {trip.driver_name ||
-                      "Not assigned"}
-                  </p>
+    {/* DRIVER PHOTO */}
+    <div
+      className="
+        relative
+        h-9
+        w-9
+        shrink-0
+        overflow-hidden
+        rounded-full
+        bg-[#f5f5f5]
+      "
+    >
+      {/* Fallback */}
+      <div
+        className="
+          absolute
+          inset-0
+          flex
+          items-center
+          justify-center
+          text-[12px]
+          font-bold
+          text-[#aaaaaa]
+        "
+      >
+        {trip.driver_name?.charAt(0)?.toUpperCase() || "D"}
+      </div>
 
-                </div>
+      {/* Photo */}
+      {trip.driver_profile_image && (
+        <img
+          src={
+            trip.driver_profile_image.startsWith("http")
+              ? trip.driver_profile_image
+              : `${API_URL}/uploads/${trip.driver_profile_image}`
+          }
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover"
+          onError={(e) => {
+            e.currentTarget.style.display = "none";
+          }}
+        />
+      )}
+    </div>
 
+    <p className="text-[14px] font-extrabold">
+      {trip.driver_name || "Driver"}
+    </p>
+
+  </div>
+</div>
               </div>
 
 
