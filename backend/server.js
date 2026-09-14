@@ -862,7 +862,9 @@ const newBooking = bookingResult.rows[0];
 
 console.log("ABOUT TO SEND WHATSAPP");
 
-sendWhatsAppBookingAlert();
+await sendWhatsAppBookingAlert();
+
+console.log("WHATSAPP FUNCTION FINISHED");
 
 res.status(201).json({
   message: "Booking created",
