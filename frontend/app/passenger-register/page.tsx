@@ -14,6 +14,8 @@ export default function PassengerRegisterPage() {
   });
 
   const [loading, setLoading] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
   
   const handlePhoneChange = (value: string) => {
   const cleaned = value.replace(/\s/g, "");
@@ -33,8 +35,12 @@ export default function PassengerRegisterPage() {
     }
 
     setLoading(true);
-
+    
     try {
+      if (!acceptedTerms || !acceptedPrivacy) {
+  alert("Please agree to the Terms & Conditions and Privacy Policy.");
+  return;
+}
       const response = await fetch(
         "https://routex-1-z1hf.onrender.com/passenger-register",
         {
@@ -48,6 +54,8 @@ export default function PassengerRegisterPage() {
             email: form.email,
             password: form.password,
             referral_code: form.referral_code,
+             acceptedTerms,
+              acceptedPrivacy,
           }),
         }
       );
@@ -327,6 +335,60 @@ export default function PassengerRegisterPage() {
             "
           />
         </div>
+  <div className="mt-3 space-y-3">
+
+          {/* Terms & Conditions */}
+          <label className="flex cursor-pointer items-start gap-3">
+
+          <input
+          type="checkbox"
+          checked={acceptedTerms}
+          onChange={(e) => setAcceptedTerms(e.target.checked)}
+          className="h-5 w-5 accent-[#ff6a00]"
+        />
+
+            <span className="text-[14px] font-medium leading-relaxed text-[#666666]">
+              I agree to the{" "}
+              <a
+                href="/terms"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-bold text-[#111111] underline underline-offset-2"
+                onClick={(e) => e.stopPropagation()}
+              >
+                Terms & Conditions
+              </a>
+            </span>
+
+          </label>
+
+
+          {/* Privacy Policy */}
+          <label className="flex cursor-pointer items-start gap-3">
+
+            <input
+          type="checkbox"
+          checked={acceptedPrivacy}
+          onChange={(e) => setAcceptedPrivacy(e.target.checked)}
+          className="h-5 w-5 accent-[#ff6a00]"
+        />
+
+            <span className="text-[14px] font-medium leading-relaxed text-[#666666]">
+              I agree to the{" "}
+              <a
+                href="/privacy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-bold text-[#111111] underline underline-offset-2"
+                onClick={(e) => e.stopPropagation()}
+              >
+                Privacy Policy
+              </a>
+            </span>
+
+          </label>
+
+        </div>
 
         {/* Create Account */}
         <button
@@ -349,6 +411,8 @@ export default function PassengerRegisterPage() {
         >
           {loading ? "Creating account..." : "Create account →"}
         </button>
+
+        
       </form>
 
       {/* Login */}

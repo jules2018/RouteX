@@ -16,6 +16,8 @@ export default function BecomeADriverPage() {
   const [vehiclePhoto, setVehiclePhoto] = useState<File | null>(null);
   const [profilePhoto, setProfilePhoto] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [acceptedDriverTerms, setAcceptedDriverTerms] = useState(false);
+  const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
 
   const handlePhoneChange = (value: string) => {
   const cleaned = value.replace(/\D/g, "");
@@ -54,6 +56,8 @@ export default function BecomeADriverPage() {
     formData.append("vehicle_color", form.vehicle_color);
     formData.append("license_plate", form.license_plate);
     formData.append("referral_code", form.referral_code);
+    formData.append("acceptedDriverTerms", String(acceptedDriverTerms));
+    formData.append("acceptedPrivacy", String(acceptedPrivacy));
 
     formData.append("vehicle_photo", vehiclePhoto);
 
@@ -62,7 +66,7 @@ export default function BecomeADriverPage() {
     }
 
     const response = await fetch(
-      "https://routex-development.onrender.com//driver-application",
+      "https://routex-1-z1hf.onrender.com//driver-application",
       {
         method: "POST",
         body: formData,
@@ -89,6 +93,8 @@ export default function BecomeADriverPage() {
 
     setVehiclePhoto(null);
     setProfilePhoto(null);
+    setAcceptedDriverTerms(false);
+    setAcceptedPrivacy(false);
   } catch (error) {
     console.error("Driver application error:", error);
     alert("Something went wrong. Please try again.");
@@ -469,10 +475,80 @@ export default function BecomeADriverPage() {
           />
         </div>
 
+{/* =================================
+            LEGAL AGREEMENTS
+        ================================= */}
+        <div className="mt-3 space-y-3">
+
+          {/* Driver Terms */}
+          <label className="flex cursor-pointer items-start gap-3">
+           <input
+              type="checkbox"
+              checked={acceptedDriverTerms}
+              onChange={(e) => setAcceptedDriverTerms(e.target.checked)}
+              className="
+                mt-0.5
+                h-5
+                w-5
+                shrink-0
+                cursor-pointer
+                accent-[#ff6a00]
+              "
+            />
+
+            <span className="text-[14px] font-medium leading-relaxed text-[#666666]">
+              I agree to the{" "}
+              <a
+                href="/driver-terms"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-bold text-[#111111] underline underline-offset-2"
+                onClick={(e) => e.stopPropagation()}
+              >
+                Driver Terms and Independent Contractor Agreement
+              </a>
+            </span>
+          </label>
+
+          {/* Privacy Policy */}
+          <label className="flex cursor-pointer items-start gap-3">
+           <input
+            type="checkbox"
+            checked={acceptedPrivacy}
+            onChange={(e) => setAcceptedPrivacy(e.target.checked)}
+            className="
+              mt-0.5
+              h-5
+              w-5
+              shrink-0
+              cursor-pointer
+              accent-[#ff6a00]
+            "
+          />
+
+            <span className="text-[14px] font-medium leading-relaxed text-[#666666]">
+              I agree to the{" "}
+              <a
+                href="/privacy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-bold text-[#111111] underline underline-offset-2"
+                onClick={(e) => e.stopPropagation()}
+              >
+                Privacy Policy
+              </a>
+            </span>
+          </label>
+
+        </div>
         {/* Submit */}
         <button
           onClick={handleSubmit}
-          disabled={submitting}
+              disabled={
+        submitting ||
+        !acceptedDriverTerms ||
+        !acceptedPrivacy
+      }
           className="
             mt-2
             w-full

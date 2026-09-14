@@ -216,28 +216,38 @@ app.post("/drivers", async (req, res) => {
 } = req.body;
 
     const result = await pool.query(
-      `
-      INSERT INTO drivers
-(
-  full_name,
-  phone,
-  license_number,
-  vehicle_type,
-  vehicle_color,
-  license_plate
-)
-VALUES ($1,$2,$3,$4,$5,$6)
-RETURNING *
-      `,
-      [
-  full_name,
-  phone,
-  license_number,
-  vehicle_type,
-  vehicle_color,
-  license_plate
-]
-    );
+  `
+  INSERT INTO drivers
+  (
+    full_name,
+    phone,
+    license_number,
+    vehicle_type,
+    vehicle_color,
+    license_plate,
+    driver_terms_accepted_at,
+    driver_terms_version,
+    privacy_accepted_at,
+    privacy_version
+  )
+  VALUES (
+    $1,$2,$3,$4,$5,$6,
+    NOW(),$7,
+    NOW(),$8
+  )
+  RETURNING *
+  `,
+  [
+    full_name,
+    phone,
+    license_number,
+    vehicle_type,
+    vehicle_color,
+    license_plate,
+    "2026-09-14",
+    "2026-09-14"
+  ]
+);
 
     res.status(201).json(result.rows[0]);
 
@@ -844,15 +854,29 @@ app.get("/admin/passengers", async (req, res) => {
 
 app.post("/passenger-register", async (req, res) => {
   try {
-
     const {
       full_name,
       phone,
       email,
       password,
-      referral_code
+      referral_code,
+      acceptedTerms,
+      acceptedPrivacy,
     } = req.body;
 
+    // =========================================
+    // REQUIRE LEGAL ACCEPTANCE
+    // =========================================
+    if (acceptedTerms !== true || acceptedPrivacy !== true) {
+      return res.status(400).json({
+        error:
+          "Terms & Conditions and Privacy Policy must be accepted.",
+      });
+    }
+
+    // =========================================
+    // CREATE PASSENGER
+    // =========================================
     const passengerResult = await pool.query(
       `
       INSERT INTO passengers
@@ -860,48 +884,70 @@ app.post("/passenger-register", async (req, res) => {
         full_name,
         phone,
         email,
-        referral_code
+        referral_code,
+        terms_accepted_at,
+        terms_version,
+        privacy_accepted_at,
+        privacy_version
       )
-      VALUES ($1,$2,$3,$4)
+      VALUES
+      (
+        $1,
+        $2,
+        $3,
+        $4,
+        NOW(),
+        $5,
+        NOW(),
+        $6
+      )
       RETURNING *
       `,
-     [
-  full_name,
-  phone,
-  email,
-  referral_code
-]
+      [
+        full_name,
+        phone,
+        email,
+        referral_code,
+        "2026-09-14",
+        "2026-09-14",
+      ]
     );
 
+    // =========================================
+    // CREATE LOGIN ACCOUNT
+    // =========================================
     await pool.query(
-  `
-  INSERT INTO users
-  (
-    full_name,
-    email,
-    password,
-    role
-  )
-  VALUES ($1,$2,$3,$4)
-  `,
-  [
-    full_name,
-    email,
-    password,
-    "passenger"
-  ]
-);
+      `
+      INSERT INTO users
+      (
+        full_name,
+        email,
+        password,
+        role
+      )
+      VALUES ($1,$2,$3,$4)
+      `,
+      [
+        full_name,
+        email,
+        password,
+        "passenger",
+      ]
+    );
+
     res.status(201).json({
-      message: "Passenger registered successfully"
+      message: "Passenger registered successfully",
+      passenger: passengerResult.rows[0],
     });
 
   } catch (error) {
+    console.error("PASSENGER REGISTRATION ERROR:", error);
+
     res.status(500).json({
-      error: error.message
+      error: error.message,
     });
   }
 });
-
 app.get("/trips/:id/occupancy", async (req, res) => {
   try {
     const tripId = req.params.id;
@@ -2671,49 +2717,7 @@ WHERE email = $1
 
   }
 });
-app.post("/passenger-register", async (req, res) => {
-  try {
 
-    const {
-      full_name,
-      phone,
-      email,
-      password
-    } = req.body;
-
-    const result = await pool.query(
-      `
-      INSERT INTO passengers
-      (
-        full_name,
-        phone,
-        email,
-        password
-      )
-      VALUES ($1,$2,$3,$4)
-      RETURNING *
-      `,
-      [
-        full_name,
-        phone,
-        email,
-        password
-      ]
-    );
-
-    res.status(201).json({
-      message: "Passenger registered successfully",
-      passenger: result.rows[0]
-    });
-
-  } catch (error) {
-
-    res.status(500).json({
-      error: error.message
-    });
-
-  }
-});
 app.post(
   "/driver-application",
   upload.fields([
@@ -2729,7 +2733,22 @@ app.post(
         vehicle_color,
         license_plate,
         referral_code,
+        acceptedDriverTerms,
+        acceptedPrivacy,
       } = req.body;
+
+      // =========================================
+      // REQUIRE LEGAL ACCEPTANCE
+      // =========================================
+      if (
+        acceptedDriverTerms !== "true" ||
+        acceptedPrivacy !== "true"
+      ) {
+        return res.status(400).json({
+          error:
+            "Driver Terms and Privacy Policy must be accepted.",
+        });
+      }
 
       const vehicleImage =
         req.files?.vehicle_photo?.[0]?.filename || null;
@@ -2748,11 +2767,26 @@ app.post(
           license_plate,
           referral_code,
           vehicle_image,
-          profile_image
+          profile_image,
+          driver_terms_accepted_at,
+          driver_terms_version,
+          privacy_accepted_at,
+          privacy_version
         )
         VALUES
         (
-          $1,$2,$3,$4,$5,$6,$7,$8
+          $1,
+          $2,
+          $3,
+          $4,
+          $5,
+          $6,
+          $7,
+          $8,
+          NOW(),
+          $9,
+          NOW(),
+          $10
         )
         RETURNING *
         `,
@@ -2765,18 +2799,22 @@ app.post(
           referral_code,
           vehicleImage,
           profileImage,
+          "2026-09-14",
+          "2026-09-14",
         ]
       );
 
       res.json(result.rows[0]);
+
     } catch (error) {
+      console.error("DRIVER APPLICATION ERROR:", error);
+
       res.status(500).json({
         error: error.message,
       });
     }
   }
 );
-
 app.get("/admin/stats", async (req, res) => {
   try {
 
