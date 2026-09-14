@@ -2070,28 +2070,7 @@ app.get("/available-vehicles", async (req, res) => {
 
   }
 });
-app.get("/available-drivers", async (req, res) => {
-  try {
 
-    const result = await pool.query(
-      `
-      SELECT *
-      FROM drivers
-      WHERE status = 'Available'
-      ORDER BY id
-      `
-    );
-
-    res.json(result.rows);
-
-  } catch (error) {
-
-    res.status(500).json({
-      error: error.message
-    });
-
-  }
-});
 app.get("/trip-bookings", async (req, res) => {
   try {
 
