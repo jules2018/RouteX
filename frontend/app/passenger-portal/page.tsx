@@ -59,7 +59,7 @@ export default function PassengerPortalPage() {
   const [passenger, setPassenger] = useState<any>(null);
   const [trips, setTrips] = useState<any[]>([]);
   const [onlineDrivers, setOnlineDrivers] = useState(0);
-
+  const [availableDrivers, setAvailableDrivers] = useState<any[]>([]);
   const [photo, setPhoto] = useState<File | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [photoVersion, setPhotoVersion] = useState(0);
@@ -107,6 +107,23 @@ export default function PassengerPortalPage() {
       const data = await response.json();
 
       setTrips(Array.isArray(data) ? data : []);
+      const waitingTrip = Array.isArray(data)
+  ? data.find(
+      (trip: any) =>
+        trip.trip_status === "Waiting" &&
+        trip.pickup_lat &&
+        trip.pickup_lng
+    )
+  : null;
+
+if (waitingTrip) {
+  loadAvailableDrivers(
+    Number(waitingTrip.pickup_lat),
+    Number(waitingTrip.pickup_lng)
+  );
+} else {
+  setAvailableDrivers([]);
+}
 
       console.log("TRIPS:", data);
     } catch (error) {
@@ -180,6 +197,39 @@ export default function PassengerPortalPage() {
       );
     }
   };
+
+  const loadAvailableDrivers = async (
+  pickupLat: number,
+  pickupLng: number
+) => {
+  try {
+    const response = await fetch(
+      `${API_URL}/available-drivers?pickup_lat=${pickupLat}&pickup_lng=${pickupLng}`
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        `Failed to load available drivers: ${response.status}`
+      );
+    }
+
+    const data = await response.json();
+
+    setAvailableDrivers(
+      Array.isArray(data) ? data : []
+    );
+
+    console.log("AVAILABLE DRIVERS:", data);
+
+  } catch (error) {
+    console.error(
+      "Error loading available drivers:",
+      error
+    );
+
+    setAvailableDrivers([]);
+  }
+};
 
   /* =======================================================
      LOAD PASSENGER
@@ -631,6 +681,127 @@ const profileImageUrl =
 
       </section>
 
+{/* =================================
+    AVAILABLE DRIVERS
+================================= */}
+{availableDrivers.length > 0 && (
+  <section className="mt-7">
+
+    <div className="mb-4">
+      <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#ff6a00]">
+        Drivers near your pickup
+      </p>
+
+      <h2 className="mt-1 text-[20px] font-extrabold tracking-tight">
+        Available drivers
+      </h2>
+
+      <p className="mt-1 text-[12px] text-[#777777]">
+        These drivers are currently online.
+      </p>
+    </div>
+
+    <div className="space-y-3">
+      {availableDrivers.map((driver) => (
+        <div
+          key={driver.id}
+          className="
+            flex
+            items-center
+            gap-4
+            rounded-[18px]
+            border
+            border-[#eeeeee]
+            bg-white
+            p-4
+          "
+        >
+
+          {/* DRIVER PHOTO */}
+          <div
+            className="
+              relative
+              h-14
+              w-14
+              shrink-0
+              overflow-hidden
+              rounded-full
+              bg-[#f5f5f5]
+            "
+          >
+            <div
+              className="
+                absolute
+                inset-0
+                flex
+                items-center
+                justify-center
+                text-lg
+                font-bold
+                text-[#aaaaaa]
+              "
+            >
+              {driver.first_name?.charAt(0)?.toUpperCase() || "D"}
+            </div>
+
+            {driver.profile_image && (
+              <img
+                src={
+                  driver.profile_image.startsWith("http")
+                    ? driver.profile_image
+                    : `${API_URL}/uploads/${driver.profile_image}`
+                }
+                alt=""
+                className="absolute inset-0 h-full w-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                }}
+              />
+            )}
+          </div>
+
+          {/* DRIVER DETAILS */}
+          <div className="min-w-0 flex-1">
+
+            <div className="flex items-center justify-between gap-3">
+
+              <p className="truncate text-[15px] font-extrabold">
+                {driver.first_name}
+              </p>
+
+              <span
+                className="
+                  shrink-0
+                  rounded-full
+                  bg-[#fff3e8]
+                  px-2.5
+                  py-1
+                  text-[10px]
+                  font-bold
+                  text-[#ff6a00]
+                "
+              >
+                {driver.distance_km} km away
+              </span>
+
+            </div>
+
+            <p className="mt-1 text-[12px] font-semibold text-[#555555]">
+              {driver.vehicle_color} {driver.vehicle_type}
+            </p>
+
+            <p className="mt-0.5 text-[11px] text-[#888888]">
+              {driver.license_plate}
+            </p>
+
+          </div>
+
+        </div>
+      ))}
+    </div>
+
+  </section>
+)}
 
       {/* =================================
           RIDES HEADER

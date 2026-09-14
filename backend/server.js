@@ -2598,6 +2598,66 @@ app.get("/online-drivers", async (req, res) => {
 
   }
 });
+app.get("/available-drivers", async (req, res) => {
+  try {
+    const { pickup_lat, pickup_lng } = req.query;
+
+    if (!pickup_lat || !pickup_lng) {
+      return res.status(400).json({
+        error: "Pickup location is required",
+      });
+    }
+
+    const result = await pool.query(
+      `
+      SELECT
+        id,
+        split_part(full_name, ' ', 1) AS first_name,
+        profile_image,
+        vehicle_type,
+        vehicle_color,
+        license_plate,
+        ROUND(
+          (
+            6371 * ACOS(
+              LEAST(
+                1,
+                COS(RADIANS($1)) *
+                COS(RADIANS(current_lat)) *
+                COS(
+                  RADIANS(current_lng) -
+                  RADIANS($2)
+                ) +
+                SIN(RADIANS($1)) *
+                SIN(RADIANS(current_lat))
+              )
+            )
+          )::numeric,
+          1
+        ) AS distance_km
+      FROM drivers
+      WHERE status = 'Available'
+        AND is_online = true
+        AND current_lat IS NOT NULL
+        AND current_lng IS NOT NULL
+      ORDER BY distance_km ASC
+      `,
+      [
+        Number(pickup_lat),
+        Number(pickup_lng),
+      ]
+    );
+
+    res.json(result.rows);
+
+  } catch (error) {
+    console.error("AVAILABLE DRIVERS ERROR:", error);
+
+    res.status(500).json({
+      error: error.message,
+    });
+  }
+});
 app.post("/driver-login", async (req, res) => {
   try {
 
