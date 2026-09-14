@@ -8,6 +8,44 @@ const { createClient } = require("@supabase/supabase-js");
 const fs = require("fs");
 require("dotenv").config();
 
+async function sendWhatsAppBookingAlert() {
+  try {
+    const response = await fetch(
+      `https://graph.facebook.com/v25.0/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.WHATSAPP_ACCESS_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          messaging_product: "whatsapp",
+          to: process.env.WHATSAPP_TEST_RECIPIENT,
+          type: "template",
+          template: {
+            name: "hello_world",
+            language: {
+              code: "en_US",
+            },
+          },
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error("WHATSAPP SEND ERROR:", data);
+      return;
+    }
+
+    console.log("WHATSAPP MESSAGE SENT:", data);
+
+  } catch (error) {
+    console.error("WHATSAPP ERROR:", error);
+  }
+}
+
 const app = express();
 
 const supabase = createClient(
@@ -820,10 +858,15 @@ RETURNING *
 ]
 );
 
+const newBooking = bookingResult.rows[0];
+
+sendWhatsAppBookingAlert();
+
 res.status(201).json({
   message: "Booking created",
-  booking: bookingResult.rows[0]
+  booking: newBooking
 });
+
   } catch (error) {
 
     res.status(500).json({
