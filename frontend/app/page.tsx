@@ -6,16 +6,29 @@ const outfit = Outfit({
   subsets: ["latin"],
 });
 
-export default function TestLandingPage() {
+export default function HomePage() {
   return (
-    <main
-      className={`${outfit.className} min-h-screen w-full bg-white text-[#111111]`}
-    >
-      <div className="mx-auto w-full max-w-md px-5 pb-4">
+   <main
+  className={`${outfit.className} min-h-screen w-full bg-[#f0f0f0] text-[#111111]`}
+>
+      {/* =================================
+          BACKGROUND
+      ================================= */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
 
-        {/* =================================
-            HEADER
-        ================================= */}
+        <div className="routex-glow-one absolute -right-24 top-24 h-72 w-72 rounded-full bg-[#ff6a00]/10 blur-[90px]" />
+
+        <div className="routex-glow-two absolute -left-32 top-[450px] h-80 w-80 rounded-full bg-[#ff6a00]/5 blur-[100px]" />
+
+      </div>
+
+
+      {/* =================================
+          PAGE
+      ================================= */}
+      <div className="relative z-10 mx-auto w-full max-w-md px-5 pb-6">
+
+        {/* HEADER */}
         <header className="flex items-center justify-between py-4">
 
           <h1 className="text-[26px] font-extrabold tracking-[-0.05em]">
@@ -26,14 +39,17 @@ export default function TestLandingPage() {
             href="/passenger-login"
             className="
               rounded-full
-              border border-[#e9e9e9]
-              bg-white
+              border
+              border-white/80
+              bg-white/60
               px-4
               py-2
               text-[14px]
               font-bold
-              text-[#111111]
+              backdrop-blur-xl
               transition
+              duration-300
+              hover:bg-white
               active:scale-[0.97]
             "
           >
@@ -46,13 +62,13 @@ export default function TestLandingPage() {
         {/* =================================
             HERO
         ================================= */}
-        <section className="pt-5">
+        <section className="routex-rise pt-5">
 
           <span
             className="
               inline-flex
               rounded-full
-              bg-[#fff3eb]
+              bg-[#fff3eb]/80
               px-3
               py-1.5
               text-[12px]
@@ -60,6 +76,7 @@ export default function TestLandingPage() {
               uppercase
               tracking-[0.12em]
               text-[#e65f00]
+              backdrop-blur-md
             "
           >
             Local rides in Upington
@@ -79,15 +96,7 @@ export default function TestLandingPage() {
             moving.
           </h2>
 
-          <p
-            className="
-              mt-3
-              text-[16px]
-              font-medium
-              leading-relaxed
-              text-[#777777]
-            "
-          >
+          <p className="mt-3 text-[16px] font-medium leading-relaxed text-[#777777]">
             Book a trusted local driver in minutes.
           </p>
 
@@ -100,18 +109,27 @@ export default function TestLandingPage() {
         <a
           href="/passenger-login"
           className="
+            routex-rise
+            routex-delay-one
+            group
             mt-5
             flex
             w-full
             items-center
             justify-between
-            rounded-[18px]
+            rounded-[22px]
             border
-            border-[#ededed]
-            bg-[#fafafa]
+            border-white/80
+            bg-white/60
             px-4
             py-4
-            transition
+            shadow-[0_10px_35px_rgba(0,0,0,0.05)]
+            backdrop-blur-xl
+            transition-all
+            duration-300
+            hover:-translate-y-1
+            hover:bg-white/80
+            hover:shadow-[0_16px_40px_rgba(0,0,0,0.08)]
             active:scale-[0.98]
           "
         >
@@ -146,7 +164,6 @@ export default function TestLandingPage() {
             </div>
 
             <div>
-
               <p className="text-[17px] font-extrabold">
                 Book a ride
               </p>
@@ -154,7 +171,6 @@ export default function TestLandingPage() {
               <p className="mt-0.5 text-[14px] font-medium text-[#888888]">
                 Where are you going?
               </p>
-
             </div>
 
           </div>
@@ -170,6 +186,9 @@ export default function TestLandingPage() {
               rounded-full
               bg-[#ff6a00]
               text-white
+              transition-transform
+              duration-300
+              group-hover:translate-x-1
             "
           >
             <svg
@@ -191,59 +210,22 @@ export default function TestLandingPage() {
 
 
         {/* =================================
-            BENEFITS
+            DRIVER
         ================================= */}
         <section
           className="
+            routex-rise
+            routex-delay-two
             mt-5
-            flex
-            items-center
-            justify-between
-            border-y
-            border-[#f0f0f0]
-            py-4
+            rounded-[22px]
+            border
+            border-white/80
+            bg-white/55
+            p-4
+            shadow-[0_10px_35px_rgba(0,0,0,0.04)]
+            backdrop-blur-xl
           "
         >
-
-          <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-[#ff6a00]" />
-
-            <span className="text-[13px] font-bold text-[#555555]">
-              Quick
-            </span>
-          </div>
-
-
-          <div className="h-4 w-px bg-[#e6e6e6]" />
-
-
-          <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-[#ff6a00]" />
-
-            <span className="text-[13px] font-bold text-[#555555]">
-              Trusted
-            </span>
-          </div>
-
-
-          <div className="h-4 w-px bg-[#e6e6e6]" />
-
-
-          <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-[#ff6a00]" />
-
-            <span className="text-[13px] font-bold text-[#555555]">
-              Local
-            </span>
-          </div>
-
-        </section>
-
-
-        {/* =================================
-            DRIVER SECTION
-        ================================= */}
-        <section className="mt-5">
 
           <div className="flex items-center justify-between">
 
@@ -314,7 +296,9 @@ export default function TestLandingPage() {
                 text-[14px]
                 font-bold
                 text-white
-                transition
+                transition-all
+                duration-300
+                hover:-translate-y-0.5
                 active:scale-[0.98]
               "
             >
@@ -329,13 +313,16 @@ export default function TestLandingPage() {
                 justify-center
                 rounded-[13px]
                 border
-                border-[#e4e4e4]
-                bg-white
+                border-white
+                bg-white/70
                 py-3
                 text-[14px]
                 font-bold
                 text-[#111111]
-                transition
+                backdrop-blur-xl
+                transition-all
+                duration-300
+                hover:bg-white
                 active:scale-[0.98]
               "
             >
@@ -348,22 +335,134 @@ export default function TestLandingPage() {
 
 
         {/* =================================
+            BENEFITS
+        ================================= */}
+        <section
+          className="
+            routex-rise
+            routex-delay-three
+            mt-8
+            flex
+            items-center
+            justify-between
+            border-y
+            border-[#ededed]
+            py-4
+          "
+        >
+
+          <div className="flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-[#ff6a00]" />
+            <span className="text-[13px] font-bold text-[#555555]">
+              Quick
+            </span>
+          </div>
+
+          <div className="h-4 w-px bg-[#e6e6e6]" />
+
+          <div className="flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-[#ff6a00]" />
+            <span className="text-[13px] font-bold text-[#555555]">
+              Trusted
+            </span>
+          </div>
+
+          <div className="h-4 w-px bg-[#e6e6e6]" />
+
+          <div className="flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-[#ff6a00]" />
+            <span className="text-[13px] font-bold text-[#555555]">
+              Local
+            </span>
+          </div>
+
+        </section>
+
+
+        {/* =================================
+            LEGAL
+        ================================= */}
+        <section className="routex-rise routex-delay-four mt-6">
+
+          <div className="flex flex-wrap justify-center gap-x-4 gap-y-2">
+
+            <a
+              href="/terms"
+              className="text-[12px] font-semibold text-[#777777] transition hover:text-[#ff6a00]"
+            >
+              Terms
+            </a>
+
+            <a
+              href="/privacy"
+              className="text-[12px] font-semibold text-[#777777] transition hover:text-[#ff6a00]"
+            >
+              Privacy
+            </a>
+
+            <a
+              href="/safety"
+              className="text-[12px] font-semibold text-[#777777] transition hover:text-[#ff6a00]"
+            >
+              Safety
+            </a>
+
+            <a
+              href="/terms-of-use"
+              className="text-[12px] font-semibold text-[#777777] transition hover:text-[#ff6a00]"
+            >
+              Terms of Use
+            </a>
+
+            <a
+              href="/driver-terms"
+              className="text-[12px] font-semibold text-[#777777] transition hover:text-[#ff6a00]"
+            >
+              Driver Terms
+            </a>
+
+            <a
+              href="/refund-policy"
+              className="text-[12px] font-semibold text-[#777777] transition hover:text-[#ff6a00]"
+            >
+              Refund Policy
+            </a>
+
+            <a
+              href="/referral-terms"
+              className="text-[12px] font-semibold text-[#777777] transition hover:text-[#ff6a00]"
+            >
+              Referral Terms
+            </a>
+
+          </div>
+
+        </section>
+
+
+        {/* =================================
             SUPPORT
         ================================= */}
-        <footer className="pt-6 text-center">
+        <footer className="routex-rise routex-delay-five pt-5 pb-4 text-center">
 
           <a
             href="https://wa.me/27799132513"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[13px] font-semibold text-[#888888]"
+            className="text-[13px] font-semibold text-[#888888] transition hover:text-[#ff6a00]"
           >
             Need help? WhatsApp RouteX Support
           </a>
 
+          <p className="mt-3 text-[11px] font-medium text-[#aaaaaa]">
+            RouteX • Getting Upington Moving
+          </p>
+
         </footer>
 
       </div>
-    </main>
+
+
+          </main>
   );
 }

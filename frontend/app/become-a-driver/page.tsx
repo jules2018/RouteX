@@ -66,7 +66,7 @@ export default function BecomeADriverPage() {
     }
 
     const response = await fetch(
-      "https://routex-1-z1hf.onrender.com//driver-application",
+      "https://routex-1-z1hf.onrender.com/driver-application",
       {
         method: "POST",
         body: formData,
@@ -74,6 +74,17 @@ export default function BecomeADriverPage() {
     );
 
     if (!response.ok) {
+  const errorData = await response.json().catch(() => null);
+
+  console.error("DRIVER APPLICATION ERROR:", errorData);
+
+  alert(
+    errorData?.error ||
+    `Failed to submit application. Server returned ${response.status}`
+  );
+
+  return;
+}if (!response.ok) {
       alert("Failed to submit application.");
       return;
     }
