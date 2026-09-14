@@ -238,7 +238,7 @@ const results = data;
 
     try {
       const response = await fetch(
-        "https://routex-development.onrender.com/bookings",
+        "https://routex-1-z1hf.onrender.com/bookings",
         {
           method: "POST",
           headers: {

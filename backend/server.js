@@ -860,6 +860,8 @@ RETURNING *
 
 const newBooking = bookingResult.rows[0];
 
+console.log("ABOUT TO SEND WHATSAPP");
+
 sendWhatsAppBookingAlert();
 
 res.status(201).json({
