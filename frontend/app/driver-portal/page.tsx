@@ -5,6 +5,7 @@ import { openNavigation } from "../lib/navigation";
 import { useEffect, useState } from "react";
 import AuthGuard from "../components/AuthGuard";
 import { showNotification } from "../lib/notifications";
+import { API_BASE_URL } from "../lib/api";
 
 export default function DriverPortalPage() {
   const [requests, setRequests] = useState<any[]>([]);
@@ -170,7 +171,7 @@ const uploadPhoto = async () => {
 
     try {
       const response = await fetch(
-        `https://routex-development.onrender.com/trip-requests/${tripId}/accept`,
+        `${API_BASE_URL}/trip-requests/${tripId}/accept`,
         {
           method: "POST",
           headers: {
@@ -213,7 +214,7 @@ const uploadPhoto = async () => {
 
     try {
       const response = await fetch(
-        `https://routex-1-z1hf.onrender.com/trip-requests/${tripId}/start`,
+        `${API_BASE_URL}/trip-requests/${tripId}/start`,
         {
           method: "POST",
         }

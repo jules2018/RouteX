@@ -18,7 +18,7 @@ export default function TestLandingPage() {
         ================================= */}
         <header className="flex items-center justify-between py-4">
 
-          <h1 className="text-[24px] font-extrabold tracking-[-0.05em]">
+          <h1 className="text-[26px] font-extrabold tracking-[-0.05em]">
             Route<span className="text-[#ff6a00]">X</span>
           </h1>
 
@@ -30,7 +30,7 @@ export default function TestLandingPage() {
               bg-white
               px-4
               py-2
-              text-[12px]
+              text-[14px]
               font-bold
               text-[#111111]
               transition
@@ -55,7 +55,7 @@ export default function TestLandingPage() {
               bg-[#fff3eb]
               px-3
               py-1.5
-              text-[10px]
+              text-[12px]
               font-extrabold
               uppercase
               tracking-[0.12em]
@@ -68,7 +68,7 @@ export default function TestLandingPage() {
           <h2
             className="
               mt-4
-              text-[30px]
+              text-[34px]
               font-extrabold
               leading-[1.05]
               tracking-[-0.045em]
@@ -81,8 +81,8 @@ export default function TestLandingPage() {
 
           <p
             className="
-              mt-2
-              text-[13px]
+              mt-3
+              text-[16px]
               font-medium
               leading-relaxed
               text-[#777777]
@@ -147,11 +147,11 @@ export default function TestLandingPage() {
 
             <div>
 
-              <p className="text-[15px] font-extrabold">
+              <p className="text-[17px] font-extrabold">
                 Book a ride
               </p>
 
-              <p className="mt-0.5 text-[11px] font-medium text-[#888888]">
+              <p className="mt-0.5 text-[14px] font-medium text-[#888888]">
                 Where are you going?
               </p>
 
@@ -208,7 +208,7 @@ export default function TestLandingPage() {
           <div className="flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-[#ff6a00]" />
 
-            <span className="text-[11px] font-bold text-[#555555]">
+            <span className="text-[13px] font-bold text-[#555555]">
               Quick
             </span>
           </div>
@@ -220,7 +220,7 @@ export default function TestLandingPage() {
           <div className="flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-[#ff6a00]" />
 
-            <span className="text-[11px] font-bold text-[#555555]">
+            <span className="text-[13px] font-bold text-[#555555]">
               Trusted
             </span>
           </div>
@@ -232,7 +232,7 @@ export default function TestLandingPage() {
           <div className="flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-[#ff6a00]" />
 
-            <span className="text-[11px] font-bold text-[#555555]">
+            <span className="text-[13px] font-bold text-[#555555]">
               Local
             </span>
           </div>
@@ -251,7 +251,7 @@ export default function TestLandingPage() {
 
               <p
                 className="
-                  text-[10px]
+                  text-[12px]
                   font-extrabold
                   uppercase
                   tracking-[0.12em]
@@ -261,7 +261,7 @@ export default function TestLandingPage() {
                 Drive with RouteX
               </p>
 
-              <h3 className="mt-1 text-[17px] font-extrabold">
+              <h3 className="mt-1 text-[20px] font-extrabold">
                 Earn on your schedule
               </h3>
 
@@ -311,7 +311,7 @@ export default function TestLandingPage() {
                 rounded-[13px]
                 bg-[#111111]
                 py-3
-                text-[11px]
+                text-[14px]
                 font-bold
                 text-white
                 transition
@@ -332,7 +332,7 @@ export default function TestLandingPage() {
                 border-[#e4e4e4]
                 bg-white
                 py-3
-                text-[11px]
+                text-[14px]
                 font-bold
                 text-[#111111]
                 transition
@@ -356,7 +356,7 @@ export default function TestLandingPage() {
             href="https://wa.me/27799132513"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[10px] font-semibold text-[#999999]"
+            className="text-[13px] font-semibold text-[#888888]"
           >
             Need help? WhatsApp RouteX Support
           </a>

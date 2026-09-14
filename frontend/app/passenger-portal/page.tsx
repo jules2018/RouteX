@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import { Outfit } from "next/font/google";
 import {
   Car,
   CalendarDays,
@@ -10,9 +10,8 @@ import {
   CreditCard,
 } from "lucide-react";
 
-const jakarta = Plus_Jakarta_Sans({
+const outfit = Outfit({
   subsets: ["latin"],
-  variable: "--font-jakarta",
 });
 
 /* =========================================================
@@ -283,10 +282,7 @@ const profileImageUrl =
 
   return (
   <main
-    className={`${jakarta.variable} min-h-[100dvh] bg-white text-[#111111]`}
-    style={{
-      fontFamily: "var(--font-jakarta)",
-    }}
+    className={`${outfit.className} min-h-[100dvh] bg-white text-[#111111]`}
   >
     <div className="mx-auto w-full max-w-md px-5 pb-8">
 
@@ -295,7 +291,7 @@ const profileImageUrl =
       ================================= */}
       <header className="flex items-center justify-between pt-5">
 
-        <h1 className="text-[24px] font-extrabold tracking-[-0.055em]">
+        <h1 className="text-[26px] font-extrabold tracking-[-0.055em]">
           Route<span className="text-[#ff6a00]">X</span>
         </h1>
 
@@ -311,7 +307,7 @@ const profileImageUrl =
               }`}
             />
 
-            <span className="text-[10px] font-bold text-[#777777]">
+            <span className="text-[12px] font-bold text-[#777777]">
               {onlineDrivers} online
             </span>
           </div>
@@ -332,7 +328,7 @@ const profileImageUrl =
 
             <p
               className="
-                text-[10px]
+                text-[12px]
                 font-extrabold
                 uppercase
                 tracking-[0.12em]
@@ -345,7 +341,7 @@ const profileImageUrl =
             <h2
               className="
                 mt-1
-                text-[24px]
+                text-[26px]
                 font-extrabold
                 leading-tight
                 tracking-[-0.04em]
@@ -362,7 +358,7 @@ const profileImageUrl =
             <p
               className="
                 mt-1
-                text-[12px]
+                text-[15px]
                 font-medium
                 text-[#777777]
               "
@@ -534,11 +530,11 @@ const profileImageUrl =
 
           <div>
 
-            <p className="text-[15px] font-extrabold">
+            <p className="text-[17px] font-extrabold">
               Book a ride
             </p>
 
-            <p className="mt-0.5 text-[11px] font-medium text-[#888888]">
+            <p className="mt-0.5 text-[14px] font-medium text-[#888888]">
               Enter your destination
             </p>
 
@@ -588,7 +584,7 @@ const profileImageUrl =
           }`}
         />
 
-        <p className="text-[11px] font-semibold text-[#666666]">
+        <p className="text-[13px] font-semibold text-[#666666]">
           {onlineDrivers > 0
             ? `${onlineDrivers} driver${
                 onlineDrivers !== 1 ? "s" : ""
@@ -610,7 +606,7 @@ const profileImageUrl =
 
             <p
               className="
-                text-[10px]
+                text-[12px]
                 font-extrabold
                 uppercase
                 tracking-[0.12em]
@@ -623,7 +619,7 @@ const profileImageUrl =
             <h2
               className="
                 mt-1
-                text-[20px]
+                text-[22px]
                 font-extrabold
                 tracking-[-0.035em]
               "
@@ -633,7 +629,7 @@ const profileImageUrl =
 
           </div>
 
-          <p className="text-[10px] font-bold text-[#999999]">
+          <p className="text-[12px] font-bold text-[#999999]">
             {trips.length} booking
             {trips.length !== 1 ? "s" : ""}
           </p>
@@ -682,11 +678,11 @@ const profileImageUrl =
               />
             </div>
 
-            <p className="mt-3 text-[14px] font-extrabold">
+            <p className="mt-3 text-[16px] font-extrabold">
               No rides booked yet
             </p>
 
-            <p className="mt-1 text-[11px] font-medium text-[#888888]">
+            <p className="mt-1 text-[14px] font-medium text-[#888888]">
               Your RouteX trips will appear here.
             </p>
 
@@ -714,7 +710,7 @@ const profileImageUrl =
 
                   <p
                     className="
-                      text-[9px]
+                      text-[13px]
                       font-bold
                       uppercase
                       tracking-[0.1em]
@@ -724,7 +720,7 @@ const profileImageUrl =
                     Booking
                   </p>
 
-                  <h3 className="mt-1 text-[14px] font-extrabold">
+                  <h3 className="mt-1 text-[16px] font-extrabold">
                     BK-
                     {trip.id
                       .toString()
@@ -741,7 +737,7 @@ const profileImageUrl =
                     rounded-full
                     px-2.5
                     py-1
-                    text-[9px]
+                    text-[11px]
                     font-extrabold
                     ${
                       trip.trip_status === "In Progress"
@@ -787,7 +783,7 @@ const profileImageUrl =
                   <div>
                     <p
                       className="
-                        text-[9px]
+                        text-[11px]
                         font-bold
                         uppercase
                         tracking-wide
@@ -801,7 +797,7 @@ const profileImageUrl =
                       className="
                         mt-1
                         line-clamp-1
-                        text-[12px]
+                        text-[14px]
                         font-semibold
                         text-[#333333]
                       "
@@ -815,7 +811,7 @@ const profileImageUrl =
 
                     <p
                       className="
-                        text-[9px]
+                        text-[11px]
                         font-bold
                         uppercase
                         tracking-wide
@@ -829,7 +825,7 @@ const profileImageUrl =
                       className="
                         mt-1
                         line-clamp-1
-                        text-[12px]
+                        text-[14px]
                         font-semibold
                         text-[#333333]
                       "
@@ -860,11 +856,11 @@ const profileImageUrl =
                 {/* FARE */}
                 <div>
 
-                  <p className="text-[9px] font-bold uppercase text-[#aaaaaa]">
+                  <p className="text-[11px] font-bold uppercase text-[#aaaaaa]">
                     Fare
                   </p>
 
-                  <p className="mt-1 text-[12px] font-extrabold">
+                  <p className="mt-1 text-[14px] font-extrabold">
                     R
                     {Number(
                       trip.passenger_amount ??
@@ -879,11 +875,11 @@ const profileImageUrl =
                 {/* DATE */}
                 <div>
 
-                  <p className="text-[9px] font-bold uppercase text-[#aaaaaa]">
+                  <p className="text-[11px] font-bold uppercase text-[#aaaaaa]">
                     Date
                   </p>
 
-                  <p className="mt-1 text-[11px] font-bold">
+                  <p className="mt-1 text-[13px] font-bold">
                     {new Date(
                       trip.travel_date
                     ).toLocaleDateString()}
@@ -895,7 +891,7 @@ const profileImageUrl =
                 {/* DRIVER */}
                 <div>
 
-                  <p className="text-[9px] font-bold uppercase text-[#aaaaaa]">
+                  <p className="text-[11px] font-bold uppercase text-[#aaaaaa]">
                     Driver
                   </p>
 
@@ -903,7 +899,7 @@ const profileImageUrl =
                     className="
                       mt-1
                       truncate
-                      text-[11px]
+                      text-[13px]
                       font-bold
                     "
                   >
@@ -955,12 +951,12 @@ const profileImageUrl =
 
                     <div className="min-w-0 flex-1">
 
-                      <p className="text-[10px] font-extrabold">
+                      <p className="text-[13px] font-extrabold">
                         {trip.vehicle_type ||
                           "Vehicle not assigned"}
                       </p>
 
-                      <p className="mt-0.5 text-[9px] font-medium text-[#888888]">
+                      <p className="mt-0.5 text-[12px] font-medium text-[#888888]">
                         {trip.vehicle_color || ""}
                         {trip.vehicle_color &&
                         trip.license_plate
@@ -1004,7 +1000,7 @@ const profileImageUrl =
                     border-[#e6e6e6]
                     bg-white
                     py-2.5
-                    text-[10px]
+                    text-[13px]
                     font-extrabold
                     text-[#333333]
                     transition
@@ -1037,7 +1033,7 @@ const profileImageUrl =
           text-center
         "
       >
-        <p className="text-[9px] font-medium text-[#aaaaaa]">
+        <p className="text-[11px] font-medium text-[#aaaaaa]">
           RouteX • Getting Upington Moving
         </p>
       </footer>
