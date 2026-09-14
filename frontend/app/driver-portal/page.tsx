@@ -131,40 +131,69 @@ const uploadPhoto = async () => {
   }
 };
 
-  const toggleStatus = async () => {
-    const newStatus =
-      status === "available"
-        ? "Offline"
-        : "Available";
+ const toggleStatus = async () => {
+  const newStatus =
+    status === "available"
+      ? "Offline"
+      : "Available";
 
-    try {
-      const response = await fetch(
-        `${API_URL}/drivers/${driver?.id}/status`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            status: newStatus,
-          }),
+  try {
+    let latitude = null;
+    let longitude = null;
+
+    if (newStatus === "Available") {
+      const position = await new Promise<GeolocationPosition>(
+        (resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(
+            resolve,
+            reject,
+            {
+              enableHighAccuracy: true,
+              timeout: 10000,
+            }
+          );
         }
       );
 
-      if (!response.ok) {
-        throw new Error("Failed to update driver status");
-      }
-
-      setStatus(
-        newStatus === "Available"
-          ? "available"
-          : "offline"
-      );
-    } catch (error) {
-      console.error("Error updating driver status:", error);
-      alert("Unable to update your status.");
+      latitude = position.coords.latitude;
+      longitude = position.coords.longitude;
     }
-  };
+
+    const response = await fetch(
+      `${API_URL}/drivers/${driver?.id}/status`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          status: newStatus,
+          current_lat: latitude,
+          current_lng: longitude,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to update driver status");
+    }
+
+    setStatus(
+      newStatus === "Available"
+        ? "available"
+        : "offline"
+    );
+
+  } catch (error) {
+    console.error("Error updating driver status:", error);
+
+    alert(
+      newStatus === "Available"
+        ? "RouteX needs your location before you can go online."
+        : "Unable to update your status."
+    );
+  }
+};
 
   const acceptTrip = async (tripId: number) => {
     setLoadingAction(tripId);

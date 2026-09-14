@@ -2640,20 +2640,38 @@ app.post("/drivers/:id/status", async (req, res) => {
     console.log("Body:", req.body);
 
     const driverId = req.params.id;
-    const { status } = req.body;
+
+    const {
+      status,
+      current_lat,
+      current_lng,
+    } = req.body;
 
     const result = await pool.query(
       `
       UPDATE drivers
-      SET status = $1
-      WHERE id = $2
+      SET
+        status = $1,
+        is_online = $2,
+        current_lat = $3,
+        current_lng = $4
+      WHERE id = $5
       RETURNING *
       `,
-      [status, driverId]
+      [
+        status,
+        status === "Available",
+        current_lat,
+        current_lng,
+        driverId,
+      ]
     );
 
     res.json(result.rows[0]);
+
   } catch (error) {
+    console.error("DRIVER STATUS ERROR:", error);
+
     res.status(500).json({
       error: error.message,
     });
