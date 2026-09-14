@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { API_URL } from "../lib/api";
 
 export default function DriverLoginPage() {
   const router = useRouter();
@@ -32,7 +33,7 @@ export default function DriverLoginPage() {
 
     try {
      const response = await fetch(
-  "https://routex-1-z1hf.onrender.com/driver-login",
+  `${API_URL}/driver-login`,
   {
     method: "POST",
     headers: {

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { API_URL } from "../lib/api";
 
 export default function AmbassadorLoginPage() {
   const [phone, setPhone] = useState("");
@@ -10,7 +11,7 @@ export default function AmbassadorLoginPage() {
 
   const handleLogin = async () => {
     const response = await fetch(
-      "https:/https://routex-1-z1hf.onrender.com/ambassador-login",
+      `${API_URL}/ambassador-login`,
       {
         method: "POST",
         headers: {

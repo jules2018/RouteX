@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Outfit } from "next/font/google";
+import { API_URL } from "../lib/api";
 import {
   Car,
   CalendarDays,
@@ -18,8 +19,6 @@ const outfit = Outfit({
    API CONFIGURATION
 ========================================================= */
 
-const API_BASE_URL = "https://routex-1-z1hf.onrender.com";
-const PHOTO_API_URL = "https://routex-1-z1hf.onrender.com";
 
 
 /* =========================================================
@@ -47,9 +46,9 @@ function getProfileImageUrl(image: string | null | undefined) {
   //
   // or:
   // uploads/profile.jpg
-  return `${PHOTO_API_URL}${
-    image.startsWith("/") ? "" : "/"
-  }${image}`;
+ return `${API_URL}${
+  image.startsWith("/") ? "" : "/"
+}${image}`;
 }
 
 /* =========================================================
@@ -96,7 +95,7 @@ export default function PassengerPortalPage() {
   const loadTrips = async (passengerId: number) => {
     try {
       const response = await fetch(
-        `${API_BASE_URL}/passenger-bookings/${passengerId}`
+        `${API_URL}/passenger-bookings/${passengerId}`
       );
 
       if (!response.ok) {
@@ -122,7 +121,7 @@ export default function PassengerPortalPage() {
   const loadOnlineDrivers = async () => {
     try {
       const response = await fetch(
-        `${API_BASE_URL}/online-drivers`
+        `${API_URL}/online-drivers`
       );
 
       if (!response.ok) {
@@ -204,8 +203,8 @@ export default function PassengerPortalPage() {
     formData.append("passengerId", String(passenger.id));
 
     try {
-      const response = await fetch(
-        `${PHOTO_API_URL}/passenger/upload-photo`,
+     const response = await fetch(
+  `${API_URL}/passenger/upload-photo`,
         {
           method: "POST",
           body: formData,

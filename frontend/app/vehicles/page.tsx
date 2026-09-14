@@ -1,12 +1,13 @@
 "use client";
 import AuthGuard from "../components/AuthGuard";
 import { useEffect, useState } from "react";
+import { API_URL } from "../lib/api";
 
 export default function VehiclesPage() {
   const [vehicles, setVehicles] = useState<any[]>([]);
 
   useEffect(() => {
-    fetch("https://routex-1-z1hf.onrender.com/vehicles")
+    fetch(`${API_URL}/vehicles`)
       .then((res) => res.json())
       .then((data) => {
         setVehicles(data);

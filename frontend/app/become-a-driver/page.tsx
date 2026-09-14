@@ -2,6 +2,7 @@
 "use client";
 
 import { useState } from "react";
+import { API_URL } from "../lib/api";
 
 export default function BecomeADriverPage() {
   const [form, setForm] = useState({
@@ -66,7 +67,7 @@ export default function BecomeADriverPage() {
     }
 
     const response = await fetch(
-      "https://routex-1-z1hf.onrender.com/driver-application",
+      `${API_URL}/driver-application`,
       {
         method: "POST",
         body: formData,

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { API_URL } from "@/app/lib/api";
 
 export default function TripDetailsPage() {
   const params = useParams();
@@ -14,7 +15,7 @@ export default function TripDetailsPage() {
   if (!id) return;
 
   fetch(
-    `https://routex-1-z1hf.onrender.com/trips/${id}/driver-manifest`
+    `${API_URL}/trips/${id}/driver-manifest`
   )
     .then((res) => res.json())
     .then((data) => {
@@ -22,7 +23,7 @@ export default function TripDetailsPage() {
     });
 
   fetch(
-    `https://routex-1-z1hf.onrender.com/trips/${id}/passengers`
+    `${API_URL}/trips/${id}/passengers`
   )
     .then((res) => res.json())
     .then((data) => {
@@ -40,7 +41,7 @@ if (!trip || !trip.trip) {
 
 const departTrip = async () => {
   await fetch(
-    `https://routex-1-z1hf.onrender.com/trips/${id}/depart`,
+    `${API_URL}/trips/${id}/depart`,
     {
       method: "POST",
     }
@@ -51,7 +52,7 @@ const departTrip = async () => {
 
 const completeTrip = async () => {
   await fetch(
-    `https://routex-1-z1hf.onrender.com/trips/${id}/complete`,
+    `${API_URL}/trips/${id}/complete`,
     {
       method: "POST",
     }

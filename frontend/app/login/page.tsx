@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { API_URL } from "../lib/api";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -13,7 +14,7 @@ export default function LoginPage() {
     e.preventDefault();
 
     const response = await fetch(
-      "https://routex-1-z1hf.onrender.com/login",
+      `${API_URL}/login`,
       {
         method: "POST",
         headers: {

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus_Jakarta_Sans } from "next/font/google";
+import { API_URL } from "../lib/api";
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -52,7 +53,7 @@ export default function PassengerLoginPage() {
 
     try {
       const response = await fetch(
-        "https://routex-1-z1hf.onrender.com/passenger-login",
+        `${API_URL}/passenger-login`,
         {
           method: "POST",
           headers: {

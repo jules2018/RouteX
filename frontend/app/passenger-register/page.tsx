@@ -2,6 +2,7 @@
 "use client";
 
 import { useState } from "react";
+import { API_URL } from "../lib/api";
 
 export default function PassengerRegisterPage() {
   const [form, setForm] = useState({
@@ -42,7 +43,7 @@ export default function PassengerRegisterPage() {
   return;
 }
       const response = await fetch(
-        "https://routex-1-z1hf.onrender.com/passenger-register",
+        `${API_URL}/passenger-register`,
         {
           method: "POST",
           headers: {

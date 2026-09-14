@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from "react";
 import AuthGuard from "../components/AuthGuard";
+import { API_URL } from "../lib/api";
 
 export default function PassengersPage() {
   const [passengers, setPassengers] = useState<any[]>([]);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    fetch("https:/https://routex-1-z1hf.onrender.com/passengers")
+    fetch(`${API_URL}/passengers`)
       .then((res) => res.json())
       .then((data) => {
         setPassengers(data);
@@ -130,7 +131,7 @@ export default function PassengersPage() {
                         className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow"
                         onClick={() => {
                           fetch(
-                            `https://routex-1-z1hf.onrender.com/passengers/${passenger.id}/pay`,
+                            `${API_URL}/passengers/${passenger.id}/pay`,
                             {
                               method: "POST",
                             }

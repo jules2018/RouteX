@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { API_URL } from "../lib/api";
 
 interface Ambassador {
   full_name?: string;
@@ -33,10 +34,11 @@ export default function AmbassadorDashboardPage() {
   const parsedAmbassador = JSON.parse(storedAmbassador);
   setAmbassador(parsedAmbassador);
 
-  fetch(
-    `https://routex-1-z1hf.onrender.com/ambassador/${parsedAmbassador.referral_code}/stats`
-  )
-    .then((res) => res.json())
+ fetch(
+  `${API_URL}/ambassador/${parsedAmbassador.referral_code}/stats`
+)
+  .then((res) => res.json())
+
     .then((data) => {
      setRegistrations(
   data.registrations
@@ -46,7 +48,7 @@ setBookings(
   data.bookings
 );
 fetch(
-  `https://routex-1-z1hf.onrender.com/ambassador/${parsedAmbassador.referral_code}/referrals`
+  `${API_URL}/ambassador/${parsedAmbassador.referral_code}/referrals`
 )
   .then((res) => res.json())
   .then((data) => {

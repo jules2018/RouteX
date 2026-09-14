@@ -1,12 +1,13 @@
 "use client";
 import AuthGuard from "../components/AuthGuard";
 import { useEffect, useState } from "react";
+import { API_URL } from "../lib/api";
 
 export default function DriversPage() {
   const [drivers, setDrivers] = useState<any[]>([]);
 
   useEffect(() => {
-    fetch("https://routex-1-z1hf.onrender.com/drivers")
+    fetch(`${API_URL}/drivers`)
       .then((res) => res.json())
       .then((data) => {
         setDrivers(data);

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { API_URL } from "../lib/api";
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -13,7 +14,7 @@ export default function NotificationsPage() {
     if (!passenger?.id) return;
 
     fetch(
-      `https://routex-1-z1hf.onrender.com/notifications/${passenger.id}`
+      `${API_URL}/notifications/${passenger.id}`
     )
       .then((res) => res.json())
       .then((data) => setNotifications(data));

@@ -2,6 +2,7 @@
 import AuthGuard from "../components/AuthGuard";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { API_URL } from "../lib/api";
 
 export default function TripsPage() {
   const [trips, setTrips] = useState<any[]>([]);
@@ -21,7 +22,7 @@ const totalPassengers = trips.reduce(
 );
 
   useEffect(() => {
-   fetch("https://routex-1-z1hf.onrender.com/trips")
+   fetch(`${API_URL}/trips`)
       .then((res) => res.json())
       .then((data) => {
         setTrips(data);

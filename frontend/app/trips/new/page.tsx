@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import AuthGuard from "../../components/AuthGuard";
+import { API_URL } from "@/app/lib/api";
 
 export default function NewTripPage() {
   const [routeName, setRouteName] = useState("");
@@ -14,11 +15,11 @@ export default function NewTripPage() {
   const [vehicleId, setVehicleId] = useState("");
 
   useEffect(() => {
-    fetch("https://routex-1-z1hf.onrender.com/available-drivers")
+    fetch(`${API_URL}/available-drivers`)
       .then((res) => res.json())
       .then((data) => setDrivers(data));
 
-    fetch("https://routex-1-z1hf.onrender.com/available-vehicles")
+    fetch(`${API_URL}/available-vehicles`)
       .then((res) => res.json())
       .then((data) => setVehicles(data));
   }, []);
@@ -29,7 +30,7 @@ export default function NewTripPage() {
     e.preventDefault();
 
     const response = await fetch(
-      "https://routex-1-z1hf.onrender.com/trips",
+      `${API_URL}/trips`,
       {
         method: "POST",
         headers: {

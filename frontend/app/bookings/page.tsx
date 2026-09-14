@@ -3,6 +3,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { showNotification } from "../lib/notifications";
+import { API_URL } from "../lib/api";
 
 function calculateDistanceKm(
   lat1: number,
@@ -42,7 +43,7 @@ export default function BookRidePage() {
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [areas, setAreas] = useState<any[]>([]);
   const [promoCode, setPromoCode] = useState("");
- const API_BASE_URL = "https://routex-development.onrender.com";
+ 
 
   const [fare, setFare] = useState("");
 
@@ -83,7 +84,7 @@ export default function BookRidePage() {
     const loadAreas = async () => {
       try {
         const response = await fetch(
-          "https://routex-development.onrender.com/areas"
+          `${API_URL}/areas`
         );
 
         const data = await response.json();
@@ -122,7 +123,7 @@ export default function BookRidePage() {
       `${query}, Upington, Northern Cape, South Africa`;
 
     const response = await fetch(
-  `${API_BASE_URL}/addresses/search?q=${encodeURIComponent(query)}`
+  `${API_URL}/addresses/search?q=${encodeURIComponent(query)}`
 );
 
 const data = await response.json();
@@ -180,7 +181,7 @@ const results = data;
   }
 
   const response = await fetch(
-    `https://routex-development.onrender.com/calculate-fare?${params.toString()}`
+    `${API_URL}/calculate-fare?${params.toString()}`
   );
 
   const data = await response.json();
@@ -238,7 +239,7 @@ const results = data;
 
     try {
       const response = await fetch(
-        "https://routex-1-z1hf.onrender.com/bookings",
+        `${API_URL}/bookings`,
         {
           method: "POST",
           headers: {

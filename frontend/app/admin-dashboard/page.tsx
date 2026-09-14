@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { API_URL } from "../lib/api";
 
 export default function AdminDashboardPage() {
   const router = useRouter();
@@ -19,7 +20,7 @@ export default function AdminDashboardPage() {
   });
 
   const loadDashboardData = () => {
-    fetch("https://routex-1-z1hf.onrender.com/admin/stats")
+    fetch(`${API_URL}/admin/stats`)
       .then((res) => res.json())
       .then((data) => {
         setStats(data);
@@ -28,7 +29,7 @@ export default function AdminDashboardPage() {
         console.error("Error loading stats:", error);
       });
 
-    fetch("https://routex-1-z1hf.onrender.com/admin/applications")
+    fetch(`${API_URL}/admin/applications`)
       .then((res) => res.json())
       .then((data) => {
         setApplications(data);
@@ -37,7 +38,7 @@ export default function AdminDashboardPage() {
         console.error("Error loading applications:", error);
       });
   };
-  fetch("https://routex-1-z1hf.onrender.com/admin/passengers")
+  fetch(`${API_URL}/admin/passengers`)
   .then((res) => res.json())
   .then((data) => {
     setPassengers(data);
@@ -347,7 +348,7 @@ export default function AdminDashboardPage() {
                       <button
                         onClick={async () => {
                           await fetch(
-                            `https://routex-1-z1hf.onrender.com/admin/applications/${app.id}/approve`,
+                            `${API_URL}/admin/applications/${app.id}/approve`,
                             { method: "POST" }
                           );
 
@@ -362,7 +363,7 @@ export default function AdminDashboardPage() {
                       <button
                         onClick={async () => {
                           await fetch(
-                            `https://routex-1-z1hf.onrender.com/admin/applications/${app.id}/reject`,
+                            `${API_URL}/admin/applications/${app.id}/reject`,
                             { method: "POST" }
                           );
 
