@@ -357,84 +357,99 @@ const uploadPhoto = async () => {
 
           <div className="flex items-center gap-4">
 
-            {/* PROFILE PHOTO */}
-            <div className="relative h-[68px] w-[68px] shrink-0">
+  {/* PROFILE PHOTO */}
+  <div className="relative h-[68px] w-[68px] shrink-0">
 
-              <div
-                className="
-                  h-[68px]
-                  w-[68px]
-                  overflow-hidden
-                  rounded-full
-                  border
-                  border-[#e8e8e8]
-                  bg-[#f7f7f7]
-                "
-              >
-                {driver?.profile_image ? (
-                  <img
-                    src={`${API_URL}/uploads/${driver.profile_image}`}
-                    alt={driver?.full_name || "Driver"}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <div
-                    className="
-                      flex
-                      h-full
-                      w-full
-                      items-center
-                      justify-center
-                      text-xl
-                      font-bold
-                      text-[#aaaaaa]
-                    "
-                  >
-                    {driver?.full_name?.charAt(0)?.toUpperCase() || "D"}
-                  </div>
-                )}
-              </div>
+    <div
+      className="
+        relative
+        h-[68px]
+        w-[68px]
+        overflow-hidden
+        rounded-full
+        border
+        border-[#e8e8e8]
+        bg-[#f7f7f7]
+      "
+    >
+      {/* FALLBACK INITIAL - ALWAYS BEHIND PHOTO */}
+      <div
+        className="
+          absolute
+          inset-0
+          flex
+          items-center
+          justify-center
+          text-xl
+          font-bold
+          text-[#aaaaaa]
+        "
+      >
+        {driver?.full_name?.charAt(0)?.toUpperCase() || "D"}
+      </div>
 
+      {/* PROFILE IMAGE */}
+      {driver?.profile_image && (
+        <img
+          src={
+            driver.profile_image.startsWith("http")
+              ? driver.profile_image
+              : `${API_URL}/uploads/${driver.profile_image}`
+          }
+          alt=""
+          className="
+            absolute
+            inset-0
+            h-full
+            w-full
+            object-cover
+          "
+          onError={(e) => {
+            e.currentTarget.style.display = "none";
+          }}
+        />
+      )}
+    </div>
 
-              {/* CHANGE PHOTO */}
-              <label
-                className="
-                  absolute
-                  -bottom-1
-                  -right-1
-                  flex
-                  h-7
-                  w-7
-                  cursor-pointer
-                  items-center
-                  justify-center
-                  rounded-full
-                  border-2
-                  border-white
-                  bg-[#ff6a00]
-                  text-[14px]
-                  font-bold
-                  text-white
-                  shadow-sm
-                "
-              >
-                +
+    {/* CHANGE PHOTO */}
+    <label
+      className="
+        absolute
+        -bottom-1
+        -right-1
+        flex
+        h-7
+        w-7
+        cursor-pointer
+        items-center
+        justify-center
+        rounded-full
+        border-2
+        border-white
+        bg-[#ff6a00]
+        text-[14px]
+        font-bold
+        text-white
+        shadow-sm
+      "
+    >
+      +
 
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
+      <input
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
 
-                    if (file) {
-                      setPhoto(file);
-                    }
-                  }}
-                  className="hidden"
-                />
-              </label>
+          if (file) {
+            setPhoto(file);
+          }
+        }}
+        className="hidden"
+      />
+    </label>
 
-            </div>
+  </div>
 
 
             {/* DRIVER DETAILS */}
