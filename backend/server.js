@@ -2617,24 +2617,27 @@ app.get("/available-drivers", async (req, res) => {
         vehicle_type,
         vehicle_color,
         license_plate,
-        ROUND(
-          (
-            6371 * ACOS(
-              LEAST(
-                1,
-                COS(RADIANS($1)) *
-                COS(RADIANS(current_lat)) *
-                COS(
-                  RADIANS(current_lng) -
-                  RADIANS($2)
-                ) +
-                SIN(RADIANS($1)) *
-                SIN(RADIANS(current_lat))
-              )
-            )
-          )::numeric,
-          1
-        ) AS distance_km
+       ROUND(
+  (
+    6371 * ACOS(
+      LEAST(
+        1,
+        GREATEST(
+          -1,
+          COS(RADIANS($1)) *
+          COS(RADIANS(current_lat)) *
+          COS(
+            RADIANS(current_lng) -
+            RADIANS($2)
+          ) +
+          SIN(RADIANS($1)) *
+          SIN(RADIANS(current_lat))
+        )
+      )
+    )
+  )::numeric,
+  1
+) AS distance_km
       FROM drivers
       WHERE status = 'Available'
         AND is_online = true
@@ -3398,10 +3401,11 @@ app.get("/passenger-bookings/:id", async (req, res) => {
     // Load passenger booking history
     const result = await pool.query(
       `
-      SELECT
+        SELECT
         tb.*,
         d.full_name AS driver_name,
         d.phone AS driver_phone,
+        d.profile_image AS driver_profile_image,
         d.vehicle_type,
         d.vehicle_color,
         d.license_plate

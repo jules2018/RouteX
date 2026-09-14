@@ -781,7 +781,9 @@ const profileImageUrl =
                   text-[#ff6a00]
                 "
               >
-                {driver.distance_km} km away
+                {driver.distance_km
+              ? `${Number(driver.distance_km).toFixed(1)} km away`
+              : "Nearby"}
               </span>
 
             </div>
