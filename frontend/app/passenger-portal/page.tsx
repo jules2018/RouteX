@@ -114,6 +114,44 @@ export default function PassengerPortalPage() {
     }
   };
 
+  const cancelBooking = async (bookingId: number) => {
+  const confirmed = window.confirm(
+    "Are you sure you want to cancel this booking?"
+  );
+
+  if (!confirmed) return;
+
+  try {
+    const response = await fetch(
+      `${API_URL}/bookings/${bookingId}/cancel`,
+      {
+        method: "PATCH",
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      alert(data.error || "Could not cancel booking.");
+      return;
+    }
+
+    setTrips((currentTrips) =>
+      currentTrips.map((trip) =>
+        trip.id === bookingId
+          ? {
+              ...trip,
+              trip_status: "Cancelled",
+              booking_status: "Cancelled",
+            }
+          : trip
+      )
+    );
+  } catch (error) {
+    console.error("CANCEL BOOKING ERROR:", error);
+    alert("Could not cancel booking.");
+  }
+};
   /* =======================================================
      LOAD ONLINE DRIVERS
   ======================================================= */
@@ -1010,7 +1048,32 @@ const profileImageUrl =
                 </a>
 
               )}
-
+{/* CANCEL BOOKING */}
+{trip.trip_status === "Waiting" && (
+  <button
+    type="button"
+    onClick={() => cancelBooking(trip.id)}
+    className="
+      mt-3
+      flex
+      w-full
+      items-center
+      justify-center
+      rounded-[12px]
+      border
+      border-[#ff6a00]
+      bg-white
+      py-2.5
+      text-[13px]
+      font-extrabold
+      text-[#ff6a00]
+      transition
+      active:scale-[0.98]
+    "
+  >
+    Cancel Booking
+  </button>
+)}
             </div>
 
           ))

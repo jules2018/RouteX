@@ -822,40 +822,46 @@ console.log("Passenger Pays:", passengerAmount);
 
 const bookingResult = await pool.query(
   `
-INSERT INTO trip_bookings
-(
-  passenger_id,
-  fare_amount,
-  discount_amount,
-  passenger_amount,
-  promo_code,
-  pickup_address,
-  dropoff_address,
-  travel_date,
-  trip_status,
-  pickup_lat,
-  pickup_lng,
-  destination_lat,
-  destination_lng
-)
-VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
-RETURNING *
+  INSERT INTO trip_bookings
+  (
+    passenger_id,
+    fare_amount,
+    discount_amount,
+    passenger_amount,
+    promo_code,
+    pickup_address,
+    dropoff_address,
+    travel_date,
+    trip_status,
+    booking_status,
+    pickup_lat,
+    pickup_lng,
+    destination_lat,
+    destination_lng,
+    expires_at
+  )
+  VALUES (
+    $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,
+    NOW() + INTERVAL '10 minutes'
+  )
+  RETURNING *
   `,
- [
-  passenger_id,
-  baseFare,
-  discountAmount,
-  passengerAmount,
-  promo_code || null,
-  pickup_address,
-  dropoff_address,
-  travel_date,
-  "Waiting",
-  pickupLat,
-  pickupLng,
-  destinationLat,
-  destinationLng
-]
+  [
+    passenger_id,
+    baseFare,
+    discountAmount,
+    passengerAmount,
+    promo_code || null,
+    pickup_address,
+    dropoff_address,
+    travel_date,
+    "Waiting",  // trip_status
+    "Waiting",  // booking_status
+    pickupLat,
+    pickupLng,
+    destinationLat,
+    destinationLng
+  ]
 );
 
 const newBooking = bookingResult.rows[0];
@@ -1164,6 +1170,43 @@ app.get("/trips/:id/manifest", async (req, res) => {
       error: error.message
     });
 
+  }
+});
+app.patch("/bookings/:id/cancel", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await pool.query(
+      `
+      UPDATE trip_bookings
+      SET
+        booking_status = 'Cancelled',
+        trip_status = 'Cancelled'
+   WHERE id = $1
+  AND booking_status = 'Waiting'
+  AND expires_at > NOW()
+      RETURNING *
+      `,
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(400).json({
+        error: "Booking cannot be cancelled."
+      });
+    }
+
+    res.json({
+      message: "Booking cancelled",
+      booking: result.rows[0]
+    });
+
+  } catch (error) {
+    console.error("CANCEL BOOKING ERROR:", error);
+
+    res.status(500).json({
+      error: "Failed to cancel booking."
+    });
   }
 });
 app.get("/trips/:id/drop-order", async (req, res) => {
@@ -2262,7 +2305,7 @@ app.post("/passengers/:id/pay", async (req, res) => {
 app.get("/trip-requests", async (req, res) => {
   try {
 
-    const result = await pool.query(`
+   const result = await pool.query(`
   SELECT
       tb.id,
       tb.passenger_id,
@@ -2276,14 +2319,18 @@ app.get("/trip-requests", async (req, res) => {
       tb.pickup_address,
       tb.dropoff_address,
       tb.travel_date,
-      tb.trip_status
+      tb.trip_status,
+      tb.expires_at
   FROM trip_bookings tb
   JOIN passengers p
       ON tb.passenger_id = p.id
- WHERE tb.booking_status = 'Waiting'
+  WHERE tb.booking_status = 'Waiting'
+    AND (
+      tb.expires_at IS NULL
+      OR tb.expires_at > NOW()
+    )
   ORDER BY tb.id DESC
 `);
-
     res.json(result.rows);
 
   } catch (error) {
@@ -3255,6 +3302,22 @@ app.get("/passenger-bookings/:id", async (req, res) => {
   try {
     const passengerId = req.params.id;
 
+    // Mark waiting bookings as expired after 10 minutes
+    await pool.query(
+      `
+      UPDATE trip_bookings
+      SET
+        booking_status = 'Expired',
+        trip_status = 'Expired'
+      WHERE passenger_id = $1
+        AND booking_status = 'Waiting'
+        AND expires_at IS NOT NULL
+        AND expires_at <= NOW()
+      `,
+      [passengerId]
+    );
+
+    // Load passenger booking history
     const result = await pool.query(
       `
       SELECT
@@ -3282,9 +3345,4 @@ app.get("/passenger-bookings/:id", async (req, res) => {
       error: error.message
     });
   }
-});
-
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
 });
