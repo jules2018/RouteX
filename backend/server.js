@@ -3427,7 +3427,91 @@ app.get("/passenger-bookings/:id", async (req, res) => {
 });
 const PORT = process.env.PORT || 5000;
 
+app.post("/driver-reviews", async (req, res) => {
+  try {
+    const {
+      booking_id,
+      passenger_id,
+      rating,
+      review_text,
+    } = req.body;
 
+    // Check that this was a completed trip
+    // belonging to this passenger and that a driver was assigned.
+    const bookingResult = await pool.query(
+      `
+      SELECT id, passenger_id, assigned_driver_id, trip_status
+      FROM trip_bookings
+      WHERE id = $1
+        AND passenger_id = $2
+        AND trip_status = 'Completed'
+        AND assigned_driver_id IS NOT NULL
+      `,
+      [booking_id, passenger_id]
+    );
+
+    if (bookingResult.rows.length === 0) {
+      return res.status(400).json({
+        error: "Only completed trips can be reviewed.",
+      });
+    }
+
+    const booking = bookingResult.rows[0];
+
+    const numericRating = Number(rating);
+
+    if (
+      !Number.isInteger(numericRating) ||
+      numericRating < 1 ||
+      numericRating > 5
+    ) {
+      return res.status(400).json({
+        error: "Rating must be between 1 and 5.",
+      });
+    }
+
+    const result = await pool.query(
+      `
+      INSERT INTO driver_reviews
+        (
+          booking_id,
+          driver_id,
+          passenger_id,
+          rating,
+          review_text
+        )
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING *
+      `,
+      [
+        booking.id,
+        booking.assigned_driver_id,
+        passenger_id,
+        numericRating,
+        review_text?.trim() || null,
+      ]
+    );
+
+    res.status(201).json({
+      message: "Review submitted successfully.",
+      review: result.rows[0],
+    });
+
+  } catch (error) {
+    console.error("DRIVER REVIEW ERROR:", error);
+
+    // booking_id is UNIQUE, so prevent a second review.
+    if (error.code === "23505") {
+      return res.status(409).json({
+        error: "You have already reviewed this trip.",
+      });
+    }
+
+    res.status(500).json({
+      error: "Failed to submit review.",
+    });
+  }
+});
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
