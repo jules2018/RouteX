@@ -1150,27 +1150,28 @@ const profileImageUrl =
                 </div>
 
 
-                {/* DRIVER */}
-                <div>
+  {/* DRIVER */}
+<div className="col-span-full mt-3">
+
   <p className="text-[10px] font-bold uppercase text-[#aaaaaa]">
     Driver
   </p>
 
-  <div className="mt-2 flex items-center gap-2">
+  <div className="mt-2 flex items-center gap-3">
 
     {/* DRIVER PHOTO */}
     <div
       className="
         relative
-        h-9
-        w-9
+        h-10
+        w-10
         shrink-0
         overflow-hidden
         rounded-full
         bg-[#f5f5f5]
       "
     >
-      {/* Fallback */}
+      {/* FALLBACK */}
       <div
         className="
           absolute
@@ -1178,7 +1179,7 @@ const profileImageUrl =
           flex
           items-center
           justify-center
-          text-[12px]
+          text-[13px]
           font-bold
           text-[#aaaaaa]
         "
@@ -1186,7 +1187,7 @@ const profileImageUrl =
         {trip.driver_name?.charAt(0)?.toUpperCase() || "D"}
       </div>
 
-      {/* Photo */}
+      {/* PHOTO */}
       {trip.driver_profile_image && (
         <img
           src={
@@ -1203,36 +1204,38 @@ const profileImageUrl =
       )}
     </div>
 
-   <div className="min-w-0 flex-1">
+    {/* NAME + RATING */}
+    <div className="min-w-0 flex-1">
 
-  <p className="truncate text-[14px] font-extrabold leading-tight text-[#111111]">
-    {trip.driver_name || "Driver"}
-  </p>
+      <p className="text-[14px] font-extrabold leading-tight text-[#111111]">
+        {trip.driver_name || "Driver"}
+      </p>
 
-  {trip.average_rating && (
-    <div className="mt-1 flex items-center gap-1">
+      {trip.average_rating && (
+        <div className="mt-1 flex flex-wrap items-center gap-x-1.5">
 
-      <span className="text-[13px] leading-none text-[#ff6a00]">
-        ★
-      </span>
+          <span className="text-[14px] leading-none text-[#ff6a00]">
+            ★
+          </span>
 
-      <span className="text-[12px] font-extrabold leading-none text-[#333333]">
-        {Number(trip.average_rating).toFixed(1)}
-      </span>
+          <span className="text-[12px] font-extrabold text-[#333333]">
+            {Number(trip.average_rating).toFixed(1)}
+          </span>
 
-      <span className="text-[11px] leading-none text-[#999999]">
-        ({trip.review_count}{" "}
-        {Number(trip.review_count) === 1
-          ? "review"
-          : "reviews"})
-      </span>
+          <span className="text-[11px] text-[#999999]">
+            {trip.review_count}{" "}
+            {Number(trip.review_count) === 1
+              ? "review"
+              : "reviews"}
+          </span>
+
+        </div>
+      )}
 
     </div>
-  )}
-
-</div>
 
   </div>
+
 </div>
               </div>
 
@@ -1300,7 +1303,9 @@ const profileImageUrl =
               {/* =================================
     RATE YOUR DRIVER
 ================================= */}
-{String(trip.trip_status).trim().toLowerCase() === "completed" && (
+{String(trip.trip_status).trim().toLowerCase() === "completed" &&
+  !trip.has_reviewed &&
+  !reviewedTrips[trip.id] && (
   <div className="mt-5 rounded-[18px] border border-[#ffe0cc] bg-[#fffaf6] p-4">
 
     <p className="text-[11px] font-bold uppercase tracking-wide text-[#ff6a00]">
@@ -1311,14 +1316,7 @@ const profileImageUrl =
       How was your trip with {trip.driver_name || "your driver"}?
     </h4>
 
-   {trip.has_reviewed || reviewedTrips[trip.id] ? (
-      <div className="mt-3 rounded-xl bg-white p-3">
-        <p className="text-sm font-bold text-[#111111]">
-          Thank you for your review.
-        </p>
-      </div>
-    ) : (
-      <>
+   
         {/* STARS */}
         <div className="mt-4 flex items-center gap-2">
           {[1, 2, 3, 4, 5].map((star) => (
@@ -1399,9 +1397,7 @@ const profileImageUrl =
             ? "Submitting..."
             : "Submit Review"}
         </button>
-      </>
-    )}
-
+    
   </div>
 )}
               {/* WHATSAPP DRIVER */}
