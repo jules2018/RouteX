@@ -1203,29 +1203,33 @@ const profileImageUrl =
       )}
     </div>
 
-    <div>
-  <p className="text-[14px] font-extrabold">
+   <div className="min-w-0 flex-1">
+
+  <p className="truncate text-[14px] font-extrabold leading-tight text-[#111111]">
     {trip.driver_name || "Driver"}
   </p>
 
   {trip.average_rating && (
-    <div className="mt-0.5 flex items-center gap-1">
-      <span className="text-[13px] text-[#ff6a00]">
+    <div className="mt-1 flex items-center gap-1">
+
+      <span className="text-[13px] leading-none text-[#ff6a00]">
         ★
       </span>
 
-      <span className="text-[12px] font-bold text-[#555555]">
+      <span className="text-[12px] font-extrabold leading-none text-[#333333]">
         {Number(trip.average_rating).toFixed(1)}
       </span>
 
-      <span className="text-[11px] text-[#999999]">
-        · {trip.review_count}{" "}
+      <span className="text-[11px] leading-none text-[#999999]">
+        ({trip.review_count}{" "}
         {Number(trip.review_count) === 1
           ? "review"
-          : "reviews"}
+          : "reviews"})
       </span>
+
     </div>
   )}
+
 </div>
 
   </div>
@@ -1307,7 +1311,7 @@ const profileImageUrl =
       How was your trip with {trip.driver_name || "your driver"}?
     </h4>
 
-    {reviewedTrips[trip.id] ? (
+   {trip.has_reviewed || reviewedTrips[trip.id] ? (
       <div className="mt-3 rounded-xl bg-white p-3">
         <p className="text-sm font-bold text-[#111111]">
           Thank you for your review.

@@ -3418,7 +3418,12 @@ app.get("/passenger-bookings/:id", async (req, res) => {
     FROM driver_reviews dr
     WHERE dr.driver_id = d.id
   ) AS review_count
-
+,
+EXISTS (
+  SELECT 1
+  FROM driver_reviews dr
+  WHERE dr.booking_id = tb.id
+) AS has_reviewed
 FROM trip_bookings tb
       LEFT JOIN drivers d
         ON tb.assigned_driver_id = d.id
