@@ -15,6 +15,11 @@ async function sendWhatsAppBookingAlert(
   fare
 ) {
   try {
+    let whatsappPhone = String(phone).replace(/\D/g, "");
+
+if (whatsappPhone.startsWith("0")) {
+  whatsappPhone = "27" + whatsappPhone.substring(1);
+}
     const response = await fetch(
       `https://graph.facebook.com/v25.0/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`,
       {
@@ -26,7 +31,7 @@ async function sendWhatsAppBookingAlert(
 
         body: JSON.stringify({
           messaging_product: "whatsapp",
-          to: phone,
+          to: whatsappPhone,
           type: "template",
 
           template: {
