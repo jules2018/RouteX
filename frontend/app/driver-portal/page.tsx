@@ -13,6 +13,9 @@ export default function DriverPortalPage() {
   const [inProgressTrips, setInProgressTrips] = useState<any[]>([]);
   const [completedTrips, setCompletedTrips] = useState<any[]>([]);
   const [driverReviews, setDriverReviews] = useState<any[]>([]);
+  const [activePage, setActivePage] = useState(0);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const [driver, setDriver] = useState<any>(null);
   const [status, setStatus] = useState("offline");
 
@@ -27,6 +30,37 @@ export default function DriverPortalPage() {
   const [photo, setPhoto] = useState<File | null>(null);
 
   const availableTrips = requests;
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+  setTouchEnd(null);
+  setTouchStart(e.targetTouches[0].clientX);
+};
+
+const handleTouchMove = (e: React.TouchEvent) => {
+  setTouchEnd(e.targetTouches[0].clientX);
+};
+
+const handleTouchEnd = () => {
+  if (touchStart === null || touchEnd === null) return;
+
+  const distance = touchStart - touchEnd;
+
+  // Require a reasonable swipe distance
+  const minimumSwipeDistance = 60;
+
+  // SWIPE LEFT
+  if (distance > minimumSwipeDistance) {
+    setActivePage((current) => Math.min(current + 1, 2));
+  }
+
+  // SWIPE RIGHT
+  if (distance < -minimumSwipeDistance) {
+    setActivePage((current) => Math.max(current - 1, 0));
+  }
+
+  setTouchStart(null);
+  setTouchEnd(null);
+};
 
   const loadTrips = () => {
     fetch(`${API_URL}/accepted-trips`)
@@ -369,7 +403,12 @@ const loadDriverReviews = async (driverId: number) => {
   <AuthGuard>
     <main className="min-h-screen bg-white text-[#111111]">
 
-      <div className="mx-auto w-full max-w-md px-5 pb-12">
+      <div
+  className="mx-auto w-full max-w-md px-5 pb-12"
+  onTouchStart={handleTouchStart}
+  onTouchMove={handleTouchMove}
+  onTouchEnd={handleTouchEnd}
+>
 
         {/* =================================
             HEADER
@@ -628,7 +667,57 @@ const loadDriverReviews = async (driverId: number) => {
 
         </section>
 
+{/* =================================
+    PORTAL NAVIGATION
+================================= */}
+<div className="mt-6 border-b border-[#eeeeee]">
 
+  <div className="grid grid-cols-3">
+
+    {["Home", "Rides", "Reviews"].map((label, index) => (
+      <button
+        key={label}
+        type="button"
+        onClick={() => setActivePage(index)}
+        className={`
+          relative
+          pb-3
+          text-[12px]
+          font-bold
+          transition
+          ${
+            activePage === index
+              ? "text-[#111111]"
+              : "text-[#999999]"
+          }
+        `}
+      >
+        {label}
+
+        {activePage === index && (
+          <span
+            className="
+              absolute
+              bottom-0
+              left-1/2
+              h-[3px]
+              w-8
+              -translate-x-1/2
+              rounded-full
+              bg-[#ff6a00]
+            "
+          />
+        )}
+
+      </button>
+    ))}
+
+  </div>
+
+</div>
+
+{activePage === 0 && (
+  <div>
         {/* =================================
             AVAILABILITY
         ================================= */}
@@ -720,6 +809,10 @@ const loadDriverReviews = async (driverId: number) => {
           </div>
 
         </section>
+          </div>
+)}
+{activePage === 2 && (
+  <div>
 {/* =================================
     PASSENGER REVIEWS
 ================================= */}
@@ -824,6 +917,9 @@ const loadDriverReviews = async (driverId: number) => {
   )}
 
 </section>
+  </div>
+)}
+
 
          {/* =================================
     CURRENT TRIP
@@ -1092,7 +1188,8 @@ const loadDriverReviews = async (driverId: number) => {
 
   </section>
 )}
-
+{activePage === 1 && (
+  <div>
          {/* =================================
     AVAILABLE TRIPS
 ================================= */}
@@ -1455,7 +1552,13 @@ const loadDriverReviews = async (driverId: number) => {
   </div>
 
 </section>
-          {/* =================================
+
+  </div>
+)}
+
+{activePage === 0 && myAcceptedTrips.length > 0 && (
+  <div>
+{/* =================================
     ACCEPTED TRIPS
 ================================= */}
 <section className="mb-8">
@@ -1731,9 +1834,14 @@ const loadDriverReviews = async (driverId: number) => {
   </div>
 
 </section>
-         {/* =================================
+  </div>
+)}
+
+{/* =================================
     COMPLETED TRIPS
 ================================= */}
+{activePage === 2 && (
+  <div>
 <section className="pb-10">
 
   {/* HEADER */}
@@ -1938,6 +2046,9 @@ const loadDriverReviews = async (driverId: number) => {
   </div>
 
 </section>
+  </div>
+)}
+
         </div>
       </main>
     </AuthGuard>
