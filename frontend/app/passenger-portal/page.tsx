@@ -1203,9 +1203,30 @@ const profileImageUrl =
       )}
     </div>
 
-    <p className="text-[14px] font-extrabold">
-      {trip.driver_name || "Driver"}
-    </p>
+    <div>
+  <p className="text-[14px] font-extrabold">
+    {trip.driver_name || "Driver"}
+  </p>
+
+  {trip.average_rating && (
+    <div className="mt-0.5 flex items-center gap-1">
+      <span className="text-[13px] text-[#ff6a00]">
+        ★
+      </span>
+
+      <span className="text-[12px] font-bold text-[#555555]">
+        {Number(trip.average_rating).toFixed(1)}
+      </span>
+
+      <span className="text-[11px] text-[#999999]">
+        · {trip.review_count}{" "}
+        {Number(trip.review_count) === 1
+          ? "review"
+          : "reviews"}
+      </span>
+    </div>
+  )}
+</div>
 
   </div>
 </div>

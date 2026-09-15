@@ -3398,15 +3398,28 @@ app.get("/passenger-bookings/:id", async (req, res) => {
     // Load passenger booking history
     const result = await pool.query(
       `
-        SELECT
-        tb.*,
-        d.full_name AS driver_name,
-        d.phone AS driver_phone,
-        d.profile_image AS driver_profile_image,
-        d.vehicle_type,
-        d.vehicle_color,
-        d.license_plate
-      FROM trip_bookings tb
+       SELECT
+  tb.*,
+  d.full_name AS driver_name,
+  d.phone AS driver_phone,
+  d.profile_image AS driver_profile_image,
+  d.vehicle_type,
+  d.vehicle_color,
+  d.license_plate,
+
+  (
+    SELECT ROUND(AVG(dr.rating)::numeric, 1)
+    FROM driver_reviews dr
+    WHERE dr.driver_id = d.id
+  ) AS average_rating,
+
+  (
+    SELECT COUNT(*)::integer
+    FROM driver_reviews dr
+    WHERE dr.driver_id = d.id
+  ) AS review_count
+
+FROM trip_bookings tb
       LEFT JOIN drivers d
         ON tb.assigned_driver_id = d.id
       WHERE tb.passenger_id = $1
