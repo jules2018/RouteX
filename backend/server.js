@@ -3512,6 +3512,39 @@ app.post("/driver-reviews", async (req, res) => {
     });
   }
 });
+
+app.get("/drivers/:id/rating", async (req, res) => {
+  try {
+    const driverId = req.params.id;
+
+    const result = await pool.query(
+      `
+      SELECT
+        ROUND(AVG(rating)::numeric, 1) AS average_rating,
+        COUNT(*)::integer AS review_count
+      FROM driver_reviews
+      WHERE driver_id = $1
+      `,
+      [driverId]
+    );
+
+    res.json({
+      average_rating:
+        result.rows[0].average_rating
+          ? Number(result.rows[0].average_rating)
+          : null,
+      review_count:
+        Number(result.rows[0].review_count) || 0,
+    });
+
+  } catch (error) {
+    console.error("DRIVER RATING ERROR:", error);
+
+    res.status(500).json({
+      error: "Failed to load driver rating.",
+    });
+  }
+});
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
