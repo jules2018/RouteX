@@ -2618,11 +2618,29 @@ app.get("/available-drivers", async (req, res) => {
   1
 ) AS distance_km
       FROM drivers
-      WHERE status = 'Available'
-        AND is_online = true
-        AND current_lat IS NOT NULL
-        AND current_lng IS NOT NULL
-      ORDER BY distance_km ASC
+     WHERE status = 'Available'
+  AND is_online = true
+  AND current_lat IS NOT NULL
+  AND current_lng IS NOT NULL
+  AND (
+    6371 * ACOS(
+      LEAST(
+        1,
+        GREATEST(
+          -1,
+          COS(RADIANS($1)) *
+          COS(RADIANS(current_lat)) *
+          COS(
+            RADIANS(current_lng) -
+            RADIANS($2)
+          ) +
+          SIN(RADIANS($1)) *
+          SIN(RADIANS(current_lat))
+        )
+      )
+    )
+  ) <= 30
+ORDER BY distance_km ASC
       `,
       [
         Number(pickup_lat),
@@ -3408,6 +3426,7 @@ app.get("/passenger-bookings/:id", async (req, res) => {
   }
 });
 const PORT = process.env.PORT || 5000;
+
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
