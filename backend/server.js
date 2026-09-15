@@ -9,6 +9,7 @@ const fs = require("fs");
 require("dotenv").config();
 
 async function sendWhatsAppBookingAlert(
+  phone,
   pickup,
   destination,
   fare
@@ -25,7 +26,7 @@ async function sendWhatsAppBookingAlert(
 
         body: JSON.stringify({
           messaging_product: "whatsapp",
-          to: process.env.WHATSAPP_TEST_RECIPIENT,
+          to: phone,
           type: "template",
 
           template: {
@@ -899,15 +900,62 @@ const bookingResult = await pool.query(
 
 const newBooking = bookingResult.rows[0];
 
-console.log("ABOUT TO SEND WHATSAPP");
+console.log("LOOKING FOR NEARBY DRIVERS FOR WHATSAPP");
 
-await sendWhatsAppBookingAlert(
-  newBooking.pickup_address || newBooking.pickup_area,
-  newBooking.dropoff_address || newBooking.dropoff_area,
-  Number(newBooking.fare_amount).toFixed(2)
+const nearbyDrivers = await pool.query(
+  `
+  SELECT
+    id,
+    full_name,
+    phone
+  FROM drivers
+  WHERE status = 'Available'
+    AND is_online = true
+    AND current_lat IS NOT NULL
+    AND current_lng IS NOT NULL
+    AND (
+      6371 * ACOS(
+        LEAST(
+          1,
+          GREATEST(
+            -1,
+            COS(RADIANS($1)) *
+            COS(RADIANS(current_lat)) *
+            COS(
+              RADIANS(current_lng) -
+              RADIANS($2)
+            ) +
+            SIN(RADIANS($1)) *
+            SIN(RADIANS(current_lat))
+          )
+        )
+      )
+    ) <= 30
+  `,
+  [
+    Number(newBooking.pickup_lat),
+    Number(newBooking.pickup_lng),
+  ]
 );
 
-console.log("WHATSAPP FUNCTION FINISHED");
+console.log(
+  `FOUND ${nearbyDrivers.rows.length} NEARBY DRIVERS`
+);
+
+for (const driver of nearbyDrivers.rows) {
+  console.log(
+    `SENDING WHATSAPP TO DRIVER: ${driver.full_name}`
+  );
+
+  await sendWhatsAppBookingAlert(
+    driver.phone,
+    newBooking.pickup_address || newBooking.pickup_area,
+    newBooking.dropoff_address || newBooking.dropoff_area,
+    Number(newBooking.fare_amount).toFixed(2)
+  );
+}
+
+console.log("WHATSAPP DRIVER ALERTS FINISHED");
 
 res.status(201).json({
   message: "Booking created",
@@ -2629,6 +2677,7 @@ app.get("/available-drivers", async (req, res) => {
       SELECT
         id,
         split_part(full_name, ' ', 1) AS first_name,
+        phone,
         profile_image,
         vehicle_type,
         vehicle_color,
