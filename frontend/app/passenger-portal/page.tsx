@@ -63,7 +63,12 @@ export default function PassengerPortalPage() {
   const [photo, setPhoto] = useState<File | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [photoVersion, setPhotoVersion] = useState(0);
-
+ 
+  
+  const [reviewRatings, setReviewRatings] = useState<Record<number, number>>({});
+  const [reviewTexts, setReviewTexts] = useState<Record<number, string>>({});
+  const [submittingReview, setSubmittingReview] = useState<number | null>(null);
+  const [reviewedTrips, setReviewedTrips] = useState<Record<number, boolean>>({});
   /* =======================================================
      LOCAL PHOTO PREVIEW
   ======================================================= */
@@ -167,6 +172,53 @@ if (waitingTrip) {
   } catch (error) {
     console.error("CANCEL BOOKING ERROR:", error);
     alert("Could not cancel booking.");
+  }
+};
+
+const submitDriverReview = async (trip: any) => {
+  const rating = reviewRatings[trip.id];
+
+  if (!rating) {
+    alert("Please select a star rating.");
+    return;
+  }
+
+  try {
+    setSubmittingReview(trip.id);
+
+    const response = await fetch(`${API_URL}/driver-reviews`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        booking_id: trip.id,
+        passenger_id: passenger.id,
+        rating,
+        review_text: reviewTexts[trip.id] || "",
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.error || "Failed to submit review."
+      );
+    }
+
+    setReviewedTrips((prev) => ({
+      ...prev,
+      [trip.id]: true,
+    }));
+
+    alert("Thank you for rating your driver.");
+
+  } catch (error: any) {
+    console.error("REVIEW ERROR:", error);
+    alert(error.message || "Unable to submit review.");
+  } finally {
+    setSubmittingReview(null);
   }
 };
   /* =======================================================
@@ -1218,10 +1270,115 @@ const profileImageUrl =
                   </div>
 
                 </div>
-
               )}
 
+              {/* =================================
+    RATE YOUR DRIVER
+================================= */}
+{String(trip.trip_status).trim().toLowerCase() === "completed" && (
+  <div className="mt-5 rounded-[18px] border border-[#ffe0cc] bg-[#fffaf6] p-4">
 
+    <p className="text-[11px] font-bold uppercase tracking-wide text-[#ff6a00]">
+      Rate your driver
+    </p>
+
+    <h4 className="mt-1 text-[16px] font-extrabold text-[#111111]">
+      How was your trip with {trip.driver_name || "your driver"}?
+    </h4>
+
+    {reviewedTrips[trip.id] ? (
+      <div className="mt-3 rounded-xl bg-white p-3">
+        <p className="text-sm font-bold text-[#111111]">
+          Thank you for your review.
+        </p>
+      </div>
+    ) : (
+      <>
+        {/* STARS */}
+        <div className="mt-4 flex items-center gap-2">
+          {[1, 2, 3, 4, 5].map((star) => (
+            <button
+              key={star}
+              type="button"
+              onClick={() =>
+                setReviewRatings((prev) => ({
+                  ...prev,
+                  [trip.id]: star,
+                }))
+              }
+              className={`text-[32px] leading-none transition active:scale-90 ${
+                (reviewRatings[trip.id] || 0) >= star
+                  ? "text-[#ff6a00]"
+                  : "text-[#d4d4d4]"
+              }`}
+            >
+              ★
+            </button>
+          ))}
+        </div>
+
+        {/* REVIEW TEXT */}
+        <textarea
+          value={reviewTexts[trip.id] || ""}
+          onChange={(e) =>
+            setReviewTexts((prev) => ({
+              ...prev,
+              [trip.id]: e.target.value,
+            }))
+          }
+          placeholder="Tell us about your trip (optional)"
+          rows={3}
+          className="
+            mt-4
+            w-full
+            resize-none
+            rounded-xl
+            border
+            border-[#e5e5e5]
+            bg-white
+            px-3
+            py-3
+            text-[14px]
+            text-[#111111]
+            outline-none
+            transition
+            focus:border-[#ff6a00]
+          "
+        />
+
+        {/* SUBMIT */}
+        <button
+          type="button"
+          disabled={
+            submittingReview === trip.id ||
+            !reviewRatings[trip.id]
+          }
+          onClick={() => submitDriverReview(trip)}
+          className="
+            mt-3
+            w-full
+            rounded-xl
+            bg-[#ff6a00]
+            px-4
+            py-3
+            text-[14px]
+            font-extrabold
+            text-white
+            transition
+            hover:bg-[#e65f00]
+            disabled:cursor-not-allowed
+            disabled:opacity-50
+          "
+        >
+          {submittingReview === trip.id
+            ? "Submitting..."
+            : "Submit Review"}
+        </button>
+      </>
+    )}
+
+  </div>
+)}
               {/* WHATSAPP DRIVER */}
               {trip.driver_phone && (
 
