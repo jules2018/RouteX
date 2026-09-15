@@ -8,7 +8,11 @@ const { createClient } = require("@supabase/supabase-js");
 const fs = require("fs");
 require("dotenv").config();
 
-async function sendWhatsAppBookingAlert() {
+async function sendWhatsAppBookingAlert(
+  pickup,
+  destination,
+  fare
+) {
   try {
     const response = await fetch(
       `https://graph.facebook.com/v25.0/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`,
@@ -18,15 +22,39 @@ async function sendWhatsAppBookingAlert() {
           Authorization: `Bearer ${process.env.WHATSAPP_ACCESS_TOKEN}`,
           "Content-Type": "application/json",
         },
+
         body: JSON.stringify({
           messaging_product: "whatsapp",
           to: process.env.WHATSAPP_TEST_RECIPIENT,
           type: "template",
+
           template: {
-            name: "hello_world",
+            name: "routex_new_booking",
+
             language: {
-              code: "en_US",
+              code: "en",
             },
+
+            components: [
+              {
+                type: "body",
+
+                parameters: [
+                  {
+                    type: "text",
+                    text: String(pickup),
+                  },
+                  {
+                    type: "text",
+                    text: String(destination),
+                  },
+                  {
+                    type: "text",
+                    text: String(fare),
+                  },
+                ],
+              },
+            ],
           },
         }),
       }
@@ -34,15 +62,20 @@ async function sendWhatsAppBookingAlert() {
 
     const data = await response.json();
 
+    console.log("WHATSAPP RESPONSE:", data);
+
     if (!response.ok) {
-      console.error("WHATSAPP SEND ERROR:", data);
-      return;
+      console.error(
+        "WHATSAPP ERROR:",
+        response.status,
+        data
+      );
     }
 
-    console.log("WHATSAPP MESSAGE SENT:", data);
+    return data;
 
   } catch (error) {
-    console.error("WHATSAPP ERROR:", error);
+    console.error("WHATSAPP SEND ERROR:", error);
   }
 }
 
@@ -868,7 +901,11 @@ const newBooking = bookingResult.rows[0];
 
 console.log("ABOUT TO SEND WHATSAPP");
 
-await sendWhatsAppBookingAlert();
+await sendWhatsAppBookingAlert(
+  newBooking.pickup_address || newBooking.pickup_area,
+  newBooking.dropoff_address || newBooking.dropoff_area,
+  Number(newBooking.fare_amount).toFixed(2)
+);
 
 console.log("WHATSAPP FUNCTION FINISHED");
 
