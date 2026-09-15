@@ -12,8 +12,17 @@ export default function DriverPortalPage() {
   const [acceptedTrips, setAcceptedTrips] = useState<any[]>([]);
   const [inProgressTrips, setInProgressTrips] = useState<any[]>([]);
   const [completedTrips, setCompletedTrips] = useState<any[]>([]);
+  const [driverReviews, setDriverReviews] = useState<any[]>([]);
   const [driver, setDriver] = useState<any>(null);
   const [status, setStatus] = useState("offline");
+
+  const [driverRating, setDriverRating] = useState<{
+  average_rating: number | null;
+  review_count: number;
+}>({
+  average_rating: null,
+  review_count: 0,
+});
   const [loadingAction, setLoadingAction] = useState<number | null>(null);
   const [photo, setPhoto] = useState<File | null>(null);
 
@@ -42,6 +51,9 @@ export default function DriverPortalPage() {
     if (storedDriver) {
       const parsedDriver = JSON.parse(storedDriver);
       setDriver(parsedDriver);
+
+      loadDriverRating(Number(parsedDriver.id));
+      loadDriverReviews(Number(parsedDriver.id));
 
       fetch(`${API_URL}/driver-list`)
         .then((res) => res.json())
@@ -128,6 +140,58 @@ const uploadPhoto = async () => {
         ? error.message
         : "Error uploading photo"
     );
+  }
+};
+
+const loadDriverRating = async (driverId: number) => {
+  try {
+    const response = await fetch(
+      `${API_URL}/drivers/${driverId}/rating`
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        `Failed to load driver rating: ${response.status}`
+      );
+    }
+
+    const data = await response.json();
+
+    setDriverRating({
+      average_rating:
+        data.average_rating !== null
+          ? Number(data.average_rating)
+          : null,
+      review_count: Number(data.review_count) || 0,
+    });
+
+    console.log("DRIVER RATING:", data);
+
+  } catch (error) {
+    console.error("Error loading driver rating:", error);
+  }
+};
+
+const loadDriverReviews = async (driverId: number) => {
+  try {
+    const response = await fetch(
+      `${API_URL}/drivers/${driverId}/reviews`
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        `Failed to load driver reviews: ${response.status}`
+      );
+    }
+
+    const data = await response.json();
+
+    setDriverReviews(data);
+
+    console.log("DRIVER REVIEWS:", data);
+
+  } catch (error) {
+    console.error("Error loading driver reviews:", error);
   }
 };
 
@@ -479,6 +543,32 @@ const uploadPhoto = async () => {
                 Hi, {driver?.full_name?.split(" ")[0] || "Driver"}
               </h1>
 
+
+                      {/* DRIVER RATING */}
+            {driverRating.review_count > 0 ? (
+              <div className="mt-1 flex items-center gap-1.5">
+
+                <span className="text-[14px] leading-none text-[#ff6a00]">
+                  ★
+                </span>
+
+                <span className="text-[12px] font-extrabold text-[#333333]">
+                  {Number(driverRating.average_rating).toFixed(1)}
+                </span>
+
+                <span className="text-[11px] text-[#999999]">
+                  {driverRating.review_count}{" "}
+                  {driverRating.review_count === 1
+                    ? "review"
+                    : "reviews"}
+                </span>
+
+              </div>
+            ) : (
+              <p className="mt-1 text-[11px] font-semibold text-[#999999]">
+                New driver · No ratings yet
+              </p>
+            )}
               <p className="mt-1 text-[12px] text-[#777777]">
                 {status === "available"
                   ? "You're ready to receive ride requests."
@@ -630,7 +720,110 @@ const uploadPhoto = async () => {
           </div>
 
         </section>
+{/* =================================
+    PASSENGER REVIEWS
+================================= */}
+<section className="mt-7">
 
+  <div className="flex items-end justify-between">
+
+    <div>
+      <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#ff6a00]">
+        Your Rating
+      </p>
+
+      <h2 className="mt-1 text-[20px] font-extrabold tracking-tight">
+        Passenger Reviews
+      </h2>
+    </div>
+
+    {driverRating.review_count > 0 && (
+      <div className="text-right">
+        <div className="flex items-center justify-end gap-1">
+          <span className="text-[17px] text-[#ff6a00]">
+            ★
+          </span>
+
+          <span className="text-[18px] font-extrabold">
+            {Number(driverRating.average_rating).toFixed(1)}
+          </span>
+        </div>
+
+        <p className="text-[10px] text-[#999999]">
+          {driverRating.review_count}{" "}
+          {driverRating.review_count === 1
+            ? "review"
+            : "reviews"}
+        </p>
+      </div>
+    )}
+
+  </div>
+
+
+  {driverReviews.length > 0 ? (
+
+    <div className="mt-4 space-y-3">
+
+      {driverReviews.map((review) => (
+        <div
+          key={review.id}
+          className="
+            rounded-[18px]
+            border
+            border-[#eeeeee]
+            bg-white
+            p-4
+          "
+        >
+
+          {/* STARS */}
+          <div className="flex items-center gap-1">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <span
+                key={star}
+                className={`text-[15px] ${
+                  star <= Number(review.rating)
+                    ? "text-[#ff6a00]"
+                    : "text-[#dddddd]"
+                }`}
+              >
+                ★
+              </span>
+            ))}
+          </div>
+
+          {/* REVIEW TEXT */}
+          {review.review_text && (
+            <p className="mt-2 text-[13px] leading-5 text-[#444444]">
+              {review.review_text}
+            </p>
+          )}
+
+          <p className="mt-2 text-[10px] text-[#aaaaaa]">
+            Passenger review
+          </p>
+
+        </div>
+      ))}
+
+    </div>
+
+  ) : (
+
+    <div className="mt-4 rounded-[18px] bg-[#fafafa] p-5">
+      <p className="text-[13px] font-bold text-[#333333]">
+        No reviews yet
+      </p>
+
+      <p className="mt-1 text-[11px] leading-5 text-[#888888]">
+        Passenger ratings and feedback will appear here after completed trips.
+      </p>
+    </div>
+
+  )}
+
+</section>
 
          {/* =================================
     CURRENT TRIP

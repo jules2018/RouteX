@@ -3563,6 +3563,36 @@ app.get("/drivers/:id/rating", async (req, res) => {
     });
   }
 });
+
+app.get("/drivers/:id/reviews", async (req, res) => {
+  try {
+    const driverId = req.params.id;
+
+    const result = await pool.query(
+      `
+      SELECT
+        dr.id,
+        dr.rating,
+        dr.review_text,
+        dr.created_at
+      FROM driver_reviews dr
+      WHERE dr.driver_id = $1
+      ORDER BY dr.created_at DESC
+      `,
+      [driverId]
+    );
+
+    res.json(result.rows);
+
+  } catch (error) {
+    console.error("DRIVER REVIEWS ERROR:", error);
+
+    res.status(500).json({
+      error: "Failed to load driver reviews.",
+    });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
