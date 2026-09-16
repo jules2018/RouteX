@@ -3631,6 +3631,70 @@ FROM trip_bookings tb
     });
   }
 });
+
+/* =========================
+   PASSENGER LIVE DRIVER TRACKING
+========================= */
+
+app.get(
+  "/passenger-bookings/:passengerId/:bookingId/driver-location",
+  async (req, res) => {
+    try {
+      const { passengerId, bookingId } = req.params;
+
+      const result = await pool.query(
+        `
+        SELECT
+          tb.id AS booking_id,
+          tb.trip_status,
+          tb.booking_status,
+          tb.pickup_lat,
+          tb.pickup_lng,
+
+          d.id AS driver_id,
+          split_part(d.full_name, ' ', 1) AS driver_name,
+          d.profile_image AS driver_profile_image,
+          d.vehicle_type,
+          d.vehicle_color,
+          d.license_plate,
+          d.current_lat AS driver_lat,
+          d.current_lng AS driver_lng
+
+        FROM trip_bookings tb
+
+        JOIN drivers d
+          ON d.id = tb.assigned_driver_id
+
+        WHERE tb.id = $1
+          AND tb.passenger_id = $2
+          AND tb.assigned_driver_id IS NOT NULL
+          AND tb.trip_status IN ('Accepted', 'In Progress')
+
+        LIMIT 1
+        `,
+        [bookingId, passengerId]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({
+          error: "Active trip not found",
+        });
+      }
+
+      res.json(result.rows[0]);
+
+    } catch (error) {
+      console.error(
+        "PASSENGER DRIVER LOCATION ERROR:",
+        error
+      );
+
+      res.status(500).json({
+        error: "Unable to load driver location",
+      });
+    }
+  }
+);
 const PORT = process.env.PORT || 5000;
 
 app.post("/driver-reviews", async (req, res) => {

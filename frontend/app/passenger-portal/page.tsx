@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Outfit } from "next/font/google";
+import dynamic from "next/dynamic";
 import { API_URL } from "../lib/api";
 import {
   Car,
@@ -15,6 +16,12 @@ const outfit = Outfit({
   subsets: ["latin"],
 });
 
+const DriverMap = dynamic(
+  () => import("./DriverMap"),
+  {
+    ssr: false,
+  }
+);
 /* =========================================================
    API CONFIGURATION
 ========================================================= */
@@ -69,6 +76,8 @@ export default function PassengerPortalPage() {
   const [reviewTexts, setReviewTexts] = useState<Record<number, string>>({});
   const [submittingReview, setSubmittingReview] = useState<number | null>(null);
   const [reviewedTrips, setReviewedTrips] = useState<Record<number, boolean>>({});
+
+  const [driverLocation, setDriverLocation] = useState<any>(null);
   /* =======================================================
      LOCAL PHOTO PREVIEW
   ======================================================= */
@@ -96,6 +105,36 @@ export default function PassengerPortalPage() {
   /* =======================================================
      LOAD PASSENGER TRIPS
   ======================================================= */
+const loadDriverLocation = async (
+  passengerId: number,
+  bookingId: number
+) => {
+  try {
+    const response = await fetch(
+      `${API_URL}/passenger-bookings/${passengerId}/${bookingId}/driver-location`
+    );
+
+    if (!response.ok) {
+      setDriverLocation(null);
+      return;
+    }
+
+    const data = await response.json();
+
+    console.log("DRIVER LOCATION:", data);
+
+    setDriverLocation(data);
+
+  } catch (error) {
+    console.error(
+      "Error loading driver location:",
+      error
+    );
+
+    setDriverLocation(null);
+  }
+};
+
 
   const loadTrips = async (passengerId: number) => {
     try {
@@ -112,6 +151,25 @@ export default function PassengerPortalPage() {
       const data = await response.json();
 
       setTrips(Array.isArray(data) ? data : []);
+      const activeTrip = Array.isArray(data)
+  ? data.find(
+      (trip: any) =>
+        trip.assigned_driver_id &&
+        (
+          trip.trip_status === "Accepted" ||
+          trip.trip_status === "In Progress"
+        )
+    )
+  : null;
+
+if (activeTrip) {
+  loadDriverLocation(
+    Number(passengerId),
+    Number(activeTrip.id)
+  );
+} else {
+  setDriverLocation(null);
+}
       const waitingTrip = Array.isArray(data)
   ? data.find(
       (trip: any) =>
@@ -857,6 +915,42 @@ const profileImageUrl =
   </section>
 )}
 
+{/* =================================
+    LIVE DRIVER TRACKING
+================================= */}
+
+{driverLocation &&
+  driverLocation.driver_lat &&
+  driverLocation.driver_lng &&
+  driverLocation.pickup_lat &&
+  driverLocation.pickup_lng && (
+
+    <section className="mt-7">
+
+      <div className="mb-3">
+        <p className="text-[12px] font-extrabold uppercase tracking-[0.12em] text-[#ff6a00]">
+          Live trip
+        </p>
+
+        <h2 className="mt-1 text-[22px] font-extrabold tracking-[-0.035em]">
+          Your driver is on the way
+        </h2>
+
+        <p className="mt-1 text-[13px] font-medium text-[#777777]">
+          Follow {driverLocation.driver_name || "your driver"} as they approach your pickup.
+        </p>
+      </div>
+
+      <DriverMap
+        driverLat={Number(driverLocation.driver_lat)}
+        driverLng={Number(driverLocation.driver_lng)}
+        pickupLat={Number(driverLocation.pickup_lat)}
+        pickupLng={Number(driverLocation.pickup_lng)}
+        driverName={driverLocation.driver_name}
+      />
+
+    </section>
+)}
       {/* =================================
           RIDES HEADER
       ================================= */}
