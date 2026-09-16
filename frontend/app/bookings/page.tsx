@@ -158,43 +158,53 @@ const getPickupLocation = () => {
   }
 
   setGettingLocation(true);
+  setPickupGpsConfirmed(false);
 
-  navigator.geolocation.getCurrentPosition(
+  let bestAccuracy = Infinity;
+  let bestLatitude: number | null = null;
+  let bestLongitude: number | null = null;
+
+  const watchId = navigator.geolocation.watchPosition(
     (position) => {
       const latitude = position.coords.latitude;
       const longitude = position.coords.longitude;
       const accuracy = position.coords.accuracy;
 
-      if (accuracy > 100) {
-        setGettingLocation(false);
-        setPickupGpsConfirmed(false);
-
-       setLocationError(
-  `Your GPS accuracy is currently about ${Math.round(accuracy)} metres. Please try again for a more accurate pickup location.`
-);
-
-        return;
-      }
-
-      console.log("PASSENGER GPS:", {
+      console.log("GPS READING:", {
         latitude,
         longitude,
-        accuracy: position.coords.accuracy,
+        accuracy,
       });
 
-      setForm((current) => ({
-        ...current,
-        pickup_lat: latitude,
-        pickup_lng: longitude,
-      }));
+      // Keep the most accurate reading received
+      if (accuracy < bestAccuracy) {
+        bestAccuracy = accuracy;
+        bestLatitude = latitude;
+        bestLongitude = longitude;
+      }
 
-      setPickupGpsConfirmed(true);
-      setGettingLocation(false);
-      setLocationError("");
+      // Good enough for pickup navigation
+      if (accuracy <= 100) {
+        navigator.geolocation.clearWatch(watchId);
+        clearTimeout(gpsTimeout);
+
+        setForm((current) => ({
+          ...current,
+          pickup_lat: latitude,
+          pickup_lng: longitude,
+        }));
+
+        setPickupGpsConfirmed(true);
+        setGettingLocation(false);
+        setLocationError("");
+      }
     },
 
     (error) => {
       console.error("GPS ERROR:", error);
+
+      navigator.geolocation.clearWatch(watchId);
+      clearTimeout(gpsTimeout);
 
       setGettingLocation(false);
       setPickupGpsConfirmed(false);
@@ -205,17 +215,47 @@ const getPickupLocation = () => {
         );
       } else {
         setLocationError(
-          "We could not get your location. Please make sure GPS is switched on and try again."
+          "We couldn't find your precise location. Make sure Location is turned on, then try again."
         );
       }
     },
 
     {
       enableHighAccuracy: true,
-      timeout: 15000,
       maximumAge: 0,
+      timeout: 20000,
     }
   );
+
+  // Give the phone up to 15 seconds to improve its GPS reading
+  const gpsTimeout = setTimeout(() => {
+    navigator.geolocation.clearWatch(watchId);
+
+    // If we received a reasonably useful reading, use it.
+    if (
+      bestLatitude !== null &&
+      bestLongitude !== null &&
+      bestAccuracy <= 150
+    ) {
+      setForm((current) => ({
+        ...current,
+        pickup_lat: bestLatitude,
+        pickup_lng: bestLongitude,
+      }));
+
+      setPickupGpsConfirmed(true);
+      setGettingLocation(false);
+      setLocationError("");
+      return;
+    }
+
+    setGettingLocation(false);
+    setPickupGpsConfirmed(false);
+
+    setLocationError(
+      "We couldn't find your precise location. Make sure Location is turned on, then try again."
+    );
+  }, 15000);
 };
 
   /* =========================
