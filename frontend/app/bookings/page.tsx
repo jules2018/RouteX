@@ -169,9 +169,9 @@ const getPickupLocation = () => {
         setGettingLocation(false);
         setPickupGpsConfirmed(false);
 
-        setLocationError(
-          "Your GPS location is not accurate enough yet. Move near a window or outside, then try again."
-        );
+       setLocationError(
+  `Your GPS accuracy is currently about ${Math.round(accuracy)} metres. Please try again for a more accurate pickup location.`
+);
 
         return;
       }
