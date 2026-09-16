@@ -2869,6 +2869,62 @@ app.post("/drivers/:id/status", async (req, res) => {
     });
   }
 });
+/* =========================
+   DRIVER LIVE LOCATION
+========================= */
+
+app.post("/drivers/:id/location", async (req, res) => {
+  try {
+    const driverId = req.params.id;
+    const { latitude, longitude } = req.body;
+
+    const lat = Number(latitude);
+    const lng = Number(longitude);
+
+    if (
+      !Number.isFinite(lat) ||
+      !Number.isFinite(lng) ||
+      lat < -90 ||
+      lat > 90 ||
+      lng < -180 ||
+      lng > 180
+    ) {
+      return res.status(400).json({
+        error: "Invalid driver location",
+      });
+    }
+
+    const result = await pool.query(
+      `
+      UPDATE drivers
+      SET
+        current_lat = $1,
+        current_lng = $2
+      WHERE id = $3
+      RETURNING id, current_lat, current_lng
+      `,
+      [lat, lng, driverId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        error: "Driver not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      location: result.rows[0],
+    });
+
+  } catch (error) {
+    console.error("DRIVER LOCATION ERROR:", error);
+
+    res.status(500).json({
+      error: "Unable to update driver location",
+    });
+  }
+});
 app.post("/ambassador-login", async (req, res) => {
   try {
 

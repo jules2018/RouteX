@@ -114,6 +114,80 @@ const handleTouchEnd = () => {
     return () => clearInterval(interval);
   }, []);
 
+  /* =========================
+   LIVE DRIVER GPS TRACKING
+========================= */
+
+useEffect(() => {
+  if (!driver?.id || status !== "available") {
+    return;
+  }
+
+  if (!navigator.geolocation) {
+    console.error("Geolocation is not supported");
+    return;
+  }
+
+  console.log("STARTING LIVE DRIVER GPS");
+
+  const watchId = navigator.geolocation.watchPosition(
+    async (position) => {
+      const latitude = position.coords.latitude;
+      const longitude = position.coords.longitude;
+      const accuracy = position.coords.accuracy;
+
+      console.log("DRIVER LIVE GPS:", {
+        latitude,
+        longitude,
+        accuracy,
+      });
+
+      try {
+        const response = await fetch(
+          `${API_URL}/drivers/${driver.id}/location`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              latitude,
+              longitude,
+            }),
+          }
+        );
+
+        if (!response.ok) {
+          console.error(
+            "Unable to update driver live location:",
+            response.status
+          );
+        }
+      } catch (error) {
+        console.error(
+          "DRIVER LOCATION UPDATE ERROR:",
+          error
+        );
+      }
+    },
+
+    (error) => {
+      console.error("DRIVER GPS WATCH ERROR:", error);
+    },
+
+    {
+      enableHighAccuracy: true,
+      maximumAge: 5000,
+      timeout: 15000,
+    }
+  );
+
+  return () => {
+    console.log("STOPPING LIVE DRIVER GPS");
+    navigator.geolocation.clearWatch(watchId);
+  };
+}, [driver?.id, status]);
+
 const uploadPhoto = async () => {
   if (!photo) {
     alert("Please select a photo first.");
