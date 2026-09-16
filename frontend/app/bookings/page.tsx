@@ -45,6 +45,10 @@ export default function BookRidePage() {
   const [promoCode, setPromoCode] = useState("");
  
 
+  const [gettingLocation, setGettingLocation] = useState(false);
+  const [pickupGpsConfirmed, setPickupGpsConfirmed] = useState(false);
+  const [locationError, setLocationError] = useState("");
+
   const [fare, setFare] = useState("");
 
  const [form, setForm] = useState({
@@ -139,6 +143,80 @@ const results = data;
     console.error("Address search failed:", error);
   }
 };
+/* =========================
+   PASSENGER GPS LOCATION
+========================= */
+
+const getPickupLocation = () => {
+  setLocationError("");
+
+  if (!navigator.geolocation) {
+    setLocationError(
+      "Location services are not supported on this device."
+    );
+    return;
+  }
+
+  setGettingLocation(true);
+
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      const latitude = position.coords.latitude;
+      const longitude = position.coords.longitude;
+      const accuracy = position.coords.accuracy;
+
+      if (accuracy > 100) {
+        setGettingLocation(false);
+        setPickupGpsConfirmed(false);
+
+        setLocationError(
+          "Your GPS location is not accurate enough yet. Move near a window or outside, then try again."
+        );
+
+        return;
+      }
+
+      console.log("PASSENGER GPS:", {
+        latitude,
+        longitude,
+        accuracy: position.coords.accuracy,
+      });
+
+      setForm((current) => ({
+        ...current,
+        pickup_lat: latitude,
+        pickup_lng: longitude,
+      }));
+
+      setPickupGpsConfirmed(true);
+      setGettingLocation(false);
+      setLocationError("");
+    },
+
+    (error) => {
+      console.error("GPS ERROR:", error);
+
+      setGettingLocation(false);
+      setPickupGpsConfirmed(false);
+
+      if (error.code === 1) {
+        setLocationError(
+          "Location permission is required to book a RouteX ride."
+        );
+      } else {
+        setLocationError(
+          "We could not get your location. Please make sure GPS is switched on and try again."
+        );
+      }
+    },
+
+    {
+      enableHighAccuracy: true,
+      timeout: 15000,
+      maximumAge: 0,
+    }
+  );
+};
 
   /* =========================
      FARE CALCULATION
@@ -232,7 +310,16 @@ const results = data;
       alert("Please complete all fields");
       return;
     }
-
+if (
+  !pickupGpsConfirmed ||
+  form.pickup_lat === null ||
+  form.pickup_lng === null
+) {
+  alert(
+    "Please confirm your current GPS location before booking your ride."
+  );
+  return;
+}
     if (loading) return;
 
     setLoading(true);
@@ -245,12 +332,23 @@ const results = data;
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
+         body: JSON.stringify({
   passenger_id: passenger?.id,
+
   pickup_area: form.pickup_area,
   dropoff_area: form.dropoff_area,
+
   pickup_address: form.pickup_address,
   dropoff_address: form.dropoff_address,
+
+  // Passenger's actual GPS pickup position
+  pickup_lat: form.pickup_lat,
+  pickup_lng: form.pickup_lng,
+
+  // Selected destination coordinates
+  dropoff_lat: form.dropoff_lat,
+  dropoff_lng: form.dropoff_lng,
+
   travel_date: form.travel_date,
   fare_amount: fare,
   promo_code: promoCode,
@@ -278,9 +376,12 @@ const results = data;
         "✅ Booking Confirmed",
         "Your RouteX trip has been booked successfully."
       );
-      setPromoCode("");
+     setPromoCode("");
 
-     setForm({
+setPickupGpsConfirmed(false);
+setLocationError("");
+
+setForm({
   pickup_area: "",
   dropoff_area: "",
 
@@ -402,13 +503,18 @@ const results = data;
         <input
           value={form.pickup_address}
           placeholder="Enter pickup location"
-          onChange={(e) => {
-            const value = e.target.value;
+         onChange={(e) => {
+          const value = e.target.value;
 
-            setForm({
-              ...form,
-              pickup_address: value,
-            });
+          setForm({
+            ...form,
+            pickup_address: value,
+            pickup_lat: null,
+            pickup_lng: null,
+          });
+
+          setPickupGpsConfirmed(false);
+          setLocationError("");
 
             if (searchTimeoutRef.current) {
               clearTimeout(searchTimeoutRef.current);
@@ -438,6 +544,7 @@ const results = data;
           "
         />
 
+
         {pickupSuggestions.length > 0 && (
           <div className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-[18px] bg-white p-2 shadow-[0_16px_40px_rgba(0,0,0,0.14)]">
 
@@ -446,13 +553,16 @@ const results = data;
                 key={`${item.address}-${index}`}
                 type="button"
                 onClick={() => {
-                  setForm({
-                    ...form,
-                    pickup_address: item.address,
-                    pickup_area: item.area_name || "",
-                    pickup_lat: item.lat ?? null,
-                    pickup_lng: item.lng ?? null,
-                  });
+                 setForm({
+                  ...form,
+                  pickup_address: item.address,
+                  pickup_area: item.area_name || "",
+                  pickup_lat: null,
+                  pickup_lng: null,
+                });
+
+                setPickupGpsConfirmed(false);
+                setLocationError("");
 
                   setPickupSuggestions([]);
                 }}
@@ -471,6 +581,55 @@ const results = data;
           </div>
         )}
       </div>
+
+      <div className="mt-2">
+  <button
+    type="button"
+    onClick={getPickupLocation}
+    disabled={gettingLocation}
+    className={`
+      w-full
+      rounded-[14px]
+      border
+      px-4
+      py-3
+      text-sm
+      font-bold
+      transition
+      ${
+        pickupGpsConfirmed
+          ? "border-green-200 bg-green-50 text-green-700"
+          : "border-[#ff8500] bg-[#fff6ed] text-[#ff6a00]"
+      }
+    `}
+  >
+    {gettingLocation
+      ? "Getting your location..."
+      : pickupGpsConfirmed
+      ? "Pickup location confirmed"
+      : "Confirm pickup location"}
+  </button>
+
+  {locationError && (
+    <p className="mt-2 text-xs font-medium text-red-600">
+      {locationError}
+    </p>
+  )}
+
+{!pickupGpsConfirmed && !locationError && (
+  <div className="mt-2 rounded-[12px] bg-[#fff8f3] px-3 py-2.5">
+    <p className="text-[12px] font-semibold text-[#333333]">
+      Allow location access
+    </p>
+
+    <p className="mt-1 text-[11px] leading-4 text-[#777777]">
+      RouteX needs your location so your driver can navigate to your
+      correct pickup point. Tap the button above and choose Allow when
+      your browser asks for location access.
+    </p>
+  </div>
+)}
+</div>
 
       {/* DROP-OFF */}
       <div className="relative">

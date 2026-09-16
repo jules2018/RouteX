@@ -734,16 +734,42 @@ app.post("/bookings", async (req, res) => {
   try {
     console.log("BOOKINGS ROUTE HIT");
 
- const {
+const {
   passenger_id,
   pickup_area,
   dropoff_area,
   pickup_address,
   dropoff_address,
+
+  pickup_lat,
+  pickup_lng,
+  dropoff_lat,
+  dropoff_lng,
+
   travel_date,
   fare_amount,
   promo_code
 } = req.body;
+
+// Passenger GPS is mandatory for every RouteX booking
+const pickupLatNumber = Number(pickup_lat);
+const pickupLngNumber = Number(pickup_lng);
+
+if (
+  pickup_lat == null ||
+  pickup_lng == null ||
+  !Number.isFinite(pickupLatNumber) ||
+  !Number.isFinite(pickupLngNumber) ||
+  pickupLatNumber < -90 ||
+  pickupLatNumber > 90 ||
+  pickupLngNumber < -180 ||
+  pickupLngNumber > 180
+) {
+  return res.status(400).json({
+    error:
+      "A valid passenger GPS pickup location is required to create a booking.",
+  });
+}
 
 console.log("Pickup Area:", pickup_area);
 console.log("Dropoff Area:", dropoff_area);
@@ -776,17 +802,32 @@ console.log(
   "Dropoff Lookup:",
   dropoffAreaResult.rows
 );
-const pickupLat =
-  pickupAreaResult.rows[0]?.latitude;
+// Passenger pickup must always use their confirmed GPS position
+const pickupLat = pickupLatNumber;
+const pickupLng = pickupLngNumber;
 
-const pickupLng =
-  pickupAreaResult.rows[0]?.longitude;
-
+// Use the selected destination's coordinates when available.
+// Fall back to the area's coordinates if necessary.
 const destinationLat =
-  dropoffAreaResult.rows[0]?.latitude;
+  dropoff_lat != null
+    ? Number(dropoff_lat)
+    : dropoffAreaResult.rows[0]?.latitude;
 
 const destinationLng =
-  dropoffAreaResult.rows[0]?.longitude;
+  dropoff_lng != null
+    ? Number(dropoff_lng)
+    : dropoffAreaResult.rows[0]?.longitude;
+
+
+console.log("FINAL PICKUP GPS:", {
+  lat: pickupLat,
+  lng: pickupLng,
+});
+
+console.log("FINAL DESTINATION GPS:", {
+  lat: destinationLat,
+  lng: destinationLng,
+});
 
   const baseFare = Number(fare_amount);
 
