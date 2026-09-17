@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 console.log("SERVER VERSION: DISCOUNT TEST");
+const crypto = require("crypto");
 
 const pool = require("./db");
 const multer = require("multer");
@@ -2839,6 +2840,71 @@ ORDER BY distance_km ASC
     });
   }
 });
+// =====================================
+// DRIVER SET INITIAL PASSWORD
+// =====================================
+
+app.post("/driver-set-password", async (req, res) => {
+  try {
+    const { token, password } = req.body;
+
+    if (!token || !password) {
+      return res.status(400).json({
+        error: "Token and password are required",
+      });
+    }
+
+    if (password.length < 8) {
+      return res.status(400).json({
+        error: "Password must be at least 8 characters",
+      });
+    }
+
+    const driverResult = await pool.query(
+      `
+      SELECT id
+      FROM drivers
+      WHERE password_setup_token = $1
+        AND password_setup_expires > NOW()
+      LIMIT 1
+      `,
+      [token]
+    );
+
+    if (driverResult.rows.length === 0) {
+      return res.status(400).json({
+        error: "This password setup link is invalid or has expired",
+      });
+    }
+
+    const driverId = driverResult.rows[0].id;
+
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    await pool.query(
+      `
+      UPDATE drivers
+      SET
+        password = $1,
+        password_setup_token = NULL,
+        password_setup_expires = NULL
+      WHERE id = $2
+      `,
+      [hashedPassword, driverId]
+    );
+
+    res.json({
+      message: "Password created successfully",
+    });
+
+  } catch (error) {
+    console.error("DRIVER SET PASSWORD ERROR:", error);
+
+    res.status(500).json({
+      error: "Unable to create password",
+    });
+  }
+});
 app.post("/driver-login", async (req, res) => {
   try {
     const { phone, password } = req.body;
@@ -3393,6 +3459,7 @@ app.get("/admin/applications", async (req, res) => {
 
   }
 });
+
 app.post("/admin/applications/:id/approve", async (req, res) => {
   try {
 
@@ -3413,53 +3480,58 @@ app.post("/admin/applications/:id/approve", async (req, res) => {
       });
     }
 
-    const appData = application.rows[0];
-    const defaultDriverPassword = "1234";
+ const appData = application.rows[0];
 
-    const hashedDriverPassword = await bcrypt.hash(
-      defaultDriverPassword,
-      12
-    );
+// Create a secure one-time password setup token
+const setupToken = crypto.randomBytes(32).toString("hex");
 
-    await pool.query(
-      `
-      INSERT INTO drivers
-(
-  full_name,
-  phone,
-  status,
-  password,
-  role,
-  vehicle_type,
-  vehicle_color,
-  license_plate,
-  referral_code
-)
+// Token expires after 24 hours
+const setupExpires = new Date(
+  Date.now() + 24 * 60 * 60 * 1000
+);
 
-     VALUES
-(
-  $1,
-  $2,
-  'Offline',
-  $7,
-  'driver',
-  $3,
-  $4,
-  $5,
-  $6
-)
-      `,
-      [
-  appData.full_name,
-  appData.phone,
-  appData.vehicle_type,
-  appData.vehicle_color,
-  appData.license_plate,
-  appData.referral_code,
-  hashedDriverPassword,
-]
-    );
-
+ await pool.query(
+  `
+  INSERT INTO drivers
+  (
+    full_name,
+    phone,
+    status,
+    password,
+    role,
+    vehicle_type,
+    vehicle_color,
+    license_plate,
+    referral_code,
+    password_setup_token,
+    password_setup_expires
+  )
+  VALUES
+  (
+    $1,
+    $2,
+    'Offline',
+    NULL,
+    'driver',
+    $3,
+    $4,
+    $5,
+    $6,
+    $7,
+    $8
+  )
+  `,
+  [
+    appData.full_name,
+    appData.phone,
+    appData.vehicle_type,
+    appData.vehicle_color,
+    appData.license_plate,
+    appData.referral_code,
+    setupToken,
+    setupExpires,
+  ]
+);
     await pool.query(
       `
       UPDATE driver_applications
@@ -3469,9 +3541,13 @@ app.post("/admin/applications/:id/approve", async (req, res) => {
       [applicationId]
     );
 
-    res.json({
-      message: "Application approved"
-    });
+   const setupLink =
+  `https://routex-frontend.onrender.com/driver-set-password?token=${setupToken}`;
+
+res.json({
+  message: "Application approved",
+  setup_link: setupLink,
+});
 
   } catch (error) {
     res.status(500).json({
