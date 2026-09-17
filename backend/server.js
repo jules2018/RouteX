@@ -3387,17 +3387,12 @@ app.post(
 );
 app.get("/admin/stats", async (req, res) => {
   try {
-
     const passengers = await pool.query(
       "SELECT COUNT(*) AS total FROM passengers"
     );
 
     const drivers = await pool.query(
       "SELECT COUNT(*) AS total FROM drivers"
-    );
-
-    const ambassadors = await pool.query(
-      "SELECT COUNT(*) AS total FROM ambassadors"
     );
 
     const bookings = await pool.query(
@@ -3408,7 +3403,8 @@ app.get("/admin/stats", async (req, res) => {
       `
       SELECT COUNT(*) AS total
       FROM drivers
-      WHERE status = 'Online'
+      WHERE status = 'Available'
+        AND is_online = true
       `
     );
 
@@ -3423,18 +3419,17 @@ app.get("/admin/stats", async (req, res) => {
     res.json({
       passengers: Number(passengers.rows[0].total),
       drivers: Number(drivers.rows[0].total),
-      ambassadors: Number(ambassadors.rows[0].total),
       bookings: Number(bookings.rows[0].total),
       onlineDrivers: Number(onlineDrivers.rows[0].total),
-      pendingApplications: Number(applications.rows[0].total)
+      pendingApplications: Number(applications.rows[0].total),
     });
 
   } catch (error) {
+    console.error("ADMIN STATS ERROR:", error);
 
     res.status(500).json({
-      error: error.message
+      error: "Unable to load admin statistics",
     });
-
   }
 });
 app.get("/admin/applications", async (req, res) => {
