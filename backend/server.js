@@ -2468,13 +2468,21 @@ app.post(
           booking_status = 'Accepted',
           trip_status = 'Accepted',
           assigned_driver_id = $2
-        WHERE id = $1
-        RETURNING *
+       WHERE id = $1
+        AND booking_status = 'Waiting'
+        AND assigned_driver_id IS NULL
+        AND (expires_at IS NULL OR expires_at > NOW())
+      RETURNING *
         `,
         [bookingId, driverId]
       );
 
       const booking = result.rows[0];
+            if (!booking) {
+        return res.status(409).json({
+          error: "This trip has already been accepted by another driver."
+        });
+      }
 
 await pool.query(
   `
