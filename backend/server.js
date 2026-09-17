@@ -958,33 +958,9 @@ const nearbyDrivers = await pool.query(
   FROM drivers
   WHERE status = 'Available'
     AND is_online = true
-    AND current_lat IS NOT NULL
-    AND current_lng IS NOT NULL
-    AND (
-      6371 * ACOS(
-        LEAST(
-          1,
-          GREATEST(
-            -1,
-            COS(RADIANS($1)) *
-            COS(RADIANS(current_lat)) *
-            COS(
-              RADIANS(current_lng) -
-              RADIANS($2)
-            ) +
-            SIN(RADIANS($1)) *
-            SIN(RADIANS(current_lat))
-          )
-        )
-      )
-    ) <= 30
-  `,
-  [
-    Number(newBooking.pickup_lat),
-    Number(newBooking.pickup_lng),
-  ]
+    AND phone IS NOT NULL
+  `
 );
-
 console.log(
   `FOUND ${nearbyDrivers.rows.length} NEARBY DRIVERS`
 );
