@@ -2735,14 +2735,16 @@ app.get("/driver-list", async (req, res) => {
 
   }
 });
+
 app.get("/online-drivers", async (req, res) => {
   try {
 
-    const result = await pool.query(`
-      SELECT COUNT(*) AS total
-      FROM drivers
-      WHERE status = 'Available'
-    `);
+   const result = await pool.query(`
+  SELECT COUNT(*) AS total
+  FROM drivers
+  WHERE status = 'Available'
+    AND is_online = true
+`);
 
     res.json(result.rows[0]);
 
@@ -2754,6 +2756,7 @@ app.get("/online-drivers", async (req, res) => {
 
   }
 });
+
 app.get("/available-drivers", async (req, res) => {
   try {
     const { pickup_lat, pickup_lng } = req.query;
