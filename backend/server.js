@@ -3320,6 +3320,7 @@ app.post(
         });
       }
 
+        console.log("DRIVER APPLICATION FILES:", req.files);
       const vehicleImage =
         req.files?.vehicle_photo?.[0]?.filename || null;
 
