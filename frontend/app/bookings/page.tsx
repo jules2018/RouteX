@@ -264,16 +264,26 @@ const getPickupLocation = () => {
   ========================= */
 
   useEffect(() => {
-    if (form.pickup_area && form.dropoff_area) {
-      calculateFare(
-        form.pickup_area,
-        form.dropoff_area
-      );
-    }
-  }, [
-    form.pickup_area,
-    form.dropoff_area,
-  ]);
+  const hasGps =
+    form.pickup_lat !== null &&
+    form.pickup_lng !== null &&
+    form.dropoff_lat !== null &&
+    form.dropoff_lng !== null;
+
+  if (hasGps) {
+    calculateFare(
+      form.pickup_area || "GPS Pickup",
+      form.dropoff_area || "GPS Destination"
+    );
+  }
+}, [
+  form.pickup_lat,
+  form.pickup_lng,
+  form.dropoff_lat,
+  form.dropoff_lng,
+  form.pickup_area,
+  form.dropoff_area,
+]);
 
   const calculateFare = async (
   pickupArea: string,
