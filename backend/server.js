@@ -3549,18 +3549,28 @@ function calculateDistanceKm(lat1, lng1, lat2, lng2) {
 // =========================================
 
             const pickupDistanceFromUpington =
-              calculateDistanceKm(
-                Number(pickup_lat),
-                Number(pickup_lng),
-                UPINGTON_CENTRE_LAT,
-                UPINGTON_CENTRE_LNG
-              );
+  calculateDistanceKm(
+    Number(pickup_lat),
+    Number(pickup_lng),
+    UPINGTON_CENTRE_LAT,
+    UPINGTON_CENTRE_LNG
+  );
 
-            const outOfTownFee =
-              pickupDistanceFromUpington > 20 ? 50 : 0;
+const dropoffDistanceFromUpington =
+  calculateDistanceKm(
+    Number(dropoff_lat),
+    Number(dropoff_lng),
+    UPINGTON_CENTRE_LAT,
+    UPINGTON_CENTRE_LNG
+  );
 
-            fare += outOfTownFee;
+const isOutOfTown =
+  pickupDistanceFromUpington > 20 ||
+  dropoffDistanceFromUpington > 20;
 
+const outOfTownFee = isOutOfTown ? 50 : 0;
+
+fare += outOfTownFee;
 
           const discount = 0;
           const finalFare = fare - discount;
