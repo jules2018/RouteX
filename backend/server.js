@@ -989,18 +989,20 @@ console.log(
   `FOUND ${nearbyDrivers.rows.length} NEARBY DRIVERS`
 );
 
-for (const driver of nearbyDrivers.rows) {
-  console.log(
-    `SENDING WHATSAPP TO DRIVER: ${driver.full_name}`
-  );
+await Promise.allSettled(
+  nearbyDrivers.rows.map((driver) => {
+    console.log(
+      `SENDING WHATSAPP TO DRIVER: ${driver.full_name}`
+    );
 
-  await sendWhatsAppBookingAlert(
-    driver.phone,
-    newBooking.pickup_address || newBooking.pickup_area,
-    newBooking.dropoff_address || newBooking.dropoff_area,
-    Number(newBooking.fare_amount).toFixed(2)
-  );
-}
+    return sendWhatsAppBookingAlert(
+      driver.phone,
+      newBooking.pickup_address || newBooking.pickup_area,
+      newBooking.dropoff_address || newBooking.dropoff_area,
+      Number(newBooking.fare_amount).toFixed(2)
+    );
+  })
+);
 
 console.log("WHATSAPP DRIVER ALERTS FINISHED");
 
