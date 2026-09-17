@@ -119,6 +119,29 @@ app.use(cors());
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 
+// =====================================
+// WHATSAPP WEBHOOK VERIFICATION
+// =====================================
+
+app.get("/whatsapp-webhook", (req, res) => {
+  const mode = req.query["hub.mode"];
+  const token = req.query["hub.verify_token"];
+  const challenge = req.query["hub.challenge"];
+
+  if (
+    mode === "subscribe" &&
+    token === process.env.WHATSAPP_VERIFY_TOKEN
+  ) {
+    console.log("WHATSAPP WEBHOOK VERIFIED");
+
+    return res.status(200).send(challenge);
+  }
+
+  console.log("WHATSAPP WEBHOOK VERIFICATION FAILED");
+
+  return res.sendStatus(403);
+});
+
 app.get("/", (req, res) => {
   res.json({
     message: "ROUTEX BUILD 20260812",
