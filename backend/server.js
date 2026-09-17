@@ -142,6 +142,40 @@ app.get("/whatsapp-webhook", (req, res) => {
   return res.sendStatus(403);
 });
 
+// =====================================
+// WHATSAPP WEBHOOK EVENTS
+// =====================================
+
+app.post("/whatsapp-webhook", (req, res) => {
+  try {
+    const entries = req.body?.entry || [];
+
+    for (const entry of entries) {
+      const changes = entry.changes || [];
+
+      for (const change of changes) {
+        const statuses = change.value?.statuses || [];
+
+        for (const status of statuses) {
+          console.log("WHATSAPP DELIVERY STATUS:", {
+            message_id: status.id,
+            recipient_id: status.recipient_id,
+            status: status.status,
+            timestamp: status.timestamp,
+            errors: status.errors || null,
+          });
+        }
+      }
+    }
+
+    return res.sendStatus(200);
+
+  } catch (error) {
+    console.error("WHATSAPP WEBHOOK ERROR:", error);
+
+    return res.sendStatus(200);
+  }
+});
 app.get("/", (req, res) => {
   res.json({
     message: "ROUTEX BUILD 20260812",
