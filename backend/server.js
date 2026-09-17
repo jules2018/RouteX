@@ -2795,39 +2795,82 @@ ORDER BY distance_km ASC
 });
 app.post("/driver-login", async (req, res) => {
   try {
-
     const { phone, password } = req.body;
 
-    console.log("PHONE:", JSON.stringify(phone));
-    console.log("PASSWORD:", JSON.stringify(password));
+    if (!phone || !password) {
+      return res.status(400).json({
+        error: "Phone and password are required",
+      });
+    }
 
     const result = await pool.query(
       `
       SELECT *
       FROM drivers
       WHERE phone = $1
-      AND password = $2
+      LIMIT 1
       `,
-      [phone, password]
+      [phone]
     );
 
     if (result.rows.length === 0) {
       return res.status(401).json({
-        error: "Invalid credentials"
+        error: "Invalid credentials",
       });
     }
 
-    res.json(result.rows[0]);
+    const driver = result.rows[0];
+
+    let passwordMatches = false;
+
+    // Driver already has a bcrypt password
+    if (driver.password?.startsWith("$2")) {
+      passwordMatches = await bcrypt.compare(
+        password,
+        driver.password
+      );
+    } else {
+      // Temporary support for existing plaintext passwords
+      passwordMatches = password === driver.password;
+
+      // Upgrade existing driver password after successful login
+      if (passwordMatches) {
+        const hashedPassword = await bcrypt.hash(password, 12);
+
+        await pool.query(
+          `
+          UPDATE drivers
+          SET password = $1
+          WHERE id = $2
+          `,
+          [hashedPassword, driver.id]
+        );
+
+        console.log(
+          `DRIVER PASSWORD UPGRADED: ${driver.id}`
+        );
+      }
+    }
+
+    if (!passwordMatches) {
+      return res.status(401).json({
+        error: "Invalid credentials",
+      });
+    }
+
+    // Never send the password back to the frontend
+    const { password: _password, ...safeDriver } = driver;
+
+    res.json(safeDriver);
 
   } catch (error) {
+    console.error("DRIVER LOGIN ERROR:", error);
 
     res.status(500).json({
-      error: error.message
+      error: "Unable to log in",
     });
-
   }
 });
-
 app.post("/drivers/:id/status", async (req, res) => {
   try {
     console.log("STATUS ROUTE HIT");
@@ -3325,6 +3368,12 @@ app.post("/admin/applications/:id/approve", async (req, res) => {
     }
 
     const appData = application.rows[0];
+    const defaultDriverPassword = "1234";
+
+    const hashedDriverPassword = await bcrypt.hash(
+      defaultDriverPassword,
+      12
+    );
 
     await pool.query(
       `
@@ -3341,28 +3390,28 @@ app.post("/admin/applications/:id/approve", async (req, res) => {
   referral_code
 )
 
-      VALUES
+     VALUES
 (
   $1,
   $2,
   'Offline',
-  '1234',
+  $7,
   'driver',
   $3,
   $4,
   $5,
   $6
 )
-
       `,
       [
-        appData.full_name,
-        appData.phone, 
-        appData.vehicle_type,
-        appData.vehicle_color,
-        appData.license_plate,
-        appData.referral_code
-      ]
+  appData.full_name,
+  appData.phone,
+  appData.vehicle_type,
+  appData.vehicle_color,
+  appData.license_plate,
+  appData.referral_code,
+  hashedDriverPassword,
+]
     );
 
     await pool.query(
@@ -3424,6 +3473,31 @@ app.get("/calculate-fare", async (req, res) => {
       Number.isFinite(dropoff_lat) &&
       Number.isFinite(dropoff_lng);
 
+
+      // Central Upington reference point
+      const UPINGTON_CENTRE_LAT = -28.4575;
+      const UPINGTON_CENTRE_LNG = 21.2427;
+
+      // Calculate straight-line distance between two GPS points
+function calculateDistanceKm(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) ** 2;
+
+  const c = 2 * Math.atan2(
+    Math.sqrt(a),
+    Math.sqrt(1 - a)
+  );
+
+  return R * c;
+}
     // =========================================
     // 1. ROAD DISTANCE PRICING
     // =========================================
@@ -3470,6 +3544,24 @@ app.get("/calculate-fare", async (req, res) => {
             fare = 160 + Math.ceil(distanceKm - 25) * 6;
           }
 
+            // =========================================
+// OUT-OF-TOWN PICKUP FEE
+// =========================================
+
+            const pickupDistanceFromUpington =
+              calculateDistanceKm(
+                Number(pickup_lat),
+                Number(pickup_lng),
+                UPINGTON_CENTRE_LAT,
+                UPINGTON_CENTRE_LNG
+              );
+
+            const outOfTownFee =
+              pickupDistanceFromUpington > 20 ? 50 : 0;
+
+            fare += outOfTownFee;
+
+
           const discount = 0;
           const finalFare = fare - discount;
 
@@ -3480,13 +3572,17 @@ app.get("/calculate-fare", async (req, res) => {
             fare: finalFare,
           });
 
-          return res.json({
-            pricing_method: "distance",
-            distance_km: Number(distanceKm.toFixed(2)),
-            base_fare: fare,
-            discount,
-            fare: finalFare,
-          });
+       return res.json({
+          pricing_method: "distance",
+          distance_km: Number(distanceKm.toFixed(2)),
+          base_fare: fare - outOfTownFee,
+          out_of_town_fee: outOfTownFee,
+          pickup_distance_from_upington: Number(
+            pickupDistanceFromUpington.toFixed(2)
+          ),
+          discount,
+          fare: finalFare,
+        });
         }
       }
 
