@@ -3321,11 +3321,102 @@ app.post(
       }
 
         console.log("DRIVER APPLICATION FILES:", req.files);
-      const vehicleImage =
-        req.files?.vehicle_photo?.[0]?.filename || null;
+     // =========================================
+// UPLOAD DRIVER PHOTOS TO SUPABASE STORAGE
+// =========================================
 
-      const profileImage =
-        req.files?.profile_photo?.[0]?.filename || null;
+let vehicleImage = null;
+let profileImage = null;
+
+// Vehicle photo
+const vehicleFile =
+  req.files?.vehicle_photo?.[0];
+
+if (vehicleFile) {
+  const fileExtension =
+    vehicleFile.originalname.split(".").pop();
+
+  const fileName =
+    `vehicle-${Date.now()}-${Math.random()
+      .toString(36)
+      .substring(2, 8)}.${fileExtension}`;
+
+  const { error: uploadError } =
+    await supabase.storage
+      .from("vehicle-photos")
+      .upload(
+        fileName,
+        vehicleFile.buffer,
+        {
+          contentType: vehicleFile.mimetype,
+          upsert: false,
+        }
+      );
+
+  if (uploadError) {
+    console.error(
+      "VEHICLE PHOTO UPLOAD ERROR:",
+      uploadError
+    );
+
+    return res.status(500).json({
+      error: "Unable to upload vehicle photo",
+    });
+  }
+
+  const { data: publicUrlData } =
+    supabase.storage
+      .from("vehicle-photos")
+      .getPublicUrl(fileName);
+
+  vehicleImage =
+    publicUrlData?.publicUrl || null;
+}
+
+// Profile photo
+const profileFile =
+  req.files?.profile_photo?.[0];
+
+if (profileFile) {
+  const fileExtension =
+    profileFile.originalname.split(".").pop();
+
+  const fileName =
+    `driver-${Date.now()}-${Math.random()
+      .toString(36)
+      .substring(2, 8)}.${fileExtension}`;
+
+  const { error: uploadError } =
+    await supabase.storage
+      .from("profile-photos")
+      .upload(
+        fileName,
+        profileFile.buffer,
+        {
+          contentType: profileFile.mimetype,
+          upsert: false,
+        }
+      );
+
+  if (uploadError) {
+    console.error(
+      "PROFILE PHOTO UPLOAD ERROR:",
+      uploadError
+    );
+
+    return res.status(500).json({
+      error: "Unable to upload profile photo",
+    });
+  }
+
+  const { data: publicUrlData } =
+    supabase.storage
+      .from("profile-photos")
+      .getPublicUrl(fileName);
+
+  profileImage =
+    publicUrlData?.publicUrl || null;
+}
 
       const result = await pool.query(
         `
