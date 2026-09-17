@@ -50,6 +50,7 @@ export default function BookRidePage() {
   const [locationError, setLocationError] = useState("");
 
   const [fare, setFare] = useState("");
+  const [outOfTownFee, setOutOfTownFee] = useState(0);
 
  const [form, setForm] = useState({
   pickup_area: "",
@@ -317,6 +318,7 @@ const getPickupLocation = () => {
   const calculatedFare = Number(data.fare);
 
   setFare(String(data.fare));
+  setOutOfTownFee(Number(data.out_of_town_fee || 0));
 
   console.log("Pricing method:", data.pricing_method);
   console.log("Road distance:", data.distance_km);
@@ -893,6 +895,11 @@ setForm({
     <p className="mt-1 text-[40px] font-bold tracking-[-0.05em] text-white">
       R{fare}
     </p>
+    {outOfTownFee > 0 && (
+  <p className="mt-2 text-xs font-medium text-white/75">
+    Includes R{outOfTownFee} out-of-town fee
+  </p>
+)}
   </div>
 
   <div className="text-right">
