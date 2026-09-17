@@ -6,6 +6,7 @@ const pool = require("./db");
 const multer = require("multer");
 const { createClient } = require("@supabase/supabase-js");
 const fs = require("fs");
+const bcrypt = require("bcryptjs");
 require("dotenv").config();
 
 async function sendWhatsAppBookingAlert(
@@ -1100,6 +1101,7 @@ app.post("/passenger-register", async (req, res) => {
     // =========================================
     // CREATE LOGIN ACCOUNT
     // =========================================
+    const hashedPassword = await bcrypt.hash(password, 12);
     await pool.query(
       `
       INSERT INTO users
@@ -1114,7 +1116,7 @@ app.post("/passenger-register", async (req, res) => {
       [
         full_name,
         email,
-        password,
+        hashedPassword,
         "passenger",
       ]
     );
@@ -1132,6 +1134,7 @@ app.post("/passenger-register", async (req, res) => {
     });
   }
 });
+
 app.get("/trips/:id/occupancy", async (req, res) => {
   try {
     const tripId = req.params.id;
@@ -3039,45 +3042,97 @@ app.get("/ambassador/:code/referrals", async (req, res) => {
 });
 app.post("/passenger-login", async (req, res) => {
   try {
-
     const { email, password } = req.body;
 
+    if (!email || !password) {
+      return res.status(400).json({
+        error: "Email and password are required",
+      });
+    }
+
+    // Find passenger account by email only.
+    // Never compare the password inside the SQL query.
     const result = await pool.query(
-  `
-  SELECT *
-  FROM users
-  WHERE email = $1
-  AND password = $2
-  AND role = 'passenger'
-  `,
-  [email, password]
-);
+      `
+      SELECT id, email, password, role
+      FROM users
+      WHERE email = $1
+        AND role = 'passenger'
+      LIMIT 1
+      `,
+      [email]
+    );
 
     if (result.rows.length === 0) {
       return res.status(401).json({
-        error: "Invalid credentials"
+        error: "Invalid credentials",
       });
     }
-const passengerResult = await pool.query(
-`
-SELECT *
-FROM passengers
-WHERE email = $1
 
-`,
-[email]
-);
-   res.json(passengerResult.rows[0]);
+    const user = result.rows[0];
+    let passwordMatches = false;
+
+    // New bcrypt password
+    if (user.password?.startsWith("$2")) {
+      passwordMatches = await bcrypt.compare(
+        password,
+        user.password
+      );
+    } else {
+      // Temporary support for existing plaintext accounts
+      passwordMatches = password === user.password;
+
+      // Automatically upgrade the password after successful login
+      if (passwordMatches) {
+        const hashedPassword = await bcrypt.hash(password, 12);
+
+        await pool.query(
+          `
+          UPDATE users
+          SET password = $1
+          WHERE id = $2
+          `,
+          [hashedPassword, user.id]
+        );
+
+        console.log(
+          `PASSENGER PASSWORD UPGRADED: ${user.id}`
+        );
+      }
+    }
+
+    if (!passwordMatches) {
+      return res.status(401).json({
+        error: "Invalid credentials",
+      });
+    }
+
+    const passengerResult = await pool.query(
+      `
+      SELECT *
+      FROM passengers
+      WHERE email = $1
+      LIMIT 1
+      `,
+      [email]
+    );
+
+    if (passengerResult.rows.length === 0) {
+      return res.status(404).json({
+        error: "Passenger profile not found",
+      });
+    }
+
+    res.json(passengerResult.rows[0]);
 
   } catch (error) {
+    console.error("PASSENGER LOGIN ERROR:", error);
 
     res.status(500).json({
-      error: error.message
+      error: "Unable to log in",
     });
-
   }
 });
-
 app.post(
   "/driver-application",
   upload.fields([
