@@ -6,13 +6,16 @@ import { API_URL } from "../lib/api";
 
 export default function BecomeADriverPage() {
   const [form, setForm] = useState({
-    full_name: "",
-    phone: "",
-    vehicle_type: "",
-    vehicle_color: "",
-    license_plate: "",
-    referral_code: "",
-  });
+  full_name: "",
+  phone: "",
+  residential_address: "",
+  id_passport_number: "",
+  vehicle_type: "",
+  vehicle_color: "",
+  license_plate: "",
+  referral_code: "",
+});
+
 
   const [vehiclePhoto, setVehiclePhoto] = useState<File | null>(null);
   const [profilePhoto, setProfilePhoto] = useState<File | null>(null);
@@ -53,6 +56,15 @@ export default function BecomeADriverPage() {
 
     formData.append("full_name", form.full_name);
     formData.append("phone", form.phone);
+    formData.append(
+  "residential_address",
+  form.residential_address
+);
+
+formData.append(
+  "id_passport_number",
+  form.id_passport_number
+);
     formData.append("vehicle_type", form.vehicle_type);
     formData.append("vehicle_color", form.vehicle_color);
     formData.append("license_plate", form.license_plate);
@@ -101,6 +113,8 @@ export default function BecomeADriverPage() {
       vehicle_color: "",
       license_plate: "",
       referral_code: "",
+      residential_address: "",
+      id_passport_number: "",
     });
 
     setVehiclePhoto(null);
@@ -227,6 +241,76 @@ export default function BecomeADriverPage() {
           </p>
         </div>
 
+
+<div>
+  <label className="block text-sm font-bold text-[#111111]">
+    Residential address
+  </label>
+
+  <input
+    type="text"
+    required
+    value={form.residential_address}
+    onChange={(e) =>
+      setForm({
+        ...form,
+        residential_address: e.target.value,
+      })
+    }
+    placeholder="Enter your residential address"
+    autoComplete="street-address"
+    className="
+      mt-2
+      w-full
+      rounded-xl
+      border
+      border-slate-200
+      bg-white
+      px-4
+      py-3
+      text-sm
+      text-[#111111]
+      outline-none
+      transition
+      focus:border-[#ff6a00]
+    "
+  />
+</div>
+
+<div>
+  <label className="block text-sm font-bold text-[#111111]">
+    SA ID or Passport number
+  </label>
+
+  <input
+    type="text"
+    required
+    value={form.id_passport_number}
+    onChange={(e) =>
+      setForm({
+        ...form,
+        id_passport_number: e.target.value,
+      })
+    }
+    placeholder="Enter your ID or passport number"
+    autoComplete="off"
+    className="
+      mt-2
+      w-full
+      rounded-xl
+      border
+      border-slate-200
+      bg-white
+      px-4
+      py-3
+      text-sm
+      text-[#111111]
+      outline-none
+      transition
+      focus:border-[#ff6a00]
+    "
+  />
+</div>
         {/* Vehicle Type */}
         <div>
           <label className="text-[12px] font-bold text-[#333333]">
@@ -371,6 +455,7 @@ export default function BecomeADriverPage() {
             <input
               type="file"
               accept="image/*"
+              required
               onChange={(e) =>
                 setVehiclePhoto(e.target.files?.[0] || null)
               }

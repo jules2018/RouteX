@@ -3288,6 +3288,7 @@ app.post("/passenger-login", async (req, res) => {
     });
   }
 });
+
 app.post(
   "/driver-application",
   upload.fields([
@@ -3305,7 +3306,34 @@ app.post(
         referral_code,
         acceptedDriverTerms,
         acceptedPrivacy,
+        residential_address,
+        id_passport_number,
       } = req.body;
+if (
+  !full_name?.trim() ||
+  !phone?.trim() ||
+  !residential_address?.trim() ||
+  !id_passport_number?.trim() ||
+  !vehicle_type?.trim() ||
+  !vehicle_color?.trim() ||
+  !license_plate?.trim()
+) {
+  return res.status(400).json({
+    error: "Please complete all required driver information.",
+  });
+}
+
+if (!req.files?.vehicle_photo?.[0]) {
+  return res.status(400).json({
+    error: "A vehicle photo is required.",
+  });
+}
+
+if (!req.files?.profile_photo?.[0]) {
+  return res.status(400).json({
+    error: "A profile photo is required.",
+  });
+}
 
       // =========================================
       // REQUIRE LEGAL ACCEPTANCE
@@ -3424,6 +3452,8 @@ if (profileFile) {
         (
           full_name,
           phone,
+           residential_address,
+          id_passport_number,
           vehicle_type,
           vehicle_color,
           license_plate,
@@ -3436,36 +3466,39 @@ if (profileFile) {
           privacy_version
         )
         VALUES
-        (
-          $1,
-          $2,
-          $3,
-          $4,
-          $5,
-          $6,
-          $7,
-          $8,
-          NOW(),
-          $9,
-          NOW(),
-          $10
-        )
-        RETURNING *
-        `,
-        [
-          full_name,
-          phone,
-          vehicle_type,
-          vehicle_color,
-          license_plate,
-          referral_code,
-          vehicleImage,
-          profileImage,
-          "2026-09-14",
-          "2026-09-14",
-        ]
-      );
-
+(
+  $1,
+  $2,
+  $3,
+  $4,
+  $5,
+  $6,
+  $7,
+  $8,
+  $9,
+  $10,
+  NOW(),
+  $11,
+  NOW(),
+  $12
+)
+RETURNING *
+`,
+[
+  full_name,
+  phone,
+  residential_address,
+  id_passport_number,
+  vehicle_type,
+  vehicle_color,
+  license_plate,
+  referral_code,
+  vehicleImage,
+  profileImage,
+  "2026-09-14",
+  "2026-09-14",
+]
+);
       res.json(result.rows[0]);
 
     } catch (error) {
