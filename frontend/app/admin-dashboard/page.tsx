@@ -455,6 +455,23 @@ export default function AdminDashboardPage() {
 
                   <div className="p-5">
 
+  {/* Vehicle Photo */}
+  {application.vehicle_image && (
+    <div className="mb-6">
+      <p className="mb-2 text-[10px] font-black uppercase tracking-[0.1em] text-[#aaaaaa]">
+        Vehicle photo
+      </p>
+
+      <div className="overflow-hidden rounded-[18px] border border-[#eeeeee] bg-[#f7f7f7]">
+        <img
+          src={application.vehicle_image}
+          alt={`${application.full_name} vehicle`}
+          className="h-52 w-full object-cover sm:h-64"
+        />
+      </div>
+    </div>
+  )}
+
                     <div className="grid grid-cols-2 gap-x-5 gap-y-5 lg:grid-cols-4">
 
                       <Detail
