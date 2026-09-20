@@ -2983,7 +2983,10 @@ app.post("/driver-login", async (req, res) => {
     });
   }
 });
+
 app.post("/drivers/:id/status", async (req, res) => {
+  const client = await pool.connect();
+
   try {
     console.log("STATUS ROUTE HIT");
     console.log("Driver ID:", req.params.id);
@@ -2997,7 +3000,38 @@ app.post("/drivers/:id/status", async (req, res) => {
       current_lng,
     } = req.body;
 
-    const result = await pool.query(
+    const goingOnline = status === "Available";
+
+    await client.query("BEGIN");
+
+    // =========================================
+    // GET CURRENT DRIVER STATUS
+    // =========================================
+    const currentDriverResult = await client.query(
+      `
+      SELECT id, status, is_online
+      FROM drivers
+      WHERE id = $1
+      FOR UPDATE
+      `,
+      [driverId]
+    );
+
+    if (currentDriverResult.rows.length === 0) {
+      await client.query("ROLLBACK");
+
+      return res.status(404).json({
+        error: "Driver not found.",
+      });
+    }
+
+    const currentDriver = currentDriverResult.rows[0];
+    const wasOnline = currentDriver.is_online === true;
+
+    // =========================================
+    // UPDATE DRIVER
+    // =========================================
+    const result = await client.query(
       `
       UPDATE drivers
       SET
@@ -3010,23 +3044,82 @@ app.post("/drivers/:id/status", async (req, res) => {
       `,
       [
         status,
-        status === "Available",
+        goingOnline,
         current_lat,
         current_lng,
         driverId,
       ]
     );
 
+    // =========================================
+    // DRIVER JUST WENT ONLINE
+    // =========================================
+    if (goingOnline && !wasOnline) {
+      await client.query(
+        `
+        INSERT INTO driver_online_sessions
+          (driver_id, started_at)
+        VALUES
+          ($1, NOW())
+        `,
+        [driverId]
+      );
+
+      console.log(
+        `ONLINE SESSION STARTED FOR DRIVER ${driverId}`
+      );
+    }
+
+    // =========================================
+    // DRIVER JUST WENT OFFLINE
+    // =========================================
+    if (!goingOnline && wasOnline) {
+      await client.query(
+        `
+        UPDATE driver_online_sessions
+        SET ended_at = NOW()
+        WHERE id = (
+          SELECT id
+          FROM driver_online_sessions
+          WHERE driver_id = $1
+            AND ended_at IS NULL
+          ORDER BY started_at DESC
+          LIMIT 1
+        )
+        `,
+        [driverId]
+      );
+
+      console.log(
+        `ONLINE SESSION ENDED FOR DRIVER ${driverId}`
+      );
+    }
+
+    await client.query("COMMIT");
+
     res.json(result.rows[0]);
 
   } catch (error) {
-    console.error("DRIVER STATUS ERROR:", error);
+    await client.query("ROLLBACK");
+
+    console.error(
+      "DRIVER STATUS ERROR:",
+      error
+    );
 
     res.status(500).json({
       error: error.message,
     });
+
+  } finally {
+    client.release();
   }
 });
+
+// =============================================
+// DRIVER DASHBOARD STATS
+// =============================================
+
 /* =========================
    DRIVER LIVE LOCATION
 ========================= */
@@ -3672,6 +3765,108 @@ res.json({
   } catch (error) {
     res.status(500).json({
       error: error.message
+    });
+  }
+});
+// =====================================================
+// DRIVER - SET PASSWORD FROM APPROVAL LINK
+// =====================================================
+
+app.post("/driver-set-password", async (req, res) => {
+  try {
+    const { token, password } = req.body;
+
+    // -----------------------------------------
+    // VALIDATE REQUEST
+    // -----------------------------------------
+
+    if (!token || !password) {
+      return res.status(400).json({
+        error: "Token and password are required",
+      });
+    }
+
+if (password.length < 8) {
+  return res.status(400).json({
+    error: "Password must be at least 8 characters",
+  });
+}
+
+    // -----------------------------------------
+    // FIND DRIVER USING TOKEN
+    // Token must also still be valid
+    // -----------------------------------------
+
+    const driverResult = await pool.query(
+      `
+      SELECT id, full_name, phone
+      FROM drivers
+      WHERE password_setup_token = $1
+        AND password_setup_expires > NOW()
+      LIMIT 1
+      `,
+      [token]
+    );
+
+    if (driverResult.rows.length === 0) {
+      return res.status(400).json({
+        error:
+          "This password setup link is invalid or has expired.",
+      });
+    }
+
+    const driver = driverResult.rows[0];
+
+    // -----------------------------------------
+    // HASH NEW PASSWORD
+    // -----------------------------------------
+
+    const hashedPassword = await bcrypt.hash(
+      password,
+      12
+    );
+
+    // -----------------------------------------
+    // SAVE PASSWORD
+    //
+    // IMPORTANT:
+    // Clear token + expiry so the link
+    // cannot be used again.
+    // -----------------------------------------
+
+    await pool.query(
+      `
+      UPDATE drivers
+      SET
+        password = $1,
+        password_setup_token = NULL,
+        password_setup_expires = NULL
+      WHERE id = $2
+      `,
+      [
+        hashedPassword,
+        driver.id,
+      ]
+    );
+
+    console.log(
+      "DRIVER PASSWORD CREATED:",
+      driver.id,
+      driver.full_name
+    );
+
+    return res.json({
+      message: "Password created successfully",
+    });
+
+  } catch (error) {
+    console.error(
+      "DRIVER SET PASSWORD ERROR:",
+      error
+    );
+
+    return res.status(500).json({
+      error: "Unable to create password",
     });
   }
 });

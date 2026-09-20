@@ -489,508 +489,399 @@ setForm({
     "Vaalkroek",
   ];
 
- return (
-  <main className="min-h-screen bg-[#f7f3ee] text-[#171717]">
-
-    <div className="mx-auto max-w-xl px-4 pb-10 pt-7">
-
-      {/* =================================
-          HEADER
-      ================================= */}
-
-      <div className="mb-5 px-1">
-
-        <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#ff8500]">
-          RouteX
-        </p>
-
-        <h1 className="mt-2 text-[30px] font-bold tracking-[-0.04em] text-[#171717]">
-          Book your ride
-        </h1>
-
-        <p className="mt-1 text-sm text-[#8a8a8a]">
-          Where would you like to go?
-        </p>
-
-      </div>
-
-
-      <form onSubmit={handleSubmit} className="space-y-4">
-
-        {/* =================================
-            LOCATION CARD
-        ================================= */}
-
-      <section
-  className="
-    rounded-[26px]
-    bg-white
-    px-5
-    py-4
-    shadow-[0_12px_35px_rgba(0,0,0,0.08)]
-  "
->
-  <div className="flex gap-4">
-
-    {/* ROUTE INDICATOR */}
-    <div className="flex w-5 shrink-0 flex-col items-center pt-8">
-
-      <div className="h-3.5 w-3.5 rounded-full border-[3px] border-[#ff8500] bg-white" />
-
-      <div className="my-1 w-px flex-1 bg-[#dedede]" />
-
-      <div className="h-3.5 w-3.5 rounded-[3px] bg-[#2c2d2d]" />
-
-    </div>
-
-    <div className="min-w-0 flex-1 space-y-4">
-
-      {/* PICKUP */}
-      <div className="relative">
-
-        <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.12em] text-[#8c8c8c]">
-          Pickup
-        </label>
-
-        <input
-          value={form.pickup_address}
-          placeholder="Enter pickup location"
-         onChange={(e) => {
-          const value = e.target.value;
-
-          setForm({
-            ...form,
-            pickup_address: value,
-            pickup_lat: null,
-            pickup_lng: null,
-          });
-
-          setPickupGpsConfirmed(false);
-          setLocationError("");
-
-            if (searchTimeoutRef.current) {
-              clearTimeout(searchTimeoutRef.current);
-            }
-
-            searchTimeoutRef.current = setTimeout(() => {
-              searchAddress(value, "pickup");
-            }, 250);
-          }}
-          className="
-            w-full
-            rounded-[16px]
-            border
-            border-[#ececec]
-            bg-white
-            px-4
-            py-[14px]
-            text-[15px]
-            font-semibold
-            text-[#1f1f1f]
-            outline-none
-            placeholder:font-normal
-            placeholder:text-[#aaa]
-            focus:border-[#ff8500]
-            focus:ring-2
-            focus:ring-[#ff8500]/10
-          "
-        />
-
-
-        {pickupSuggestions.length > 0 && (
-          <div className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-[18px] bg-white p-2 shadow-[0_16px_40px_rgba(0,0,0,0.14)]">
-
-            {pickupSuggestions.map((item, index) => (
-              <button
-                key={`${item.address}-${index}`}
-                type="button"
-                onClick={() => {
-                 setForm({
-                  ...form,
-                  pickup_address: item.address,
-                  pickup_area: item.area_name || "",
-                  pickup_lat: null,
-                  pickup_lng: null,
-                });
-
-                setPickupGpsConfirmed(false);
-                setLocationError("");
-
-                  setPickupSuggestions([]);
-                }}
-                className="w-full rounded-[14px] px-4 py-3 text-left hover:bg-[#fff6ed]"
-              >
-                <p className="text-[14px] font-semibold text-[#202020]">
-                  {item.address}
-                </p>
-
-                <p className="mt-1 text-xs text-[#9a9a9a]">
-                  {item.area_name}
-                </p>
-              </button>
-            ))}
-
-          </div>
-        )}
-      </div>
-
-      <div className="mt-2">
-  <button
-    type="button"
-    onClick={getPickupLocation}
-    disabled={gettingLocation}
-    className={`
-      w-full
-      rounded-[14px]
-      border
-      px-4
-      py-3
-      text-sm
-      font-bold
-      transition
-      ${
-        pickupGpsConfirmed
-          ? "border-green-200 bg-green-50 text-green-700"
-          : "border-[#ff8500] bg-[#fff6ed] text-[#ff6a00]"
-      }
-    `}
-  >
-    {gettingLocation
-      ? "Getting your location..."
-      : pickupGpsConfirmed
-      ? "Pickup location confirmed"
-      : "Confirm pickup location"}
-  </button>
-
-  {locationError && (
-    <p className="mt-2 text-xs font-medium text-red-600">
-      {locationError}
-    </p>
-  )}
-
-{!pickupGpsConfirmed && !locationError && (
-  <div className="mt-2 rounded-[12px] bg-[#fff8f3] px-3 py-2.5">
-    <p className="text-[12px] font-semibold text-[#333333]">
-      Allow location access
-    </p>
-
-    <p className="mt-1 text-[11px] leading-4 text-[#777777]">
-      RouteX needs your location so your driver can navigate to your
-      correct pickup point. Tap the button above and choose Allow when
-      your browser asks for location access.
-    </p>
-  </div>
-)}
-</div>
-
-      {/* DROP-OFF */}
-      <div className="relative">
-
-        <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.12em] text-[#8c8c8c]">
-          Drop-off
-        </label>
-
-        <input
-          value={form.dropoff_address}
-          placeholder="Enter destination"
-          onChange={(e) => {
-            const value = e.target.value;
-
-            setForm({
-              ...form,
-              dropoff_address: value,
-            });
-
-            if (searchTimeoutRef.current) {
-              clearTimeout(searchTimeoutRef.current);
-            }
-
-            searchTimeoutRef.current = setTimeout(() => {
-              searchAddress(value, "dropoff");
-            }, 250);
-          }}
-          className="
-            w-full
-            rounded-[16px]
-            border
-            border-[#ececec]
-            bg-white
-            px-4
-            py-[14px]
-            text-[15px]
-            font-semibold
-            text-[#1f1f1f]
-            outline-none
-            placeholder:font-normal
-            placeholder:text-[#aaa]
-            focus:border-[#ff8500]
-            focus:ring-2
-            focus:ring-[#ff8500]/10
-          "
-        />
-
-        {dropoffSuggestions.length > 0 && (
-          <div className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-[18px] bg-white p-2 shadow-[0_16px_40px_rgba(0,0,0,0.14)]">
-
-            {dropoffSuggestions.map((item, index) => (
-              <button
-                key={`${item.address}-${index}`}
-                type="button"
-                onClick={() => {
-                  setForm({
-                    ...form,
-                    dropoff_address: item.address,
-                    dropoff_area: item.area_name || "",
-                    dropoff_lat: item.lat ?? null,
-                    dropoff_lng: item.lng ?? null,
-                  });
-
-                  setDropoffSuggestions([]);
-                }}
-                className="w-full rounded-[14px] px-4 py-3 text-left hover:bg-[#fff6ed]"
-              >
-                <p className="text-[14px] font-semibold text-[#202020]">
-                  {item.address}
-                </p>
-
-                <p className="mt-1 text-xs text-[#9a9a9a]">
-                  {item.area_name}
-                </p>
-              </button>
-            ))}
-
-          </div>
-        )}
-      </div>
-
-    </div>
-  </div>
-</section>
-
-
-        {/* =================================
-            DATE + PROMO CARD
-        ================================= */}
-
-        <section
-          className="
-            rounded-[28px]
-            bg-white
-            p-5
-            shadow-[0_12px_35px_rgba(0,0,0,0.08)]
-          "
-        >
-
-          {/* DATE */}
-
-          <div className="flex items-center justify-between gap-5">
-
-            <div>
-
-              <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#8c8c8c]">
-                Travel date
-              </p>
-
-              <p className="mt-1 text-sm font-semibold text-[#262626]">
-                When do you need the ride?
-              </p>
-
-            </div>
-
-
-            <input
-              type="date"
-              min={new Date().toISOString().split("T")[0]}
-              value={form.travel_date}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  travel_date: e.target.value,
-                })
-              }
-              className="
-                rounded-[16px]
-                border-0
-              bg-white border border-[#e8e8e8]
-                px-3
-                py-3
-                text-sm
-                font-semibold
-                text-[#252525]
-                outline-none
-              "
-            />
-
-          </div>
-
-
-          {/* DIVIDER */}
-
-          <div className="my-5 h-px bg-[#eeeeec]" />
-
-
-          {/* PROMO */}
-
-          <div>
-
-            <div className="mb-2 flex items-center justify-between">
-
-              <label className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#8c8c8c]">
-                Promo code
-              </label>
-
-              <span className="text-[11px] font-medium text-[#b0b0b0]">
-                Optional
-              </span>
-
-            </div>
-
-
-            <input
-              type="text"
-              value={promoCode}
-              onChange={(e) =>
-                setPromoCode(e.target.value.toUpperCase())
-              }
-              placeholder="Enter promo code"
-              className="
-                w-full
-                rounded-[18px]
-                border-0
-                bg-white border border-[#e8e8e8]
-                px-4
-                py-[15px]
-                text-sm
-                font-semibold
-                text-[#202020]
-                outline-none
-                placeholder:font-normal
-                placeholder:text-[#aaa]
-                focus:ring-2
-                focus:ring-teal-600/15
-              "
-            />
-
-          </div>
-
+  return (
+    <main className="min-h-[100dvh] bg-[#e7e9ee] text-[#17191f]">
+      <div className="mx-auto w-full max-w-md px-5 pb-10">
+
+        <header className="flex items-center justify-between pt-6">
+          <a
+            href="/passenger-portal"
+            className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-[#e7e9ee] text-[#17191f] shadow-[4px_4px_9px_#c4c6ca,-4px_-4px_9px_#ffffff] transition active:scale-95"
+          >
+            <BackIcon />
+          </a>
+
+          <h1 className="text-[25px] font-black tracking-[-0.06em]">
+            Route<span className="text-[#ff6846]">X</span>
+          </h1>
+
+          <div className="h-10 w-10" />
+        </header>
+
+        <section className="pt-8">
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#ff6846]">
+            Book a ride
+          </p>
+          <h2 className="mt-2 text-[30px] font-black leading-[1.05] tracking-[-0.045em]">
+            Where are you
+            <br />
+            going?
+          </h2>
+          <p className="mt-3 max-w-[280px] text-[13px] font-medium leading-5 text-[#7c7f86]">
+            Choose your pickup point and destination.
+          </p>
         </section>
 
-
-        {/* =================================
-            FARE CARD
-        ================================= */}
-
-        {fare && (
-         <section
-  className="
-    rounded-[28px]
-    bg-[#ff8500]
-    p-5
-    text-white
-    shadow-[0_10px_30px_rgba(0,0,0,0.10)]
-  "
->
-
-           <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-white/70">
-  Your ride
-</p>
-
-<div className="mt-4 flex items-end justify-between gap-6">
-
-  <div>
-    <p className="text-sm text-white/75">
-      Estimated fare
-    </p>
-
-    <p className="mt-1 text-[40px] font-bold tracking-[-0.05em] text-white">
-      R{fare}
-    </p>
-    {outOfTownFee > 0 && (
-  <p className="mt-2 text-xs font-medium text-white/75">
-    Includes R{outOfTownFee} out-of-town fee
-  </p>
-)}
-  </div>
-
-  <div className="text-right">
-    {distanceKm && (
-      <>
-        <p className="text-[18px] font-bold text-white">
-          {distanceKm} km
-        </p>
-
-        <p className="mt-1 text-xs text-white/70">
-          Road distance
-        </p>
-      </>
-    )}
-  </div>
-
-</div>
-
-
-            <div className="my-5 h-px bg-[#eeeeec]" />
-
-
-            <div className="flex items-center justify-between">
-
-              <div>
-
-                <p className="text-xs font-semibold text-[#303030]">
-                  RouteX ride
-                </p>
-
-                <p className="mt-1 text-sm font-medium text-[#333333]">
-                  Driver assigned when available
-                </p>
-
+        <form onSubmit={handleSubmit}>
+          <section className="mt-7 rounded-[26px] bg-[#e7e9ee] p-4 shadow-[7px_7px_16px_#c3c5ca,-7px_-7px_16px_#ffffff]">
+            <div className="flex gap-3">
+              <div className="flex w-5 shrink-0 flex-col items-center pt-[48px]">
+                <span className="h-[12px] w-[12px] rounded-full border-[3px] border-[#17191f] bg-[#e7e9ee]" />
+                <span className="my-1.5 min-h-[57px] w-px flex-1 border-l border-dashed border-[#aeb1b7]" />
+                <span className="h-[11px] w-[11px] rounded-[3px] bg-[#ff6846]" />
               </div>
 
+              <div className="min-w-0 flex-1 space-y-5">
+                <div className="relative">
+                  <label className="mb-2 block text-[9px] font-extrabold uppercase tracking-[0.14em] text-[#8d9097]">
+                    Pickup
+                  </label>
 
-              <div className="h-2.5 w-2.5 rounded-full bg-teal-600" />
+                  <div className="rounded-[16px] bg-[#e7e9ee] shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff]">
+                    <input
+                      type="text"
+                      value={form.pickup_address}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setForm({
+                          ...form,
+                          pickup_address: value,
+                          pickup_lat: null,
+                          pickup_lng: null,
+                        });
+                        setPickupGpsConfirmed(false);
+                        setLocationError("");
+                        if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+                        searchTimeoutRef.current = setTimeout(() => {
+                          searchAddress(value, "pickup");
+                        }, 250);
+                      }}
+                      placeholder="Enter pickup location"
+                      className="w-full bg-transparent px-4 py-[14px] text-[13px] font-bold text-[#17191f] outline-none placeholder:font-medium placeholder:text-[#a0a3a9]"
+                    />
+                  </div>
 
+                  {pickupSuggestions.length > 0 && (
+                    <div className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-[17px] bg-[#e7e9ee] p-2 shadow-[7px_7px_16px_#c3c5ca,-7px_-7px_16px_#ffffff]">
+                      {pickupSuggestions.map((item, index) => (
+                        <button
+                          key={`${item.address}-${index}`}
+                          type="button"
+                          onClick={() => {
+                            setForm({
+                              ...form,
+                              pickup_address: item.address,
+                              pickup_area: item.area_name || "",
+                              pickup_lat: null,
+                              pickup_lng: null,
+                            });
+                            setPickupGpsConfirmed(false);
+                            setLocationError("");
+                            setPickupSuggestions([]);
+                          }}
+                          className="w-full rounded-[12px] px-3 py-3 text-left transition hover:bg-[#dfe1e6]"
+                        >
+                          <p className="text-[11px] font-extrabold text-[#17191f]">
+                            {item.address}
+                          </p>
+                          <p className="mt-1 text-[9px] font-semibold text-[#92959b]">
+                            {item.area_name}
+                          </p>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={getPickupLocation}
+                    disabled={gettingLocation}
+                    className={`mt-3 flex w-full items-center justify-between rounded-[14px] px-3.5 py-3 text-left transition active:scale-[0.985] ${
+                      pickupGpsConfirmed
+                        ? "bg-[#17191f] text-white shadow-[3px_3px_7px_#c3c5ca,-3px_-3px_7px_#ffffff]"
+                        : "bg-[#e7e9ee] text-[#17191f] shadow-[3px_3px_7px_#c4c6ca,-3px_-3px_7px_#ffffff]"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <span className={`flex h-8 w-8 items-center justify-center rounded-[10px] ${
+                        pickupGpsConfirmed
+                          ? "bg-[#ff6846]"
+                          : "bg-[#e7e9ee] text-[#ff6846] shadow-[inset_2px_2px_5px_#c4c6ca,inset_-2px_-2px_5px_#ffffff]"
+                      }`}>
+                        <GpsIcon />
+                      </span>
+                      <div>
+                        <p className="text-[10px] font-extrabold">
+                          {gettingLocation
+                            ? "Getting your location..."
+                            : pickupGpsConfirmed
+                            ? "Pickup confirmed"
+                            : "Confirm my location"}
+                        </p>
+                        <p className={`mt-0.5 text-[8px] font-semibold ${
+                          pickupGpsConfirmed ? "text-white/55" : "text-[#96999f]"
+                        }`}>
+                          Helps your driver find you
+                        </p>
+                      </div>
+                    </div>
+                    {pickupGpsConfirmed && <CheckIcon />}
+                  </button>
+
+                  {locationError && (
+                    <p className="mt-2 px-1 text-[10px] font-semibold leading-4 text-red-600">
+                      {locationError}
+                    </p>
+                  )}
+                </div>
+
+                <div className="relative">
+                  <label className="mb-2 block text-[9px] font-extrabold uppercase tracking-[0.14em] text-[#8d9097]">
+                    Destination
+                  </label>
+
+                  <div className="rounded-[16px] bg-[#e7e9ee] shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff]">
+                    <input
+                      type="text"
+                      value={form.dropoff_address}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setForm({
+                          ...form,
+                          dropoff_address: value,
+                          dropoff_lat: null,
+                          dropoff_lng: null,
+                        });
+                        if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+                        searchTimeoutRef.current = setTimeout(() => {
+                          searchAddress(value, "dropoff");
+                        }, 250);
+                      }}
+                      placeholder="Where are you going?"
+                      className="w-full bg-transparent px-4 py-[14px] text-[13px] font-bold text-[#17191f] outline-none placeholder:font-medium placeholder:text-[#a0a3a9]"
+                    />
+                  </div>
+
+                  {dropoffSuggestions.length > 0 && (
+                    <div className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-[17px] bg-[#e7e9ee] p-2 shadow-[7px_7px_16px_#c3c5ca,-7px_-7px_16px_#ffffff]">
+                      {dropoffSuggestions.map((item, index) => (
+                        <button
+                          key={`${item.address}-${index}`}
+                          type="button"
+                          onClick={() => {
+                            setForm({
+                              ...form,
+                              dropoff_address: item.address,
+                              dropoff_area: item.area_name || "",
+                              dropoff_lat: item.lat ?? null,
+                              dropoff_lng: item.lng ?? null,
+                            });
+                            setDropoffSuggestions([]);
+                          }}
+                          className="w-full rounded-[12px] px-3 py-3 text-left transition hover:bg-[#dfe1e6]"
+                        >
+                          <p className="text-[11px] font-extrabold text-[#17191f]">
+                            {item.address}
+                          </p>
+                          <p className="mt-1 text-[9px] font-semibold text-[#92959b]">
+                            {item.area_name}
+                          </p>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="mt-7">
+            <div className="mb-3">
+              <p className="text-[9px] font-extrabold uppercase tracking-[0.16em] text-[#8f9298]">
+                Trip details
+              </p>
+              <h3 className="mt-1 text-[18px] font-black tracking-[-0.035em]">
+                When are you travelling?
+              </h3>
             </div>
 
+            <div className="rounded-[22px] bg-[#e7e9ee] p-4 shadow-[5px_5px_12px_#c4c6ca,-5px_-5px_12px_#ffffff]">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-[#e7e9ee] text-[#ff6846] shadow-[inset_3px_3px_6px_#c5c7cc,inset_-3px_-3px_6px_#ffffff]">
+                  <CalendarIcon />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[9px] font-extrabold uppercase tracking-[0.12em] text-[#92959b]">
+                    Travel date
+                  </p>
+                  <input
+                    type="date"
+                    min={new Date().toISOString().split("T")[0]}
+                    value={form.travel_date}
+                    onChange={(e) => setForm({ ...form, travel_date: e.target.value })}
+                    className="mt-1 w-full bg-transparent text-[12px] font-extrabold text-[#17191f] outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="my-4 h-px bg-[#d1d3d8]" />
+
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-[#e7e9ee] text-[#ff6846] shadow-[inset_3px_3px_6px_#c5c7cc,inset_-3px_-3px_6px_#ffffff]">
+                  <TicketIcon />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[9px] font-extrabold uppercase tracking-[0.12em] text-[#92959b]">
+                      Promo code
+                    </p>
+                    <span className="text-[8px] font-bold text-[#aaadb3]">Optional</span>
+                  </div>
+                  <input
+                    type="text"
+                    value={promoCode}
+                    onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                    placeholder="Enter code"
+                    className="mt-1 w-full bg-transparent text-[12px] font-extrabold uppercase text-[#17191f] outline-none placeholder:normal-case placeholder:font-medium placeholder:text-[#a0a3a9]"
+                  />
+                </div>
+              </div>
+            </div>
           </section>
-        )}
 
+          {fare && (
+            <section className="mt-7">
+              <div className="relative overflow-hidden rounded-[24px] bg-[#ff6846] p-5 text-white shadow-[7px_7px_15px_#c0c2c7,-5px_-5px_12px_#ffffff]">
+                <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full border-[24px] border-white/5" />
+                <div className="relative">
+                  <p className="text-[9px] font-extrabold uppercase tracking-[0.16em] text-white/65">
+                    Estimated fare
+                  </p>
 
-        {/* =================================
-            REQUEST BUTTON
-        ================================= */}
+                  <div className="mt-3 flex items-end justify-between gap-5">
+                    <div>
+                      <p className="text-[38px] font-black leading-none tracking-[-0.055em]">
+                        R{fare}
+                      </p>
+                      {outOfTownFee > 0 ? (
+                        <p className="mt-2 text-[9px] font-semibold text-white/65">
+                          Includes R{outOfTownFee} out-of-town fee
+                        </p>
+                      ) : (
+                        <p className="mt-2 text-[9px] font-semibold text-white/65">
+                          Final fare calculated from your route
+                        </p>
+                      )}
+                    </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="
-            w-full
-            rounded-[20px]
-            bg-[#2c2d2d]
-            py-[17px]
-            text-[15px]
-            font-bold
-            text-white
-            shadow-[0_8px_24px_rgba(0,0,0,0.14)]
-            transition
-            hover:bg-[#1f2020]
-            active:scale-[0.99]
-            disabled:bg-[#bdbdbd]
-          "
-        >
-          {loading
-            ? "Requesting ride..."
-            : "Request ride"}
-        </button>
+                    {distanceKm !== null && (
+                      <div className="text-right">
+                        <p className="text-[16px] font-black">
+                          {Number(distanceKm).toFixed(1)} km
+                        </p>
+                        <p className="mt-1 text-[8px] font-bold uppercase tracking-wide text-white/60">
+                          Road distance
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
 
+          <section className="mt-7">
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex w-full items-center justify-between rounded-[18px] bg-[#17191f] px-5 py-[16px] text-white shadow-[6px_6px_13px_#c0c2c7,-5px_-5px_11px_#ffffff] transition active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <div className="text-left">
+                <p className="text-[13px] font-black">
+                  {loading ? "Requesting ride..." : "Request RouteX"}
+                </p>
+                <p className="mt-0.5 text-[8px] font-semibold text-white/45">
+                  We'll send your request to nearby drivers
+                </p>
+              </div>
 
-        <p className="px-7 text-center text-[11px] leading-5 text-[#999]">
-          Your request will be sent to available RouteX drivers.
-        </p>
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#ff6846]">
+                <ArrowRightIcon />
+              </span>
+            </button>
 
-      </form>
+            <p className="mt-4 px-5 text-center text-[9px] font-medium leading-4 text-[#96999f]">
+              Your driver will receive your pickup location after you confirm the booking.
+            </p>
+          </section>
+        </form>
 
-    </div>
+        <footer className="mt-9 text-center">
+          <p className="text-[9px] font-semibold text-[#a0a3a9]">
+            RouteX • Getting Upington Moving
+          </p>
+        </footer>
+      </div>
+    </main>
+  );
+}
 
-  </main>
-);
+function BackIcon() {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+      <path d="m15 18-6-6 6-6" />
+    </svg>
+  );
+}
+
+function GpsIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="3" />
+      <circle cx="12" cy="12" r="8" />
+      <path d="M12 2v2" />
+      <path d="M12 20v2" />
+      <path d="M2 12h2" />
+      <path d="M20 12h2" />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="m5 12 4 4L19 6" />
+    </svg>
+  );
+}
+
+function CalendarIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="5" width="18" height="16" rx="2" />
+      <path d="M16 3v4" />
+      <path d="M8 3v4" />
+      <path d="M3 10h18" />
+    </svg>
+  );
+}
+
+function TicketIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 9a3 3 0 0 0 0 6v3a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-3a3 3 0 0 0 0-6V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" />
+      <path d="M13 5v2" />
+      <path d="M13 17v2" />
+      <path d="M13 11v2" />
+    </svg>
+  );
+}
+
+function ArrowRightIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 12h14" />
+      <path d="m13 6 6 6-6 6" />
+    </svg>
+  );
 }
