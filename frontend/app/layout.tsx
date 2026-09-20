@@ -3,7 +3,6 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Outfit } from "next/font/google";
 import "./globals.css";
 import Navigation from "./components/Navigation";
-import InstallBanner from "./components/InstallBanner";
 import NotificationPermission from "./components/NotificationPermission";
 
 
@@ -40,8 +39,7 @@ export default function RootLayout({
       <body>
   <NotificationPermission />
   <ServiceWorker />
-  <InstallBanner />
-  <Navigation />
+    <Navigation />
   {children}
 </body>
 
