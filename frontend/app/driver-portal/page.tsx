@@ -475,1656 +475,797 @@ const loadDriverReviews = async (driverId: number) => {
 
  return (
   <AuthGuard>
-    <main className="min-h-screen bg-white text-[#111111]">
-
+    <main className="min-h-[100dvh] bg-[#e7e9ee] text-[#17191f]">
       <div
-  className="mx-auto w-full max-w-md px-5 pb-12"
-  onTouchStart={handleTouchStart}
-  onTouchMove={handleTouchMove}
-  onTouchEnd={handleTouchEnd}
->
-
-        {/* =================================
-            HEADER
-        ================================= */}
+        className="mx-auto min-h-[100dvh] w-full max-w-md px-5 pb-10"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        {/* HEADER */}
         <header className="flex items-center justify-between pt-6">
+          <h1 className="text-[25px] font-black tracking-[-0.06em]">
+            Route<span className="text-[#ff6846]">X</span>
+          </h1>
 
-          <a
-            href="/"
-            className="text-[24px] font-extrabold tracking-tight"
+          <button
+            type="button"
+            onClick={() => {
+              localStorage.removeItem("driver");
+              window.location.href = "/driver-login";
+            }}
+            className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-[#e7e9ee] text-[#6f7279] shadow-[4px_4px_9px_#c4c6ca,-4px_-4px_9px_#ffffff] active:scale-95"
+            aria-label="Log out"
+            title="Log out"
           >
-            Route<span className="text-[#ff6a00]">X</span>
-          </a>
-
-          <div
-            className={`
-              flex items-center gap-2
-              rounded-full
-              px-3 py-1.5
-              text-[11px]
-              font-bold
-              ${
-                status === "available"
-                  ? "bg-[#fff3e8] text-[#ff6a00]"
-                  : "bg-[#f4f4f4] text-[#777777]"
-              }
-            `}
-          >
-            <span
-              className={`
-                h-2 w-2 rounded-full
-                ${
-                  status === "available"
-                    ? "bg-[#ff6a00]"
-                    : "bg-[#aaaaaa]"
-                }
-              `}
-            />
-
-            {status === "available" ? "Online" : "Offline"}
-          </div>
-
+            <MenuIcon />
+          </button>
         </header>
 
-
-        {/* =================================
-            DRIVER PROFILE
-        ================================= */}
-        <section className="pt-9">
-
-          <div className="flex items-center gap-4">
-
-  {/* PROFILE PHOTO */}
-  <div className="relative h-[68px] w-[68px] shrink-0">
-
-    <div
-      className="
-        relative
-        h-[68px]
-        w-[68px]
-        overflow-hidden
-        rounded-full
-        border
-        border-[#e8e8e8]
-        bg-[#f7f7f7]
-      "
-    >
-      {/* FALLBACK INITIAL - ALWAYS BEHIND PHOTO */}
-      <div
-        className="
-          absolute
-          inset-0
-          flex
-          items-center
-          justify-center
-          text-xl
-          font-bold
-          text-[#aaaaaa]
-        "
-      >
-        {driver?.full_name?.charAt(0)?.toUpperCase() || "D"}
-      </div>
-
-      {/* PROFILE IMAGE */}
-      {driver?.profile_image && (
-        <img
-          src={
-            driver.profile_image.startsWith("http")
-              ? driver.profile_image
-              : `${API_URL}/uploads/${driver.profile_image}`
-          }
-          alt=""
-          className="
-            absolute
-            inset-0
-            h-full
-            w-full
-            object-cover
-          "
-          onError={(e) => {
-            e.currentTarget.style.display = "none";
-          }}
-        />
-      )}
-    </div>
-
-    {/* CHANGE PHOTO */}
-    <label
-      className="
-        absolute
-        -bottom-1
-        -right-1
-        flex
-        h-7
-        w-7
-        cursor-pointer
-        items-center
-        justify-center
-        rounded-full
-        border-2
-        border-white
-        bg-[#ff6a00]
-        text-[14px]
-        font-bold
-        text-white
-        shadow-sm
-      "
-    >
-      +
-
-      <input
-        type="file"
-        accept="image/jpeg,image/png,image/webp"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-
-          if (file) {
-            setPhoto(file);
-          }
-        }}
-        className="hidden"
-      />
-    </label>
-
-  </div>
-
-
-            {/* DRIVER DETAILS */}
-            <div className="min-w-0 flex-1">
-
-              <p
-                className="
-                  text-[10px]
-                  font-bold
-                  uppercase
-                  tracking-[0.08em]
-                  text-[#ff6a00]
-                "
-              >
-                Driver Portal
-              </p>
-
-              <h1
-                className="
-                  mt-1
-                  truncate
-                  text-[22px]
-                  font-extrabold
-                  tracking-tight
-                "
-              >
-                Hi, {driver?.full_name?.split(" ")[0] || "Driver"}
-              </h1>
-
-
-                      {/* DRIVER RATING */}
-            {driverRating.review_count > 0 ? (
-              <div className="mt-1 flex items-center gap-1.5">
-
-                <span className="text-[14px] leading-none text-[#ff6a00]">
-                  ★
+        {/* DRIVER */}
+        <section className="mt-8 flex items-center gap-4">
+          {/* PROFILE PHOTO */}
+          <div className="relative shrink-0">
+            <div className="relative flex h-[82px] w-[82px] items-center justify-center rounded-[27px] bg-[#e7e9ee] shadow-[7px_7px_15px_#c4c6ca,-7px_-7px_15px_#ffffff]">
+              <div className="relative flex h-[64px] w-[64px] items-center justify-center overflow-hidden rounded-[21px] bg-[#dfe1e6] text-[20px] font-black text-[#ff6846] shadow-[inset_3px_3px_7px_#c2c4c9,inset_-3px_-3px_7px_#ffffff]">
+                <span className="absolute inset-0 flex items-center justify-center">
+                  {driver?.full_name?.charAt(0)?.toUpperCase() || "D"}
                 </span>
 
-                <span className="text-[12px] font-extrabold text-[#333333]">
-                  {Number(driverRating.average_rating).toFixed(1)}
-                </span>
-
-                <span className="text-[11px] text-[#999999]">
-                  {driverRating.review_count}{" "}
-                  {driverRating.review_count === 1
-                    ? "review"
-                    : "reviews"}
-                </span>
-
+                {driver?.profile_image && (
+                  <img
+                    src={
+                      driver.profile_image.startsWith("http")
+                        ? driver.profile_image
+                        : `${API_URL}/uploads/${driver.profile_image}`
+                    }
+                    alt={driver?.full_name || "Driver"}
+                    className="absolute inset-0 h-full w-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.style.display = "none";
+                    }}
+                  />
+                )}
               </div>
-            ) : (
-              <p className="mt-1 text-[11px] font-semibold text-[#999999]">
-                New driver · No ratings yet
-              </p>
-            )}
-              <p className="mt-1 text-[12px] text-[#777777]">
-                {status === "available"
-                  ? "You're ready to receive ride requests."
-                  : "Go online when you're ready to drive."}
-              </p>
 
+              <span
+                className={`absolute -bottom-1 -right-1 h-5 w-5 rounded-full border-[4px] border-[#e7e9ee] ${
+                  status === "available" ? "bg-[#35b86b]" : "bg-[#a2a5ab]"
+                }`}
+              />
             </div>
 
+            <label
+              className="absolute -right-2 -top-2 flex h-8 w-8 cursor-pointer items-center justify-center rounded-[11px] bg-[#ff6846] text-white shadow-[3px_3px_7px_#c1c3c8,-2px_-2px_6px_#ffffff] active:scale-95"
+              title="Change profile photo"
+            >
+              <CameraIcon />
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) setPhoto(file);
+                }}
+              />
+            </label>
           </div>
 
+          <div className="min-w-0 flex-1">
+            <p className="text-[9px] font-extrabold uppercase tracking-[0.16em] text-[#ff6846]">
+              Driver portal
+            </p>
 
-          {/* PHOTO UPLOAD */}
-          {photo && (
-            <div
-              className="
-                mt-4
-                flex
-                items-center
-                justify-between
-                rounded-xl
-                border
-                border-[#eeeeee]
-                bg-[#fafafa]
-                px-4
-                py-3
-              "
+            <h2 className="mt-1 truncate text-[26px] font-black tracking-[-0.045em]">
+              Hi, {driver?.full_name?.trim().split(/\s+/)[0] || "Driver"}.
+            </h2>
+
+            <div className="mt-1 flex items-center gap-1.5">
+              <StarIcon />
+              <span className="text-[10px] font-extrabold">
+                {driverRating.average_rating !== null
+                  ? driverRating.average_rating.toFixed(1)
+                  : "New"}
+              </span>
+              <span className="text-[9px] font-semibold text-[#92959b]">
+                · RouteX Driver
+              </span>
+            </div>
+          </div>
+        </section>
+
+        {/* SELECTED PHOTO */}
+        {photo && (
+          <section className="mt-4 flex items-center justify-between rounded-[18px] bg-[#e7e9ee] px-4 py-3 shadow-[inset_3px_3px_7px_#c5c7cc,inset_-3px_-3px_7px_#ffffff]">
+            <div className="min-w-0 pr-3">
+              <p className="text-[10px] font-black">New profile photo</p>
+              <p className="mt-0.5 truncate text-[8px] font-semibold text-[#92959b]">
+                {photo.name}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={uploadPhoto}
+              className="shrink-0 rounded-[12px] bg-[#17191f] px-4 py-2.5 text-[9px] font-black text-white active:scale-[0.98]"
             >
-              <div className="min-w-0">
-                <p className="text-[11px] font-bold">
-                  New profile photo
-                </p>
+              Save photo
+            </button>
+          </section>
+        )}
 
-                <p className="mt-0.5 truncate text-[10px] text-[#888888]">
-                  {photo.name}
-                </p>
+        {/* ONLINE CONTROL */}
+        <section className="mt-7 flex items-center justify-between rounded-[24px] bg-[#e7e9ee] p-4 shadow-[6px_6px_14px_#c4c6ca,-6px_-6px_14px_#ffffff]">
+          <div className="flex items-center gap-3">
+            <div
+              className={`flex h-11 w-11 items-center justify-center rounded-[15px] shadow-[inset_2px_2px_5px_#c5c7cc,inset_-2px_-2px_5px_#ffffff] ${
+                status === "available" ? "text-[#35a967]" : "text-[#92959b]"
+              }`}
+            >
+              <PowerIcon />
+            </div>
+
+            <div>
+              <p className="text-[12px] font-black">
+                {status === "available" ? "You're online" : "You're offline"}
+              </p>
+              <p className="mt-0.5 text-[9px] font-semibold text-[#92959b]">
+                {status === "available"
+                  ? "Ready to receive ride requests"
+                  : "You won't receive new requests"}
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={toggleStatus}
+            className={`relative h-8 w-[55px] rounded-full transition-all duration-300 shadow-[inset_2px_2px_5px_rgba(0,0,0,0.18),inset_-2px_-2px_5px_rgba(255,255,255,0.5)] ${
+              status === "available" ? "bg-[#ff6846]" : "bg-[#cfd1d6]"
+            }`}
+            aria-label={status === "available" ? "Go offline" : "Go online"}
+          >
+            <span
+              className={`absolute top-1 h-6 w-6 rounded-full bg-white shadow-md transition-all duration-300 ${
+                status === "available" ? "left-[27px]" : "left-1"
+              }`}
+            />
+          </button>
+        </section>
+
+        {/* HOME / RIDES / REVIEWS */}
+        <nav className="mt-7 grid grid-cols-3 gap-2 rounded-[18px] bg-[#e7e9ee] p-1.5 shadow-[inset_3px_3px_7px_#c5c7cc,inset_-3px_-3px_7px_#ffffff]">
+          {["Home", "Rides", "Reviews"].map((label, index) => (
+            <button
+              key={label}
+              type="button"
+              onClick={() => setActivePage(index)}
+              className={`rounded-[14px] py-3 text-[9px] font-black transition ${
+                activePage === index
+                  ? "bg-[#e7e9ee] text-[#17191f] shadow-[4px_4px_8px_#c5c7cc,-4px_-4px_8px_#ffffff]"
+                  : "text-[#92959b]"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </nav>
+
+        {/* HOME */}
+        {activePage === 0 && (
+          <>
+
+        {/* CURRENT / IN-PROGRESS RIDES */}
+        {myInProgressTrips.map((trip) => (
+          <section key={trip.id} className="mt-8">
+            <p className="text-[9px] font-extrabold uppercase tracking-[0.15em] text-[#ff6846]">
+              Active trip
+            </p>
+            <h3 className="mt-1 text-[19px] font-black tracking-[-0.035em]">
+              Passenger on board
+            </h3>
+
+            <div className="mt-4 rounded-[26px] bg-[#e7e9ee] p-5 shadow-[7px_7px_16px_#c3c5ca,-7px_-7px_16px_#ffffff]">
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-[16px] bg-[#e7e9ee] text-[14px] font-black shadow-[inset_2px_2px_5px_#c5c7cc,inset_-2px_-2px_5px_#ffffff]">
+                  {trip.full_name?.charAt(0)?.toUpperCase() || "P"}
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[12px] font-black">
+                    {trip.full_name || "Passenger"}
+                  </p>
+                  <p className="mt-1 text-[9px] font-semibold text-[#91949a]">
+                    {trip.phone}
+                  </p>
+                </div>
+
+                <p className="text-[20px] font-black">R{trip.fare_amount}</p>
               </div>
+
+              <RouteBox
+                pickup={trip.pickup_address}
+                destination={trip.dropoff_address}
+              />
 
               <button
                 type="button"
-                onClick={uploadPhoto}
-                className="
-                  ml-3
-                  shrink-0
-                  rounded-lg
-                  bg-[#111111]
-                  px-4
-                  py-2
-                  text-[11px]
-                  font-bold
-                  text-white
-                "
+                onClick={() =>
+                  openNavigation(trip.destination_lat, trip.destination_lng)
+                }
+                className="mt-4 flex w-full items-center justify-center gap-2 rounded-[15px] bg-[#e7e9ee] py-3.5 text-[9px] font-black shadow-[4px_4px_9px_#c4c6ca,-4px_-4px_9px_#ffffff]"
               >
-                Save
+                <NavigationIcon />
+                Navigate to destination
+              </button>
+
+              <button
+                type="button"
+                onClick={() => completeTrip(trip.id)}
+                disabled={loadingAction === trip.id}
+                className="mt-4 w-full rounded-[17px] bg-[#ff6846] py-4 text-[11px] font-black text-white shadow-[4px_4px_9px_#c1c3c8,-3px_-3px_8px_#ffffff] active:scale-[0.985] disabled:opacity-50"
+              >
+                {loadingAction === trip.id ? "Completing..." : "Complete trip"}
               </button>
             </div>
-          )}
+          </section>
+        ))}
 
-        </section>
+        {/* ACCEPTED RIDES */}
+        {myAcceptedTrips.map((trip) => (
+          <section key={trip.id} className="mt-8">
+            <p className="text-[9px] font-extrabold uppercase tracking-[0.15em] text-[#ff6846]">
+              Active trip
+            </p>
+            <h3 className="mt-1 text-[19px] font-black tracking-[-0.035em]">
+              Collect passenger
+            </h3>
 
-{/* =================================
-    PORTAL NAVIGATION
-================================= */}
-<div className="mt-6 border-b border-[#eeeeee]">
+            <div className="mt-4 rounded-[26px] bg-[#e7e9ee] p-5 shadow-[7px_7px_16px_#c3c5ca,-7px_-7px_16px_#ffffff]">
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-[16px] bg-[#e7e9ee] text-[14px] font-black shadow-[inset_2px_2px_5px_#c5c7cc,inset_-2px_-2px_5px_#ffffff]">
+                  {trip.full_name?.charAt(0)?.toUpperCase() || "P"}
+                </div>
 
-  <div className="grid grid-cols-3">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[12px] font-black">
+                    {trip.full_name || "Passenger"}
+                  </p>
+                  <p className="mt-1 text-[9px] font-semibold text-[#91949a]">
+                    {trip.phone}
+                  </p>
+                </div>
 
-    {["Home", "Rides", "Reviews"].map((label, index) => (
-      <button
-        key={label}
-        type="button"
-        onClick={() => setActivePage(index)}
-        className={`
-          relative
-          pb-3
-          text-[12px]
-          font-bold
-          transition
-          ${
-            activePage === index
-              ? "text-[#111111]"
-              : "text-[#999999]"
-          }
-        `}
-      >
-        {label}
+                <p className="text-[20px] font-black">R{trip.fare_amount}</p>
+              </div>
 
-        {activePage === index && (
-          <span
-            className="
-              absolute
-              bottom-0
-              left-1/2
-              h-[3px]
-              w-8
-              -translate-x-1/2
-              rounded-full
-              bg-[#ff6a00]
-            "
-          />
+              <RouteBox
+                pickup={trip.pickup_address}
+                destination={trip.dropoff_address}
+              />
+
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => openNavigation(trip.pickup_lat, trip.pickup_lng)}
+                  className="flex items-center justify-center gap-2 rounded-[15px] bg-[#e7e9ee] py-3.5 text-[9px] font-black shadow-[4px_4px_9px_#c4c6ca,-4px_-4px_9px_#ffffff]"
+                >
+                  <NavigationIcon />
+                  Navigate
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => startTrip(trip.id)}
+                  disabled={loadingAction === trip.id}
+                  className="rounded-[15px] bg-[#17191f] py-3.5 text-[10px] font-black text-white shadow-[4px_4px_9px_#c1c3c8,-3px_-3px_8px_#ffffff] active:scale-[0.98] disabled:opacity-50"
+                >
+                  {loadingAction === trip.id ? "Starting..." : "Start trip"}
+                </button>
+              </div>
+            </div>
+          </section>
+        ))}
+
+        {/* NEW RIDE REQUESTS */}
+        {status === "available" && availableTrips.length > 0 && (
+          <section className="mt-8">
+            <div className="mb-3 flex items-center justify-between">
+              <div>
+                <p className="text-[9px] font-extrabold uppercase tracking-[0.15em] text-[#ff6846]">
+                  New request
+                </p>
+                <h3 className="mt-1 text-[19px] font-black tracking-[-0.035em]">
+                  Ride available
+                </h3>
+              </div>
+
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#ff6846] text-white shadow-[3px_3px_8px_#c3c5ca,-3px_-3px_8px_#ffffff]">
+                <BellIcon />
+              </div>
+            </div>
+
+            <div className="space-y-5">
+              {availableTrips.map((request) => (
+                <div
+                  key={request.id}
+                  className="overflow-hidden rounded-[26px] bg-[#e7e9ee] shadow-[7px_7px_16px_#c3c5ca,-7px_-7px_16px_#ffffff]"
+                >
+                  <div className="flex items-start justify-between px-5 pt-5">
+                    <div>
+                      <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-[#96999f]">
+                        Trip fare
+                      </p>
+                      <p className="mt-1 text-[27px] font-black tracking-[-0.05em]">
+                        R{request.fare_amount}
+                      </p>
+                    </div>
+
+                    <div className="rounded-[12px] bg-[#e7e9ee] px-3 py-2 text-right shadow-[inset_2px_2px_5px_#c5c7cc,inset_-2px_-2px_5px_#ffffff]">
+                      <p className="text-[10px] font-black">
+                        BK-{request.id.toString().padStart(4, "0")}
+                      </p>
+                      <p className="mt-0.5 text-[8px] font-semibold text-[#92959b]">
+                        Ride request
+                      </p>
+                    </div>
+                  </div>
+
+                  {Number(request.discount_amount || 0) > 0 && (
+                    <div className="mx-5 mt-4 rounded-[15px] bg-[#e7e9ee] px-4 py-3 shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff]">
+                      <p className="text-[8px] font-black uppercase tracking-[0.12em] text-[#ff6846]">
+                        RouteX Promo
+                      </p>
+                      <p className="mt-1 text-[10px] font-extrabold">
+                        RouteX covers R{Number(request.discount_amount).toFixed(2)}
+                      </p>
+                      <p className="mt-1 text-[9px] font-semibold text-[#8d9096]">
+                        Your full fare remains R
+                        {Number(request.fare_amount).toFixed(2)}
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="mx-5">
+                    <RouteBox
+                      pickup={request.pickup_address}
+                      destination={request.dropoff_address}
+                    />
+                  </div>
+
+                  <div className="mx-5 mt-4 flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-[13px] bg-[#e7e9ee] text-[12px] font-black shadow-[4px_4px_8px_#c5c7cc,-4px_-4px_8px_#ffffff]">
+                      {request.full_name?.charAt(0)?.toUpperCase() || "P"}
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[11px] font-black">
+                        {request.full_name || "Passenger"}
+                      </p>
+                      <p className="mt-0.5 text-[8px] font-semibold text-[#999ca2]">
+                        {request.phone}
+                      </p>
+                    </div>
+
+                    <span className="text-[9px] font-bold text-[#8c8f95]">
+                      {new Date(request.travel_date).toLocaleDateString("en-ZA", {
+                        day: "numeric",
+                        month: "short",
+                      })}
+                    </span>
+                  </div>
+
+                  <div className="p-5">
+                    <button
+                      type="button"
+                      onClick={() => acceptTrip(request.id)}
+                      disabled={loadingAction === request.id}
+                      className="flex w-full items-center justify-center gap-2 rounded-[16px] bg-[#17191f] py-3.5 text-[10px] font-black text-white shadow-[4px_4px_9px_#c1c3c8,-3px_-3px_8px_#ffffff] active:scale-[0.98] disabled:opacity-50"
+                    >
+                      {loadingAction === request.id ? "Accepting..." : "Accept ride"}
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#ff6846]">
+                        <ArrowIcon />
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
         )}
 
-      </button>
-    ))}
-
-  </div>
-
-</div>
-
-{activePage === 0 && (
-  <div>
-        {/* =================================
-            AVAILABILITY
-        ================================= */}
-        <section
-          className={`
-            mt-7
-            rounded-[22px]
-            border
-            p-5
-            transition
-            ${
-              status === "available"
-                ? "border-[#ffd9bd] bg-[#fff8f3]"
-                : "border-[#eeeeee] bg-[#fafafa]"
-            }
-          `}
-        >
-
-          <div className="flex items-start justify-between gap-4">
-
-            <div>
-
-              <p
-                className="
-                  text-[10px]
-                  font-bold
-                  uppercase
-                  tracking-[0.08em]
-                  text-[#888888]
-                "
-              >
-                Availability
-              </p>
-
-              <div className="mt-2 flex items-center gap-2">
-
-                <span
-                  className={`
-                    h-2.5 w-2.5 rounded-full
-                    ${
-                      status === "available"
-                        ? "bg-[#ff6a00]"
-                        : "bg-[#aaaaaa]"
-                    }
-                  `}
-                />
-
-                <h2 className="text-[18px] font-extrabold">
-                  {status === "available"
-                    ? "You're online"
-                    : "You're offline"}
-                </h2>
-
+        {/* WAITING / OFFLINE */}
+        {myAcceptedTrips.length === 0 &&
+          myInProgressTrips.length === 0 &&
+          availableTrips.length === 0 &&
+          status === "available" && (
+            <section className="mt-8 text-center">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-[17px] text-[#ff6846] shadow-[inset_3px_3px_7px_#c5c7cc,inset_-3px_-3px_7px_#ffffff]">
+                <RadarIcon />
               </div>
-
-              <p className="mt-2 max-w-[220px] text-[12px] leading-5 text-[#777777]">
-                {status === "available"
-                  ? "New RouteX ride requests can appear below."
-                  : "Go online to start receiving new ride requests."}
+              <p className="mt-3 text-[10px] font-black">Looking for rides</p>
+              <p className="mt-1 text-[8px] font-semibold text-[#96999f]">
+                We'll show your next request here.
               </p>
-
-            </div>
-
-
-            {/* STATUS BUTTON */}
-            <button
-              onClick={toggleStatus}
-              className={`
-                shrink-0
-                rounded-xl
-                px-4
-                py-3
-                text-[12px]
-                font-bold
-                transition
-                active:scale-[0.98]
-                ${
-                  status === "available"
-                    ? "border border-[#dddddd] bg-white text-[#111111]"
-                    : "bg-[#111111] text-white"
-                }
-              `}
-            >
-              {status === "available"
-                ? "Go offline"
-                : "Go online"}
-            </button>
-
-          </div>
-
-        </section>
-          </div>
-)}
-{activePage === 2 && (
-  <div>
-{/* =================================
-    PASSENGER REVIEWS
-================================= */}
-<section className="mt-7">
-
-  <div className="flex items-end justify-between">
-
-    <div>
-      <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#ff6a00]">
-        Your Rating
-      </p>
-
-      <h2 className="mt-1 text-[20px] font-extrabold tracking-tight">
-        Passenger Reviews
-      </h2>
-    </div>
-
-    {driverRating.review_count > 0 && (
-      <div className="text-right">
-        <div className="flex items-center justify-end gap-1">
-          <span className="text-[17px] text-[#ff6a00]">
-            ★
-          </span>
-
-          <span className="text-[18px] font-extrabold">
-            {Number(driverRating.average_rating).toFixed(1)}
-          </span>
-        </div>
-
-        <p className="text-[10px] text-[#999999]">
-          {driverRating.review_count}{" "}
-          {driverRating.review_count === 1
-            ? "review"
-            : "reviews"}
-        </p>
-      </div>
-    )}
-
-  </div>
-
-
-  {driverReviews.length > 0 ? (
-
-    <div className="mt-4 space-y-3">
-
-      {driverReviews.map((review) => (
-        <div
-          key={review.id}
-          className="
-            rounded-[18px]
-            border
-            border-[#eeeeee]
-            bg-white
-            p-4
-          "
-        >
-
-          {/* STARS */}
-          <div className="flex items-center gap-1">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <span
-                key={star}
-                className={`text-[15px] ${
-                  star <= Number(review.rating)
-                    ? "text-[#ff6a00]"
-                    : "text-[#dddddd]"
-                }`}
-              >
-                ★
-              </span>
-            ))}
-          </div>
-
-          {/* REVIEW TEXT */}
-          {review.review_text && (
-            <p className="mt-2 text-[13px] leading-5 text-[#444444]">
-              {review.review_text}
-            </p>
+            </section>
           )}
 
-          <p className="mt-2 text-[10px] text-[#aaaaaa]">
-            Passenger review
-          </p>
+        {status !== "available" && (
+          <section className="mt-8 rounded-[24px] bg-[#e7e9ee] p-5 text-center shadow-[inset_4px_4px_9px_#c5c7cc,inset_-4px_-4px_9px_#ffffff]">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-[16px] text-[#96999f]">
+              <PowerIcon />
+            </div>
+            <p className="mt-2 text-[11px] font-black">You're offline</p>
+            <p className="mx-auto mt-1 max-w-[230px] text-[8px] font-semibold leading-4 text-[#96999f]">
+              Go online when you're ready to start receiving RouteX ride requests.
+            </p>
+          </section>
+        )}
 
-        </div>
-      ))}
+          </>
+        )}
 
-    </div>
-
-  ) : (
-
-    <div className="mt-4 rounded-[18px] bg-[#fafafa] p-5">
-      <p className="text-[13px] font-bold text-[#333333]">
-        No reviews yet
-      </p>
-
-      <p className="mt-1 text-[11px] leading-5 text-[#888888]">
-        Passenger ratings and feedback will appear here after completed trips.
-      </p>
-    </div>
-
-  )}
-
-</section>
-  </div>
-)}
-
-
-         {/* =================================
-    CURRENT TRIP
-================================= */}
-{myInProgressTrips.length > 0 && (
-  <section className="mt-8 mb-8">
-
-    {/* HEADER */}
-    <div className="mb-4">
-
-      <div className="flex items-center justify-between">
-
-        <p
-          className="
-            text-[10px]
-            font-bold
-            uppercase
-            tracking-[0.08em]
-            text-[#ff6a00]
-          "
-        >
-          Current ride
-        </p>
-
-        <span
-          className="
-            rounded-full
-            bg-[#fff3e8]
-            px-3
-            py-1.5
-            text-[9px]
-            font-bold
-            uppercase
-            tracking-[0.05em]
-            text-[#ff6a00]
-          "
-        >
-          In progress
-        </span>
-
-      </div>
-
-      <h2 className="mt-1 text-[20px] font-extrabold tracking-tight">
-        Ride in progress
-      </h2>
-
-      <p className="mt-1 text-[12px] text-[#777777]">
-        Take the passenger to their destination.
-      </p>
-
-    </div>
-
-
-    <div className="space-y-4">
-
-      {myInProgressTrips.map((trip) => (
-
-        <div
-          key={trip.id}
-          className="
-            overflow-hidden
-            rounded-[22px]
-            border
-            border-[#ffd9bd]
-            bg-white
-            shadow-[0_12px_35px_rgba(0,0,0,0.06)]
-          "
-        >
-
-          {/* ORANGE ACCENT */}
-          <div className="h-1.5 w-full bg-[#ff6a00]" />
-
-
-          <div className="p-5">
-
-            {/* PASSENGER + BOOKING */}
-            <div className="flex items-start justify-between gap-4">
-
-              <div className="min-w-0">
-
-                <p
-                  className="
-                    text-[9px]
-                    font-bold
-                    uppercase
-                    tracking-[0.08em]
-                    text-[#999999]
-                  "
-                >
-                  Passenger
+        {/* RIDES */}
+        {activePage === 1 && (
+          <>
+            {/* ACTIVE / ACCEPTED RIDES */}
+            {myInProgressTrips.length === 0 && myAcceptedTrips.length === 0 && (
+              <section className="mt-8 rounded-[24px] bg-[#e7e9ee] p-5 text-center shadow-[inset_4px_4px_9px_#c5c7cc,inset_-4px_-4px_9px_#ffffff]">
+                <p className="text-[11px] font-black">No active rides</p>
+                <p className="mt-1 text-[8px] font-semibold text-[#96999f]">
+                  Accepted and in-progress rides will appear here.
                 </p>
+              </section>
+            )}
 
-                <h3 className="mt-1 truncate text-[17px] font-extrabold">
-                  {trip.full_name || "Passenger"}
+            {myAcceptedTrips.map((trip) => (
+              <section key={`rides-accepted-${trip.id}`} className="mt-8">
+                <p className="text-[9px] font-extrabold uppercase tracking-[0.15em] text-[#ff6846]">
+                  Accepted
+                </p>
+                <h3 className="mt-1 text-[19px] font-black tracking-[-0.035em]">
+                  Collect passenger
                 </h3>
+                <div className="mt-4 rounded-[26px] bg-[#e7e9ee] p-5 shadow-[7px_7px_16px_#c3c5ca,-7px_-7px_16px_#ffffff]">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-[12px] font-black">{trip.full_name || "Passenger"}</p>
+                      <p className="mt-1 text-[9px] font-semibold text-[#91949a]">{trip.phone}</p>
+                    </div>
+                    <p className="text-[20px] font-black">R{trip.fare_amount}</p>
+                  </div>
+                  <RouteBox pickup={trip.pickup_address} destination={trip.dropoff_address} />
+                  <div className="mt-4 grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => openNavigation(trip.pickup_lat, trip.pickup_lng)}
+                      className="flex items-center justify-center gap-2 rounded-[15px] bg-[#e7e9ee] py-3.5 text-[9px] font-black shadow-[4px_4px_9px_#c4c6ca,-4px_-4px_9px_#ffffff]"
+                    >
+                      <NavigationIcon /> Navigate
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => startTrip(trip.id)}
+                      disabled={loadingAction === trip.id}
+                      className="rounded-[15px] bg-[#17191f] py-3.5 text-[10px] font-black text-white disabled:opacity-50"
+                    >
+                      {loadingAction === trip.id ? "Starting..." : "Start trip"}
+                    </button>
+                  </div>
+                </div>
+              </section>
+            ))}
 
-                <p className="mt-1 text-[11px] text-[#777777]">
-                  {trip.phone}
+            {myInProgressTrips.map((trip) => (
+              <section key={`rides-progress-${trip.id}`} className="mt-8">
+                <p className="text-[9px] font-extrabold uppercase tracking-[0.15em] text-[#ff6846]">
+                  In progress
                 </p>
-
-              </div>
-
-
-              <div className="shrink-0 text-right">
-
-                <p
-                  className="
-                    text-[9px]
-                    font-bold
-                    uppercase
-                    tracking-[0.08em]
-                    text-[#999999]
-                  "
-                >
-                  Booking
-                </p>
-
-                <p className="mt-1 text-[12px] font-bold">
-                  BK-{trip.id.toString().padStart(4, "0")}
-                </p>
-
-              </div>
-
-            </div>
-
-
-            {/* ROUTE */}
-            <div className="mt-6 flex gap-3">
-
-              <div className="flex flex-col items-center pt-1">
-
-                <span
-                  className="
-                    h-2.5
-                    w-2.5
-                    rounded-full
-                    border-[3px]
-                    border-[#111111]
-                    bg-white
-                  "
-                />
-
-                <span className="my-1 h-10 w-px bg-[#dddddd]" />
-
-                <span className="h-2.5 w-2.5 rounded-full bg-[#ff6a00]" />
-
-              </div>
-
-
-              <div className="min-w-0 flex-1">
-
-                <div className="mb-4">
-
-                  <p
-                    className="
-                      text-[9px]
-                      font-bold
-                      uppercase
-                      tracking-[0.08em]
-                      text-[#999999]
-                    "
+                <h3 className="mt-1 text-[19px] font-black tracking-[-0.035em]">
+                  Current ride
+                </h3>
+                <div className="mt-4 rounded-[26px] bg-[#e7e9ee] p-5 shadow-[7px_7px_16px_#c3c5ca,-7px_-7px_16px_#ffffff]">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-[12px] font-black">{trip.full_name || "Passenger"}</p>
+                      <p className="mt-1 text-[9px] font-semibold text-[#91949a]">{trip.phone}</p>
+                    </div>
+                    <p className="text-[20px] font-black">R{trip.fare_amount}</p>
+                  </div>
+                  <RouteBox pickup={trip.pickup_address} destination={trip.dropoff_address} />
+                  <button
+                    type="button"
+                    onClick={() => completeTrip(trip.id)}
+                    disabled={loadingAction === trip.id}
+                    className="mt-4 w-full rounded-[17px] bg-[#ff6846] py-4 text-[11px] font-black text-white disabled:opacity-50"
                   >
-                    Pickup
-                  </p>
-
-                  <p className="mt-1 text-[12px] font-semibold leading-5">
-                    {trip.pickup_address}
-                  </p>
-
+                    {loadingAction === trip.id ? "Completing..." : "Complete trip"}
+                  </button>
                 </div>
-
-
-                <div>
-
-                  <p
-                    className="
-                      text-[9px]
-                      font-bold
-                      uppercase
-                      tracking-[0.08em]
-                      text-[#999999]
-                    "
-                  >
-                    Destination
-                  </p>
-
-                  <p className="mt-1 text-[12px] font-semibold leading-5">
-                    {trip.dropoff_address}
-                  </p>
-
-                </div>
-
-              </div>
-
-            </div>
-
-
-            {/* DESTINATION ACTION */}
-            <button
-              onClick={() =>
-                openNavigation(
-                  trip.destination_lat,
-                  trip.destination_lng
-                )
-              }
-              className="
-                mt-6
-                flex
-                min-h-[52px]
-                w-full
-                items-center
-                justify-center
-                rounded-xl
-                bg-[#111111]
-                px-4
-                text-[12px]
-                font-bold
-                text-white
-                transition
-                hover:bg-[#222222]
-                active:scale-[0.99]
-              "
-            >
-              Navigate to destination →
-            </button>
-
-
-            {/* COMPLETE */}
-            <button
-              onClick={() => completeTrip(trip.id)}
-              disabled={loadingAction === trip.id}
-              className="
-                mt-3
-                flex
-                min-h-[52px]
-                w-full
-                items-center
-                justify-center
-                rounded-xl
-                border
-                border-[#ff6a00]
-                bg-[#fff8f3]
-                px-4
-                text-[12px]
-                font-bold
-                text-[#ff6a00]
-                transition
-                hover:bg-[#fff3e8]
-                active:scale-[0.99]
-                disabled:cursor-not-allowed
-                disabled:opacity-50
-              "
-            >
-              {loadingAction === trip.id
-                ? "Completing..."
-                : "Complete ride"}
-            </button>
-
-          </div>
-
-        </div>
-
-      ))}
-
-    </div>
-
-  </section>
-)}
-{activePage === 1 && (
-  <div>
-         {/* =================================
-    AVAILABLE TRIPS
-================================= */}
-<section className="mt-6 mb-8">
-
-  {/* SECTION HEADER */}
-  <div className="mb-4">
-
-    <div className="flex items-center justify-between">
-
-      <p
-        className="
-          text-[10px]
-          font-bold
-          uppercase
-          tracking-[0.08em]
-          text-[#ff6a00]
-        "
-      >
-        Ride requests
-      </p>
-
-      <span
-        className="
-          flex
-          min-w-[26px]
-          items-center
-          justify-center
-          rounded-full
-          bg-[#fff3e8]
-          px-2
-          py-1
-          text-[10px]
-          font-bold
-          text-[#ff6a00]
-        "
-      >
-        {availableTrips.length}
-      </span>
-
-    </div>
-
-
-    <h2 className="mt-1 text-[20px] font-extrabold tracking-tight">
-      Available rides
-    </h2>
-
-    <p className="mt-1 text-[12px] text-[#777777]">
-      New ride requests will appear here.
-    </p>
-
-  </div>
-
-
-  {/* EMPTY STATE */}
-  {availableTrips.length === 0 && (
-    <div
-      className="
-        rounded-[18px]
-        border
-        border-[#eeeeee]
-        bg-[#fafafa]
-        px-5
-        py-5
-      "
-    >
-
-      <div className="flex items-center gap-3">
-
-        <div
-          className="
-            flex
-            h-9
-            w-9
-            shrink-0
-            items-center
-            justify-center
-            rounded-full
-            bg-white
-            border
-            border-[#eeeeee]
-          "
-        >
-          <span className="h-2 w-2 rounded-full bg-[#ff6a00]" />
-        </div>
-
-
-        <div>
-          <h3 className="text-[13px] font-bold">
-            No ride requests yet
-          </h3>
-
-          <p className="mt-1 text-[11px] leading-4 text-[#888888]">
-            {status === "available"
-              ? "Stay online — new rides will appear automatically."
-              : "Go online to start receiving ride requests."}
-          </p>
-        </div>
-
-      </div>
-
-    </div>
-  )}
-
-
-  {/* RIDE REQUESTS */}
-  <div className="space-y-4">
-
-    {availableTrips.map((request) => (
-
-      <div
-        key={request.id}
-        className="
-          overflow-hidden
-          rounded-[20px]
-          border
-          border-[#eeeeee]
-          bg-white
-          shadow-[0_8px_30px_rgba(0,0,0,0.04)]
-        "
-      >
-
-        {/* TOP */}
-        <div className="p-5">
-
-          <div className="flex items-start justify-between gap-4">
-
-            {/* PASSENGER */}
-            <div className="min-w-0">
-
-              <p
-                className="
-                  text-[9px]
-                  font-bold
-                  uppercase
-                  tracking-[0.08em]
-                  text-[#888888]
-                "
-              >
-                Passenger
-              </p>
-
-              <h3 className="mt-1 truncate text-[17px] font-extrabold">
-                {request.full_name}
-              </h3>
-
-              <p className="mt-1 text-[11px] text-[#777777]">
-                {request.phone}
-              </p>
-
-            </div>
-
-
-            {/* FARE */}
-            <div className="shrink-0 text-right">
-
-              <p
-                className="
-                  text-[9px]
-                  font-bold
-                  uppercase
-                  tracking-[0.08em]
-                  text-[#888888]
-                "
-              >
-                Fare
-              </p>
-
-              <p className="mt-1 text-[24px] font-extrabold tracking-tight text-[#111111]">
-                R{request.fare_amount}
-              </p>
-
-            </div>
-
-          </div>
-
-
-          {/* PROMO */}
-          {Number(request.discount_amount || 0) > 0 && (
-            <div
-              className="
-                mt-4
-                rounded-xl
-                border
-                border-[#ffd9bd]
-                bg-[#fff8f3]
-                px-4
-                py-3
-              "
-            >
-              <p
-                className="
-                  text-[9px]
-                  font-bold
-                  uppercase
-                  tracking-[0.08em]
-                  text-[#ff6a00]
-                "
-              >
-                RouteX Promo
-              </p>
-
-              <p className="mt-1 text-[12px] font-bold text-[#111111]">
-                RouteX covers R
-                {Number(request.discount_amount).toFixed(2)}
-              </p>
-
-              <p className="mt-1 text-[10px] text-[#777777]">
-                Your full fare remains R
-                {Number(request.fare_amount).toFixed(2)}
-              </p>
-            </div>
-          )}
-
-
-          {/* ROUTE */}
-          <div className="mt-5">
-
-            <div className="flex gap-3">
-
-              {/* ROUTE LINE */}
-              <div className="flex flex-col items-center pt-1">
-
-                <span
-                  className="
-                    h-2.5
-                    w-2.5
-                    rounded-full
-                    border-[3px]
-                    border-[#111111]
-                    bg-white
-                  "
-                />
-
-                <span className="my-1 h-9 w-px bg-[#dddddd]" />
-
-                <span className="h-2.5 w-2.5 rounded-full bg-[#ff6a00]" />
-
-              </div>
-
-
-              {/* LOCATIONS */}
-              <div className="min-w-0 flex-1">
-
-                <div className="mb-4">
-
-                  <p
-                    className="
-                      text-[9px]
-                      font-bold
-                      uppercase
-                      tracking-[0.08em]
-                      text-[#999999]
-                    "
-                  >
-                    Pickup
-                  </p>
-
-                  <p className="mt-1 text-[12px] font-semibold leading-5">
-                    {request.pickup_address}
-                  </p>
-
-                </div>
-
-
-                <div>
-
-                  <p
-                    className="
-                      text-[9px]
-                      font-bold
-                      uppercase
-                      tracking-[0.08em]
-                      text-[#999999]
-                    "
-                  >
-                    Destination
-                  </p>
-
-                  <p className="mt-1 text-[12px] font-semibold leading-5">
-                    {request.dropoff_address}
-                  </p>
-
-                </div>
-
-              </div>
-
-            </div>
-
-          </div>
-
-
-          {/* DATE */}
-          <div
-            className="
-              mt-5
-              flex
-              items-center
-              justify-between
-              border-t
-              border-[#eeeeee]
-              pt-4
-            "
-          >
-
-            <p className="text-[10px] font-medium text-[#888888]">
-              Travel date
-            </p>
-
-            <p className="text-[11px] font-bold">
-              {new Date(request.travel_date).toLocaleDateString(
-                "en-ZA",
-                {
-                  day: "numeric",
-                  month: "short",
-                  year: "numeric",
-                }
-              )}
-            </p>
-
-          </div>
-
-
-          {/* ACCEPT */}
-          <button
-            onClick={() => acceptTrip(request.id)}
-            disabled={loadingAction === request.id}
-            className="
-              mt-5
-              flex
-              h-13
-              w-full
-              items-center
-              justify-center
-              rounded-xl
-              bg-[#111111]
-              px-4
-              py-3.5
-              text-[12px]
-              font-bold
-              text-white
-              transition
-              hover:bg-[#222222]
-              active:scale-[0.99]
-              disabled:cursor-not-allowed
-              disabled:opacity-50
-            "
-          >
-            {loadingAction === request.id
-              ? "Accepting..."
-              : "Accept ride →"}
-          </button>
-
-        </div>
-
-      </div>
-
-    ))}
-
-  </div>
-
-</section>
-
-  </div>
-)}
-
-{activePage === 0 && myAcceptedTrips.length > 0 && (
-  <div>
-{/* =================================
-    ACCEPTED TRIPS
-================================= */}
-<section className="mb-8">
-
-  {/* HEADER */}
-  <div className="mb-4">
-
-    <div className="flex items-center justify-between">
-
-      <p className="
-        text-[10px]
-        font-bold
-        uppercase
-        tracking-[0.08em]
-        text-[#ff6a00]
-      ">
-        Upcoming
-      </p>
-
-      {myAcceptedTrips.length > 0 && (
-        <span className="
-          rounded-full
-          bg-[#fff3e8]
-          px-2.5
-          py-1
-          text-[10px]
-          font-bold
-          text-[#ff6a00]
-        ">
-          {myAcceptedTrips.length}
-        </span>
-      )}
-
-    </div>
-
-    <h2 className="mt-1 text-[20px] font-extrabold tracking-tight">
-      Accepted rides
-    </h2>
-
-    <p className="mt-1 text-[12px] text-[#777777]">
-      Rides you've accepted and are ready to start.
-    </p>
-
-  </div>
-
-
-  {/* EMPTY STATE */}
-  {myAcceptedTrips.length === 0 && (
-    <div className="
-      rounded-[18px]
-      border
-      border-[#eeeeee]
-      bg-[#fafafa]
-      px-5
-      py-4
-    ">
-      <p className="text-[12px] text-[#777777]">
-        You have no accepted rides yet.
-      </p>
-    </div>
-  )}
-
-
-  {/* ACCEPTED RIDE CARDS */}
-  <div className="space-y-4">
-
-    {myAcceptedTrips.map((trip) => (
-
-      <div
-        key={trip.id}
-        className="
-          overflow-hidden
-          rounded-[20px]
-          border
-          border-[#eeeeee]
-          bg-white
-          shadow-[0_8px_30px_rgba(0,0,0,0.04)]
-        "
-      >
-
-        <div className="p-5">
-
-          {/* BOOKING + STATUS */}
-          <div className="flex items-start justify-between gap-4">
-
+              </section>
+            ))}
+
+        {/* RECENT TRIPS */}
+        <section className="mt-9">
+          <div className="flex w-full items-center justify-between rounded-[20px] bg-[#e7e9ee] px-4 py-4 shadow-[4px_4px_9px_#c4c6ca,-4px_-4px_9px_#ffffff]">
             <div>
-
-              <p className="
-                text-[9px]
-                font-bold
-                uppercase
-                tracking-[0.08em]
-                text-[#888888]
-              ">
-                Booking
+              <p className="text-[9px] font-extrabold uppercase tracking-[0.13em] text-[#92959b]">
+                Activity
               </p>
-
-              <h3 className="mt-1 text-[15px] font-extrabold">
-                BK-{trip.id.toString().padStart(4, "0")}
-              </h3>
-
+              <p className="mt-1 text-[12px] font-black">Recent trips</p>
             </div>
 
-
-            <span className="
-              rounded-full
-              bg-[#fff3e8]
-              px-3
-              py-1.5
-              text-[9px]
-              font-bold
-              uppercase
-              tracking-[0.05em]
-              text-[#ff6a00]
-            ">
-              Accepted
+            <span className="flex h-8 min-w-8 items-center justify-center rounded-[11px] px-2 text-[10px] font-black shadow-[inset_2px_2px_5px_#c5c7cc,inset_-2px_-2px_5px_#ffffff]">
+              {myCompletedTrips.length}
             </span>
-
           </div>
 
-
-          {/* PASSENGER */}
-          <div className="mt-5">
-
-            <p className="
-              text-[9px]
-              font-bold
-              uppercase
-              tracking-[0.08em]
-              text-[#999999]
-            ">
-              Passenger
-            </p>
-
-            <p className="mt-1 text-[14px] font-bold">
-              {trip.full_name || "Passenger"}
-            </p>
-
-            <p className="mt-0.5 text-[11px] text-[#777777]">
-              {trip.phone}
-            </p>
-
-          </div>
-
-
-          {/* ROUTE */}
-          <div className="mt-5 flex gap-3">
-
-            {/* ROUTE LINE */}
-            <div className="flex flex-col items-center pt-1">
-
-              <span className="
-                h-2.5
-                w-2.5
-                rounded-full
-                border-[3px]
-                border-[#111111]
-                bg-white
-              " />
-
-              <span className="my-1 h-10 w-px bg-[#dddddd]" />
-
-              <span className="h-2.5 w-2.5 rounded-full bg-[#ff6a00]" />
-
-            </div>
-
-
-            {/* LOCATIONS */}
-            <div className="min-w-0 flex-1">
-
-              <div className="mb-4">
-
-                <p className="
-                  text-[9px]
-                  font-bold
-                  uppercase
-                  tracking-[0.08em]
-                  text-[#999999]
-                ">
-                  Pickup
+          <div className="mt-4 space-y-3">
+            {myCompletedTrips.length === 0 ? (
+              <div className="rounded-[18px] bg-[#e7e9ee] px-4 py-4 text-center shadow-[inset_3px_3px_7px_#c5c7cc,inset_-3px_-3px_7px_#ffffff]">
+                <p className="text-[9px] font-semibold text-[#96999f]">
+                  No completed rides yet.
                 </p>
-
-                <p className="mt-1 text-[12px] font-semibold leading-5">
-                  {trip.pickup_address}
-                </p>
-
               </div>
+            ) : (
+              myCompletedTrips.slice(0, 5).map((trip) => (
+                <HistoryRide key={trip.id} trip={trip} />
+              ))
+            )}
+          </div>
+        </section>
 
+          </>
+        )}
 
-              <div>
-
-                <p className="
-                  text-[9px]
-                  font-bold
-                  uppercase
-                  tracking-[0.08em]
-                  text-[#999999]
-                ">
-                  Destination
-                </p>
-
-                <p className="mt-1 text-[12px] font-semibold leading-5">
-                  {trip.dropoff_address}
-                </p>
-
+        {/* REVIEWS PAGE */}
+        {activePage === 2 && (
+          <>
+            <section className="mt-8 rounded-[24px] bg-[#e7e9ee] p-5 shadow-[6px_6px_14px_#c4c6ca,-6px_-6px_14px_#ffffff]">
+              <p className="text-[9px] font-extrabold uppercase tracking-[0.13em] text-[#ff6846]">
+                Driver rating
+              </p>
+              <div className="mt-3 flex items-end gap-2">
+                <span className="text-[36px] font-black tracking-[-0.06em]">
+                  {driverRating.average_rating !== null
+                    ? driverRating.average_rating.toFixed(1)
+                    : "—"}
+                </span>
+                <div className="mb-1.5 flex items-center gap-1">
+                  <StarIcon />
+                  <span className="text-[9px] font-bold text-[#92959b]">
+                    {driverRating.review_count} review
+                    {driverRating.review_count === 1 ? "" : "s"}
+                  </span>
+                </div>
               </div>
+            </section>
 
-            </div>
-
-          </div>
-
-
-          {/* ACTIONS */}
-          <div className="mt-6 grid grid-cols-2 gap-3">
-
-            <button
-              onClick={() =>
-                openNavigation(
-                  trip.pickup_lat,
-                  trip.pickup_lng
-                )
-              }
-              className="
-                min-h-[50px]
-                rounded-xl
-                border
-                border-[#dddddd]
-                bg-white
-                px-3
-                text-[11px]
-                font-bold
-                text-[#111111]
-                transition
-                hover:bg-[#fafafa]
-                active:scale-[0.98]
-              "
-            >
-              Navigate to pickup
-            </button>
-
-
-            <button
-              onClick={() => startTrip(trip.id)}
-              disabled={loadingAction === trip.id}
-              className="
-                min-h-[50px]
-                rounded-xl
-                bg-[#111111]
-                px-3
-                text-[11px]
-                font-bold
-                text-white
-                transition
-                hover:bg-[#222222]
-                active:scale-[0.98]
-                disabled:cursor-not-allowed
-                disabled:opacity-50
-              "
-            >
-              {loadingAction === trip.id
-                ? "Starting..."
-                : "Start ride →"}
-            </button>
-
-          </div>
-
-        </div>
-
-      </div>
-
-    ))}
-
-  </div>
-
-</section>
-  </div>
-)}
-
-{/* =================================
-    COMPLETED TRIPS
-================================= */}
-{activePage === 2 && (
-  <div>
-<section className="pb-10">
-
-  {/* HEADER */}
-  <div className="mb-4">
-
-    <div className="flex items-center justify-between">
-
-      <p
-        className="
-          text-[10px]
-          font-bold
-          uppercase
-          tracking-[0.08em]
-          text-[#888888]
-        "
-      >
-        History
-      </p>
-
-      {myCompletedTrips.length > 0 && (
-        <span
-          className="
-            rounded-full
-            bg-[#f4f4f4]
-            px-2.5
-            py-1
-            text-[10px]
-            font-bold
-            text-[#666666]
-          "
-        >
-          {myCompletedTrips.length}
-        </span>
-      )}
-
-    </div>
-
-    <h2 className="mt-1 text-[20px] font-extrabold tracking-tight">
-      Completed rides
-    </h2>
-
-    <p className="mt-1 text-[12px] text-[#777777]">
-      Your recent RouteX ride history.
-    </p>
-
-  </div>
-
-
-  {/* EMPTY */}
-  {myCompletedTrips.length === 0 && (
-    <div
-      className="
-        rounded-[18px]
-        border
-        border-[#eeeeee]
-        bg-[#fafafa]
-        px-5
-        py-4
-      "
-    >
-      <p className="text-[12px] text-[#777777]">
-        No completed rides yet.
-      </p>
-    </div>
-  )}
-
-
-  {/* HISTORY */}
-  <div className="space-y-3">
-
-    {myCompletedTrips.map((trip) => (
-
-      <div
-        key={trip.id}
-        className="
-          rounded-[18px]
-          border
-          border-[#eeeeee]
-          bg-white
-          p-4
-        "
-      >
-
-        {/* TOP */}
-        <div className="flex items-center justify-between gap-3">
-
-          <div>
-            <p
-              className="
-                text-[9px]
-                font-bold
-                uppercase
-                tracking-[0.08em]
-                text-[#999999]
-              "
-            >
-              Booking
-            </p>
-
-            <p className="mt-1 text-[13px] font-bold">
-              BK-{trip.id.toString().padStart(4, "0")}
-            </p>
-          </div>
-
-
-          <span
-            className="
-              rounded-full
-              bg-[#f4f4f4]
-              px-3
-              py-1.5
-              text-[9px]
-              font-bold
-              uppercase
-              tracking-[0.05em]
-              text-[#666666]
-            "
-          >
-            Completed
-          </span>
-
-        </div>
-
-
-        {/* ROUTE */}
-        <div className="mt-4 flex gap-3">
-
-          <div className="flex flex-col items-center pt-1">
-
-            <span
-              className="
-                h-2
-                w-2
-                rounded-full
-                border-2
-                border-[#111111]
-                bg-white
-              "
-            />
-
-            <span className="my-1 h-8 w-px bg-[#dddddd]" />
-
-            <span className="h-2 w-2 rounded-full bg-[#ff6a00]" />
-
-          </div>
-
-
-          <div className="min-w-0 flex-1">
-
-            <div className="mb-3">
-
-              <p className="text-[9px] font-bold uppercase text-[#999999]">
-                Pickup
-              </p>
-
-              <p className="mt-1 text-[11px] font-medium leading-4">
-                {trip.pickup_address}
-              </p>
-
-            </div>
-
-
+        {/* REVIEWS */}
+        <section className="mt-9">
+          <div className="flex items-end justify-between">
             <div>
-
-              <p className="text-[9px] font-bold uppercase text-[#999999]">
-                Destination
+              <p className="text-[9px] font-extrabold uppercase tracking-[0.13em] text-[#92959b]">
+                Feedback
               </p>
-
-              <p className="mt-1 text-[11px] font-medium leading-4">
-                {trip.dropoff_address}
-              </p>
-
+              <p className="mt-1 text-[12px] font-black">Passenger reviews</p>
             </div>
-
+            <span className="text-[9px] font-bold text-[#92959b]">
+              {driverRating.review_count} review
+              {driverRating.review_count === 1 ? "" : "s"}
+            </span>
           </div>
 
-        </div>
+          <div className="mt-4 space-y-3">
+            {driverReviews.length === 0 ? (
+              <div className="rounded-[18px] bg-[#e7e9ee] px-4 py-4 text-center shadow-[inset_3px_3px_7px_#c5c7cc,inset_-3px_-3px_7px_#ffffff]">
+                <p className="text-[9px] font-semibold text-[#96999f]">
+                  No passenger reviews yet.
+                </p>
+              </div>
+            ) : (
+              driverReviews.slice(0, 5).map((review: any, index: number) => (
+                <div
+                  key={review.id ?? index}
+                  className="rounded-[18px] bg-[#e7e9ee] px-4 py-4 shadow-[3px_3px_8px_#c5c7cc,-3px_-3px_8px_#ffffff]"
+                >
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] font-black">
+                      {review.passenger_name || review.full_name || "Passenger"}
+                    </p>
+                    <div className="flex items-center gap-1">
+                      <StarIcon />
+                      <span className="text-[9px] font-black">
+                        {Number(review.rating || 0).toFixed(1)}
+                      </span>
+                    </div>
+                  </div>
+                  {review.review_text && (
+                    <p className="mt-2 text-[9px] font-semibold leading-4 text-[#777b82]">
+                      {review.review_text}
+                    </p>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        </section>
 
+          </>
+        )}
 
-        {/* PASSENGER */}
-        <div
-          className="
-            mt-4
-            border-t
-            border-[#eeeeee]
-            pt-3
-          "
-        >
-          <p className="text-[10px] text-[#888888]">
-            Passenger
+        <footer className="pt-10 text-center">
+          <p className="text-[9px] font-semibold text-[#a0a3a9]">
+            RouteX • Driver Portal
           </p>
-
-          <p className="mt-1 text-[11px] font-semibold">
-            {trip.phone}
-          </p>
-        </div>
-
+        </footer>
       </div>
+    </main>
+  </AuthGuard>
+);
+}
 
-    ))}
+/* =====================================================
+   UI COMPONENTS
+===================================================== */
 
-  </div>
+function RouteBox({
+  pickup,
+  destination,
+}: {
+  pickup: string;
+  destination: string;
+}) {
+  return (
+    <div className="mt-5 rounded-[19px] bg-[#e7e9ee] px-4 py-4 shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff]">
+      <RouteRow type="pickup" label="Pickup" value={pickup} />
+      <div className="ml-[5px] h-5 border-l border-dashed border-[#b6b9bf]" />
+      <RouteRow type="destination" label="Destination" value={destination} />
+    </div>
+  );
+}
 
-</section>
-  </div>
-)}
+function RouteRow({
+  type,
+  label,
+  value,
+}: {
+  type: "pickup" | "destination";
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex items-start gap-3">
+      <span
+        className={`mt-1 h-[11px] w-[11px] shrink-0 rounded-full ${
+          type === "pickup"
+            ? "border-[3px] border-[#17191f]"
+            : "bg-[#ff6846]"
+        }`}
+      />
+      <div className="min-w-0">
+        <p className="text-[8px] font-extrabold uppercase tracking-[0.11em] text-[#9a9da3]">
+          {label}
+        </p>
+        <p className="mt-1 text-[10px] font-black leading-4">
+          {value || "Location unavailable"}
+        </p>
+      </div>
+    </div>
+  );
+}
 
-        </div>
-      </main>
-    </AuthGuard>
+function HistoryRide({ trip }: { trip: any }) {
+  return (
+    <div className="flex items-center rounded-[18px] bg-[#e7e9ee] px-4 py-3.5 shadow-[3px_3px_8px_#c5c7cc,-3px_-3px_8px_#ffffff]">
+      <div className="flex h-9 w-9 items-center justify-center rounded-[12px] text-[#ff6846] shadow-[inset_2px_2px_5px_#c5c7cc,inset_-2px_-2px_5px_#ffffff]">
+        <RideIcon />
+      </div>
+      <div className="ml-3 min-w-0 flex-1">
+        <p className="truncate text-[10px] font-black">
+          {trip.dropoff_address || "Completed ride"}
+        </p>
+        <p className="mt-0.5 text-[8px] font-semibold text-[#999ca2]">
+          Completed · BK-{trip.id.toString().padStart(4, "0")}
+        </p>
+      </div>
+      <p className="text-[11px] font-black">R{trip.fare_amount}</p>
+    </div>
+  );
+}
+
+/* =====================================================
+   ICONS
+===================================================== */
+
+function MenuIcon() {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2.3" strokeLinecap="round">
+      <path d="M5 7h14M5 12h14M5 17h14" />
+    </svg>
+  );
+}
+
+function CameraIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2.3" strokeLinecap="round"
+      strokeLinejoin="round">
+      <path d="M14.5 4 16 7h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h3l1.5-3z" />
+      <circle cx="12" cy="13" r="3" />
+    </svg>
+  );
+}
+
+function StarIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24"
+      fill="#ff6846" stroke="#ff6846" strokeWidth="2">
+      <path d="m12 2 3 6 6.5.9-4.7 4.6 1.1 6.5-5.9-3.1L6.1 20l1.1-6.5-4.7-4.6L9 8Z" />
+    </svg>
+  );
+}
+
+function PowerIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2.3" strokeLinecap="round">
+      <path d="M12 2v10" />
+      <path d="M18.4 6.6a9 9 0 1 1-12.8 0" />
+    </svg>
+  );
+}
+
+function RideIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2" strokeLinecap="round"
+      strokeLinejoin="round">
+      <path d="m5 17 1-7 2-4h8l2 4 1 7" />
+      <path d="M3 13h18" />
+      <circle cx="7" cy="17" r="2" />
+      <circle cx="17" cy="17" r="2" />
+    </svg>
+  );
+}
+
+function BellIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+      <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
+      <path d="M10 21h4" />
+    </svg>
+  );
+}
+
+function ArrowIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+      <path d="M5 12h14M13 6l6 6-6 6" />
+    </svg>
+  );
+}
+
+function NavigationIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2.2"
+      strokeLinecap="round" strokeLinejoin="round">
+      <path d="m3 11 18-8-8 18-2-8Z" />
+    </svg>
+  );
+}
+
+function RadarIcon() {
+  return (
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <circle cx="12" cy="12" r="2" />
+      <path d="M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8" />
+      <path d="M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7" />
+    </svg>
   );
 }
