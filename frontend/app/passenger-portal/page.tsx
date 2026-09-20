@@ -1,20 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Outfit } from "next/font/google";
 import dynamic from "next/dynamic";
 import { API_URL } from "../lib/api";
-import {
-  Car,
-  CalendarDays,
-  UserRound,
-  Palette,
-  CreditCard,
-} from "lucide-react";
 
-const outfit = Outfit({
-  subsets: ["latin"],
-});
 
 const DriverMap = dynamic(
   () => import("./DriverMap"),
@@ -78,6 +67,8 @@ export default function PassengerPortalPage() {
   const [reviewedTrips, setReviewedTrips] = useState<Record<number, boolean>>({});
 
   const [driverLocation, setDriverLocation] = useState<any>(null);
+  const [showCompletedTrips, setShowCompletedTrips] = useState(false);
+  const [showLiveTrip, setShowLiveTrip] = useState(false);
   /* =======================================================
      LOCAL PHOTO PREVIEW
   ======================================================= */
@@ -473,1117 +464,637 @@ console.log("PHOTO UPLOAD COMPLETE:", finalImageUrl);
 
 const profileImageUrl =
   getProfileImageUrl(passenger?.profile_image);
+
+  const normalizedStatus = (trip: any) =>
+    String(trip?.trip_status || trip?.booking_status || "")
+      .trim()
+      .toLowerCase();
+
+  const activeTrip =
+    trips.find((trip) =>
+      ["accepted", "in progress"].includes(normalizedStatus(trip))
+    ) || null;
+
+  const waitingTrips = trips.filter(
+    (trip) => normalizedStatus(trip) === "waiting"
+  );
+
+  const completedTrips = trips.filter(
+    (trip) => normalizedStatus(trip) === "completed"
+  );
+
+  const otherTrips = trips.filter((trip) => {
+    const status = normalizedStatus(trip);
+    return (
+      status &&
+      !["waiting", "accepted", "in progress", "completed", "cancelled"].includes(status)
+    );
+  });
+
+  const firstName =
+    passenger?.full_name?.trim()?.split(/\s+/)?.[0] || "Passenger";
   /* =======================================================
      PAGE
   ======================================================= */
 
   return (
-  <main
-    className={`${outfit.className} min-h-[100dvh] bg-white text-[#111111]`}
-  >
-    <div className="mx-auto w-full max-w-md px-5 pb-8">
+    <main className="min-h-[100dvh] bg-[#e7e9ee] text-[#17191f]">
+      <div className="mx-auto w-full max-w-md px-5 pb-10">
 
-      {/* =================================
-          HEADER
-      ================================= */}
-      <header className="flex items-center justify-between pt-5">
+        <header className="flex items-center justify-between pt-6">
+          <h1 className="text-[27px] font-black tracking-[-0.06em]">
+            Route<span className="text-[#ff6846]">X</span>
+          </h1>
 
-        <h1 className="text-[26px] font-extrabold tracking-[-0.055em]">
-          Route<span className="text-[#ff6a00]">X</span>
-        </h1>
-
-        <div className="flex items-center gap-3">
-
-          {/* DRIVER AVAILABILITY */}
-          <div className="flex items-center gap-1.5">
-            <span
-              className={`h-2 w-2 rounded-full ${
-                onlineDrivers > 0
-                  ? "bg-[#ff6a00]"
-                  : "bg-[#cccccc]"
-              }`}
-            />
-
-            <span className="text-[12px] font-bold text-[#777777]">
+          <div className="flex items-center gap-2 rounded-full bg-[#e7e9ee] px-3 py-2 shadow-[3px_3px_7px_#c5c7cc,-3px_-3px_7px_#ffffff]">
+            <span className={`relative inline-flex h-2 w-2 rounded-full ${onlineDrivers > 0 ? "bg-[#ff6846]" : "bg-[#aeb1b7]"}`} />
+            <span className="text-[10px] font-extrabold text-[#777a81]">
               {onlineDrivers} online
             </span>
           </div>
+        </header>
 
-        </div>
-
-      </header>
-
-
-      {/* =================================
-          WELCOME
-      ================================= */}
-      <section className="pt-7">
-
-        <div className="flex items-center justify-between gap-4">
-
-          <div className="min-w-0">
-
-            <p
-              className="
-                text-[12px]
-                font-extrabold
-                uppercase
-                tracking-[0.12em]
-                text-[#ff6a00]
-              "
-            >
-              Passenger Portal
-            </p>
-
-            <h2
-              className="
-                mt-1
-                text-[26px]
-                font-extrabold
-                leading-tight
-                tracking-[-0.04em]
-              "
-            >
-              Hi
-              {passenger?.full_name
-                ? `, ${passenger.full_name
-                    .trim()
-                    .split(/\s+/)[0]}`
-                : ""}
-            </h2>
-
-            <p
-              className="
-                mt-1
-                text-[15px]
-                font-medium
-                text-[#777777]
-              "
-            >
-              Where are you going today?
-            </p>
-
-          </div>
-
-
-          {/* PROFILE PHOTO */}
-          <div className="relative h-[68px] w-[68px] shrink-0">
-
-            <div
-              className="
-                relative
-                h-[68px]
-                w-[68px]
-                overflow-hidden
-                rounded-full
-                border
-                border-[#e8e8e8]
-                bg-[#f7f7f7]
-              "
-            >
-
-              {photo ? (
-                <img
-                  src={photoPreviewUrl}
-                  alt="Selected profile photo"
-                  className="block h-full w-full object-cover"
-                />
-              ) : profileImageUrl ? (
-                <img
-                  key={`${passenger?.profile_image}-${photoVersion}`}
-                  src={`${profileImageUrl}${
-                    profileImageUrl.includes("?") ? "&" : "?"
-                  }v=${photoVersion}`}
-                  alt={passenger?.full_name || "Passenger"}
-                  className="block h-full w-full object-cover"
-                />
-              ) : null}
-
-              <div
-                className={`
-                  absolute
-                  inset-0
-                  flex
-                  items-center
-                  justify-center
-                  text-[16px]
-                  font-extrabold
-                  text-[#999999]
-                  ${
-                    photo || profileImageUrl
-                      ? "hidden"
-                      : ""
-                  }
-                `}
-              >
-                {passenger?.full_name
-                  ?.charAt(0)
-                  ?.toUpperCase() || "P"}
-              </div>
-
-            </div>
-
-
-            {/* CHANGE PHOTO */}
-            <label
-              className="
-                absolute
-                -bottom-1
-                -right-1
-                flex
-                h-6
-                w-6
-                cursor-pointer
-                items-center
-                justify-center
-                rounded-full
-                border-2
-                border-white
-                bg-[#ff6a00]
-                text-white
-                shadow-sm
-              "
-              title="Change photo"
-            >
-              <span className="text-[10px]">
-                ✎
-              </span>
-
-              <input
-                type="file"
-                accept="image/*"
-                onChange={async (e) => {
-                  const file = e.target.files?.[0];
-
-                  if (!file) {
-                    return;
-                  }
-
-                  setPhoto(file);
-                  await uploadPhoto(file);
-                  e.target.value = "";
-                }}
-                className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-              />
-            </label>
-
-          </div>
-
-        </div>
-
-      </section>
-
-
-      {/* =================================
-          BOOK RIDE
-      ================================= */}
-      <a
-        href="/bookings"
-        className="
-          mt-6
-          flex
-          w-full
-          items-center
-          justify-between
-          rounded-[18px]
-          border
-          border-[#eeeeee]
-          bg-[#fafafa]
-          px-4
-          py-4
-          transition
-          active:scale-[0.98]
-        "
-      >
-
-        <div className="flex items-center gap-3">
-
-          <div
-            className="
-              flex
-              h-10
-              w-10
-              items-center
-              justify-center
-              rounded-full
-              bg-[#fff1e8]
-              text-[#ff6a00]
-            "
-          >
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z" />
-              <circle cx="12" cy="10" r="2.5" />
-            </svg>
-          </div>
-
-          <div>
-
-            <p className="text-[17px] font-extrabold">
-              Book a ride
-            </p>
-
-            <p className="mt-0.5 text-[14px] font-medium text-[#888888]">
-              Enter your destination
-            </p>
-
-          </div>
-
-        </div>
-
-
-        <div
-          className="
-            flex
-            h-9
-            w-9
-            items-center
-            justify-center
-            rounded-full
-            bg-[#111111]
-            text-white
-          "
-        >
-          <span className="text-[17px]">→</span>
-        </div>
-
-      </a>
-
-
-      {/* =================================
-          AVAILABILITY
-      ================================= */}
-      <section
-        className="
-          mt-4
-          flex
-          items-center
-          gap-2
-          border-b
-          border-[#eeeeee]
-          pb-4
-        "
-      >
-
-        <span
-          className={`h-2 w-2 rounded-full ${
-            onlineDrivers > 0
-              ? "bg-[#ff6a00]"
-              : "bg-[#cccccc]"
-          }`}
-        />
-
-        <p className="text-[13px] font-semibold text-[#666666]">
-          {onlineDrivers > 0
-            ? `${onlineDrivers} driver${
-                onlineDrivers !== 1 ? "s" : ""
-              } available now`
-            : "No drivers currently online"}
-        </p>
-
-      </section>
-
-{/* =================================
-    AVAILABLE DRIVERS
-================================= */}
-{availableDrivers.length > 0 && (
-  <section className="mt-7">
-
-    <div className="mb-4">
-      <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#ff6a00]">
-        Drivers near your pickup
-      </p>
-
-      <h2 className="mt-1 text-[20px] font-extrabold tracking-tight">
-        Available drivers
-      </h2>
-
-      <p className="mt-1 text-[12px] text-[#777777]">
-        These drivers are currently online.
-      </p>
-    </div>
-
-    <div className="space-y-3">
-      {availableDrivers.map((driver) => (
-        <div
-          key={driver.id}
-          className="
-            flex
-            items-center
-            gap-4
-            rounded-[18px]
-            border
-            border-[#eeeeee]
-            bg-white
-            p-4
-          "
-        >
-
-          {/* DRIVER PHOTO */}
-          <div
-            className="
-              relative
-              h-14
-              w-14
-              shrink-0
-              overflow-hidden
-              rounded-full
-              bg-[#f5f5f5]
-            "
-          >
-            <div
-              className="
-                absolute
-                inset-0
-                flex
-                items-center
-                justify-center
-                text-lg
-                font-bold
-                text-[#aaaaaa]
-              "
-            >
-              {driver.first_name?.charAt(0)?.toUpperCase() || "D"}
-            </div>
-
-            {driver.profile_image && (
-              <img
-                src={
-                  driver.profile_image.startsWith("http")
-                    ? driver.profile_image
-                    : `${API_URL}/uploads/${driver.profile_image}`
-                }
-                alt=""
-                className="absolute inset-0 h-full w-full object-cover"
-                onError={(e) => {
-                  e.currentTarget.style.display = "none";
-                }}
-              />
-            )}
-          </div>
-
-          {/* DRIVER DETAILS */}
-          <div className="min-w-0 flex-1">
-
-            <div className="flex items-center justify-between gap-3">
-
-              <p className="truncate text-[15px] font-extrabold">
-                {driver.first_name}
+        <section className="pt-8">
+          <div className="flex items-center justify-between gap-4">
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#ff6846]">
+                Passenger Portal
               </p>
-
-              <span
-                className="
-                  shrink-0
-                  rounded-full
-                  bg-[#fff3e8]
-                  px-2.5
-                  py-1
-                  text-[10px]
-                  font-bold
-                  text-[#ff6a00]
-                "
-              >
-                {driver.distance_km
-              ? `${Number(driver.distance_km).toFixed(1)} km away`
-              : "Nearby"}
-              </span>
-
+              <h2 className="mt-2 text-[29px] font-black leading-none tracking-[-0.045em]">
+                Hi, {firstName}
+              </h2>
+              <p className="mt-2 text-[14px] font-medium text-[#7c7f86]">
+                Where are you going today?
+              </p>
             </div>
 
-            <p className="mt-1 text-[12px] font-semibold text-[#555555]">
-              {driver.vehicle_color} {driver.vehicle_type}
-            </p>
-
-            <p className="mt-0.5 text-[11px] text-[#888888]">
-              {driver.license_plate}
-            </p>
-
-          </div>
-
-        </div>
-      ))}
-    </div>
-
-  </section>
-)}
-
-{/* =================================
-    LIVE DRIVER TRACKING
-================================= */}
-
-{driverLocation &&
-  driverLocation.driver_lat &&
-  driverLocation.driver_lng &&
-  driverLocation.pickup_lat &&
-  driverLocation.pickup_lng && (
-
-    <section className="mt-7">
-
-      <div className="mb-3">
-        <p className="text-[12px] font-extrabold uppercase tracking-[0.12em] text-[#ff6a00]">
-          Live trip
-        </p>
-
-        <h2 className="mt-1 text-[22px] font-extrabold tracking-[-0.035em]">
-          Your driver is on the way
-        </h2>
-
-        <p className="mt-1 text-[13px] font-medium text-[#777777]">
-          Follow {driverLocation.driver_name || "your driver"} as they approach your pickup.
-        </p>
-      </div>
-
-      <DriverMap
-        driverLat={Number(driverLocation.driver_lat)}
-        driverLng={Number(driverLocation.driver_lng)}
-        pickupLat={Number(driverLocation.pickup_lat)}
-        pickupLng={Number(driverLocation.pickup_lng)}
-        driverName={driverLocation.driver_name}
-      />
-
-    </section>
-)}
-      {/* =================================
-          RIDES HEADER
-      ================================= */}
-      <section className="mt-7">
-
-        <div className="flex items-end justify-between">
-
-          <div>
-
-            <p
-              className="
-                text-[12px]
-                font-extrabold
-                uppercase
-                tracking-[0.12em]
-                text-[#ff6a00]
-              "
-            >
-              Your rides
-            </p>
-
-            <h2
-              className="
-                mt-1
-                text-[22px]
-                font-extrabold
-                tracking-[-0.035em]
-              "
-            >
-              Recent bookings
-            </h2>
-
-          </div>
-
-          <p className="text-[12px] font-bold text-[#999999]">
-            {trips.length} booking
-            {trips.length !== 1 ? "s" : ""}
-          </p>
-
-        </div>
-
-      </section>
-
-
-      {/* =================================
-          TRIPS
-      ================================= */}
-      <section className="mt-4 space-y-3">
-
-        {trips.length === 0 ? (
-
-          /* NO TRIPS */
-          <div
-            className="
-              rounded-[20px]
-              border
-              border-[#eeeeee]
-              bg-[#fafafa]
-              px-5
-              py-7
-              text-center
-            "
-          >
-
-            <div
-              className="
-                mx-auto
-                flex
-                h-11
-                w-11
-                items-center
-                justify-center
-                rounded-full
-                bg-[#fff1e8]
-                text-[#ff6a00]
-              "
-            >
-              <Car
-                size={20}
-                strokeWidth={2.2}
-              />
-            </div>
-
-            <p className="mt-3 text-[16px] font-extrabold">
-              No rides booked yet
-            </p>
-
-            <p className="mt-1 text-[14px] font-medium text-[#888888]">
-              Your RouteX trips will appear here.
-            </p>
-
-          </div>
-
-        ) : (
-
-          trips.map((trip) => (
-
-            <div
-              key={trip.id}
-              className="
-                rounded-[20px]
-                border
-                border-[#e8e8e8]
-                bg-white
-                p-4
-              "
-            >
-
-              {/* TOP */}
-              <div className="flex items-start justify-between gap-3">
-
-                <div>
-
-                  <p
-                    className="
-                      text-[13px]
-                      font-bold
-                      uppercase
-                      tracking-[0.1em]
-                      text-[#999999]
-                    "
-                  >
-                    Booking
-                  </p>
-
-                  <h3 className="mt-1 text-[16px] font-extrabold">
-                    BK-
-                    {trip.id
-                      .toString()
-                      .padStart(4, "0")}
-                  </h3>
-
-                </div>
-
-
-                {/* STATUS */}
-                <span
-                  className={`
-                    shrink-0
-                    rounded-full
-                    px-2.5
-                    py-1
-                    text-[11px]
-                    font-extrabold
-                    ${
-                      trip.trip_status === "In Progress"
-                        ? "bg-[#111111] text-white"
-                        : trip.trip_status === "Accepted"
-                        ? "bg-[#fff1e8] text-[#e65f00]"
-                        : "bg-[#f2f2f2] text-[#555555]"
-                    }
-                  `}
-                >
-                  {trip.trip_status}
-                </span>
-
-              </div>
-
-
-              {/* ROUTE */}
-              <div className="mt-5 flex gap-3">
-
-                {/* ROUTE LINE */}
-                <div className="flex w-3 shrink-0 flex-col items-center">
-
-                  <div className="mt-1 h-2.5 w-2.5 rounded-full bg-[#111111]" />
-
-                  <div
-                    className="
-                      my-1
-                      h-9
-                      border-l
-                      border-dashed
-                      border-[#cccccc]
-                    "
-                  />
-
-                  <div className="h-2.5 w-2.5 rounded-full bg-[#ff6a00]" />
-
-                </div>
-
-
-                {/* ADDRESSES */}
-                <div className="min-w-0 flex-1">
-
-                  <div>
-                    <p
-                      className="
-                        text-[11px]
-                        font-bold
-                        uppercase
-                        tracking-wide
-                        text-[#aaaaaa]
-                      "
-                    >
-                      Pickup
-                    </p>
-
-                    <p
-                      className="
-                        mt-1
-                        line-clamp-1
-                        text-[14px]
-                        font-semibold
-                        text-[#333333]
-                      "
-                    >
-                      {trip.pickup_address}
-                    </p>
-                  </div>
-
-
-                  <div className="mt-4">
-
-                    <p
-                      className="
-                        text-[11px]
-                        font-bold
-                        uppercase
-                        tracking-wide
-                        text-[#aaaaaa]
-                      "
-                    >
-                      Destination
-                    </p>
-
-                    <p
-                      className="
-                        mt-1
-                        line-clamp-1
-                        text-[14px]
-                        font-semibold
-                        text-[#333333]
-                      "
-                    >
-                      {trip.dropoff_address}
-                    </p>
-
-                  </div>
-
-                </div>
-
-              </div>
-
-
-              {/* TRIP SUMMARY */}
-              <div
-                className="
-                  mt-5
-                  grid
-                  grid-cols-3
-                  gap-3
-                  border-t
-                  border-[#eeeeee]
-                  pt-4
-                "
-              >
-
-                {/* FARE */}
-                <div>
-
-                  <p className="text-[11px] font-bold uppercase text-[#aaaaaa]">
-                    Fare
-                  </p>
-
-                  <p className="mt-1 text-[14px] font-extrabold">
-                    R
-                    {Number(
-                      trip.passenger_amount ??
-                        trip.fare_amount ??
-                        0
-                    ).toFixed(2)}
-                  </p>
-
-                </div>
-
-
-                {/* DATE */}
-                <div>
-
-                  <p className="text-[11px] font-bold uppercase text-[#aaaaaa]">
-                    Date
-                  </p>
-
-                  <p className="mt-1 text-[13px] font-bold">
-                    {new Date(
-                      trip.travel_date
-                    ).toLocaleDateString()}
-                  </p>
-
-                </div>
-
-
-  {/* DRIVER */}
-<div className="col-span-full mt-3">
-
-  <p className="text-[10px] font-bold uppercase text-[#aaaaaa]">
-    Driver
-  </p>
-
-  <div className="mt-2 flex items-center gap-3">
-
-    {/* DRIVER PHOTO */}
-    <div
-      className="
-        relative
-        h-10
-        w-10
-        shrink-0
-        overflow-hidden
-        rounded-full
-        bg-[#f5f5f5]
-      "
-    >
-      {/* FALLBACK */}
-      <div
-        className="
-          absolute
-          inset-0
-          flex
-          items-center
-          justify-center
-          text-[13px]
-          font-bold
-          text-[#aaaaaa]
-        "
-      >
-        {trip.driver_name?.charAt(0)?.toUpperCase() || "D"}
-      </div>
-
-      {/* PHOTO */}
-      {trip.driver_profile_image && (
-        <img
-          src={
-            trip.driver_profile_image.startsWith("http")
-              ? trip.driver_profile_image
-              : `${API_URL}/uploads/${trip.driver_profile_image}`
-          }
-          alt=""
-          className="absolute inset-0 h-full w-full object-cover"
-          onError={(e) => {
-            e.currentTarget.style.display = "none";
-          }}
-        />
-      )}
-    </div>
-
-    {/* NAME + RATING */}
-    <div className="min-w-0 flex-1">
-
-      <p className="text-[14px] font-extrabold leading-tight text-[#111111]">
-        {trip.driver_name || "Driver"}
-      </p>
-
-      {trip.average_rating && (
-        <div className="mt-1 flex flex-wrap items-center gap-x-1.5">
-
-          <span className="text-[14px] leading-none text-[#ff6a00]">
-            ★
-          </span>
-
-          <span className="text-[12px] font-extrabold text-[#333333]">
-            {Number(trip.average_rating).toFixed(1)}
-          </span>
-
-          <span className="text-[11px] text-[#999999]">
-            {trip.review_count}{" "}
-            {Number(trip.review_count) === 1
-              ? "review"
-              : "reviews"}
-          </span>
-
-        </div>
-      )}
-
-    </div>
-
-  </div>
-
-</div>
-              </div>
-
-
-              {/* DRIVER / VEHICLE DETAILS */}
-              {(trip.driver_name ||
-                trip.vehicle_type ||
-                trip.license_plate) && (
-
-                <div
-                  className="
-                    mt-4
-                    rounded-[14px]
-                    bg-[#fafafa]
-                    px-3
-                    py-3
-                  "
-                >
-
-                  <div className="flex items-center gap-3">
-
-                    <div
-                      className="
-                        flex
-                        h-8
-                        w-8
-                        shrink-0
-                        items-center
-                        justify-center
-                        rounded-full
-                        bg-[#fff1e8]
-                        text-[#ff6a00]
-                      "
-                    >
-                      <Car
-                        size={16}
-                        strokeWidth={2.2}
+            <div className="relative shrink-0">
+              <div className="relative flex h-[92px] w-[92px] items-center justify-center rounded-[30px] bg-[#e7e9ee] shadow-[8px_8px_18px_#c1c3c8,-8px_-8px_18px_#ffffff]">
+                <div className="absolute -right-[3px] top-[18px] h-9 w-[5px] rounded-full bg-[#ff6846] shadow-[0_2px_5px_rgba(255,104,70,0.35)]" />
+                <div className="flex h-[72px] w-[72px] items-center justify-center rounded-full bg-[#e7e9ee] p-[5px] shadow-[inset_5px_5px_10px_#c2c4c9,inset_-5px_-5px_10px_#ffffff]">
+                  <div className="relative h-full w-full overflow-hidden rounded-full bg-[#dfe1e6] shadow-[2px_2px_5px_rgba(80,82,88,0.16)]">
+                    {photo ? (
+                      <img src={photoPreviewUrl} alt="Selected profile" className="h-full w-full object-cover" />
+                    ) : profileImageUrl ? (
+                      <img
+                        key={`${passenger?.profile_image}-${photoVersion}`}
+                        src={`${profileImageUrl}${profileImageUrl.includes("?") ? "&" : "?"}v=${photoVersion}`}
+                        alt={passenger?.full_name || "Passenger"}
+                        className="h-full w-full object-cover"
                       />
-                    </div>
-
-
-                    <div className="min-w-0 flex-1">
-
-                      <p className="text-[13px] font-extrabold">
-                        {trip.vehicle_type ||
-                          "Vehicle not assigned"}
-                      </p>
-
-                      <p className="mt-0.5 text-[12px] font-medium text-[#888888]">
-                        {trip.vehicle_color || ""}
-                        {trip.vehicle_color &&
-                        trip.license_plate
-                          ? " • "
-                          : ""}
-                        {trip.license_plate || ""}
-                      </p>
-
-                    </div>
-
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center">
+                        <span className="text-[22px] font-black text-[#a0a3aa]">
+                          {firstName.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                    )}
                   </div>
-
                 </div>
-              )}
+              </div>
 
-              {/* =================================
-    RATE YOUR DRIVER
-================================= */}
-{String(trip.trip_status).trim().toLowerCase() === "completed" &&
-  !trip.has_reviewed &&
-  !reviewedTrips[trip.id] && (
-  <div className="mt-5 rounded-[18px] border border-[#ffe0cc] bg-[#fffaf6] p-4">
-
-    <p className="text-[11px] font-bold uppercase tracking-wide text-[#ff6a00]">
-      Rate your driver
-    </p>
-
-    <h4 className="mt-1 text-[16px] font-extrabold text-[#111111]">
-      How was your trip with {trip.driver_name || "your driver"}?
-    </h4>
-
-   
-        {/* STARS */}
-        <div className="mt-4 flex items-center gap-2">
-          {[1, 2, 3, 4, 5].map((star) => (
-            <button
-              key={star}
-              type="button"
-              onClick={() =>
-                setReviewRatings((prev) => ({
-                  ...prev,
-                  [trip.id]: star,
-                }))
-              }
-              className={`text-[32px] leading-none transition active:scale-90 ${
-                (reviewRatings[trip.id] || 0) >= star
-                  ? "text-[#ff6a00]"
-                  : "text-[#d4d4d4]"
-              }`}
-            >
-              ★
-            </button>
-          ))}
-        </div>
-
-        {/* REVIEW TEXT */}
-        <textarea
-          value={reviewTexts[trip.id] || ""}
-          onChange={(e) =>
-            setReviewTexts((prev) => ({
-              ...prev,
-              [trip.id]: e.target.value,
-            }))
-          }
-          placeholder="Tell us about your trip (optional)"
-          rows={3}
-          className="
-            mt-4
-            w-full
-            resize-none
-            rounded-xl
-            border
-            border-[#e5e5e5]
-            bg-white
-            px-3
-            py-3
-            text-[14px]
-            text-[#111111]
-            outline-none
-            transition
-            focus:border-[#ff6a00]
-          "
-        />
-
-        {/* SUBMIT */}
-        <button
-          type="button"
-          disabled={
-            submittingReview === trip.id ||
-            !reviewRatings[trip.id]
-          }
-          onClick={() => submitDriverReview(trip)}
-          className="
-            mt-3
-            w-full
-            rounded-xl
-            bg-[#ff6a00]
-            px-4
-            py-3
-            text-[14px]
-            font-extrabold
-            text-white
-            transition
-            hover:bg-[#e65f00]
-            disabled:cursor-not-allowed
-            disabled:opacity-50
-          "
-        >
-          {submittingReview === trip.id
-            ? "Submitting..."
-            : "Submit Review"}
-        </button>
-    
-  </div>
-)}
-              {/* WHATSAPP DRIVER */}
-              {trip.driver_phone && (
-
-                <a
-                  href={`https://wa.me/27${String(
-                    trip.driver_phone
-                  )
-                    .replace(/\D/g, "")
-                    .replace(/^0/, "")}?text=${encodeURIComponent(
-                    `Hi, this is your RouteX passenger for booking BK-${trip.id
-                      .toString()
-                      .padStart(4, "0")}.`
-                  )}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="
-                    mt-3
-                    flex
-                    w-full
-                    items-center
-                    justify-center
-                    rounded-[12px]
-                    border
-                    border-[#e6e6e6]
-                    bg-white
-                    py-2.5
-                    text-[13px]
-                    font-extrabold
-                    text-[#333333]
-                    transition
-                    active:scale-[0.98]
-                  "
-                >
-                  WhatsApp Driver
-                </a>
-
-              )}
-{/* CANCEL BOOKING */}
-{trip.trip_status === "Waiting" && (
-  <button
-    type="button"
-    onClick={() => cancelBooking(trip.id)}
-    className="
-      mt-3
-      flex
-      w-full
-      items-center
-      justify-center
-      rounded-[12px]
-      border
-      border-[#ff6a00]
-      bg-white
-      py-2.5
-      text-[13px]
-      font-extrabold
-      text-[#ff6a00]
-      transition
-      active:scale-[0.98]
-    "
-  >
-    Cancel Booking
-  </button>
-)}
+              <label
+                title="Change profile photo"
+                className="absolute -bottom-2 -right-2 flex h-9 w-9 cursor-pointer items-center justify-center rounded-[13px] bg-[#ff6846] text-white shadow-[4px_4px_8px_#bfc1c6,-3px_-3px_7px_#ffffff] transition hover:scale-105 active:scale-90"
+              >
+                <CameraIcon />
+                <input
+                  type="file"
+                  accept="image/*"
+                  disabled={uploadingPhoto}
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    setPhoto(file);
+                    await uploadPhoto(file);
+                    e.target.value = "";
+                  }}
+                  className="hidden"
+                />
+              </label>
             </div>
+          </div>
+        </section>
 
-          ))
+        <section className="mt-8">
+          <a
+            href="/bookings"
+            className="group flex w-full items-center justify-between rounded-[21px] bg-[#e7e9ee] px-4 py-4 text-left shadow-[6px_6px_13px_#c3c5ca,-6px_-6px_13px_#ffffff] transition active:scale-[0.985]"
+          >
+            <div className="flex min-w-0 items-center gap-3.5">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-[#ff6846] text-white shadow-[3px_3px_7px_#c2c4c9,-3px_-3px_7px_#ffffff]">
+                <LocationIcon />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[16px] font-black tracking-[-0.02em]">Book a ride</p>
+                <p className="mt-0.5 text-[11px] font-medium text-[#85888f]">
+                  Enter your pickup and destination
+                </p>
+              </div>
+            </div>
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#17191f] text-white">
+              <ArrowRightIcon />
+            </div>
+          </a>
 
+          <div className="mt-3 flex items-center gap-2 px-1">
+            <span className={`h-2 w-2 rounded-full ${onlineDrivers > 0 ? "bg-[#ff6846]" : "bg-[#aeb1b7]"}`} />
+            <span className="text-[10px] font-bold text-[#85888f]">
+              {onlineDrivers > 0
+                ? `${onlineDrivers} driver${onlineDrivers === 1 ? "" : "s"} available now`
+                : "No drivers currently online"}
+            </span>
+          </div>
+        </section>
+
+        {waitingTrips.length > 0 && (
+          <section className="mt-8">
+            <p className="text-[9px] font-extrabold uppercase tracking-[0.16em] text-[#ff6846]">
+              Looking for a driver
+            </p>
+            <h3 className="mt-1 text-[20px] font-black tracking-[-0.035em]">
+              Your ride is waiting
+            </h3>
+
+            {waitingTrips.map((trip) => (
+              <div key={trip.id} className="mt-4 rounded-[23px] bg-[#e7e9ee] p-4 shadow-[6px_6px_14px_#c3c5ca,-6px_-6px_14px_#ffffff]">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-extrabold text-[#777a81]">
+                    BK-{String(trip.id).padStart(4, "0")}
+                  </span>
+                  <span className="rounded-full bg-[#fff0eb] px-3 py-1.5 text-[9px] font-extrabold text-[#ff6846]">
+                    Waiting
+                  </span>
+                </div>
+
+                <div className="mt-4 rounded-[17px] bg-[#e7e9ee] px-4 py-3.5 shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff]">
+                  <RoutePoint type="pickup" label="Pickup" value={trip.pickup_address || "Pickup"} />
+                  <div className="ml-[5px] h-4 border-l border-dashed border-[#b5b8be]" />
+                  <RoutePoint type="destination" label="Destination" value={trip.dropoff_address || "Destination"} />
+                </div>
+
+                {availableDrivers.length > 0 && (
+                  <p className="mt-3 text-[10px] font-bold text-[#85888f]">
+                    {availableDrivers.length} nearby driver{availableDrivers.length === 1 ? "" : "s"} found
+                  </p>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => cancelBooking(trip.id)}
+                  className="mt-4 w-full rounded-[14px] bg-[#e7e9ee] py-3 text-[10px] font-extrabold text-[#ff6846] shadow-[3px_3px_7px_#c4c6ca,-3px_-3px_7px_#ffffff]"
+                >
+                  Cancel booking
+                </button>
+              </div>
+            ))}
+          </section>
         )}
 
-      </section>
+        {activeTrip && (
+          <section className="mt-8">
+            <div className="flex items-end justify-between gap-3">
+              <div>
+                <p className="text-[9px] font-extrabold uppercase tracking-[0.16em] text-[#ff6846]">
+                  Active ride
+                </p>
+                <h3 className="mt-1 text-[20px] font-black tracking-[-0.035em]">
+                  {normalizedStatus(activeTrip) === "in progress"
+                    ? "Your trip is in progress"
+                    : "Your driver is coming"}
+                </h3>
+              </div>
+              <span className="rounded-full bg-[#17191f] px-3 py-1.5 text-[9px] font-extrabold text-white">
+                {activeTrip.trip_status}
+              </span>
+            </div>
+
+            <div className="mt-4 rounded-[23px] bg-[#e7e9ee] p-4 shadow-[6px_6px_14px_#c3c5ca,-6px_-6px_14px_#ffffff]">
+              <div className="flex items-center gap-3">
+                <div className="relative flex h-[48px] w-[48px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#e7e9ee] p-[4px] shadow-[inset_3px_3px_7px_#c3c5ca,inset_-3px_-3px_7px_#ffffff]">
+                  <div className="absolute inset-[4px] flex items-center justify-center rounded-full bg-[#dfe1e6]">
+                    <span className="text-[13px] font-black text-[#ff6846]">
+                      {activeTrip.driver_name?.charAt(0)?.toUpperCase() || "D"}
+                    </span>
+                  </div>
+                  {activeTrip.driver_profile_image && (
+                    <img
+                      src={activeTrip.driver_profile_image.startsWith("http")
+                        ? activeTrip.driver_profile_image
+                        : `${API_URL}/uploads/${activeTrip.driver_profile_image}`}
+                      alt=""
+                      className="absolute inset-[4px] h-[40px] w-[40px] rounded-full object-cover"
+                      onError={(e) => { e.currentTarget.style.display = "none"; }}
+                    />
+                  )}
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <p className="text-[14px] font-black">{activeTrip.driver_name || "Your driver"}</p>
+                  <p className="mt-0.5 truncate text-[11px] font-semibold text-[#777a81]">
+                    {[activeTrip.vehicle_color, activeTrip.vehicle_type].filter(Boolean).join(" ") || "Vehicle assigned"}
+                  </p>
+                  <p className="mt-0.5 text-[9px] font-bold text-[#a0a3a9]">
+                    {activeTrip.license_plate || ""}
+                  </p>
+                </div>
+
+                {activeTrip.average_rating && (
+                  <div className="text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      <span className="text-[12px] text-[#ff6846]">★</span>
+                      <span className="text-[12px] font-black">
+                        {Number(activeTrip.average_rating).toFixed(1)}
+                      </span>
+                    </div>
+                    <p className="mt-0.5 text-[8px] font-bold uppercase tracking-wide text-[#a0a3a9]">
+                      Driver
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-4 rounded-[17px] bg-[#e7e9ee] px-4 py-3.5 shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff]">
+                <RoutePoint type="pickup" label="Pickup" value={activeTrip.pickup_address || "Pickup"} />
+                <div className="ml-[5px] h-4 border-l border-dashed border-[#b5b8be]" />
+                <RoutePoint type="destination" label="Destination" value={activeTrip.dropoff_address || "Destination"} />
+              </div>
+
+              <div className={`mt-4 grid ${activeTrip.driver_phone ? "grid-cols-2" : "grid-cols-1"} gap-3`}>
+                {driverLocation &&
+                  driverLocation.driver_lat &&
+                  driverLocation.driver_lng &&
+                  driverLocation.pickup_lat &&
+                  driverLocation.pickup_lng && (
+                    <button
+                      type="button"
+                      onClick={() => setShowLiveTrip((value) => !value)}
+                      className="rounded-[14px] bg-[#17191f] py-3 text-[10px] font-extrabold text-white"
+                    >
+                      {showLiveTrip ? "Hide live trip" : "View live trip"}
+                    </button>
+                  )}
+
+                {activeTrip.driver_phone && (
+                  <a
+                    href={`https://wa.me/27${String(activeTrip.driver_phone)
+                      .replace(/\D/g, "")
+                      .replace(/^0/, "")}?text=${encodeURIComponent(
+                        `Hi, this is your RouteX passenger for booking BK-${String(activeTrip.id).padStart(4, "0")}.`
+                      )}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center rounded-[14px] bg-[#e7e9ee] py-3 text-[10px] font-extrabold text-[#ff6846] shadow-[3px_3px_7px_#c4c6ca,-3px_-3px_7px_#ffffff]"
+                  >
+                    Contact driver
+                  </a>
+                )}
+              </div>
+
+              {showLiveTrip &&
+                driverLocation &&
+                driverLocation.driver_lat &&
+                driverLocation.driver_lng &&
+                driverLocation.pickup_lat &&
+                driverLocation.pickup_lng && (
+                  <div className="mt-4 overflow-hidden rounded-[18px]">
+                    <DriverMap
+                      driverLat={Number(driverLocation.driver_lat)}
+                      driverLng={Number(driverLocation.driver_lng)}
+                      pickupLat={Number(driverLocation.pickup_lat)}
+                      pickupLng={Number(driverLocation.pickup_lng)}
+                      driverName={driverLocation.driver_name}
+                    />
+                  </div>
+                )}
+            </div>
+          </section>
+        )}
+
+        {otherTrips.length > 0 && (
+          <section className="mt-8">
+            <p className="text-[9px] font-extrabold uppercase tracking-[0.16em] text-[#8f9298]">
+              Other rides
+            </p>
+            <div className="mt-3 space-y-3">
+              {otherTrips.map((trip) => (
+                <div key={trip.id} className="rounded-[18px] bg-[#e7e9ee] px-4 py-4 shadow-[4px_4px_9px_#c4c6ca,-4px_-4px_9px_#ffffff]">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[9px] font-bold text-[#96999f]">
+                      BK-{String(trip.id).padStart(4, "0")}
+                    </span>
+                    <span className="text-[9px] font-extrabold text-[#777a81]">{trip.trip_status}</span>
+                  </div>
+                  <p className="mt-3 truncate text-[10px] font-bold">{trip.pickup_address}</p>
+                  <p className="mt-2 truncate text-[10px] font-bold">{trip.dropoff_address}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        <section className="mt-9">
+          <div>
+            <p className="text-[9px] font-extrabold uppercase tracking-[0.16em] text-[#8f9298]">
+              Your rides
+            </p>
+            <h3 className="mt-1 text-[20px] font-black tracking-[-0.035em]">
+              Ride history
+            </h3>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setShowCompletedTrips((current) => !current)}
+            className="mt-4 flex w-full items-center justify-between rounded-[19px] bg-[#e7e9ee] px-4 py-4 text-left shadow-[5px_5px_11px_#c4c6ca,-5px_-5px_11px_#ffffff] transition active:scale-[0.985]"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-[13px] bg-[#e7e9ee] text-[#ff6846] shadow-[inset_3px_3px_6px_#c4c6ca,inset_-3px_-3px_6px_#ffffff]">
+                <HistoryIcon />
+              </div>
+              <div>
+                <p className="text-[12px] font-extrabold">Completed trips</p>
+                <p className="mt-0.5 text-[9px] font-medium text-[#92959b]">
+                  View your previous RouteX rides
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="flex h-6 min-w-6 items-center justify-center rounded-full bg-[#ff6846] px-2 text-[9px] font-black text-white">
+                {completedTrips.length}
+              </div>
+              <div className={`transition-transform duration-200 ${showCompletedTrips ? "rotate-180" : ""}`}>
+                <ChevronIcon />
+              </div>
+            </div>
+          </button>
+
+          {showCompletedTrips && (
+            <div className="mt-4 space-y-3">
+              {completedTrips.length === 0 ? (
+                <div className="rounded-[18px] bg-[#e7e9ee] px-4 py-5 text-center shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff]">
+                  <p className="text-[11px] font-bold text-[#85888f]">No completed trips yet.</p>
+                </div>
+              ) : (
+                completedTrips.map((trip) => (
+                  <div key={trip.id} className="rounded-[18px] bg-[#e7e9ee] px-4 py-4 shadow-[4px_4px_9px_#c4c6ca,-4px_-4px_9px_#ffffff]">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[9px] font-bold text-[#96999f]">
+                        {trip.travel_date ? new Date(trip.travel_date).toLocaleDateString() : `BK-${String(trip.id).padStart(4, "0")}`}
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <CheckSmallIcon />
+                        <span className="text-[8px] font-extrabold text-[#777a81]">Completed</span>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 flex items-center">
+                      <div className="mr-3 flex w-3 shrink-0 flex-col items-center">
+                        <span className="h-2 w-2 rounded-full bg-[#17191f]" />
+                        <span className="my-1 h-4 border-l border-dashed border-[#b9bbc0]" />
+                        <span className="h-2 w-2 rounded-[2px] bg-[#ff6846]" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-[10px] font-bold">{trip.pickup_address}</p>
+                        <p className="mt-2 truncate text-[10px] font-bold">{trip.dropoff_address}</p>
+                      </div>
+                      <p className="ml-3 text-[11px] font-black">
+                        R{Number(trip.passenger_amount ?? trip.fare_amount ?? 0).toFixed(2)}
+                      </p>
+                    </div>
+
+                    {(trip.driver_name || trip.vehicle_type) && (
+                      <div className="mt-4 border-t border-[#d5d7dc] pt-3">
+                        <p className="text-[9px] font-extrabold text-[#777a81]">
+                          {trip.driver_name || "Driver"}
+                          {trip.vehicle_type ? ` • ${trip.vehicle_color || ""} ${trip.vehicle_type}` : ""}
+                        </p>
+                      </div>
+                    )}
+
+                    {!trip.has_reviewed && !reviewedTrips[trip.id] && (
+                      <div className="mt-4 rounded-[15px] bg-[#e7e9ee] p-3 shadow-[inset_3px_3px_6px_#c7c9ce,inset_-3px_-3px_6px_#ffffff]">
+                        <p className="text-[9px] font-extrabold uppercase tracking-[0.12em] text-[#ff6846]">
+                          Rate your driver
+                        </p>
+                        <div className="mt-2 flex items-center gap-1">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <button
+                              key={star}
+                              type="button"
+                              onClick={() =>
+                                setReviewRatings((prev) => ({ ...prev, [trip.id]: star }))
+                              }
+                              className={`text-[25px] leading-none ${
+                                (reviewRatings[trip.id] || 0) >= star
+                                  ? "text-[#ff6846]"
+                                  : "text-[#b9bbc0]"
+                              }`}
+                            >
+                              ★
+                            </button>
+                          ))}
+                        </div>
+                        <textarea
+                          value={reviewTexts[trip.id] || ""}
+                          onChange={(e) =>
+                            setReviewTexts((prev) => ({ ...prev, [trip.id]: e.target.value }))
+                          }
+                          placeholder="Tell us about your trip (optional)"
+                          rows={2}
+                          className="mt-3 w-full resize-none rounded-[12px] bg-[#e7e9ee] px-3 py-2.5 text-[10px] outline-none shadow-[inset_2px_2px_5px_#c7c9ce,inset_-2px_-2px_5px_#ffffff]"
+                        />
+                        <button
+                          type="button"
+                          disabled={submittingReview === trip.id || !reviewRatings[trip.id]}
+                          onClick={() => submitDriverReview(trip)}
+                          className="mt-3 w-full rounded-[12px] bg-[#ff6846] py-2.5 text-[9px] font-extrabold text-white disabled:opacity-40"
+                        >
+                          {submittingReview === trip.id ? "Submitting..." : "Submit review"}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+        </section>
+
+        <section className="mt-9 border-t border-[#d2d4d9] pt-5">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-[11px] font-extrabold">Need help with a ride?</p>
+              <p className="mt-1 text-[9px] font-medium text-[#92959b]">
+                RouteX support is here to help.
+              </p>
+            </div>
+            <a
+              href="https://wa.me/27799132513"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-[12px] bg-[#e7e9ee] px-4 py-2.5 text-[9px] font-extrabold text-[#ff6846] shadow-[3px_3px_7px_#c4c6ca,-3px_-3px_7px_#ffffff]"
+            >
+              Support
+            </a>
+          </div>
+        </section>
+
+        <footer className="mt-8 text-center">
+          <p className="text-[9px] font-semibold text-[#a0a3a9]">
+            RouteX • Getting Upington Moving
+          </p>
+        </footer>
+      </div>
+    </main>
+  );
+}
 
 
-      {/* =================================
-          FOOTER
-      ================================= */}
-      <footer
-        className="
-          mt-8
-          border-t
-          border-[#eeeeee]
-          pt-4
-          text-center
-        "
-      >
-        <p className="text-[11px] font-medium text-[#aaaaaa]">
-          RouteX • Getting Upington Moving
+/* =========================================================
+   ROUTE POINT
+========================================================= */
+
+function RoutePoint({
+  type,
+  label,
+  value,
+}: {
+  type: "pickup" | "destination";
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex items-center gap-3">
+
+      <span
+        className={`h-[11px] w-[11px] shrink-0 ${
+          type === "pickup"
+            ? "rounded-full bg-[#17191f]"
+            : "rounded-[3px] bg-[#ff6846]"
+        }`}
+      />
+
+      <div className="min-w-0">
+        <p className="text-[8px] font-extrabold uppercase tracking-[0.12em] text-[#9a9da3]">
+          {label}
         </p>
-      </footer>
+
+        <p className="mt-0.5 truncate text-[11px] font-extrabold">
+          {value}
+        </p>
+      </div>
 
     </div>
-  </main>
-);
+  );
+}
+
+
+function LocationIcon() {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.3"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z" />
+      <circle cx="12" cy="10" r="2.5" />
+    </svg>
+  );
+}
+
+function ArrowRightIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M5 12h14" />
+      <path d="m13 6 6 6-6 6" />
+    </svg>
+  );
+}
+
+function CameraIcon() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.3"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M14.5 4 16 7h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h3l1.5-3z" />
+      <circle cx="12" cy="13" r="3" />
+    </svg>
+  );
+}
+
+function HistoryIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M3 12a9 9 0 1 0 3-6.7" />
+      <path d="M3 4v6h6" />
+      <path d="M12 7v5l3 2" />
+    </svg>
+  );
+}
+
+function ChevronIcon() {
+  return (
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="text-[#85888f]"
+    >
+      <path d="m6 9 6 6 6-6" />
+    </svg>
+  );
+}
+
+function CheckSmallIcon() {
+  return (
+    <svg
+      width="11"
+      height="11"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="#ff6846"
+      strokeWidth="2.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="m5 12 4 4L19 6" />
+    </svg>
+  );
 }
