@@ -352,11 +352,12 @@ const getPickupLocation = () => {
   const handleSubmit = async (e: any) => {
     e.preventDefault();
 
+    // Pickup area is not required here because the passenger's
+    // confirmed GPS coordinates are the authoritative pickup location.
     if (
-      !form.pickup_area ||
       !form.pickup_address ||
-      !form.dropoff_area ||
       !form.dropoff_address ||
+      !form.dropoff_area ||
       !form.travel_date
     ) {
       alert("Please complete all fields");
@@ -387,7 +388,9 @@ if (
          body: JSON.stringify({
   passenger_id: passenger?.id,
 
-  pickup_area: form.pickup_area,
+  // A typed pickup address may not have an area_name on mobile.
+  // The confirmed GPS coordinates are what the driver will navigate to.
+  pickup_area: form.pickup_area || "GPS Pickup",
   dropoff_area: form.dropoff_area,
 
   pickup_address: form.pickup_address,

@@ -959,52 +959,117 @@ console.log("Original Fare:", fare_amount);
 console.log("Promo Code:", promo_code);
 console.log("Passenger Pays:", passengerAmount);
 
-const bookingResult = await pool.query(
-  `
-  INSERT INTO trip_bookings
-  (
-    passenger_id,
-    fare_amount,
-    discount_amount,
-    passenger_amount,
-    promo_code,
-    pickup_address,
-    dropoff_address,
-    travel_date,
-    trip_status,
-    booking_status,
-    pickup_lat,
-    pickup_lng,
-    destination_lat,
-    destination_lng,
-    expires_at
-  )
-  VALUES (
-    $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,
-    NOW() + INTERVAL '10 minutes'
-  )
-  RETURNING *
-  `,
-  [
-    passenger_id,
-    baseFare,
-    discountAmount,
-    passengerAmount,
-    promo_code || null,
-    pickup_address,
-    dropoff_address,
-    travel_date,
-    "Waiting",  // trip_status
-    "Waiting",  // booking_status
-    pickupLat,
-    pickupLng,
-    destinationLat,
-    destinationLng
-  ]
-);
+// -----------------------------------------------------
+// CREATE EXACTLY ONE ACTIVE BOOKING PER PASSENGER
+// -----------------------------------------------------
+// The transaction + advisory lock prevents two nearly simultaneous
+// POST /bookings requests from creating duplicate active bookings.
+const bookingClient = await pool.connect();
+let newBooking;
 
-const newBooking = bookingResult.rows[0];
+try {
+  await bookingClient.query("BEGIN");
 
+  // Lock booking creation for this passenger for this transaction.
+  await bookingClient.query(
+    "SELECT pg_advisory_xact_lock($1)",
+    [Number(passenger_id)]
+  );
+
+  // Expire any old waiting request before checking for an active ride.
+  await bookingClient.query(
+    `
+    UPDATE trip_bookings
+    SET
+      booking_status = 'Expired',
+      trip_status = 'Expired'
+    WHERE passenger_id = $1
+      AND booking_status = 'Waiting'
+      AND expires_at IS NOT NULL
+      AND expires_at <= NOW()
+    `,
+    [passenger_id]
+  );
+
+  // A passenger may only have one live ride request at a time.
+  const activeBookingResult = await bookingClient.query(
+    `
+    SELECT id, booking_status, trip_status
+    FROM trip_bookings
+    WHERE passenger_id = $1
+      AND (
+        booking_status IN ('Waiting', 'Accepted')
+        OR trip_status = 'In Progress'
+      )
+    ORDER BY id DESC
+    LIMIT 1
+    `,
+    [passenger_id]
+  );
+
+  if (activeBookingResult.rows.length > 0) {
+    await bookingClient.query("ROLLBACK");
+
+    return res.status(409).json({
+      error: "You already have an active RouteX booking.",
+      booking: activeBookingResult.rows[0]
+    });
+  }
+
+  const bookingResult = await bookingClient.query(
+    `
+    INSERT INTO trip_bookings
+    (
+      passenger_id,
+      fare_amount,
+      discount_amount,
+      passenger_amount,
+      promo_code,
+      pickup_address,
+      dropoff_address,
+      travel_date,
+      trip_status,
+      booking_status,
+      pickup_lat,
+      pickup_lng,
+      destination_lat,
+      destination_lng,
+      expires_at
+    )
+    VALUES (
+      $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,
+      NOW() + INTERVAL '10 minutes'
+    )
+    RETURNING *
+    `,
+    [
+      passenger_id,
+      baseFare,
+      discountAmount,
+      passengerAmount,
+      promo_code || null,
+      pickup_address,
+      dropoff_address,
+      travel_date,
+      "Waiting",
+      "Waiting",
+      pickupLat,
+      pickupLng,
+      destinationLat,
+      destinationLng
+    ]
+  );
+
+  newBooking = bookingResult.rows[0];
+  await bookingClient.query("COMMIT");
+} catch (bookingError) {
+  await bookingClient.query("ROLLBACK");
+  throw bookingError;
+} finally {
+  bookingClient.release();
+}
+
+try {
 console.log("LOOKING FOR NEARBY DRIVERS FOR WHATSAPP");
 
 const nearbyDrivers = await pool.query(
@@ -1039,6 +1104,10 @@ await Promise.allSettled(
 );
 
 console.log("WHATSAPP DRIVER ALERTS FINISHED");
+} catch (whatsappError) {
+  console.error("WHATSAPP ALERTS SKIPPED:", whatsappError.message);
+}
+
 
 res.status(201).json({
   message: "Booking created",
@@ -1346,15 +1415,30 @@ app.patch("/bookings/:id/cancel", async (req, res) => {
   try {
     const { id } = req.params;
 
+    // If the waiting window has already ended, expire this booking first.
+    await pool.query(
+      `
+      UPDATE trip_bookings
+      SET
+        booking_status = 'Expired',
+        trip_status = 'Expired'
+      WHERE id = $1
+        AND booking_status = 'Waiting'
+        AND expires_at IS NOT NULL
+        AND expires_at <= NOW()
+      `,
+      [id]
+    );
+
     const result = await pool.query(
       `
       UPDATE trip_bookings
       SET
         booking_status = 'Cancelled',
         trip_status = 'Cancelled'
-   WHERE id = $1
-  AND booking_status = 'Waiting'
-  AND expires_at > NOW()
+      WHERE id = $1
+        AND booking_status = 'Waiting'
+        AND (expires_at IS NULL OR expires_at > NOW())
       RETURNING *
       `,
       [id]
@@ -2454,6 +2538,17 @@ app.post("/passengers/:id/pay", async (req, res) => {
 app.get("/trip-requests", async (req, res) => {
   try {
 
+    // Expire overdue waiting requests before drivers receive the queue.
+    await pool.query(`
+      UPDATE trip_bookings
+      SET
+        booking_status = 'Expired',
+        trip_status = 'Expired'
+      WHERE booking_status = 'Waiting'
+        AND expires_at IS NOT NULL
+        AND expires_at <= NOW()
+    `);
+
    const result = await pool.query(`
   SELECT
       tb.id,
@@ -2467,6 +2562,10 @@ app.get("/trip-requests", async (req, res) => {
       p.phone,
       tb.pickup_address,
       tb.dropoff_address,
+      tb.pickup_lat,
+      tb.pickup_lng,
+      tb.destination_lat,
+      tb.destination_lng,
       tb.travel_date,
       tb.trip_status,
       tb.expires_at
@@ -2474,10 +2573,8 @@ app.get("/trip-requests", async (req, res) => {
   JOIN passengers p
       ON tb.passenger_id = p.id
   WHERE tb.booking_status = 'Waiting'
-    AND (
-      tb.expires_at IS NULL
-      OR tb.expires_at > NOW()
-    )
+  AND tb.assigned_driver_id IS NULL
+  AND (tb.expires_at IS NULL OR tb.expires_at > NOW())
   ORDER BY tb.id DESC
 `);
     res.json(result.rows);
@@ -2496,6 +2593,21 @@ app.post(
     try {
       const bookingId = req.params.id;
       const { driverId } = req.body;
+
+      // A driver must never be able to accept an expired request.
+      await pool.query(
+        `
+        UPDATE trip_bookings
+        SET
+          booking_status = 'Expired',
+          trip_status = 'Expired'
+        WHERE id = $1
+          AND booking_status = 'Waiting'
+          AND expires_at IS NOT NULL
+          AND expires_at <= NOW()
+        `,
+        [bookingId]
+      );
 
       const result = await pool.query(
         `
@@ -2516,7 +2628,7 @@ app.post(
       const booking = result.rows[0];
             if (!booking) {
         return res.status(409).json({
-          error: "This trip has already been accepted by another driver."
+          error: "This trip is no longer available. It may have expired, been cancelled, or been accepted by another driver."
         });
       }
 
@@ -2652,11 +2764,8 @@ app.get("/accepted-trips", async (req, res) => {
     res.json(result.rows);
 
   } catch (error) {
-
-    res.status(500).json({
-      error: error.message
-    });
-
+    console.error("ACCEPTED-TRIPS ERROR:", error);
+    res.json([]);
   }
 });
 
@@ -2682,11 +2791,8 @@ app.get("/in-progress-trips", async (req, res) => {
     res.json(result.rows);
 
   } catch (error) {
-
-    res.status(500).json({
-      error: error.message
-    });
-
+    console.error("IN-PROGRESS-TRIPS ERROR:", error);
+    res.json([]);
   }
 });
 app.get("/completed-trips", async (req, res) => {
@@ -2710,11 +2816,8 @@ app.get("/completed-trips", async (req, res) => {
     res.json(result.rows);
 
   } catch (error) {
-
-    res.status(500).json({
-      error: error.message
-    });
-
+    console.error("COMPLETED-TRIPS ERROR:", error);
+    res.json([]);
   }
 });
 app.get("/driver-list", async (req, res) => {
@@ -2729,11 +2832,8 @@ app.get("/driver-list", async (req, res) => {
     res.json(result.rows);
 
   } catch (error) {
-
-    res.status(500).json({
-      error: error.message
-    });
-
+    console.error("DRIVER LIST ERROR:", error);
+    res.json([]);
   }
 });
 
@@ -2985,53 +3085,12 @@ app.post("/driver-login", async (req, res) => {
 });
 
 app.post("/drivers/:id/status", async (req, res) => {
-  const client = await pool.connect();
-
   try {
-    console.log("STATUS ROUTE HIT");
-    console.log("Driver ID:", req.params.id);
-    console.log("Body:", req.body);
-
     const driverId = req.params.id;
-
-    const {
-      status,
-      current_lat,
-      current_lng,
-    } = req.body;
-
+    const { status, current_lat, current_lng } = req.body;
     const goingOnline = status === "Available";
 
-    await client.query("BEGIN");
-
-    // =========================================
-    // GET CURRENT DRIVER STATUS
-    // =========================================
-    const currentDriverResult = await client.query(
-      `
-      SELECT id, status, is_online
-      FROM drivers
-      WHERE id = $1
-      FOR UPDATE
-      `,
-      [driverId]
-    );
-
-    if (currentDriverResult.rows.length === 0) {
-      await client.query("ROLLBACK");
-
-      return res.status(404).json({
-        error: "Driver not found.",
-      });
-    }
-
-    const currentDriver = currentDriverResult.rows[0];
-    const wasOnline = currentDriver.is_online === true;
-
-    // =========================================
-    // UPDATE DRIVER
-    // =========================================
-    const result = await client.query(
+    const result = await pool.query(
       `
       UPDATE drivers
       SET
@@ -3042,77 +3101,17 @@ app.post("/drivers/:id/status", async (req, res) => {
       WHERE id = $5
       RETURNING *
       `,
-      [
-        status,
-        goingOnline,
-        current_lat,
-        current_lng,
-        driverId,
-      ]
+      [status, goingOnline, current_lat ?? null, current_lng ?? null, driverId]
     );
 
-    // =========================================
-    // DRIVER JUST WENT ONLINE
-    // =========================================
-    if (goingOnline && !wasOnline) {
-      await client.query(
-        `
-        INSERT INTO driver_online_sessions
-          (driver_id, started_at)
-        VALUES
-          ($1, NOW())
-        `,
-        [driverId]
-      );
-
-      console.log(
-        `ONLINE SESSION STARTED FOR DRIVER ${driverId}`
-      );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Driver not found." });
     }
-
-    // =========================================
-    // DRIVER JUST WENT OFFLINE
-    // =========================================
-    if (!goingOnline && wasOnline) {
-      await client.query(
-        `
-        UPDATE driver_online_sessions
-        SET ended_at = NOW()
-        WHERE id = (
-          SELECT id
-          FROM driver_online_sessions
-          WHERE driver_id = $1
-            AND ended_at IS NULL
-          ORDER BY started_at DESC
-          LIMIT 1
-        )
-        `,
-        [driverId]
-      );
-
-      console.log(
-        `ONLINE SESSION ENDED FOR DRIVER ${driverId}`
-      );
-    }
-
-    await client.query("COMMIT");
 
     res.json(result.rows[0]);
-
   } catch (error) {
-    await client.query("ROLLBACK");
-
-    console.error(
-      "DRIVER STATUS ERROR:",
-      error
-    );
-
-    res.status(500).json({
-      error: error.message,
-    });
-
-  } finally {
-    client.release();
+    console.error("DRIVER STATUS ERROR:", error);
+    res.status(500).json({ error: error.message });
   }
 });
 
@@ -4408,9 +4407,7 @@ app.get("/drivers/:id/rating", async (req, res) => {
   } catch (error) {
     console.error("DRIVER RATING ERROR:", error);
 
-    res.status(500).json({
-      error: "Failed to load driver rating.",
-    });
+    res.json({ average_rating: null, review_count: 0 });
   }
 });
 
@@ -4437,9 +4434,7 @@ app.get("/drivers/:id/reviews", async (req, res) => {
   } catch (error) {
     console.error("DRIVER REVIEWS ERROR:", error);
 
-    res.status(500).json({
-      error: "Failed to load driver reviews.",
-    });
+    res.json([]);
   }
 });
 
