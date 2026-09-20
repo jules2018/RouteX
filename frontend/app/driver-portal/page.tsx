@@ -633,28 +633,6 @@ const loadDriverReviews = async (driverId: number) => {
           </button>
         </section>
 
-        {/* HOME / RIDES / REVIEWS */}
-        <nav className="mt-7 grid grid-cols-3 gap-2 rounded-[18px] bg-[#e7e9ee] p-1.5 shadow-[inset_3px_3px_7px_#c5c7cc,inset_-3px_-3px_7px_#ffffff]">
-          {["Home", "Rides", "Reviews"].map((label, index) => (
-            <button
-              key={label}
-              type="button"
-              onClick={() => setActivePage(index)}
-              className={`rounded-[14px] py-3 text-[9px] font-black transition ${
-                activePage === index
-                  ? "bg-[#e7e9ee] text-[#17191f] shadow-[4px_4px_8px_#c5c7cc,-4px_-4px_8px_#ffffff]"
-                  : "text-[#92959b]"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </nav>
-
-        {/* HOME */}
-        {activePage === 0 && (
-          <>
-
         {/* CURRENT / IN-PROGRESS RIDES */}
         {myInProgressTrips.map((trip) => (
           <section key={trip.id} className="mt-8">
@@ -902,89 +880,6 @@ const loadDriverReviews = async (driverId: number) => {
           </section>
         )}
 
-          </>
-        )}
-
-        {/* RIDES */}
-        {activePage === 1 && (
-          <>
-            {/* ACTIVE / ACCEPTED RIDES */}
-            {myInProgressTrips.length === 0 && myAcceptedTrips.length === 0 && (
-              <section className="mt-8 rounded-[24px] bg-[#e7e9ee] p-5 text-center shadow-[inset_4px_4px_9px_#c5c7cc,inset_-4px_-4px_9px_#ffffff]">
-                <p className="text-[11px] font-black">No active rides</p>
-                <p className="mt-1 text-[8px] font-semibold text-[#96999f]">
-                  Accepted and in-progress rides will appear here.
-                </p>
-              </section>
-            )}
-
-            {myAcceptedTrips.map((trip) => (
-              <section key={`rides-accepted-${trip.id}`} className="mt-8">
-                <p className="text-[9px] font-extrabold uppercase tracking-[0.15em] text-[#ff6846]">
-                  Accepted
-                </p>
-                <h3 className="mt-1 text-[19px] font-black tracking-[-0.035em]">
-                  Collect passenger
-                </h3>
-                <div className="mt-4 rounded-[26px] bg-[#e7e9ee] p-5 shadow-[7px_7px_16px_#c3c5ca,-7px_-7px_16px_#ffffff]">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-[12px] font-black">{trip.full_name || "Passenger"}</p>
-                      <p className="mt-1 text-[9px] font-semibold text-[#91949a]">{trip.phone}</p>
-                    </div>
-                    <p className="text-[20px] font-black">R{trip.fare_amount}</p>
-                  </div>
-                  <RouteBox pickup={trip.pickup_address} destination={trip.dropoff_address} />
-                  <div className="mt-4 grid grid-cols-2 gap-3">
-                    <button
-                      type="button"
-                      onClick={() => openNavigation(trip.pickup_lat, trip.pickup_lng)}
-                      className="flex items-center justify-center gap-2 rounded-[15px] bg-[#e7e9ee] py-3.5 text-[9px] font-black shadow-[4px_4px_9px_#c4c6ca,-4px_-4px_9px_#ffffff]"
-                    >
-                      <NavigationIcon /> Navigate
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => startTrip(trip.id)}
-                      disabled={loadingAction === trip.id}
-                      className="rounded-[15px] bg-[#17191f] py-3.5 text-[10px] font-black text-white disabled:opacity-50"
-                    >
-                      {loadingAction === trip.id ? "Starting..." : "Start trip"}
-                    </button>
-                  </div>
-                </div>
-              </section>
-            ))}
-
-            {myInProgressTrips.map((trip) => (
-              <section key={`rides-progress-${trip.id}`} className="mt-8">
-                <p className="text-[9px] font-extrabold uppercase tracking-[0.15em] text-[#ff6846]">
-                  In progress
-                </p>
-                <h3 className="mt-1 text-[19px] font-black tracking-[-0.035em]">
-                  Current ride
-                </h3>
-                <div className="mt-4 rounded-[26px] bg-[#e7e9ee] p-5 shadow-[7px_7px_16px_#c3c5ca,-7px_-7px_16px_#ffffff]">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-[12px] font-black">{trip.full_name || "Passenger"}</p>
-                      <p className="mt-1 text-[9px] font-semibold text-[#91949a]">{trip.phone}</p>
-                    </div>
-                    <p className="text-[20px] font-black">R{trip.fare_amount}</p>
-                  </div>
-                  <RouteBox pickup={trip.pickup_address} destination={trip.dropoff_address} />
-                  <button
-                    type="button"
-                    onClick={() => completeTrip(trip.id)}
-                    disabled={loadingAction === trip.id}
-                    className="mt-4 w-full rounded-[17px] bg-[#ff6846] py-4 text-[11px] font-black text-white disabled:opacity-50"
-                  >
-                    {loadingAction === trip.id ? "Completing..." : "Complete trip"}
-                  </button>
-                </div>
-              </section>
-            ))}
-
         {/* RECENT TRIPS */}
         <section className="mt-9">
           <div className="flex w-full items-center justify-between rounded-[20px] bg-[#e7e9ee] px-4 py-4 shadow-[4px_4px_9px_#c4c6ca,-4px_-4px_9px_#ffffff]">
@@ -1014,32 +909,6 @@ const loadDriverReviews = async (driverId: number) => {
             )}
           </div>
         </section>
-
-          </>
-        )}
-
-        {/* REVIEWS PAGE */}
-        {activePage === 2 && (
-          <>
-            <section className="mt-8 rounded-[24px] bg-[#e7e9ee] p-5 shadow-[6px_6px_14px_#c4c6ca,-6px_-6px_14px_#ffffff]">
-              <p className="text-[9px] font-extrabold uppercase tracking-[0.13em] text-[#ff6846]">
-                Driver rating
-              </p>
-              <div className="mt-3 flex items-end gap-2">
-                <span className="text-[36px] font-black tracking-[-0.06em]">
-                  {driverRating.average_rating !== null
-                    ? driverRating.average_rating.toFixed(1)
-                    : "—"}
-                </span>
-                <div className="mb-1.5 flex items-center gap-1">
-                  <StarIcon />
-                  <span className="text-[9px] font-bold text-[#92959b]">
-                    {driverRating.review_count} review
-                    {driverRating.review_count === 1 ? "" : "s"}
-                  </span>
-                </div>
-              </div>
-            </section>
 
         {/* REVIEWS */}
         <section className="mt-9">
@@ -1090,9 +959,6 @@ const loadDriverReviews = async (driverId: number) => {
             )}
           </div>
         </section>
-
-          </>
-        )}
 
         <footer className="pt-10 text-center">
           <p className="text-[9px] font-semibold text-[#a0a3a9]">
