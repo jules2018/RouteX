@@ -997,10 +997,7 @@ try {
     SELECT id, booking_status, trip_status
     FROM trip_bookings
     WHERE passenger_id = $1
-      AND (
-        booking_status IN ('Waiting', 'Accepted')
-        OR trip_status = 'In Progress'
-      )
+      AND trip_status IN ('Waiting', 'Accepted', 'In Progress')
     ORDER BY id DESC
     LIMIT 1
     `,
@@ -2695,8 +2692,11 @@ app.post(
       await pool.query(
         `
         UPDATE trip_bookings
-        SET trip_status = 'In Progress'
+        SET
+          booking_status = 'In Progress',
+          trip_status = 'In Progress'
         WHERE id = $1
+          AND trip_status = 'Accepted'
         `,
         [bookingId]
       );
@@ -2724,8 +2724,11 @@ app.post(
       await pool.query(
         `
         UPDATE trip_bookings
-        SET trip_status = 'Completed'
+        SET
+          booking_status = 'Completed',
+          trip_status = 'Completed'
         WHERE id = $1
+          AND trip_status = 'In Progress'
         `,
         [bookingId]
       );
