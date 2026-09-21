@@ -87,6 +87,85 @@ if (whatsappPhone.startsWith("0")) {
   }
 }
 
+async function sendWhatsAppDriverApproved(
+  phone,
+  driverName,
+  setupLink
+) {
+  try {
+    let whatsappPhone = String(phone).replace(/\D/g, "");
+
+    if (whatsappPhone.startsWith("0")) {
+      whatsappPhone = "27" + whatsappPhone.substring(1);
+    }
+
+    const response = await fetch(
+      `https://graph.facebook.com/v25.0/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`,
+      {
+        method: "POST",
+
+        headers: {
+          Authorization: `Bearer ${process.env.WHATSAPP_ACCESS_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+
+        body: JSON.stringify({
+          messaging_product: "whatsapp",
+          to: whatsappPhone,
+          type: "template",
+
+          template: {
+            name: "routex_driver_approved",
+
+            language: {
+              code: "en",
+            },
+
+            components: [
+              {
+                type: "body",
+
+                parameters: [
+                  {
+                    type: "text",
+                    text: String(driverName),
+                  },
+                  {
+                    type: "text",
+                    text: String(setupLink),
+                  },
+                ],
+              },
+            ],
+          },
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    console.log(
+      "DRIVER APPROVAL WHATSAPP RESPONSE:",
+      data
+    );
+
+    if (!response.ok) {
+      console.error(
+        "DRIVER APPROVAL WHATSAPP ERROR:",
+        response.status,
+        data
+      );
+    }
+
+    return data;
+
+  } catch (error) {
+    console.error(
+      "DRIVER APPROVAL WHATSAPP SEND ERROR:",
+      error
+    );
+  }
+}
 const app = express();
 
 const supabase = createClient(
@@ -3756,8 +3835,26 @@ const setupExpires = new Date(
       [applicationId]
     );
 
-   const setupLink =
+  const setupLink =
   `https://routex-frontend.onrender.com/driver-set-password?token=${setupToken}`;
+
+// Send the approved driver their RouteX account setup link
+try {
+  await sendWhatsAppDriverApproved(
+    appData.phone,
+    appData.full_name,
+    setupLink
+  );
+
+  console.log(
+    `DRIVER APPROVAL WHATSAPP SENT TO: ${appData.full_name}`
+  );
+} catch (whatsappError) {
+  console.error(
+    "DRIVER APPROVAL WHATSAPP FAILED:",
+    whatsappError
+  );
+}
 
 res.json({
   message: "Application approved",
