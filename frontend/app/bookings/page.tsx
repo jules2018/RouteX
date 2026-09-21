@@ -373,7 +373,22 @@ if (
   );
   return;
 }
-    if (loading) return;
+
+// Never submit until a valid fare has been calculated
+const numericFare = Number(fare);
+
+if (
+  !fare ||
+  !Number.isFinite(numericFare) ||
+  numericFare <= 0
+) {
+  alert(
+    "Your fare is still being calculated. Please wait a moment and try again."
+  );
+  return;
+}
+
+if (loading) return;
 
     setLoading(true);
 
@@ -405,7 +420,7 @@ if (
   dropoff_lng: form.dropoff_lng,
 
   travel_date: form.travel_date,
-  fare_amount: fare,
+  fare_amount: numericFare,
   promo_code: promoCode,
 }),
         }

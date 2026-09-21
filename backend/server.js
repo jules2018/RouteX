@@ -969,6 +969,24 @@ console.log("FINAL DESTINATION GPS:", {
 
   const baseFare = Number(fare_amount);
 
+// SAFETY: Never create a free/invalid RouteX booking
+if (!Number.isFinite(baseFare) || baseFare <= 0) {
+  console.error("BOOKING BLOCKED - INVALID FARE:", {
+    passenger_id,
+    fare_amount,
+    pickup_address,
+    dropoff_address,
+    pickupLat,
+    pickupLng,
+    destinationLat,
+    destinationLng,
+  });
+
+  return res.status(400).json({
+    error: "We could not calculate the fare for this trip. Please select the destination again.",
+  });
+}
+
 let discountAmount = 0;
 
 if (
