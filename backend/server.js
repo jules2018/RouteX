@@ -1631,220 +1631,7 @@ app.get("/addresses/search", async (req, res) => {
       return res.json([]);
     }
 
-    // 1. Search RouteX's own address table first
-   const localResult = await pool.query(
-  `
-  SELECT
-    id,
-    address,
-    full_address,
-    area_name,
-    latitude,
-    longitude,
-    place_type
-  FROM public.addresses
-  WHERE
-    address ILIKE $1
-    OR full_address ILIKE $1
-  ORDER BY address
-  LIMIT 10
-  `,
-  [`%${query}%`]
-);
-
-   if (localResult.rows.length > 0) {
-
-  // First check whether any matching local result
-  // already has coordinates
-  const localWithCoordinates = localResult.rows.filter(
-    (item) =>
-      item.latitude !== null &&
-      item.longitude !== null
-  );
-
-  if (localWithCoordinates.length > 0) {
-    return res.json(
-      localWithCoordinates.map((item) => ({
-        address: item.address,
-        full_address:
-          item.full_address || item.address,
-        area_name: item.area_name,
-        place_type: item.place_type,
-        lat: Number(item.latitude),
-        lng: Number(item.longitude),
-        source: "local",
-      }))
-    );
-  }
-
-  // A local place was found, but it has no coordinates.
-  // Try to geocode its full physical address.
-  const place = localResult.rows.find(
-    (item) =>
-      item.full_address &&
-      (
-        item.latitude === null ||
-        item.longitude === null
-      )
-  );
-if (place) {
-  try {
-    const geocodeQueries = [
-      `${place.full_address}, South Africa`,
-      `${place.address}, ${place.area_name}, Upington, South Africa`,
-      `${place.address}, Upington, South Africa`,
-    ];
-
-    for (const geocodeQuery of geocodeQueries) {
-      const geocodeUrl =
-        `https://nominatim.openstreetmap.org/search` +
-        `?q=${encodeURIComponent(geocodeQuery)}` +
-        `&format=jsonv2` +
-        `&limit=1` +
-        `&countrycodes=za`;
-
-      const geocodeResponse = await fetch(
-        geocodeUrl,
-        {
-          headers: {
-            "User-Agent": "RouteX/1.0",
-            "Accept-Language": "en",
-          },
-        }
-      );
-
-      if (!geocodeResponse.ok) {
-        continue;
-      }
-
-      const geocodeData =
-        await geocodeResponse.json();
-
-      if (geocodeData.length === 0) {
-        continue;
-      }
-
-      const lat = Number(
-        geocodeData[0].lat
-      );
-
-      const lng = Number(
-        geocodeData[0].lon
-      );
-
-      await pool.query(
-        `
-        UPDATE public.addresses
-        SET
-          latitude = $1,
-          longitude = $2
-        WHERE id = $3
-        `,
-        [lat, lng, place.id]
-      );
-
-      console.log(
-        "GEOCODED LOCAL PLACE:",
-        place.address,
-        lat,
-        lng,
-        "USING:",
-        geocodeQuery
-      );
-
-      return res.json([
-        {
-          address: place.address,
-          full_address:
-            place.full_address ||
-            place.address,
-          area_name: place.area_name,
-          place_type: place.place_type,
-          lat,
-          lng,
-          source: "local-geocoded",
-        },
-      ]);
-    }
-
-    console.log(
-      "COULD NOT GEOCODE LOCAL PLACE:",
-      place.address
-    );
-
-    return res.json([
-  {
-    address: place.address,
-    full_address:
-      place.full_address ||
-      place.address,
-    area_name: place.area_name,
-    place_type: place.place_type,
-    lat: null,
-    lng: null,
-    source: "local-no-coordinates",
-  },
-]);
-
-  } catch (geocodeError) {
-    console.error(
-      "LOCAL PLACE GEOCODING FAILED:",
-      geocodeError.message
-    );
-  }
-}
-}
-
-    // 2. Only use OpenStreetMap if local database found nothing
-    const searchQuery = `${query}, Upington, South Africa`;
-
-    const url =
-      `https://nominatim.openstreetmap.org/search` +
-      `?q=${encodeURIComponent(searchQuery)}` +
-      `&format=jsonv2` +
-      `&addressdetails=1` +
-      `&limit=6` +
-      `&countrycodes=za`;
-
-    const response = await fetch(url, {
-      headers: {
-        "User-Agent": "RouteX/1.0",
-        "Accept-Language": "en",
-      },
-    });
-
-    // If Nominatim rate-limits us, don't crash the frontend
-    if (response.status === 429) {
-      console.log("Nominatim rate limited");
-      return res.json([]);
-    }
-
-    if (!response.ok) {
-      console.log(
-        "Nominatim search failed:",
-        response.status
-      );
-
-      return res.json([]);
-    }
-
-    const data = await response.json();
-
-    const results = await Promise.all(
-  data.map(async (item) => {
-    const address = item.address || {};
-
-    const areaName =
-      address.suburb ||
-      address.neighbourhood ||
-      address.residential ||
-      address.village ||
-      address.quarter ||
-      address.city_district ||
-      address.town ||
-      "";
-
-    let normalizedArea = areaName;
+    console.log("ADDRESS SEARCH:", query);
 
     const knownAreas = [
       "Augrabies Park",
@@ -1876,114 +1663,480 @@ if (place) {
       "Vaalkroek",
     ];
 
-    for (const knownArea of knownAreas) {
-      if (
-        item.display_name
-          .toLowerCase()
-          .includes(knownArea.toLowerCase())
-      ) {
-        normalizedArea = knownArea;
-        break;
+    // =====================================================
+    // 1. SEARCH ROUTEX LOCAL DATABASE FIRST
+    // =====================================================
+
+    const localResult = await pool.query(
+      `
+      SELECT
+        id,
+        address,
+        full_address,
+        area_name,
+        latitude,
+        longitude,
+        place_type
+      FROM public.addresses
+      WHERE
+        address ILIKE $1
+        OR full_address ILIKE $1
+      ORDER BY
+        CASE
+          WHEN LOWER(address) = LOWER($2) THEN 0
+          WHEN LOWER(address) LIKE LOWER($2 || '%') THEN 1
+          ELSE 2
+        END,
+        address
+      LIMIT 10
+      `,
+      [`%${query}%`, query]
+    );
+
+    // Return usable local matches immediately.
+    const localWithCoordinates = localResult.rows.filter(
+      (item) =>
+        item.latitude !== null &&
+        item.longitude !== null
+    );
+
+    if (localWithCoordinates.length > 0) {
+      console.log(
+        "LOCAL ADDRESS RESULTS:",
+        localWithCoordinates.length
+      );
+
+      return res.json(
+        localWithCoordinates.map((item) => ({
+          address: item.address,
+          full_address:
+            item.full_address || item.address,
+          area_name: item.area_name || "",
+          place_type: item.place_type,
+          lat: Number(item.latitude),
+          lng: Number(item.longitude),
+          source: "local",
+        }))
+      );
+    }
+
+    // =====================================================
+    // 2. TRY TO GEOCODE LOCAL MATCHES WITHOUT COORDINATES
+    // =====================================================
+
+    const localWithoutCoordinates =
+      localResult.rows.filter(
+        (item) =>
+          item.latitude === null ||
+          item.longitude === null
+      );
+
+    for (const place of localWithoutCoordinates) {
+      const geocodeQueries = [
+        place.full_address
+          ? `${place.full_address}, South Africa`
+          : null,
+
+        place.area_name
+          ? `${place.address}, ${place.area_name}, Upington, South Africa`
+          : null,
+
+        `${place.address}, Upington, South Africa`,
+      ].filter(Boolean);
+
+      for (const geocodeQuery of geocodeQueries) {
+        try {
+          const geocodeUrl =
+            `https://nominatim.openstreetmap.org/search` +
+            `?q=${encodeURIComponent(geocodeQuery)}` +
+            `&format=jsonv2` +
+            `&addressdetails=1` +
+            `&namedetails=1` +
+            `&limit=3` +
+            `&countrycodes=za`;
+
+          const geocodeResponse = await fetch(
+            geocodeUrl,
+            {
+              headers: {
+                "User-Agent": "RouteX/1.0",
+                "Accept-Language": "en",
+              },
+            }
+          );
+
+          if (!geocodeResponse.ok) {
+            continue;
+          }
+
+          const geocodeData =
+            await geocodeResponse.json();
+
+          if (!geocodeData.length) {
+            continue;
+          }
+
+          // Prefer a result that is actually around Upington.
+          const match =
+            geocodeData.find((item) =>
+              String(item.display_name || "")
+                .toLowerCase()
+                .includes("upington")
+            ) || geocodeData[0];
+
+          const lat = Number(match.lat);
+          const lng = Number(match.lon);
+
+          if (
+            !Number.isFinite(lat) ||
+            !Number.isFinite(lng)
+          ) {
+            continue;
+          }
+
+          await pool.query(
+            `
+            UPDATE public.addresses
+            SET
+              latitude = $1,
+              longitude = $2,
+              full_address = COALESCE(
+                NULLIF(full_address, ''),
+                $3
+              )
+            WHERE id = $4
+            `,
+            [
+              lat,
+              lng,
+              match.display_name,
+              place.id,
+            ]
+          );
+
+          console.log(
+            "GEOCODED LOCAL PLACE:",
+            place.address,
+            lat,
+            lng
+          );
+
+          return res.json([
+            {
+              address: place.address,
+              full_address:
+                place.full_address ||
+                match.display_name ||
+                place.address,
+              area_name: place.area_name || "",
+              place_type:
+                place.place_type ||
+                match.type ||
+                match.category ||
+                null,
+              lat,
+              lng,
+              source: "local-geocoded",
+            },
+          ]);
+        } catch (geocodeError) {
+          console.error(
+            "LOCAL GEOCODING ATTEMPT FAILED:",
+            geocodeError.message
+          );
+        }
       }
     }
 
-    const fullAddress = item.display_name.toLowerCase();
+    // IMPORTANT:
+    // If a local result exists but still has no coordinates,
+    // DO NOT return it.
+    // Continue to the wider OSM search.
 
-    if (
-      fullAddress.includes("extension 1") ||
-      fullAddress.includes("extension 2")
-    ) {
-      normalizedArea = "Rosedale";
+    // =====================================================
+    // 3. OPENSTREETMAP / NOMINATIM SEARCH
+    // =====================================================
+
+    const searchQueries = [
+      `${query}, Upington, South Africa`,
+      `${query}, Upington`,
+      `${query}, Northern Cape, South Africa`,
+      query,
+    ];
+
+    const allOsmResults = [];
+
+    for (const searchQuery of searchQueries) {
+      try {
+        console.log(
+          "OSM SEARCH:",
+          searchQuery
+        );
+
+        const url =
+          `https://nominatim.openstreetmap.org/search` +
+          `?q=${encodeURIComponent(searchQuery)}` +
+          `&format=jsonv2` +
+          `&addressdetails=1` +
+          `&namedetails=1` +
+          `&limit=8` +
+          `&countrycodes=za`;
+
+        const response = await fetch(url, {
+          headers: {
+            "User-Agent": "RouteX/1.0",
+            "Accept-Language": "en",
+          },
+        });
+
+        if (response.status === 429) {
+          console.log(
+            "Nominatim rate limited"
+          );
+
+          break;
+        }
+
+        if (!response.ok) {
+          console.log(
+            "Nominatim search failed:",
+            response.status
+          );
+
+          continue;
+        }
+
+        const data = await response.json();
+
+        for (const item of data) {
+          const displayName =
+            String(item.display_name || "");
+
+          // We only want results relevant to Upington.
+          if (
+            !displayName
+              .toLowerCase()
+              .includes("upington")
+          ) {
+            continue;
+          }
+
+          const duplicate =
+            allOsmResults.some(
+              (existing) =>
+                String(existing.osm_type) ===
+                  String(item.osm_type) &&
+                String(existing.osm_id) ===
+                  String(item.osm_id)
+            );
+
+          if (!duplicate) {
+            allOsmResults.push(item);
+          }
+        }
+
+        // Once we have enough useful results,
+        // don't keep hitting Nominatim.
+        if (allOsmResults.length >= 6) {
+          break;
+        }
+      } catch (searchError) {
+        console.error(
+          "OSM SEARCH ATTEMPT FAILED:",
+          searchError.message
+        );
+      }
     }
 
-    if (areaName === "Louisvale - Upington") {
-      normalizedArea = "Louisvale";
+    // =====================================================
+    // 4. FORMAT RESULTS
+    // =====================================================
+
+    const results = [];
+
+    for (const item of allOsmResults) {
+      const address = item.address || {};
+      const namedetails = item.namedetails || {};
+
+      let areaName =
+        address.suburb ||
+        address.neighbourhood ||
+        address.residential ||
+        address.village ||
+        address.quarter ||
+        address.city_district ||
+        address.town ||
+        "";
+
+      let normalizedArea = areaName;
+
+      for (const knownArea of knownAreas) {
+        if (
+          String(item.display_name || "")
+            .toLowerCase()
+            .includes(
+              knownArea.toLowerCase()
+            )
+        ) {
+          normalizedArea = knownArea;
+          break;
+        }
+      }
+
+      const fullAddress =
+        String(item.display_name || "")
+          .toLowerCase();
+
+      if (
+        fullAddress.includes("extension 1") ||
+        fullAddress.includes("extension 2")
+      ) {
+        normalizedArea = "Rosedale";
+      }
+
+      if (
+        areaName ===
+        "Louisvale - Upington"
+      ) {
+        normalizedArea = "Louisvale";
+      }
+
+      // Upington business/POI results do not
+      // always expose a suburb.
+      if (!normalizedArea) {
+        normalizedArea =
+          "Upington Central";
+      }
+
+      const street =
+        address.road ||
+        address.pedestrian ||
+        "";
+
+      const houseNumber =
+        address.house_number || "";
+
+      const streetAddress =
+        houseNumber && street
+          ? `${houseNumber} ${street}`
+          : street;
+
+      // Prefer actual POI/business names.
+      const placeName =
+        namedetails.name ||
+        namedetails["name:en"] ||
+        address.shop ||
+        address.amenity ||
+        address.office ||
+        address.tourism ||
+        address.healthcare ||
+        address.leisure ||
+        item.name ||
+        "";
+
+      let shortAddress =
+        placeName ||
+        streetAddress ||
+        query;
+
+      // If Nominatim doesn't expose item.name,
+      // display_name's first section is often
+      // the POI/business name.
+      if (
+        !placeName &&
+        item.display_name
+      ) {
+        const firstPart =
+          item.display_name
+            .split(",")[0]
+            .trim();
+
+        if (firstPart) {
+          shortAddress = firstPart;
+        }
+      }
+
+      const lat = Number(item.lat);
+      const lng = Number(item.lon);
+
+      if (
+        !Number.isFinite(lat) ||
+        !Number.isFinite(lng)
+      ) {
+        continue;
+      }
+
+      const result = {
+        address: shortAddress,
+        full_address:
+          item.display_name ||
+          shortAddress,
+        area_name: normalizedArea,
+        place_type:
+          item.type ||
+          item.category ||
+          null,
+        lat,
+        lng,
+        source: "osm",
+      };
+
+      results.push(result);
+
+      // ===================================================
+      // 5. CACHE RESULT IN ROUTEX DATABASE
+      // ===================================================
+
+      try {
+        await pool.query(
+          `
+          INSERT INTO public.addresses (
+            address,
+            full_address,
+            area_name,
+            latitude,
+            longitude,
+            place_type
+          )
+          VALUES (
+            $1,
+            $2,
+            $3,
+            $4,
+            $5,
+            $6
+          )
+          ON CONFLICT DO NOTHING
+          `,
+          [
+            result.address,
+            result.full_address,
+            result.area_name,
+            result.lat,
+            result.lng,
+            result.place_type,
+          ]
+        );
+      } catch (saveError) {
+        console.error(
+          "FAILED TO CACHE ADDRESS:",
+          saveError.message
+        );
+      }
     }
 
-   const street =
-  address.road ||
-  address.pedestrian ||
-  address.residential ||
-  "";
-
-const houseNumber =
-  address.house_number || "";
-
-// Named places such as Shoprite, KFC,
-// doctors, restaurants, hospitals, etc.
-const placeName =
-  item.name ||
-  address.amenity ||
-  address.shop ||
-  address.office ||
-  address.tourism ||
-  address.healthcare ||
-  address.leisure ||
-  "";
-
-// Normal street address
-const streetAddress = houseNumber
-  ? `${houseNumber} ${street}`.trim()
-  : street;
-
-// Prefer the place name when one exists.
-// Otherwise use the normal street address.
-const shortAddress =
-  placeName ||
-  streetAddress ||
-  query;
-
-// Save recognised places/addresses locally
-if (
-  shortAddress &&
-  normalizedArea &&
-  knownAreas.includes(normalizedArea)
-) {
-  try {
-    await pool.query(
-      `
- INSERT INTO public.addresses (
-  address,
-  full_address,
-  area_name,
-  latitude,
-  longitude,
-  place_type
-)
-VALUES ($1, $2, $3, $4, $5, $6)
-      ON CONFLICT DO NOTHING
-      `,
- [
-  shortAddress,
-  item.display_name,
-  normalizedArea,
-  Number(item.lat),
-  Number(item.lon),
-  item.type || item.category || null
-]
+    console.log(
+      "ADDRESS SEARCH RESULTS:",
+      query,
+      results.length
     );
-  } catch (saveError) {
-    console.error(
-      "FAILED TO SAVE ADDRESS:",
-      saveError.message
-    );
-  }
-}
 
-return {
-  address: shortAddress,
-  full_address: item.display_name,
-  area_name: normalizedArea,
-  lat: Number(item.lat),
-  lng: Number(item.lon),
-  source: "osm",
-}; 
-  })
-);
-
-    res.json(results);
+    return res.json(results.slice(0, 10));
   } catch (error) {
-    console.error("ADDRESS SEARCH ERROR:", error);
+    console.error(
+      "ADDRESS SEARCH ERROR:",
+      error
+    );
 
     res.status(500).json({
       error: error.message,
