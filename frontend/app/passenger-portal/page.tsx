@@ -147,7 +147,7 @@ export default function PassengerPortalPage() {
 
   const closeBookingSuccess = () => {
     setShowBookingSuccess(false);
-    router.replace("/passenger-portal-new");
+    router.replace("/passenger-portal");
   };
   /* =======================================================
      LOCAL PHOTO PREVIEW
