@@ -885,27 +885,66 @@ const {
   dropoff_lng,
 
   travel_date,
+  pickup_time,
+  ride_type = "now",
   fare_amount,
   promo_code
 } = req.body;
 
-// Passenger GPS is mandatory for every RouteX booking
+const isScheduledRide = ride_type === "scheduled";
+
+let scheduledPickupAt = null;
+let matchingOpensAt = null;
+
+if (isScheduledRide) {
+  if (!travel_date || !pickup_time) {
+    return res.status(400).json({
+      error: "Travel date and pickup time are required for a scheduled ride."
+    });
+  }
+
+  // RouteX operates in South Africa (UTC+2).
+  // Store the scheduled instant as timestamptz.
+  scheduledPickupAt = new Date(`${travel_date}T${pickup_time}:00+02:00`);
+
+  if (Number.isNaN(scheduledPickupAt.getTime())) {
+    return res.status(400).json({
+      error: "Invalid scheduled pickup date or time."
+    });
+  }
+
+  matchingOpensAt = new Date(
+    scheduledPickupAt.getTime() - 30 * 60 * 1000
+  );
+
+  if (scheduledPickupAt <= new Date()) {
+    return res.status(400).json({
+      error: "Scheduled pickup time must be in the future."
+    });
+  }
+}
+
+// Ride Now requires confirmed passenger GPS.
+// Scheduled rides use the selected pickup address coordinates instead.
 const pickupLatNumber = Number(pickup_lat);
 const pickupLngNumber = Number(pickup_lng);
 
 if (
-  pickup_lat == null ||
-  pickup_lng == null ||
-  !Number.isFinite(pickupLatNumber) ||
-  !Number.isFinite(pickupLngNumber) ||
-  pickupLatNumber < -90 ||
-  pickupLatNumber > 90 ||
-  pickupLngNumber < -180 ||
-  pickupLngNumber > 180
+  !isScheduledRide &&
+  (
+    pickup_lat == null ||
+    pickup_lng == null ||
+    !Number.isFinite(pickupLatNumber) ||
+    !Number.isFinite(pickupLngNumber) ||
+    pickupLatNumber < -90 ||
+    pickupLatNumber > 90 ||
+    pickupLngNumber < -180 ||
+    pickupLngNumber > 180
+  )
 ) {
   return res.status(400).json({
     error:
-      "A valid passenger GPS pickup location is required to create a booking.",
+      "A valid passenger GPS pickup location is required to create a Ride Now booking."
   });
 }
 
@@ -940,9 +979,37 @@ console.log(
   "Dropoff Lookup:",
   dropoffAreaResult.rows
 );
-// Passenger pickup must always use their confirmed GPS position
-const pickupLat = pickupLatNumber;
-const pickupLng = pickupLngNumber;
+// Ride Now uses confirmed passenger GPS.
+// Scheduled rides use the coordinates selected with the pickup address,
+// falling back to the pickup area's coordinates if necessary.
+const scheduledPickupLat =
+  pickup_lat != null && Number.isFinite(Number(pickup_lat))
+    ? Number(pickup_lat)
+    : Number(pickupAreaResult.rows[0]?.latitude);
+
+const scheduledPickupLng =
+  pickup_lng != null && Number.isFinite(Number(pickup_lng))
+    ? Number(pickup_lng)
+    : Number(pickupAreaResult.rows[0]?.longitude);
+
+const pickupLat = isScheduledRide
+  ? scheduledPickupLat
+  : pickupLatNumber;
+
+const pickupLng = isScheduledRide
+  ? scheduledPickupLng
+  : pickupLngNumber;
+
+if (
+  !Number.isFinite(pickupLat) ||
+  !Number.isFinite(pickupLng)
+) {
+  return res.status(400).json({
+    error: isScheduledRide
+      ? "The selected scheduled pickup address does not have valid coordinates."
+      : "A valid pickup location is required."
+  });
+}
 
 // Use the selected destination's coordinates when available.
 // Fall back to the area's coordinates if necessary.
@@ -968,24 +1035,6 @@ console.log("FINAL DESTINATION GPS:", {
 });
 
   const baseFare = Number(fare_amount);
-
-// SAFETY: Never create a free/invalid RouteX booking
-if (!Number.isFinite(baseFare) || baseFare <= 0) {
-  console.error("BOOKING BLOCKED - INVALID FARE:", {
-    passenger_id,
-    fare_amount,
-    pickup_address,
-    dropoff_address,
-    pickupLat,
-    pickupLng,
-    destinationLat,
-    destinationLng,
-  });
-
-  return res.status(400).json({
-    error: "We could not calculate the fare for this trip. Please select the destination again.",
-  });
-}
 
 let discountAmount = 0;
 
@@ -1089,11 +1138,54 @@ try {
   );
 
   // A passenger may only have one live ride request at a time.
-  const activeBookingResult = await bookingClient.query(
+  let activeBookingResult;
+
+if (isScheduledRide) {
+  // A current Ride Now must NOT prevent the passenger
+  // from booking a future scheduled ride.
+  //
+  // Only check for another future scheduled booking.
+  activeBookingResult = await bookingClient.query(
     `
-    SELECT id, booking_status, trip_status
+    SELECT
+      id,
+      booking_status,
+      trip_status,
+      ride_type,
+      scheduled_pickup_at
     FROM trip_bookings
     WHERE passenger_id = $1
+      AND ride_type = 'scheduled'
+      AND trip_status IN ('Scheduled', 'Waiting', 'Accepted', 'In Progress')
+    ORDER BY scheduled_pickup_at ASC
+    LIMIT 1
+    `,
+    [passenger_id]
+  );
+
+  if (activeBookingResult.rows.length > 0) {
+    await bookingClient.query("ROLLBACK");
+
+    return res.status(409).json({
+      error: "You already have an upcoming scheduled RouteX ride.",
+      booking: activeBookingResult.rows[0]
+    });
+  }
+
+} else {
+  // Ride Now:
+  // prevent multiple simultaneous immediate rides,
+  // but ignore future Scheduled rides.
+  activeBookingResult = await bookingClient.query(
+    `
+    SELECT
+      id,
+      booking_status,
+      trip_status,
+      ride_type
+    FROM trip_bookings
+    WHERE passenger_id = $1
+      AND COALESCE(ride_type, 'now') = 'now'
       AND trip_status IN ('Waiting', 'Accepted', 'In Progress')
     ORDER BY id DESC
     LIMIT 1
@@ -1105,36 +1197,39 @@ try {
     await bookingClient.query("ROLLBACK");
 
     return res.status(409).json({
-      error: "You already have an active RouteX booking.",
+      error: "You already have an active RouteX ride.",
       booking: activeBookingResult.rows[0]
     });
   }
-
+}
   const bookingResult = await bookingClient.query(
     `
-    INSERT INTO trip_bookings
-    (
-      passenger_id,
-      fare_amount,
-      discount_amount,
-      passenger_amount,
-      promo_code,
-      pickup_address,
-      dropoff_address,
-      travel_date,
-      trip_status,
-      booking_status,
-      pickup_lat,
-      pickup_lng,
-      destination_lat,
-      destination_lng,
-      expires_at
-    )
-    VALUES (
-      $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,
-      NOW() + INTERVAL '10 minutes'
-    )
-    RETURNING *
+      INSERT INTO trip_bookings
+      (
+        passenger_id,
+        fare_amount,
+        discount_amount,
+        passenger_amount,
+        promo_code,
+        pickup_address,
+        dropoff_address,
+        travel_date,
+        trip_status,
+        booking_status,
+        pickup_lat,
+        pickup_lng,
+        destination_lat,
+        destination_lng,
+        expires_at,
+        ride_type,
+        scheduled_pickup_at,
+        matching_opens_at
+      )
+      VALUES (
+        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,
+        $15,$16,$17,$18
+      )
+      RETURNING *
     `,
     [
       passenger_id,
@@ -1145,12 +1240,16 @@ try {
       pickup_address,
       dropoff_address,
       travel_date,
-      "Waiting",
-      "Waiting",
+      isScheduledRide ? "Scheduled" : "Waiting",
+      isScheduledRide ? "Scheduled" : "Waiting",
       pickupLat,
       pickupLng,
       destinationLat,
-      destinationLng
+      destinationLng,
+      isScheduledRide ? null : new Date(Date.now() + 10 * 60 * 1000),
+      isScheduledRide ? "scheduled" : "now",
+      isScheduledRide ? scheduledPickupAt : null,
+      isScheduledRide ? matchingOpensAt : null
     ]
   );
 
@@ -1163,6 +1262,7 @@ try {
   bookingClient.release();
 }
 
+if (!isScheduledRide) {
 try {
 console.log("LOOKING FOR NEARBY DRIVERS FOR WHATSAPP");
 
@@ -1201,6 +1301,7 @@ console.log("WHATSAPP DRIVER ALERTS FINISHED");
 } catch (whatsappError) {
   console.error("WHATSAPP ALERTS SKIPPED:", whatsappError.message);
 }
+}
 
 
 res.status(201).json({
@@ -1216,6 +1317,204 @@ res.status(201).json({
 
   }
 });
+
+
+
+
+/* =========================================================
+   SCHEDULED RIDES - PROTOTYPE
+   =========================================================
+   Scheduled -> Waiting 30 minutes before pickup.
+   Once released, the normal 10-minute Waiting window applies.
+========================================================= */
+
+async function releaseScheduledBookings() {
+  try {
+    // =====================================================
+    // 1. RELEASE SCHEDULED RIDES INTO DRIVER MATCHING
+    // =====================================================
+
+    const released = await pool.query(
+      `
+        UPDATE trip_bookings
+        SET
+          booking_status = 'Waiting',
+          trip_status = 'Waiting',
+          expires_at = LEAST(
+            scheduled_pickup_at,
+            NOW() + INTERVAL '10 minutes'
+          )
+        WHERE booking_status = 'Scheduled'
+          AND trip_status = 'Scheduled'
+          AND matching_opens_at IS NOT NULL
+          AND matching_opens_at <= NOW()
+          AND scheduled_pickup_at > NOW()
+        RETURNING *
+      `
+    );
+
+    if (released.rows.length > 0) {
+      console.log(
+        `RELEASED ${released.rows.length} SCHEDULED BOOKING(S) FOR DRIVER MATCHING`
+      );
+    }
+
+    // =====================================================
+    // 2. EXPIRE SCHEDULED RIDES WHOSE PICKUP TIME PASSED
+    // =====================================================
+
+    const missed = await pool.query(
+      `
+        UPDATE trip_bookings
+        SET
+          booking_status = 'Expired',
+          trip_status = 'Expired',
+          expires_at = NOW()
+        WHERE ride_type = 'scheduled'
+          AND scheduled_pickup_at IS NOT NULL
+          AND scheduled_pickup_at <= NOW()
+          AND booking_status IN ('Scheduled', 'Waiting')
+          AND trip_status IN ('Scheduled', 'Waiting')
+        RETURNING *
+      `
+    );
+
+    if (missed.rows.length > 0) {
+      console.log(
+        `EXPIRED ${missed.rows.length} MISSED SCHEDULED BOOKING(S)`
+      );
+    }
+
+    return released.rows;
+  } catch (error) {
+    console.error("SCHEDULED BOOKING RELEASE ERROR:", error);
+    throw error;
+  }
+}
+
+// Passenger scheduled rides.
+app.get("/passenger-scheduled-bookings/:passengerId", async (req, res) => {
+  try {
+    const { passengerId } = req.params;
+
+    await releaseScheduledBookings();
+
+    const result = await pool.query(
+      `
+        SELECT
+          tb.*,
+
+          d.full_name AS driver_name,
+          d.phone AS driver_phone,
+          d.vehicle_type,
+          d.vehicle_color,
+          d.license_plate,
+          d.profile_image AS driver_profile_image
+
+        FROM trip_bookings tb
+
+        LEFT JOIN drivers d
+          ON d.id = tb.assigned_driver_id
+
+        WHERE tb.passenger_id = $1
+          AND tb.ride_type = 'scheduled'
+          AND tb.trip_status IN (
+            'Scheduled',
+            'Waiting',
+            'Accepted',
+            'In Progress',
+            'Completed'
+          )
+
+        ORDER BY tb.scheduled_pickup_at ASC
+      `,
+      [passengerId]
+    );
+
+    res.json(result.rows);
+
+  } catch (error) {
+    console.error(
+      "PASSENGER SCHEDULED BOOKINGS ERROR:",
+      error
+    );
+
+    res.status(500).json({
+      error: "Failed to load scheduled bookings."
+    });
+  }
+});
+// Driver preview of future scheduled rides.
+// Scheduled rows are visible before matching opens, but are not yet acceptable.
+app.get("/scheduled-rides", async (req, res) => {
+  try {
+    await releaseScheduledBookings();
+
+    const result = await pool.query(
+      `
+       SELECT
+        tb.*,
+        p.full_name AS passenger_name,
+        p.phone AS passenger_phone,
+        p.profile_image AS passenger_profile_image
+      FROM trip_bookings tb
+        LEFT JOIN passengers p
+          ON p.id = tb.passenger_id
+        WHERE tb.ride_type = 'scheduled'
+          AND tb.trip_status IN ('Scheduled', 'Waiting')
+          AND tb.scheduled_pickup_at > NOW()
+        ORDER BY tb.scheduled_pickup_at ASC
+      `
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error("SCHEDULED RIDES ERROR:", error);
+    res.status(500).json({
+      error: "Failed to load scheduled rides."
+    });
+  }
+});
+
+// Scheduled rides can be cancelled while still Scheduled or Waiting.
+app.patch("/scheduled-bookings/:id/cancel", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await pool.query(
+      `
+        UPDATE trip_bookings
+        SET
+          booking_status = 'Cancelled',
+          trip_status = 'Cancelled',
+          expires_at = NULL
+        WHERE id = $1
+          AND ride_type = 'scheduled'
+          AND trip_status IN ('Scheduled', 'Waiting')
+          AND assigned_driver_id IS NULL
+        RETURNING *
+      `,
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(400).json({
+        error: "Scheduled booking cannot be cancelled."
+      });
+    }
+
+    res.json({
+      message: "Scheduled booking cancelled",
+      booking: result.rows[0]
+    });
+  } catch (error) {
+    console.error("CANCEL SCHEDULED BOOKING ERROR:", error);
+    res.status(500).json({
+      error: "Failed to cancel scheduled booking."
+    });
+  }
+});
+
 
 app.get("/test-route", (req, res) => {
   res.json({ message: "NEW CODE IS RUNNING" });
@@ -2807,6 +3106,7 @@ app.get("/trip-requests", async (req, res) => {
       tb.promo_code,
       p.full_name,
       p.phone,
+      p.profile_image AS passenger_profile_image,
       tb.pickup_address,
       tb.dropoff_address,
       tb.pickup_lat,
@@ -3000,11 +3300,14 @@ app.get("/accepted-trips", async (req, res) => {
   try {
 
    const result = await pool.query(`
-  SELECT
-    tb.*,
-    p.full_name,
-    p.phone,
-    d.full_name AS driver_name
+ SELECT
+  tb.*,
+  p.full_name,
+  p.phone,
+  p.full_name AS passenger_name,
+  p.phone AS passenger_phone,
+  p.profile_image AS passenger_profile_image,
+  d.full_name AS driver_name
   FROM trip_bookings tb
   JOIN passengers p
     ON tb.passenger_id = p.id
@@ -3027,10 +3330,13 @@ app.get("/in-progress-trips", async (req, res) => {
 
    const result = await pool.query(`
   SELECT
-    tb.*,
-    p.full_name,
-    p.phone,
-    d.full_name AS driver_name
+  tb.*,
+  p.full_name,
+  p.phone,
+  p.full_name AS passenger_name,
+  p.phone AS passenger_phone,
+  p.profile_image AS passenger_profile_image,
+  d.full_name AS driver_name
   FROM trip_bookings tb
   JOIN passengers p
     ON tb.passenger_id = p.id

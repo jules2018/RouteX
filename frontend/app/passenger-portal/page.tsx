@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
+import { useRouter, useSearchParams } from "next/navigation";
 import { API_URL } from "../lib/api";
 
 
@@ -69,6 +70,82 @@ export default function PassengerPortalPage() {
   const [driverLocation, setDriverLocation] = useState<any>(null);
   const [showCompletedTrips, setShowCompletedTrips] = useState(false);
   const [showLiveTrip, setShowLiveTrip] = useState(false);
+
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  type ScheduledRide = {
+    id: number;
+    pickup_address: string;
+    dropoff_address: string;
+    fare_amount: number | string;
+    scheduled_pickup_at: string;
+    matching_opens_at?: string | null;
+    booking_status: string;
+    trip_status?: string;
+    driver_name?: string | null;
+    driver_phone?: string | null;
+    driver_profile_image?: string | null;
+    vehicle_type?: string | null;
+    vehicle_color?: string | null;
+    license_plate?: string | null;
+  };
+
+  const [scheduledRides, setScheduledRides] = useState<ScheduledRide[]>([]);
+  const [scheduledLoading, setScheduledLoading] = useState(true);
+  const [cancellingRideId, setCancellingRideId] = useState<number | null>(null);
+
+  const loadScheduledRides = async (passengerId: number) => {
+    try {
+      const response = await fetch(
+        `${API_URL}/passenger-scheduled-bookings/${passengerId}`,
+        { cache: "no-store" }
+      );
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error || "Failed to load scheduled rides.");
+      }
+      setScheduledRides(Array.isArray(data) ? data : data.bookings || []);
+    } catch (error) {
+      console.error("SCHEDULED RIDES ERROR:", error);
+    } finally {
+      setScheduledLoading(false);
+    }
+  };
+
+  const cancelScheduledRide = async (rideId: number) => {
+    if (!window.confirm("Cancel this scheduled RouteX ride?")) return;
+    try {
+      setCancellingRideId(rideId);
+      const response = await fetch(
+        `${API_URL}/scheduled-bookings/${rideId}/cancel`,
+        { method: "PATCH" }
+      );
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error || "Could not cancel this ride.");
+      }
+      setScheduledRides((current) =>
+        current.filter((ride) => ride.id !== rideId)
+      );
+    } catch (error: any) {
+      console.error("CANCEL SCHEDULED RIDE ERROR:", error);
+      window.alert(error?.message || "Could not cancel this ride.");
+    } finally {
+      setCancellingRideId(null);
+    }
+  };
+
+  const bookingResult = searchParams.get("booking");
+  const [showBookingSuccess, setShowBookingSuccess] = useState(
+    bookingResult === "scheduled" || bookingResult === "requested"
+  );
+  const bookingWasScheduled = bookingResult === "scheduled";
+
+  const closeBookingSuccess = () => {
+    setShowBookingSuccess(false);
+    router.replace("/passenger-portal-new");
+  };
   /* =======================================================
      LOCAL PHOTO PREVIEW
   ======================================================= */
@@ -357,10 +434,12 @@ const submitDriverReview = async (trip: any) => {
       setPassenger(passengerData);
 
       loadTrips(passengerData.id);
+      loadScheduledRides(passengerData.id);
       loadOnlineDrivers();
 
       const interval = setInterval(() => {
         loadTrips(passengerData.id);
+        loadScheduledRides(passengerData.id);
         loadOnlineDrivers();
       }, 5000);
 
@@ -482,12 +561,20 @@ const profileImageUrl =
   const completedTrips = trips.filter(
     (trip) => normalizedStatus(trip) === "completed"
   );
+const upcomingScheduledRides = scheduledRides.filter((ride) => {
+  const status = String(
+    ride.trip_status || ride.booking_status || ""
+  )
+    .trim()
+    .toLowerCase();
 
+  return status === "scheduled" || status === "waiting";
+});
   const otherTrips = trips.filter((trip) => {
     const status = normalizedStatus(trip);
     return (
       status &&
-      !["waiting", "accepted", "in progress", "completed", "cancelled"].includes(status)
+      !["scheduled", "waiting", "accepted", "in progress", "completed", "cancelled"].includes(status)
     );
   });
 
@@ -499,6 +586,52 @@ const profileImageUrl =
 
   return (
     <main className="min-h-[100dvh] bg-[#e7e9ee] text-[#17191f]">
+      {showBookingSuccess && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/35 px-5 backdrop-blur-[3px]">
+          <div className="w-full max-w-[350px] rounded-[28px] bg-[#e7e9ee] p-6 text-[#17191f] shadow-[10px_10px_30px_rgba(0,0,0,0.25),-6px_-6px_18px_rgba(255,255,255,0.8)]">
+            <div className="flex justify-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#ff6846] text-white">
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="m5 12 4 4L19 6" />
+                </svg>
+              </div>
+            </div>
+            <div className="mt-5 text-center">
+              <p className="text-[9px] font-black uppercase tracking-[0.16em] text-[#ff6846]">RouteX</p>
+              <h2 className="mt-2 text-[24px] font-black tracking-[-0.045em]">
+                {bookingWasScheduled ? "Ride scheduled" : "Ride requested"}
+              </h2>
+              <p className="mx-auto mt-2 max-w-[260px] text-[11px] font-semibold leading-5 text-[#85888f]">
+                {bookingWasScheduled
+                  ? "Your ride is booked. RouteX will start matching you with a driver closer to your pickup time."
+                  : "Your request has been sent. Nearby RouteX drivers can now accept your ride."}
+              </p>
+            </div>
+            {bookingWasScheduled && (
+              <div className="mt-5 rounded-[18px] bg-[#e7e9ee] px-4 py-3 shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff]">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-[#17191f] text-[#ff6846]">
+                    <ClockIcon />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black">Scheduled</p>
+                    <p className="mt-0.5 text-[8px] font-semibold text-[#8d9097]">
+                      Driver matching opens closer to pickup time.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={closeBookingSuccess}
+              className="mt-6 flex w-full items-center justify-center rounded-[16px] bg-[#17191f] px-5 py-4 text-[12px] font-black text-white"
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      )}
       <div className="mx-auto w-full max-w-md px-5 pb-10">
 
         <header className="flex items-center justify-between pt-6">
@@ -771,6 +904,240 @@ const profileImageUrl =
           </section>
         )}
 
+        {/* =====================================================
+            SCHEDULED RIDE LIFECYCLE
+        ===================================================== */}
+        <section className="mt-8">
+          {(() => {
+         const liveScheduled = upcomingScheduledRides;
+
+            return (
+              <>
+                <div className="flex items-end justify-between gap-3">
+                  <div>
+                    <p className="text-[9px] font-extrabold uppercase tracking-[0.16em] text-[#ff6846]">
+                      {liveScheduled.some((ride) =>
+                        ["accepted", "in progress"].includes(
+                          String(ride.trip_status || ride.booking_status || "").trim().toLowerCase()
+                        )
+                      )
+                        ? "Active"
+                        : "Upcoming"}
+                    </p>
+                    <h3 className="mt-1 text-[20px] font-black tracking-[-0.035em]">
+                      {liveScheduled.some(
+                        (ride) =>
+                          String(ride.trip_status || ride.booking_status || "")
+                            .trim()
+                            .toLowerCase() === "in progress"
+                      )
+                        ? "Trip in progress"
+                        : liveScheduled.some(
+                            (ride) =>
+                              String(ride.trip_status || ride.booking_status || "")
+                                .trim()
+                                .toLowerCase() === "accepted"
+                          )
+                        ? "Driver assigned"
+                        : "Scheduled rides"}
+                    </h3>
+                  </div>
+
+                  {liveScheduled.length > 0 && (
+                    <span className="flex h-7 min-w-7 items-center justify-center rounded-full bg-[#17191f] px-2 text-[9px] font-black text-white">
+                      {liveScheduled.length}
+                    </span>
+                  )}
+                </div>
+
+                {scheduledLoading ? (
+                  <div className="mt-4 rounded-[21px] bg-[#e7e9ee] px-4 py-5 text-center shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff]">
+                    <p className="text-[10px] font-bold text-[#8d9097]">Loading ride...</p>
+                  </div>
+                ) : liveScheduled.length === 0 ? (
+                  <div className="mt-4 rounded-[21px] bg-[#e7e9ee] px-4 py-5 shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff]">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[13px] bg-[#17191f] text-[#ff6846]">
+                        <ClockIcon />
+                      </div>
+                      <div>
+                        <p className="text-[11px] font-extrabold">No active scheduled ride</p>
+                        <p className="mt-0.5 text-[9px] font-medium text-[#92959b]">
+                          Future bookings will appear here.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-4 space-y-4">
+                    {liveScheduled.map((ride) => {
+                      const state = String(
+                        ride.trip_status || ride.booking_status || "Scheduled"
+                      )
+                        .trim()
+                        .toLowerCase();
+
+                      const isScheduled = state === "scheduled";
+                      const isWaiting = state === "waiting";
+                      const isAccepted = state === "accepted";
+                      const isInProgress = state === "in progress";
+
+                      const pickupDate = new Date(ride.scheduled_pickup_at);
+                      const matchingDate = ride.matching_opens_at
+                        ? new Date(ride.matching_opens_at)
+                        : null;
+
+                      const dateText = pickupDate.toLocaleDateString("en-ZA", {
+                        weekday: "short",
+                        day: "numeric",
+                        month: "short",
+                      });
+
+                      const timeText = pickupDate.toLocaleTimeString("en-ZA", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        hour12: false,
+                      });
+
+                      const matchingText = matchingDate
+                        ? matchingDate.toLocaleTimeString("en-ZA", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            hour12: false,
+                          })
+                        : null;
+
+                      const statusLabel = isInProgress
+                        ? "In Progress"
+                        : isAccepted
+                        ? "Driver assigned"
+                        : isWaiting
+                        ? "Finding driver"
+                        : "Scheduled";
+
+                      return (
+                        <div
+                          key={ride.id}
+                          className="rounded-[23px] bg-[#e7e9ee] p-4 shadow-[6px_6px_14px_#c3c5ca,-6px_-6px_14px_#ffffff]"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex items-center gap-3">
+                              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-[#ff6846] text-white shadow-[3px_3px_7px_#c2c4c9,-3px_-3px_7px_#ffffff]">
+                                <ClockIcon />
+                              </div>
+                              <div>
+                                <p className="text-[9px] font-extrabold uppercase tracking-[0.12em] text-[#96999f]">
+                                  Pickup time
+                                </p>
+                                <p className="mt-1 text-[14px] font-black">
+                                  {dateText} · {timeText}
+                                </p>
+                              </div>
+                            </div>
+
+                            <span
+                              className={`rounded-full px-3 py-1.5 text-[8px] font-extrabold text-white ${
+                                isInProgress ? "bg-[#ff6846]" : "bg-[#17191f]"
+                              }`}
+                            >
+                              {statusLabel}
+                            </span>
+                          </div>
+
+                          <div className="mt-4 rounded-[17px] bg-[#e7e9ee] px-4 py-3.5 shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff]">
+                            <RoutePoint type="pickup" label="Pickup" value={ride.pickup_address} />
+                            <div className="ml-[5px] h-4 border-l border-dashed border-[#b5b8be]" />
+                            <RoutePoint
+                              type="destination"
+                              label="Destination"
+                              value={ride.dropoff_address}
+                            />
+                          </div>
+
+                          <div className="mt-4 flex items-center justify-between gap-3">
+                            <div>
+                              <p className="text-[8px] font-extrabold uppercase tracking-[0.12em] text-[#9a9da3]">
+                                Fare
+                              </p>
+                              <p className="mt-0.5 text-[16px] font-black">
+                                R{Number(ride.fare_amount || 0).toFixed(0)}
+                              </p>
+                            </div>
+
+                            {(isScheduled || isWaiting) && (
+                              <div className="max-w-[190px] text-right">
+                                <p className="text-[9px] font-bold text-[#85888f]">
+                                  {isWaiting
+                                    ? "RouteX is finding your driver."
+                                    : matchingText
+                                    ? `Driver matching opens at ${matchingText}`
+                                    : "Driver matching opens closer to pickup time."}
+                                </p>
+                              </div>
+                            )}
+
+                            {isInProgress && (
+                              <p className="max-w-[190px] text-right text-[9px] font-bold text-[#ff6846]">
+                                Your trip is underway.
+                              </p>
+                            )}
+                          </div>
+
+                          {(isAccepted || isInProgress) && ride.driver_name && (
+                            <div className="mt-4 flex items-center gap-3 rounded-[17px] bg-[#17191f] p-3 text-white">
+                              <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#2a2d34]">
+                                {ride.driver_profile_image ? (
+                                  <img
+                                    src={ride.driver_profile_image}
+                                    alt={ride.driver_name}
+                                    className="h-full w-full object-cover"
+                                  />
+                                ) : (
+                                  <span className="text-[15px] font-black text-[#ff6846]">
+                                    {ride.driver_name.charAt(0).toUpperCase()}
+                                  </span>
+                                )}
+                              </div>
+
+                              <div className="min-w-0 flex-1">
+                                <p className="text-[8px] font-bold uppercase tracking-[0.12em] text-[#ff6846]">
+                                  {isInProgress ? "Your driver" : "Driver assigned"}
+                                </p>
+                                <p className="mt-0.5 truncate text-[12px] font-black">
+                                  {ride.driver_name}
+                                </p>
+                                <p className="mt-0.5 truncate text-[9px] font-semibold text-white/65">
+                                  {[ride.vehicle_color, ride.vehicle_type, ride.license_plate]
+                                    .filter(Boolean)
+                                    .join(" · ")}
+                                </p>
+                              </div>
+                            </div>
+                          )}
+
+                          {(isScheduled || isWaiting) && (
+                            <button
+                              type="button"
+                              disabled={cancellingRideId === ride.id}
+                              onClick={() => cancelScheduledRide(ride.id)}
+                              className="mt-4 w-full rounded-[14px] bg-[#e7e9ee] py-3 text-[10px] font-extrabold text-[#ff6846] shadow-[3px_3px_7px_#c4c6ca,-3px_-3px_7px_#ffffff] transition active:scale-[0.98] disabled:opacity-50"
+                            >
+                              {cancellingRideId === ride.id
+                                ? "Cancelling..."
+                                : "Cancel scheduled ride"}
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            );
+          })()}
+        </section>
+
+
         {otherTrips.length > 0 && (
           <section className="mt-8">
             <p className="text-[9px] font-extrabold uppercase tracking-[0.16em] text-[#8f9298]">
@@ -1041,6 +1408,24 @@ function CameraIcon() {
     >
       <path d="M14.5 4 16 7h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h3l1.5-3z" />
       <circle cx="12" cy="13" r="3" />
+    </svg>
+  );
+}
+
+function ClockIcon() {
+  return (
+    <svg
+      width="17"
+      height="17"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.3"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" />
     </svg>
   );
 }

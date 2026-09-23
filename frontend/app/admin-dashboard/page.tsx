@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { API_URL } from "../lib/api";
+console.log("ADMIN API URL:", API_URL);
 
 type Stats = {
   passengers: number;
