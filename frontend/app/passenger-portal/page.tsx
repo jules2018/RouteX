@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { API_URL } from "../lib/api";
 
 
@@ -72,7 +72,7 @@ export default function PassengerPortalPage() {
   const [showLiveTrip, setShowLiveTrip] = useState(false);
 
   const router = useRouter();
-  const searchParams = useSearchParams();
+ 
 
   type ScheduledRide = {
     id: number;
@@ -136,7 +136,10 @@ export default function PassengerPortalPage() {
     }
   };
 
-  const bookingResult = searchParams.get("booking");
+  const bookingResult =
+  typeof window !== "undefined"
+    ? new URLSearchParams(window.location.search).get("booking")
+    : null;
   const [showBookingSuccess, setShowBookingSuccess] = useState(
     bookingResult === "scheduled" || bookingResult === "requested"
   );
