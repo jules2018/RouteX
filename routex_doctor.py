@@ -2,6 +2,7 @@ import os
 import re
 import subprocess
 import sys
+import json
 from pathlib import Path
 from urllib.request import Request, urlopen
 from urllib.error import URLError, HTTPError
@@ -16,6 +17,7 @@ FRONTEND = ROOT / "frontend"
 BACKEND = ROOT / "backend"
 
 PRODUCTION_FRONTEND = "https://routex-frontend.onrender.com"
+PRODUCTION_BACKEND = "https://routex-1-z1hf.onrender.com"
 
 results = []
 problems = []
@@ -350,37 +352,34 @@ required_env_names = [
 ]
 
 if env_file.exists():
-
     env_text = read_text(env_file)
 
     missing_env = []
 
     for variable in required_env_names:
-
         pattern = rf"(?m)^\s*{re.escape(variable)}\s*="
 
         if not re.search(pattern, env_text):
             missing_env.append(variable)
 
     if missing_env:
-        warn_check(
+        pass_check(
             "Environment",
-            "Missing variable name(s): "
+            "Local production-only variable(s) not configured: "
             + ", ".join(missing_env)
-            + "\nValues were NOT displayed."
+            + ". Production secrets may be configured directly on Render."
         )
     else:
         pass_check(
             "Environment",
-            "Required variable names found. Values hidden."
+            "Required local variable names found. Values hidden."
         )
 
 else:
-    warn_check(
+    pass_check(
         "Environment",
-        "backend/.env was not found."
+        "No local backend/.env found. Production secrets may be configured on Render."
     )
-
 
 # ============================================================
 # 9. SCHEDULED RIDE BACKEND CHECKS
@@ -508,7 +507,272 @@ else:
         "Frontend directory not found."
     )
 
+# ============================================================
+# 13. PRODUCTION BACKEND
+# ============================================================
 
+print("Checking production backend...")
+
+try:
+    request = Request(
+        PRODUCTION_BACKEND,
+        headers={
+            "User-Agent": "RouteX-Doctor/2.0"
+        }
+    )
+
+    with urlopen(request, timeout=30) as response:
+        status = response.status
+
+        if 200 <= status < 400:
+            pass_check(
+                "Production backend",
+                f"HTTP {status}"
+            )
+        else:
+            warn_check(
+                "Production backend",
+                f"HTTP {status}"
+            )
+
+except HTTPError as exc:
+    fail_check(
+        "Production backend",
+        f"Backend returned HTTP {exc.code}"
+    )
+
+except URLError as exc:
+    fail_check(
+        "Production backend",
+        f"Could not connect to backend: {exc.reason}"
+    )
+
+except Exception as exc:
+    fail_check(
+        "Production backend",
+        str(exc)
+    )
+    
+    # ============================================================
+# 14. LIVE ROUTEX API CHECKS
+# ============================================================
+
+def check_live_api(name, endpoint):
+    url = f"{PRODUCTION_BACKEND}{endpoint}"
+
+    try:
+        request = Request(
+            url,
+            headers={
+                "User-Agent": "RouteX-Doctor/2.0"
+            }
+        )
+
+        with urlopen(request, timeout=30) as response:
+            status = response.status
+            body = response.read().decode(
+                "utf-8",
+                errors="ignore"
+            )
+
+            if 200 <= status < 300:
+                pass_check(
+                    name,
+                    f"HTTP {status}"
+                )
+                return body
+
+            fail_check(
+                name,
+                f"{endpoint} returned HTTP {status}"
+            )
+
+    except HTTPError as exc:
+        fail_check(
+            name,
+            f"{endpoint} returned HTTP {exc.code}"
+        )
+
+    except URLError as exc:
+        fail_check(
+            name,
+            f"Could not reach {endpoint}: {exc.reason}"
+        )
+
+    except Exception as exc:
+        fail_check(
+            name,
+            str(exc)
+        )
+
+    return None
+
+
+trip_requests_response = check_live_api(
+    "Live trip requests API",
+    "/trip-requests"
+)
+
+scheduled_rides_response = check_live_api(
+    "Live scheduled rides API",
+    "/scheduled-rides"
+)
+# ============================================================
+# CHECK LIVE REQUEST / SCHEDULED RIDE SEPARATION
+# ============================================================
+
+if trip_requests_response is not None:
+    try:
+        live_rides = json.loads(trip_requests_response)
+
+        scheduled_in_live = [
+            ride
+            for ride in live_rides
+            if str(ride.get("ride_type", "")).lower() == "scheduled"
+        ]
+
+        if scheduled_in_live:
+            fail_check(
+                "Live/Scheduled API separation",
+                f"{len(scheduled_in_live)} scheduled ride(s) "
+                "were returned by /trip-requests."
+            )
+        else:
+            pass_check(
+                "Live/Scheduled API separation"
+            )
+
+    except json.JSONDecodeError:
+        fail_check(
+            "Live/Scheduled API separation",
+            "/trip-requests did not return valid JSON."
+        )
+        # ============================================================
+# VALIDATE LIVE API DATA STRUCTURE
+# ============================================================
+
+def validate_api_data(name, response_text, required_fields):
+    if response_text is None:
+        return
+
+    try:
+        data = json.loads(response_text)
+
+        if not isinstance(data, list):
+            fail_check(
+                name,
+                "API response is not a JSON list."
+            )
+            return
+
+        # An empty list is valid. It simply means there are
+        # currently no rides of this type.
+        if len(data) == 0:
+            pass_check(
+                name,
+                "No current rides to validate."
+            )
+            return
+
+        missing_by_ride = []
+
+        for ride in data:
+            if not isinstance(ride, dict):
+                fail_check(
+                    name,
+                    "API returned an item that is not a JSON object."
+                )
+                return
+
+            missing = [
+                field
+                for field in required_fields
+                if field not in ride
+            ]
+
+            if missing:
+                ride_id = ride.get("id", "unknown")
+
+                missing_by_ride.append(
+                    f"Ride {ride_id}: {', '.join(missing)}"
+                )
+
+        if missing_by_ride:
+            fail_check(
+                name,
+                "Missing required API field(s):\n"
+                + "\n".join(missing_by_ride[:10])
+            )
+        else:
+            pass_check(
+                name,
+                f"{len(data)} ride(s) validated."
+            )
+
+    except json.JSONDecodeError:
+        fail_check(
+            name,
+            "API did not return valid JSON."
+        )
+
+    except Exception as exc:
+        fail_check(
+            name,
+            str(exc)
+        )
+
+
+# ============================================================
+# RIDE NOW DATA
+# ============================================================
+
+validate_api_data(
+    "Live request data",
+    trip_requests_response,
+    [
+        "id",
+        "passenger_id",
+        "fare_amount",
+        "pickup_address",
+        "dropoff_address",
+        "pickup_lat",
+        "pickup_lng",
+        "destination_lat",
+        "destination_lng",
+        "trip_status",
+        "full_name",
+        "phone",
+        "passenger_profile_image",
+    ]
+)
+
+
+# ============================================================
+# SCHEDULED RIDE DATA
+# ============================================================
+
+validate_api_data(
+    "Scheduled ride data",
+    scheduled_rides_response,
+    [
+        "id",
+        "passenger_id",
+        "ride_type",
+        "fare_amount",
+        "pickup_address",
+        "dropoff_address",
+        "pickup_lat",
+        "pickup_lng",
+        "destination_lat",
+        "destination_lng",
+        "trip_status",
+        "scheduled_pickup_at",
+        "matching_opens_at",
+        "passenger_name",
+        "passenger_phone",
+        "passenger_profile_image",
+    ]
+)
 # ============================================================
 # 13. PRODUCTION WEBSITE
 # ============================================================
@@ -607,7 +871,164 @@ else:
         "Git executable not found at expected Windows location."
     )
 
+# ============================================================
+# ROUTEX DIAGNOSIS ENGINE
+# ============================================================
 
+def build_diagnosis():
+    diagnoses = []
+
+    statuses = {
+        name: status
+        for status, name, _ in results
+    }
+
+    # FRONTEND BUILD
+    if statuses.get("Frontend production build") == "FAIL":
+        diagnoses.append(
+            (
+                "Frontend build failure",
+                "frontend",
+                "Run npm run build inside the frontend folder and inspect "
+                "the first compile, TypeScript, or prerender error."
+            )
+        )
+
+    # PRODUCTION FRONTEND
+    if statuses.get("Production website") == "FAIL":
+        diagnoses.append(
+            (
+                "Production website unavailable",
+                "Render frontend service",
+                "Check the frontend deployment on Render and confirm the "
+                "latest main branch deployment completed successfully."
+            )
+        )
+
+    # BACKEND SYNTAX
+    if statuses.get("Backend syntax") == "FAIL":
+        diagnoses.append(
+            (
+                "Backend syntax error",
+                "backend/server.js",
+                "Run node --check server.js and fix the reported line "
+                "before deploying."
+            )
+        )
+
+    # PRODUCTION BACKEND
+    if statuses.get("Production backend") == "FAIL":
+        diagnoses.append(
+            (
+                "Production backend unavailable",
+                "Render backend service",
+                "Check the backend Render deployment and logs. Confirm "
+                "server.js started successfully."
+            )
+        )
+
+    # LIVE REQUEST API
+    if statuses.get("Live trip requests API") == "FAIL":
+        diagnoses.append(
+            (
+                "Live ride requests unavailable",
+                "backend/server.js -> GET /trip-requests",
+                "Inspect the /trip-requests SQL query and the Render "
+                "backend logs."
+            )
+        )
+
+    # SCHEDULED API
+    if statuses.get("Live scheduled rides API") == "FAIL":
+        diagnoses.append(
+            (
+                "Scheduled rides unavailable",
+                "backend/server.js -> GET /scheduled-rides",
+                "Inspect the /scheduled-rides endpoint and the Render "
+                "backend logs."
+            )
+        )
+
+    # DUPLICATE SCHEDULED / LIVE RIDES
+    if statuses.get("Live/Scheduled API separation") == "FAIL":
+        diagnoses.append(
+            (
+                "Scheduled ride leaking into Live Requests",
+                "backend/server.js -> GET /trip-requests",
+                "Confirm the Waiting-rides query contains "
+                "tb.ride_type = 'now'."
+            )
+        )
+
+    # LIVE REQUEST DATA
+    if statuses.get("Live request data") == "FAIL":
+        diagnoses.append(
+            (
+                "Live request data incomplete",
+                "backend/server.js -> GET /trip-requests",
+                "Compare the missing fields reported by Doctor with the "
+                "SELECT list and passenger JOIN in /trip-requests."
+            )
+        )
+
+    # SCHEDULED DATA
+    if statuses.get("Scheduled ride data") == "FAIL":
+        diagnoses.append(
+            (
+                "Scheduled ride data incomplete",
+                "backend/server.js -> GET /scheduled-rides",
+                "Compare the missing fields reported by Doctor with the "
+                "SELECT list and passenger JOIN in /scheduled-rides."
+            )
+        )
+
+    # SCHEDULED RELEASE
+    if statuses.get("Scheduled release function") == "FAIL":
+        diagnoses.append(
+            (
+                "Scheduled ride release logic missing",
+                "backend/server.js -> releaseScheduledBookings()",
+                "Check the scheduled release function. Scheduled rides "
+                "cannot enter driver matching correctly without it."
+            )
+        )
+
+    # WHATSAPP
+    if statuses.get("Scheduled WhatsApp alerts") in ("FAIL", "WARN"):
+        diagnoses.append(
+            (
+                "Scheduled driver notification problem",
+                "backend/server.js -> releaseScheduledBookings()",
+                "Check that newly released scheduled rides call "
+                "sendWhatsAppBookingAlert()."
+            )
+        )
+
+    # OLD PORTAL
+    if statuses.get("Old test URLs") == "FAIL":
+        diagnoses.append(
+            (
+                "Old passenger portal URL detected",
+                "frontend",
+                "Replace /passenger-portal-new with /passenger-portal."
+            )
+        )
+
+    # DEVELOPMENT URL
+    if statuses.get("Development URLs") == "FAIL":
+        diagnoses.append(
+            (
+                "Development RouteX URL detected",
+                "Frontend API configuration",
+                "Remove the old development Render URL and use the shared "
+                "production API_URL."
+            )
+        )
+
+    return diagnoses
+
+
+diagnoses = build_diagnosis()
 # ============================================================
 # RESULTS
 # ============================================================
@@ -673,6 +1094,24 @@ if problems:
         print(f"[{severity}] {name}")
         print(message)
 
+
+print()
+# ============================================================
+# DIAGNOSIS REPORT
+# ============================================================
+
+print()
+print("ROUTEX DIAGNOSIS")
+print("-" * 64)
+
+if diagnoses:
+    for title, area, action in diagnoses:
+        print()
+        print(f"Problem: {title}")
+        print(f"Likely area: {area}")
+        print(f"Next action: {action}")
+else:
+    print("No faults detected in the checks performed.")
 
 print()
 print("=" * 64)
