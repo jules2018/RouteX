@@ -4330,6 +4330,9 @@ const setupExpires = new Date(
     vehicle_color,
     license_plate,
     referral_code,
+    profile_image,
+    residential_address,
+    id_passport_number,
     password_setup_token,
     password_setup_expires
   )
@@ -4345,7 +4348,10 @@ const setupExpires = new Date(
     $5,
     $6,
     $7,
-    $8
+    $8,
+    $9,
+    $10,
+    $11
   )
   `,
   [
@@ -4355,6 +4361,9 @@ const setupExpires = new Date(
     appData.vehicle_color,
     appData.license_plate,
     appData.referral_code,
+    appData.profile_image,
+    appData.residential_address,
+    appData.id_passport_number,
     setupToken,
     setupExpires,
   ]
