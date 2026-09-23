@@ -291,8 +291,8 @@ useEffect(() => {
 
       window.location.href =
   rideType === "scheduled"
-    ? "/passenger-portal-new?booking=scheduled"
-    : "/passenger-portal-new?booking=requested";
+    ? "/passenger-portal?booking=scheduled"
+    : "/passenger-portal?booking=requested";
 
     } catch (error) {
       console.error("BOOKING ERROR:", error);
@@ -337,7 +337,7 @@ useEffect(() => {
         {/* HEADER */}
         <header className="flex items-center justify-between pt-6">
           <a
-            href="/passenger-portal-new"
+            href="/passenger-portal"
             className="
               flex h-10 w-10
               items-center justify-center
