@@ -1318,16 +1318,12 @@ res.status(201).json({
   }
 });
 
-
-
-
 /* =========================================================
    SCHEDULED RIDES - PROTOTYPE
    =========================================================
    Scheduled -> Waiting 30 minutes before pickup.
    Once released, the normal 10-minute Waiting window applies.
 ========================================================= */
-
 async function releaseScheduledBookings() {
   try {
     // =====================================================
@@ -1357,6 +1353,59 @@ async function releaseScheduledBookings() {
       console.log(
         `RELEASED ${released.rows.length} SCHEDULED BOOKING(S) FOR DRIVER MATCHING`
       );
+
+      // =====================================================
+      // SEND WHATSAPP ALERTS TO AVAILABLE DRIVERS
+      // =====================================================
+
+      try {
+        const availableDrivers = await pool.query(
+          `
+            SELECT
+              id,
+              full_name,
+              phone
+            FROM drivers
+            WHERE status = 'Available'
+              AND is_online = true
+              AND phone IS NOT NULL
+          `
+        );
+
+        console.log(
+          `FOUND ${availableDrivers.rows.length} AVAILABLE DRIVER(S) FOR SCHEDULED RIDES`
+        );
+
+        for (const ride of released.rows) {
+          console.log(
+            `SENDING SCHEDULED RIDE WHATSAPP ALERTS FOR BOOKING ${ride.id}`
+          );
+
+          await Promise.allSettled(
+            availableDrivers.rows.map((driver) => {
+              console.log(
+                `SENDING SCHEDULED RIDE WHATSAPP TO DRIVER: ${driver.full_name}`
+              );
+
+              return sendWhatsAppBookingAlert(
+                driver.phone,
+                ride.pickup_address || ride.pickup_area,
+                ride.dropoff_address || ride.dropoff_area,
+                Number(ride.fare_amount).toFixed(2)
+              );
+            })
+          );
+        }
+
+        console.log(
+          "SCHEDULED RIDE WHATSAPP DRIVER ALERTS FINISHED"
+        );
+      } catch (whatsappError) {
+        console.error(
+          "SCHEDULED RIDE WHATSAPP ALERTS SKIPPED:",
+          whatsappError.message
+        );
+      }
     }
 
     // =====================================================
@@ -1386,11 +1435,17 @@ async function releaseScheduledBookings() {
     }
 
     return released.rows;
+
   } catch (error) {
-    console.error("SCHEDULED BOOKING RELEASE ERROR:", error);
+    console.error(
+      "SCHEDULED BOOKING RELEASE ERROR:",
+      error
+    );
+
     throw error;
   }
 }
+
 
 // Passenger scheduled rides.
 app.get("/passenger-scheduled-bookings/:passengerId", async (req, res) => {
@@ -3119,9 +3174,10 @@ app.get("/trip-requests", async (req, res) => {
   FROM trip_bookings tb
   JOIN passengers p
       ON tb.passenger_id = p.id
-  WHERE tb.booking_status = 'Waiting'
-  AND tb.assigned_driver_id IS NULL
-  AND (tb.expires_at IS NULL OR tb.expires_at > NOW())
+ WHERE tb.booking_status = 'Waiting'
+AND tb.assigned_driver_id IS NULL
+AND tb.ride_type = 'now'
+AND (tb.expires_at IS NULL OR tb.expires_at > NOW())
   ORDER BY tb.id DESC
 `);
     res.json(result.rows);
