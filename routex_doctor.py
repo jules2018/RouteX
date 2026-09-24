@@ -1,3 +1,8 @@
+# ROUTEX DOCTOR COMPLETE SCRIPT - PART 1 OF 3
+# IMPORTANT: Do NOT run this part by itself.
+# Combine Parts 1, 2 and 3 in order into ONE file named routex_doctor.py.
+# Remove these three instruction lines after combining if you want.
+
 import os
 import re
 import subprocess
@@ -476,6 +481,11 @@ if release_position != -1:
 # ============================================================
 
 print("Running frontend production build...")
+# ROUTEX DOCTOR COMPLETE SCRIPT - PART 2 OF 3
+# IMPORTANT: Do NOT run this part by itself.
+# Combine Parts 1, 2 and 3 in order into ONE file named routex_doctor.py.
+# Remove these three instruction lines after combining if you want.
+
 print("This can take a little while.")
 print()
 
@@ -506,6 +516,235 @@ else:
         "Frontend production build",
         "Frontend directory not found."
     )
+
+
+# ============================================================
+# 12A. SCHEDULED-RIDE ARCHITECTURE CONTRACT
+# ============================================================
+
+passenger_portal_text = read_text(
+    FRONTEND / "app" / "passenger-portal" / "page.tsx"
+)
+driver_portal_text = read_text(
+    FRONTEND / "app" / "driver-portal" / "page.tsx"
+)
+
+def require_terms(name, source, terms, area, expected):
+    missing = [term for term in terms if term not in source]
+    if missing:
+        fail_check(
+            name,
+            f"Likely area: {area}\n"
+            f"Missing: {', '.join(missing)}\n"
+            f"Expected: {expected}"
+        )
+    else:
+        pass_check(name)
+
+# Passenger confirms exact GPS for scheduled pickup.
+has_confirmation_route = any(
+    term in server_text
+    for term in (
+        "pickup-location",
+        "confirm-pickup",
+        "pickup_location_confirmed",
+    )
+)
+
+if has_confirmation_route and "pickup_lat" in server_text and "pickup_lng" in server_text:
+    pass_check("Scheduled pickup GPS endpoint")
+else:
+    fail_check(
+        "Scheduled pickup GPS endpoint",
+        "Likely area: backend/server.js\n"
+        "Expected a scheduled pickup confirmation endpoint that stores "
+        "pickup_lat and pickup_lng. GPS confirmation is for navigation "
+        "and must not change the booked fare."
+    )
+
+require_terms(
+    "Passenger pickup GPS confirmation",
+    passenger_portal_text,
+    ["navigator.geolocation", "pickup_lat", "pickup_lng"],
+    "frontend/app/passenger-portal/page.tsx",
+    "Passenger confirms current physical pickup position for a scheduled ride."
+)
+
+require_terms(
+    "Driver scheduled GPS navigation",
+    driver_portal_text,
+    ["pickup_lat", "pickup_lng", "google.com/maps/dir"],
+    "frontend/app/driver-portal/page.tsx",
+    "Navigation must use passenger-confirmed GPS coordinates."
+)
+
+if (
+    "15 * 60 * 1000" in driver_portal_text
+    and "navigateOpensMs" in driver_portal_text
+    and "canNavigate" in driver_portal_text
+):
+    pass_check("Scheduled navigation 15-minute lock")
+else:
+    fail_check(
+        "Scheduled navigation 15-minute lock",
+        "Likely area: frontend/app/driver-portal/page.tsx\n"
+        "Navigation should unlock 15 minutes before scheduled_pickup_at."
+    )
+
+if (
+    "scheduled_pickup_at" in driver_portal_text
+    and "canStart" in driver_portal_text
+    and "startRide" in driver_portal_text
+):
+    pass_check("Scheduled Start Ride lock")
+else:
+    fail_check(
+        "Scheduled Start Ride lock",
+        "Likely area: frontend/app/driver-portal/page.tsx\n"
+        "Start Ride should remain disabled until scheduled_pickup_at."
+    )
+
+# Passenger scheduled endpoint must expose full assigned-driver details.
+pos = server_text.find('app.get("/passenger-scheduled-bookings/:passengerId"')
+if pos != -1:
+    section = server_text[pos:pos + 7000]
+    required = [
+        "driver_name", "driver_phone", "driver_profile_image",
+        "vehicle_type", "vehicle_color", "license_plate",
+        "assigned_driver_id",
+    ]
+    missing = [field for field in required if field not in section]
+    if missing:
+        fail_check(
+            "Scheduled driver details for passenger",
+            "Likely area: backend/server.js -> "
+            "GET /passenger-scheduled-bookings/:passengerId\n"
+            "Missing: " + ", ".join(missing) + "\n"
+            "Expected join: drivers.id = trip_bookings.assigned_driver_id"
+        )
+    else:
+        pass_check("Scheduled driver details for passenger")
+else:
+    fail_check(
+        "Scheduled driver details for passenger",
+        "GET /passenger-scheduled-bookings/:passengerId not found."
+    )
+
+require_terms(
+    "Passenger scheduled driver card",
+    passenger_portal_text,
+    [
+        "driver_name", "driver_phone", "driver_profile_image",
+        "vehicle_type", "vehicle_color", "license_plate", "tel:"
+    ],
+    "frontend/app/passenger-portal/page.tsx",
+    "Passenger sees assigned driver identity, vehicle details and Call action."
+)
+
+if (
+    "passenger_profile_image" in driver_portal_text
+    and "tel:" in driver_portal_text
+    and ("ride.phone" in driver_portal_text or "passenger_phone" in driver_portal_text)
+):
+    pass_check("Driver scheduled passenger card")
+else:
+    fail_check(
+        "Driver scheduled passenger card",
+        "Likely area: frontend/app/driver-portal/page.tsx\n"
+        "Accepted scheduled ride should show passenger details and Call action."
+    )
+
+# Start Ride must preserve assigned_driver_id.
+pos = server_text.find('"/trip-requests/:id/start"')
+if pos != -1:
+    section = server_text[pos:pos + 4500]
+    if "assigned_driver_id = $2" in section and "trip_status = 'In Progress'" in section:
+        pass_check("Assigned driver preserved on Start Ride")
+    else:
+        fail_check(
+            "Assigned driver preserved on Start Ride",
+            "Likely area: backend/server.js -> POST /trip-requests/:id/start\n"
+            "Start Ride should change status to In Progress while retaining "
+            "the same assigned_driver_id."
+        )
+else:
+    fail_check(
+        "Assigned driver preserved on Start Ride",
+        "POST /trip-requests/:id/start not found."
+    )
+
+# Driver data must remain consistent across lifecycle endpoints.
+driver_fields = [
+    "driver_name", "driver_phone", "driver_profile_image",
+    "vehicle_type", "vehicle_color", "license_plate",
+]
+
+for endpoint, name in [
+    ("/accepted-trips", "Accepted ride driver data"),
+    ("/in-progress-trips", "In Progress ride driver data"),
+    ("/completed-trips", "Completed ride driver data"),
+]:
+    pos = server_text.find(f'app.get("{endpoint}"')
+    if pos == -1:
+        fail_check(name, f"GET {endpoint} not found in backend/server.js.")
+        continue
+    section = server_text[pos:pos + 6000]
+    missing = [field for field in driver_fields if field not in section]
+    if missing:
+        fail_check(
+            name,
+            f"{endpoint} missing driver field(s): {', '.join(missing)}\n"
+            "Expected consistent driver data through "
+            "Accepted -> In Progress -> Completed."
+        )
+    else:
+        pass_check(name)
+
+# Fare protection: GPS confirmation should not visibly recalculate fare.
+confirmation_positions = [
+    p for p in (
+        server_text.find("pickup-location"),
+        server_text.find("confirm-pickup"),
+        server_text.find("pickup_location_confirmed"),
+    )
+    if p != -1
+]
+if confirmation_positions:
+    pos = min(confirmation_positions)
+    section = server_text[max(0, pos - 1000):pos + 4500]
+    suspicious = (
+        "fare_amount =" in section
+        or "driver_fare =" in section
+        or "base_fare =" in section
+    )
+    if suspicious:
+        warn_check(
+            "Scheduled GPS fare protection",
+            "Fare assignment found near pickup GPS confirmation. Review it: "
+            "confirmed GPS should improve navigation without changing the "
+            "passenger's booked fare."
+        )
+    else:
+        pass_check("Scheduled GPS fare protection")
+else:
+    warn_check(
+        "Scheduled GPS fare protection",
+        "Pickup confirmation section could not be identified for fare review."
+    )
+
+if (
+    "scheduledRides" in passenger_portal_text
+    and "rideNowTrips" in passenger_portal_text
+    and "scheduled_pickup_at" in passenger_portal_text
+):
+    pass_check("Passenger Ride Now / Scheduled separation")
+else:
+    warn_check(
+        "Passenger Ride Now / Scheduled separation",
+        "Could not verify separate Ride Now and scheduled collections in "
+        "passenger-portal/page.tsx."
+    )
+
 
 # ============================================================
 # 13. PRODUCTION BACKEND
@@ -725,6 +964,11 @@ def validate_api_data(name, response_text, required_fields):
 # ============================================================
 # RIDE NOW DATA
 # ============================================================
+# ROUTEX DOCTOR COMPLETE SCRIPT - PART 3 OF 3
+# IMPORTANT: Do NOT run this part by itself.
+# Combine Parts 1, 2 and 3 in order into ONE file named routex_doctor.py.
+# Remove these three instruction lines after combining if you want.
+
 
 validate_api_data(
     "Live request data",
@@ -1024,6 +1268,77 @@ def build_diagnosis():
                 "production API_URL."
             )
         )
+
+
+    scheduled_contract_diagnoses = {
+        "Scheduled pickup GPS endpoint": (
+            "Scheduled pickup GPS backend is incomplete",
+            "backend/server.js",
+            "Restore the pickup confirmation endpoint. Store pickup_lat/lng "
+            "for navigation without changing the booked fare."
+        ),
+        "Passenger pickup GPS confirmation": (
+            "Passenger scheduled GPS confirmation is incomplete",
+            "frontend/app/passenger-portal/page.tsx",
+            "Check browser geolocation and the request that sends confirmed "
+            "pickup coordinates to the backend."
+        ),
+        "Driver scheduled GPS navigation": (
+            "Driver navigation is not using confirmed pickup GPS",
+            "frontend/app/driver-portal/page.tsx",
+            "Navigate using ride.pickup_lat and ride.pickup_lng."
+        ),
+        "Scheduled navigation 15-minute lock": (
+            "Scheduled navigation timing is incorrect",
+            "frontend/app/driver-portal/page.tsx",
+            "Navigation must unlock 15 minutes before scheduled pickup."
+        ),
+        "Scheduled Start Ride lock": (
+            "Scheduled Start Ride timing is incorrect",
+            "frontend/app/driver-portal/page.tsx",
+            "Start Ride must unlock at scheduled_pickup_at."
+        ),
+        "Scheduled driver details for passenger": (
+            "Passenger is missing assigned-driver information",
+            "backend/server.js -> passenger scheduled bookings",
+            "Join drivers through assigned_driver_id and return the complete "
+            "driver data contract."
+        ),
+        "Passenger scheduled driver card": (
+            "Passenger driver card is incomplete",
+            "frontend/app/passenger-portal/page.tsx",
+            "Show driver photo, name, vehicle, registration, phone and Call."
+        ),
+        "Driver scheduled passenger card": (
+            "Driver passenger card is incomplete",
+            "frontend/app/driver-portal/page.tsx",
+            "Show passenger identity/contact details and Call."
+        ),
+        "Assigned driver preserved on Start Ride": (
+            "Driver assignment lifecycle is broken",
+            "backend/server.js -> Start Ride",
+            "Transition Accepted to In Progress without losing assigned_driver_id."
+        ),
+        "Accepted ride driver data": (
+            "Accepted API driver contract is incomplete",
+            "backend/server.js -> /accepted-trips",
+            "Return the complete driver fields."
+        ),
+        "In Progress ride driver data": (
+            "In Progress API driver contract is incomplete",
+            "backend/server.js -> /in-progress-trips",
+            "Return the same driver fields so details do not disappear."
+        ),
+        "Completed ride driver data": (
+            "Completed API driver contract is incomplete",
+            "backend/server.js -> /completed-trips",
+            "Keep driver fields consistent through Completed."
+        ),
+    }
+
+    for check_name, diagnosis in scheduled_contract_diagnoses.items():
+        if statuses.get(check_name) == "FAIL":
+            diagnoses.append(diagnosis)
 
     return diagnoses
 
