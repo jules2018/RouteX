@@ -2211,13 +2211,73 @@ app.get("/addresses/search", async (req, res) => {
     // 3. OPENSTREETMAP / NOMINATIM SEARCH
     // =====================================================
 
-    const searchQueries = [
-      `${query}, Upington, South Africa`,
-      `${query}, Upington`,
-      `${query}, Northern Cape, South Africa`,
-      query,
-    ];
+   // Remove a leading house number for fallback searching.
+// Examples:
+// "11B Schroder Street" -> "Schroder Street"
+// "06 Hantam Single"    -> "Hantam Single"
+// =====================================================
+// ADDRESS SEARCH FALLBACKS
+// =====================================================
 
+// Remove a leading house number.
+//
+// Examples:
+// "11B Schroder Street" -> "Schroder Street"
+// "06 Hantam Singel"    -> "Hantam Singel"
+const queryWithoutHouseNumber = query
+  .replace(/^\s*\d+[A-Za-z]?\s+/, "")
+  .trim();
+
+
+// -----------------------------------------------------
+// Afrikaans -> English street type fallback
+// -----------------------------------------------------
+//
+// This does NOT change what the passenger typed.
+// It is only used to help find coordinates.
+//
+// Examples:
+// Hantam Singel -> Hantam Crescent
+// Kerkstraat    -> Kerk Street
+// Parkweg       -> Park Road
+//
+let translatedStreetQuery = queryWithoutHouseNumber;
+
+translatedStreetQuery = translatedStreetQuery
+  .replace(/\bsingel\b/gi, "Crescent")
+  .replace(/\bstraat\b/gi, "Street")
+  .replace(/\bweg\b/gi, "Road")
+  .replace(/\blaan\b/gi, "Avenue")
+  .replace(/\brylaan\b/gi, "Drive");
+
+
+// Build our different search attempts
+const searchQueries = [
+  // 1. Exact address first
+  `${query}, Upington, South Africa`,
+  `${query}, Upington`,
+
+  // 2. Try without the house number
+  ...(queryWithoutHouseNumber !== query
+    ? [
+        `${queryWithoutHouseNumber}, Upington, South Africa`,
+        `${queryWithoutHouseNumber}, Upington`,
+      ]
+    : []),
+
+  // 3. Try English street terminology
+  ...(translatedStreetQuery.toLowerCase() !==
+  queryWithoutHouseNumber.toLowerCase()
+    ? [
+        `${translatedStreetQuery}, Upington, South Africa`,
+        `${translatedStreetQuery}, Upington`,
+      ]
+    : []),
+
+  // 4. Existing broader fallbacks
+  `${query}, Northern Cape, South Africa`,
+  query,
+];
     const allOsmResults = [];
 
     for (const searchQuery of searchQueries) {
@@ -2388,13 +2448,36 @@ app.get("/addresses/search", async (req, res) => {
         item.name ||
         "";
 
-      let shortAddress =
-        placeName ||
-        streetAddress ||
-        query;
+     let shortAddress =
+  placeName ||
+  streetAddress ||
+  query;
+
+// If we had to fall back by removing the house number,
+// keep the customer's original typed address.
+// Example:
+// Search coordinates using "Schroder Street"
+// Display/save "11B Schroder Street"
+// If RouteX had to use either:
+// - a house-number fallback, or
+// - an Afrikaans/English street-name fallback,
+// keep the passenger's original typed address.
+//
+// Example:
+// Passenger types: "06 Hantam Singel"
+// Coordinates found using: "Hantam Crescent"
+// Address saved/displayed: "06 Hantam Singel"
+
+if (
+  queryWithoutHouseNumber !== query ||
+  translatedStreetQuery.toLowerCase() !==
+    queryWithoutHouseNumber.toLowerCase()
+) {
+  shortAddress = query;
+}
 
       // If Nominatim doesn't expose item.name,
-      // display_name's first section is often
+      // display_name's first section is often`
       // the POI/business name.
       if (
         !placeName &&
