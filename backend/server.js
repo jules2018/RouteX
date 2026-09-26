@@ -1977,6 +1977,44 @@ app.get("/trips/:id/route-manifest", async (req, res) => {
 
   }
 });
+// =====================================================
+// GEOAPIFY ADDRESS AUTOCOMPLETE
+// =====================================================
+
+async function searchGeoapifyAddress(searchText) {
+  try {
+    const apiKey = process.env.GEOAPIFY_API_KEY;
+
+    if (!apiKey) {
+      console.log("GEOAPIFY_API_KEY NOT CONFIGURED");
+      return [];
+    }
+
+    const url =
+      "https://api.geoapify.com/v1/geocode/autocomplete" +
+      `?text=${encodeURIComponent(searchText)}` +
+      "&format=json" +
+      "&filter=countrycode:za" +
+      "&limit=6" +
+      `&apiKey=${encodeURIComponent(apiKey)}`;
+
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      console.log("GEOAPIFY ERROR:", response.status);
+      return [];
+    }
+
+    const data = await response.json();
+
+    return Array.isArray(data.results)
+      ? data.results
+      : [];
+  } catch (error) {
+    console.error("GEOAPIFY SEARCH FAILED:", error.message);
+    return [];
+  }
+}
 app.get("/addresses/search", async (req, res) => {
   try {
     const query = String(req.query.q || "").trim();
@@ -2074,6 +2112,146 @@ app.get("/addresses/search", async (req, res) => {
       );
     }
 
+    // =====================================================
+// GEOAPIFY FAST AUTOCOMPLETE
+// =====================================================
+
+// Remove leading house number for fallback searches.
+// "11B Schroder Street" -> "Schroder Street"
+// "06 Hantam Singel"    -> "Hantam Singel"
+const queryWithoutHouseNumber = query
+  .replace(/^\s*\d+[A-Za-z]?\s+/, "")
+  .trim();
+
+// Afrikaans -> English street terminology fallback.
+const translatedStreetQuery = queryWithoutHouseNumber
+  .replace(/\bsingel\b/gi, "Crescent")
+  .replace(/\bstraat\b/gi, "Street")
+  .replace(/\bweg\b/gi, "Road")
+  .replace(/\blaan\b/gi, "Avenue")
+  .replace(/\brylaan\b/gi, "Drive");
+
+
+// -----------------------------------------------------
+// First try exactly what the passenger entered
+// -----------------------------------------------------
+
+let geoResults = await searchGeoapifyAddress(
+  `${query}, Upington, South Africa`
+);
+
+
+// -----------------------------------------------------
+// Check whether Geoapify returned a useful location
+// Do NOT accept a city-only result.
+// -----------------------------------------------------
+
+let usefulGeoResults = geoResults.filter((item) => {
+  const lat = Number(item.lat);
+  const lng = Number(item.lon);
+
+  return (
+    Number.isFinite(lat) &&
+    Number.isFinite(lng) &&
+    item.city?.toLowerCase() === "upington" &&
+    !["city", "county", "state", "country"].includes(
+      String(item.result_type || "").toLowerCase()
+    )
+  );
+});
+
+
+// -----------------------------------------------------
+// If exact search failed, try our RouteX normalization.
+//
+// Example:
+// 06 Hantam Singel
+//        ↓
+// Hantam Crescent
+// -----------------------------------------------------
+
+if (
+  usefulGeoResults.length === 0 &&
+  translatedStreetQuery.toLowerCase() !==
+    queryWithoutHouseNumber.toLowerCase()
+) {
+  console.log(
+    "GEOAPIFY NORMALIZED FALLBACK:",
+    query,
+    "->",
+    translatedStreetQuery
+  );
+
+  geoResults = await searchGeoapifyAddress(
+    `${translatedStreetQuery}, Upington, South Africa`
+  );
+
+  usefulGeoResults = geoResults.filter((item) => {
+    const lat = Number(item.lat);
+    const lng = Number(item.lon);
+
+    return (
+      Number.isFinite(lat) &&
+      Number.isFinite(lng) &&
+      item.city?.toLowerCase() === "upington" &&
+      !["city", "county", "state", "country"].includes(
+        String(item.result_type || "").toLowerCase()
+      )
+    );
+  });
+}
+
+
+// -----------------------------------------------------
+// Return Geoapify suggestions immediately when useful.
+// -----------------------------------------------------
+
+if (usefulGeoResults.length > 0) {
+  const formattedGeoResults = usefulGeoResults
+    .slice(0, 6)
+    .map((item) => ({
+      // Keep what the passenger typed when we had
+      // to normalize the address.
+      address:
+        translatedStreetQuery.toLowerCase() !==
+        queryWithoutHouseNumber.toLowerCase()
+          ? query
+          : item.address_line1 || query,
+
+      full_address:
+        item.formatted ||
+        item.address_line1 ||
+        query,
+
+      area_name:
+        item.suburb ||
+        item.district ||
+        "",
+
+      place_type:
+        item.result_type ||
+        null,
+
+      lat: Number(item.lat),
+      lng: Number(item.lon),
+
+      source: "geoapify",
+
+      confidence:
+        item.rank?.confidence ?? null,
+
+      confidence_building:
+        item.rank?.confidence_building_level ?? null,
+    }));
+
+  console.log(
+    "GEOAPIFY RESULTS:",
+    query,
+    formattedGeoResults.length
+  );
+
+  return res.json(formattedGeoResults);
+}
     // =====================================================
     // 2. TRY TO GEOCODE LOCAL MATCHES WITHOUT COORDINATES
     // =====================================================
@@ -2218,38 +2396,6 @@ app.get("/addresses/search", async (req, res) => {
 // =====================================================
 // ADDRESS SEARCH FALLBACKS
 // =====================================================
-
-// Remove a leading house number.
-//
-// Examples:
-// "11B Schroder Street" -> "Schroder Street"
-// "06 Hantam Singel"    -> "Hantam Singel"
-const queryWithoutHouseNumber = query
-  .replace(/^\s*\d+[A-Za-z]?\s+/, "")
-  .trim();
-
-
-// -----------------------------------------------------
-// Afrikaans -> English street type fallback
-// -----------------------------------------------------
-//
-// This does NOT change what the passenger typed.
-// It is only used to help find coordinates.
-//
-// Examples:
-// Hantam Singel -> Hantam Crescent
-// Kerkstraat    -> Kerk Street
-// Parkweg       -> Park Road
-//
-let translatedStreetQuery = queryWithoutHouseNumber;
-
-translatedStreetQuery = translatedStreetQuery
-  .replace(/\bsingel\b/gi, "Crescent")
-  .replace(/\bstraat\b/gi, "Street")
-  .replace(/\bweg\b/gi, "Road")
-  .replace(/\blaan\b/gi, "Avenue")
-  .replace(/\brylaan\b/gi, "Drive");
-
 
 // Build our different search attempts
 const searchQueries = [

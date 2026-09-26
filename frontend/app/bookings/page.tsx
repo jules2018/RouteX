@@ -122,12 +122,22 @@ useEffect(() => {
 }, [destination, selectedDestination]);
 
   useEffect(() => {
-    if (!selectedPickup || !selectedDestination) {
-      setFare("");
-      setDistanceKm(null);
-      setOutOfTownFee(0);
-      return;
-    }
+   // Destination must always be selected because we need its coordinates.
+if (!selectedDestination) {
+  setFare("");
+  setDistanceKm(null);
+  setOutOfTownFee(0);
+  return;
+}
+
+// Scheduled rides need a mapped pickup.
+// Ride Now uses the passenger's confirmed GPS instead.
+if (rideType === "scheduled" && !selectedPickup) {
+  setFare("");
+  setDistanceKm(null);
+  setOutOfTownFee(0);
+  return;
+}
 
     // Ride Now must use the passenger's confirmed live GPS position.
     if (rideType === "now" && !gpsLocation) {
@@ -138,50 +148,130 @@ useEffect(() => {
     }
 
     const calculateFare = async () => {
-      try {
-        const pickupLat = rideType === "now" ? gpsLocation!.lat : selectedPickup.lat;
-        const pickupLng = rideType === "now" ? gpsLocation!.lng : selectedPickup.lng;
+  // We always need a destination.
+  if (!selectedDestination) {
+    setFare("");
+    setDistanceKm(null);
+    setOutOfTownFee(0);
+    return;
+  }
 
-        const params = new URLSearchParams({
-          pickup_area: selectedPickup.area_name || "GPS Pickup",
-          dropoff_area: selectedDestination.area_name || "GPS Destination",
-          pickup_lat: String(pickupLat),
-          pickup_lng: String(pickupLng),
-          dropoff_lat: String(selectedDestination.lat),
-          dropoff_lng: String(selectedDestination.lng),
-        });
+  // RIDE NOW:
+  // Pickup comes from confirmed GPS location.
+  if (rideType === "now" && (!locationConfirmed || !gpsLocation)) {
+    setFare("");
+    setDistanceKm(null);
+    setOutOfTownFee(0);
+    return;
+  }
 
-        const response = await fetch(`${API_URL}/calculate-fare?${params.toString()}`);
-        const data = await response.json();
+  // SCHEDULED:
+  // Pickup comes from the selected pickup suggestion.
+  if (rideType === "scheduled" && !selectedPickup) {
+    setFare("");
+    setDistanceKm(null);
+    setOutOfTownFee(0);
+    return;
+  }
 
-        if (!response.ok) {
-          setFare("");
-          setDistanceKm(null);
-          setOutOfTownFee(0);
-          return;
-        }
+  try {
+    const pickupLat =
+      rideType === "now"
+        ? gpsLocation!.lat
+        : selectedPickup!.lat;
 
-        const numericFare = Number(data.fare);
-        if (!Number.isFinite(numericFare) || numericFare <= 0) {
-          setFare("");
-          setDistanceKm(null);
-          setOutOfTownFee(0);
-          return;
-        }
+    const pickupLng =
+      rideType === "now"
+        ? gpsLocation!.lng
+        : selectedPickup!.lng;
+        console.log("FARE DEBUG:", {
+  rideType,
+  pickupLat,
+  pickupLng,
+  dropoffLat: selectedDestination.lat,
+  dropoffLng: selectedDestination.lng,
+  destination: selectedDestination.address,
+});
 
-        setFare(String(data.fare));
-        setDistanceKm(data.distance_km ?? null);
-        setOutOfTownFee(Number(data.out_of_town_fee || 0));
-      } catch (error) {
-        console.error("FARE CALCULATION ERROR:", error);
-        setFare("");
-        setDistanceKm(null);
-        setOutOfTownFee(0);
-      }
-    };
+    const pickupArea =
+      rideType === "now"
+        ? "Current Location"
+        : selectedPickup?.area_name || "GPS Pickup";
 
-    calculateFare();
-  }, [selectedPickup, selectedDestination, rideType, gpsLocation]);
+    const dropoffArea =
+      selectedDestination.area_name || "GPS Destination";
+
+    console.log("CALCULATING FARE:", {
+      rideType,
+      pickupLat,
+      pickupLng,
+      dropoffLat: selectedDestination.lat,
+      dropoffLng: selectedDestination.lng,
+      pickupArea,
+      dropoffArea,
+    });
+
+    const params = new URLSearchParams({
+      pickup_area: pickupArea,
+      dropoff_area: dropoffArea,
+      pickup_lat: String(pickupLat),
+      pickup_lng: String(pickupLng),
+      dropoff_lat: String(selectedDestination.lat),
+      dropoff_lng: String(selectedDestination.lng),
+    });
+
+    const response = await fetch(
+      `${API_URL}/calculate-fare?${params.toString()}`
+    );
+
+    const data = await response.json();
+
+    console.log("FARE RESPONSE:", data);
+
+    if (!response.ok) {
+      console.error("FARE API ERROR:", data);
+      setFare("");
+      setDistanceKm(null);
+      setOutOfTownFee(0);
+      return;
+    }
+
+    const numericFare = Number(data.fare);
+
+    if (!Number.isFinite(numericFare) || numericFare <= 0) {
+      console.error("INVALID FARE:", data);
+      setFare("");
+      setDistanceKm(null);
+      setOutOfTownFee(0);
+      return;
+    }
+
+    setFare(String(numericFare));
+    setDistanceKm(
+      data.distance_km !== undefined
+        ? Number(data.distance_km)
+        : null
+    );
+    setOutOfTownFee(Number(data.out_of_town_fee || 0));
+
+  } catch (error) {
+    console.error("FARE CALCULATION ERROR:", error);
+
+    setFare("");
+    setDistanceKm(null);
+    setOutOfTownFee(0);
+  }
+};
+
+calculateFare();
+
+}, [
+  selectedPickup,
+  selectedDestination,
+  rideType,
+  gpsLocation,
+  locationConfirmed,
+]);
 
   const confirmCurrentLocation = () => {
     if (!navigator.geolocation) {
@@ -233,10 +323,15 @@ useEffect(() => {
       return;
     }
 
-    if (!selectedPickup || !selectedDestination) {
-      showAppPopup("RouteX", "Please choose your pickup and destination from the suggestions.", "error");
-      return;
-    }
+   if (!selectedDestination) {
+  showAppPopup("RouteX", "Please choose your destination from the suggestions.", "error");
+  return;
+}
+
+if (rideType === "scheduled" && !selectedPickup) {
+  showAppPopup("RouteX", "Please choose your pickup location from the suggestions.", "error");
+  return;
+}
 
     const numericFare = Number(fare);
     if (!fare || !Number.isFinite(numericFare) || numericFare <= 0) {
@@ -266,12 +361,31 @@ useEffect(() => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           passenger_id: passenger.id,
-          pickup_area: selectedPickup.area_name || "GPS Pickup",
-          dropoff_area: selectedDestination.area_name || "GPS Destination",
-          pickup_address: selectedPickup.address,
-          dropoff_address: selectedDestination.address,
-          pickup_lat: rideType === "now" ? gpsLocation!.lat : selectedPickup.lat,
-          pickup_lng: rideType === "now" ? gpsLocation!.lng : selectedPickup.lng,
+          pickup_area:
+  rideType === "now"
+    ? "Current Location"
+    : selectedPickup!.area_name || "GPS Pickup",
+
+dropoff_area:
+  selectedDestination.area_name || "GPS Destination",
+
+pickup_address:
+  rideType === "now"
+    ? "Current Location"
+    : selectedPickup!.address,
+
+dropoff_address:
+  selectedDestination.address,
+
+pickup_lat:
+  rideType === "now"
+    ? gpsLocation!.lat
+    : selectedPickup!.lat,
+
+pickup_lng:
+  rideType === "now"
+    ? gpsLocation!.lng
+    : selectedPickup!.lng,
           dropoff_lat: selectedDestination.lat,
           dropoff_lng: selectedDestination.lng,
           travel_date: travelDate,
