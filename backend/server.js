@@ -1317,7 +1317,130 @@ res.status(201).json({
 
   }
 });
+// ============================================================
+// CONFIRM SCHEDULED RIDE PICKUP GPS
+// ============================================================
+//
+// Passenger confirms their actual physical pickup position
+// before a scheduled ride.
+//
+// IMPORTANT:
+// This updates navigation coordinates ONLY.
+// It must NOT change:
+// - pickup_lat
+// - pickup_lng
+// - fare_amount
+// ============================================================
 
+app.post("/bookings/:id/confirm-pickup-location", async (req, res) => {
+  try {
+    const bookingId = req.params.id;
+
+    const {
+      lat,
+      lng
+    } = req.body;
+
+    const confirmedLat = Number(lat);
+    const confirmedLng = Number(lng);
+
+    // --------------------------------------------------------
+    // Validate GPS coordinates
+    // --------------------------------------------------------
+
+    if (
+      !Number.isFinite(confirmedLat) ||
+      !Number.isFinite(confirmedLng)
+    ) {
+      return res.status(400).json({
+        error: "Valid pickup GPS coordinates are required.",
+      });
+    }
+
+    // --------------------------------------------------------
+    // Confirm that this is an existing scheduled ride
+    // --------------------------------------------------------
+
+    const bookingResult = await pool.query(
+      `
+      SELECT
+        id,
+        ride_type,
+        booking_status,
+        fare_amount,
+        pickup_lat,
+        pickup_lng
+      FROM trip_bookings
+      WHERE id = $1
+      LIMIT 1
+      `,
+      [bookingId]
+    );
+
+    if (bookingResult.rows.length === 0) {
+      return res.status(404).json({
+        error: "Booking not found.",
+      });
+    }
+
+    const booking = bookingResult.rows[0];
+
+    if (booking.ride_type !== "scheduled") {
+      return res.status(400).json({
+        error: "Pickup confirmation is only available for scheduled rides.",
+      });
+    }
+
+    // --------------------------------------------------------
+    // Save confirmed GPS for DRIVER NAVIGATION ONLY
+    // --------------------------------------------------------
+
+    const result = await pool.query(
+      `
+      UPDATE trip_bookings
+      SET
+        confirmed_pickup_lat = $1,
+        confirmed_pickup_lng = $2,
+        pickup_location_confirmed_at = NOW()
+      WHERE id = $3
+      RETURNING
+        id,
+        ride_type,
+        booking_status,
+        fare_amount,
+        pickup_lat,
+        pickup_lng,
+        confirmed_pickup_lat,
+        confirmed_pickup_lng,
+        pickup_location_confirmed_at
+      `,
+      [
+        confirmedLat,
+        confirmedLng,
+        bookingId
+      ]
+    );
+
+    console.log("SCHEDULED PICKUP GPS CONFIRMED:", {
+      booking_id: bookingId,
+      confirmed_pickup_lat: confirmedLat,
+      confirmed_pickup_lng: confirmedLng,
+    });
+
+    return res.json({
+      success: true,
+      message: "Pickup location confirmed.",
+      booking: result.rows[0],
+    });
+
+  } catch (error) {
+    console.error("CONFIRM SCHEDULED PICKUP GPS ERROR:", error);
+
+    return res.status(500).json({
+      error: "Could not confirm pickup location.",
+    });
+  }
+});
 /* =========================================================
    SCHEDULED RIDES - PROTOTYPE
    =========================================================
@@ -2015,6 +2138,8 @@ async function searchGeoapifyAddress(searchText) {
     return [];
   }
 }
+
+
 app.get("/addresses/search", async (req, res) => {
   try {
     const query = String(req.query.q || "").trim();
@@ -2054,7 +2179,23 @@ app.get("/addresses/search", async (req, res) => {
       "Upington Central",
       "Vaalkroek",
     ];
+const isUpingtonGeoResult = (item) => {
+  const searchableLocation = [
+    item.city,
+    item.town,
+    item.suburb,
+    item.district,
+    item.county,
+    item.formatted,
+    item.address_line1,
+    item.address_line2,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
 
+  return searchableLocation.includes("upington");
+};
     // =====================================================
     // 1. SEARCH ROUTEX LOCAL DATABASE FIRST
     // =====================================================
@@ -2115,11 +2256,25 @@ app.get("/addresses/search", async (req, res) => {
     // =====================================================
 // GEOAPIFY FAST AUTOCOMPLETE
 // =====================================================
+// Clean location information that RouteX already adds itself.
+// Example:
+// "3 Mouton St, Upington, 8801"
+// becomes:
+// "3 Mouton St"
+
+const cleanedQuery = query
+  .replace(/,\s*upington\b/gi, "")
+  .replace(/,\s*8\d{3}\b/g, "")
+  .replace(/,\s*south africa\b/gi, "")
+  .replace(/\s+/g, " ")
+  .replace(/,\s*$/, "")
+  .trim();
+
 
 // Remove leading house number for fallback searches.
 // "11B Schroder Street" -> "Schroder Street"
 // "06 Hantam Singel"    -> "Hantam Singel"
-const queryWithoutHouseNumber = query
+const queryWithoutHouseNumber = cleanedQuery
   .replace(/^\s*\d+[A-Za-z]?\s+/, "")
   .trim();
 
@@ -2129,7 +2284,11 @@ const translatedStreetQuery = queryWithoutHouseNumber
   .replace(/\bstraat\b/gi, "Street")
   .replace(/\bweg\b/gi, "Road")
   .replace(/\blaan\b/gi, "Avenue")
-  .replace(/\brylaan\b/gi, "Drive");
+  .replace(/\brylaan\b/gi, "Drive")
+  .replace(/\bst\.?\b/gi, "Street")
+  .replace(/\brd\.?\b/gi, "Road")
+  .replace(/\bave\.?\b/gi, "Avenue")
+  .replace(/\bdr\.?\b/gi, "Drive");
 
 
 // -----------------------------------------------------
@@ -2153,7 +2312,7 @@ let usefulGeoResults = geoResults.filter((item) => {
   return (
     Number.isFinite(lat) &&
     Number.isFinite(lng) &&
-    item.city?.toLowerCase() === "upington" &&
+    isUpingtonGeoResult(item) &&
     !["city", "county", "state", "country"].includes(
       String(item.result_type || "").toLowerCase()
     )
@@ -2193,7 +2352,7 @@ if (
     return (
       Number.isFinite(lat) &&
       Number.isFinite(lng) &&
-      item.city?.toLowerCase() === "upington" &&
+     isUpingtonGeoResult(item) &&
       !["city", "county", "state", "country"].includes(
         String(item.result_type || "").toLowerCase()
       )

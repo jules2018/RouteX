@@ -89,6 +89,10 @@ export default function PassengerPortalPage() {
     vehicle_type?: string | null;
     vehicle_color?: string | null;
     license_plate?: string | null;
+
+    confirmed_pickup_lat?: number | string | null;
+    confirmed_pickup_lng?: number | string | null;
+    pickup_location_confirmed_at?: string | null;
   };
 
   const [scheduledRides, setScheduledRides] = useState<ScheduledRide[]>([]);
@@ -136,6 +140,92 @@ export default function PassengerPortalPage() {
     }
   };
 
+
+
+  const confirmScheduledPickupLocation = async (rideId: number) => {
+  if (!navigator.geolocation) {
+    window.alert("Location services are not supported on this device.");
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    async (position) => {
+      try {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+
+        const response = await fetch(
+          `${API_URL}/bookings/${rideId}/confirm-pickup-location`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              lat,
+              lng,
+            }),
+          }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            data?.error || "Could not confirm your pickup location."
+          );
+        }
+
+        console.log("SCHEDULED PICKUP GPS CONFIRMED:", data);
+
+        window.alert(
+          "Pickup location confirmed. Your driver will use this location for navigation."
+        );
+
+        if (passenger?.id) {
+          await loadScheduledRides(passenger.id);
+        }
+      } catch (error: any) {
+        console.error(
+          "SCHEDULED PICKUP LOCATION ERROR:",
+          error
+        );
+
+        window.alert(
+          error?.message || "Could not confirm your pickup location."
+        );
+      }
+    },
+
+    (error) => {
+      console.error("GPS ERROR:", error);
+
+      if (error.code === error.PERMISSION_DENIED) {
+        window.alert(
+          "Location permission was denied. Please allow location access and try again."
+        );
+      } else if (error.code === error.POSITION_UNAVAILABLE) {
+        window.alert(
+          "Your current location could not be determined. Please try again."
+        );
+      } else if (error.code === error.TIMEOUT) {
+        window.alert(
+          "Getting your location took too long. Please try again."
+        );
+      } else {
+        window.alert(
+          "Could not get your current location."
+        );
+      }
+    },
+
+    {
+      enableHighAccuracy: true,
+      timeout: 15000,
+      maximumAge: 0,
+    }
+  );
+};
   const bookingResult =
   typeof window !== "undefined"
     ? new URLSearchParams(window.location.search).get("booking")
@@ -571,7 +661,12 @@ const upcomingScheduledRides = scheduledRides.filter((ride) => {
     .trim()
     .toLowerCase();
 
-  return status === "scheduled" || status === "waiting";
+  return [
+    "scheduled",
+    "waiting",
+    "accepted",
+    "in progress",
+  ].includes(status);
 });
   const otherTrips = trips.filter((trip) => {
     const status = normalizedStatus(trip);
@@ -1103,21 +1198,63 @@ const upcomingScheduledRides = scheduledRides.filter((ride) => {
                               </div>
 
                               <div className="min-w-0 flex-1">
-                                <p className="text-[8px] font-bold uppercase tracking-[0.12em] text-[#ff6846]">
-                                  {isInProgress ? "Your driver" : "Driver assigned"}
-                                </p>
-                                <p className="mt-0.5 truncate text-[12px] font-black">
-                                  {ride.driver_name}
-                                </p>
-                                <p className="mt-0.5 truncate text-[9px] font-semibold text-white/65">
-                                  {[ride.vehicle_color, ride.vehicle_type, ride.license_plate]
-                                    .filter(Boolean)
-                                    .join(" · ")}
-                                </p>
-                              </div>
+  <p className="text-[8px] font-bold uppercase tracking-[0.12em] text-[#ff6846]">
+    {isInProgress ? "Your driver" : "Driver assigned"}
+  </p>
+
+  <p className="mt-0.5 truncate text-[12px] font-black">
+    {ride.driver_name}
+  </p>
+
+  <p className="mt-0.5 truncate text-[9px] font-semibold text-white/65">
+    {[ride.vehicle_color, ride.vehicle_type, ride.license_plate]
+      .filter(Boolean)
+      .join(" · ")}
+  </p>
+
+  {ride.driver_phone && (
+    <a
+      href={`tel:${ride.driver_phone}`}
+      className="mt-2 inline-flex rounded-[10px] bg-[#ff6846] px-3 py-2 text-[9px] font-extrabold text-white"
+    >
+      Call driver
+    </a>
+  )}
+</div>
                             </div>
                           )}
+{isAccepted && !ride.pickup_location_confirmed_at && (
+  <div className="mt-4 rounded-[17px] bg-[#e7e9ee] p-4 shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff]">
+    <p className="text-[10px] font-extrabold text-[#17191f]">
+      Confirm your pickup location
+    </p>
 
+    <p className="mt-1 text-[9px] font-medium leading-relaxed text-[#85888f]">
+      When you are at your pickup point, confirm your location so your
+      driver can navigate directly to you.
+    </p>
+
+    <button
+      type="button"
+      onClick={() => confirmScheduledPickupLocation(ride.id)}
+      className="mt-3 w-full rounded-[14px] bg-[#ff6846] py-3 text-[10px] font-extrabold text-white transition active:scale-[0.98]"
+    >
+      Confirm pickup location
+    </button>
+  </div>
+)}
+
+{isAccepted && ride.pickup_location_confirmed_at && (
+  <div className="mt-4 rounded-[17px] bg-[#e7e9ee] p-4 text-center shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff]">
+    <p className="text-[10px] font-extrabold text-[#17191f]">
+      Pickup location confirmed
+    </p>
+
+    <p className="mt-1 text-[9px] font-medium text-[#85888f]">
+      Your driver will use your confirmed location for navigation.
+    </p>
+  </div>
+)}
                           {(isScheduled || isWaiting) && (
                             <button
                               type="button"

@@ -8,6 +8,69 @@ import re
 import subprocess
 import sys
 import json
+
+# ============================================================
+# ROUTEX SYSTEM RULES
+# ============================================================
+#
+# These are the business/technical rules RouteX is expected
+# to follow. Doctor uses these rules when diagnosing problems.
+#
+# IMPORTANT:
+# Update these rules whenever RouteX's intended behaviour changes.
+# ============================================================
+
+ROUTEX_RULES = {
+
+    "ride_now": {
+        "pickup_source": "confirmed_gps",
+        "requires_selected_pickup": False,
+        "requires_destination": True,
+        "requires_gps_confirmation": True,
+        "description": (
+            "Ride Now uses the passenger's confirmed live GPS "
+            "coordinates as the actual pickup location."
+        ),
+    },
+
+    "scheduled_ride": {
+        "pickup_source": "selected_pickup",
+        "requires_selected_pickup": True,
+        "requires_destination": True,
+        "requires_gps_confirmation": False,
+        "description": (
+            "Scheduled rides use the coordinates belonging to "
+            "the pickup selected from RouteX address suggestions."
+        ),
+    },
+
+    "fare": {
+        "calculated_by": "backend",
+        "routing_engine": "OSRM",
+        "uses_coordinates": True,
+        "frontend_calculates_fare": False,
+        "description": (
+            "The backend calculates fares using pickup and "
+            "destination coordinates and road distance."
+        ),
+    },
+
+    "address_search": {
+        "local_first": True,
+        "external_fallback": True,
+        "learn_local_addresses": True,
+        "description": (
+            "Known RouteX addresses should be preferred before "
+            "external geocoding results."
+        ),
+    },
+
+    "booking": {
+        "ride_now_needs_gps": True,
+        "scheduled_needs_selected_pickup": True,
+        "destination_needs_coordinates": True,
+    },
+}
 from pathlib import Path
 from urllib.request import Request, urlopen
 from urllib.error import URLError, HTTPError
@@ -745,7 +808,99 @@ else:
         "passenger-portal/page.tsx."
     )
 
+# ============================================================
+# 12B. ROUTEX BOOKING BUSINESS RULES
+# ============================================================
 
+booking_page = FRONTEND / "app" / "bookings" / "page.tsx"
+booking_text = read_text(booking_page)
+
+if not booking_text:
+    fail_check(
+        "Booking business rules",
+        "Could not read frontend/app/bookings/page.tsx."
+    )
+
+else:
+    # --------------------------------------------------------
+    # RIDE NOW: must use confirmed GPS coordinates
+    # --------------------------------------------------------
+
+    if (
+        'rideType === "now"' in booking_text
+        and "gpsLocation!.lat" in booking_text
+        and "gpsLocation!.lng" in booking_text
+    ):
+        pass_check("Ride Now GPS fare source")
+    else:
+        fail_check(
+            "Ride Now GPS fare source",
+            "Ride Now should calculate the pickup from the passenger's "
+            "confirmed gpsLocation coordinates."
+        )
+
+    # --------------------------------------------------------
+    # SCHEDULED: must use selected pickup coordinates
+    # --------------------------------------------------------
+
+    if (
+        'rideType === "scheduled"' in booking_text
+        and "selectedPickup!.lat" in booking_text
+        and "selectedPickup!.lng" in booking_text
+    ):
+        pass_check("Scheduled pickup fare source")
+    else:
+        fail_check(
+            "Scheduled pickup fare source",
+            "Scheduled rides should calculate the fare using the "
+            "selected pickup address coordinates."
+        )
+
+    # --------------------------------------------------------
+    # DETECT OLD BUG:
+    # Ride Now must not require selectedPickup
+    # --------------------------------------------------------
+
+    old_broken_validation = (
+        "if (!selectedPickup || !selectedDestination)"
+    )
+
+    if old_broken_validation in booking_text:
+        fail_check(
+            "Ride Now pickup validation",
+            "Old validation detected: Ride Now is requiring selectedPickup. "
+            "Ride Now should use confirmed GPS as its pickup."
+        )
+    else:
+        pass_check("Ride Now pickup validation")
+
+    # --------------------------------------------------------
+    # DESTINATION MUST ALWAYS EXIST
+    # --------------------------------------------------------
+
+    if "if (!selectedDestination)" in booking_text:
+        pass_check("Booking destination validation")
+    else:
+        warn_check(
+            "Booking destination validation",
+            "Could not confirm destination validation in bookings/page.tsx."
+        )
+
+    # --------------------------------------------------------
+    # RIDE NOW MUST REQUIRE CONFIRMED GPS
+    # --------------------------------------------------------
+
+    if (
+        "!locationConfirmed || !gpsLocation"
+        in booking_text
+    ):
+        pass_check("Ride Now GPS confirmation")
+    else:
+        fail_check(
+            "Ride Now GPS confirmation",
+            "Ride Now should require confirmed GPS before the passenger "
+            "can request the ride."
+        )
 # ============================================================
 # 13. PRODUCTION BACKEND
 # ============================================================
@@ -1268,7 +1423,59 @@ def build_diagnosis():
                 "production API_URL."
             )
         )
+    # ========================================================
+    # ROUTEX BOOKING BUSINESS RULE DIAGNOSIS
+    # ========================================================
 
+    if statuses.get("Ride Now GPS fare source") == "FAIL":
+        diagnoses.append(
+            (
+                "Ride Now fare is not using confirmed GPS",
+                "frontend/app/bookings/page.tsx",
+                "Check calculateFare(). For Ride Now, pickup_lat and "
+                "pickup_lng must come from gpsLocation."
+            )
+        )
+
+    if statuses.get("Scheduled pickup fare source") == "FAIL":
+        diagnoses.append(
+            (
+                "Scheduled fare pickup source is incorrect",
+                "frontend/app/bookings/page.tsx",
+                "Scheduled rides must calculate from selectedPickup.lat "
+                "and selectedPickup.lng."
+            )
+        )
+
+    if statuses.get("Ride Now pickup validation") == "FAIL":
+        diagnoses.append(
+            (
+                "Ride Now is being blocked by pickup address validation",
+                "frontend/app/bookings/page.tsx",
+                "Do not require selectedPickup for Ride Now. "
+                "Require selectedPickup only for scheduled rides."
+            )
+        )
+
+    if statuses.get("Booking destination validation") == "WARN":
+        diagnoses.append(
+            (
+                "Booking destination validation could not be verified",
+                "frontend/app/bookings/page.tsx",
+                "Check that a destination must be selected before "
+                "fare calculation or booking."
+            )
+        )
+
+    if statuses.get("Ride Now GPS confirmation") == "FAIL":
+        diagnoses.append(
+            (
+                "Ride Now GPS confirmation is missing",
+                "frontend/app/bookings/page.tsx",
+                "Require locationConfirmed and gpsLocation before "
+                "allowing a Ride Now request."
+            )
+        )
 
     scheduled_contract_diagnoses = {
         "Scheduled pickup GPS endpoint": (
