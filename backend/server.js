@@ -2885,6 +2885,76 @@ if (
     });
   }
 });
+app.get("/addresses/reverse", async (req, res) => {
+  try {
+    const { lat, lng } = req.query;
+
+    if (!lat || !lng) {
+      return res.status(400).json({
+        error: "Latitude and longitude are required",
+      });
+    }
+
+    const apiKey = process.env.GEOAPIFY_API_KEY;
+
+    if (!apiKey) {
+      return res.status(500).json({
+        error: "Geoapify API key is not configured",
+      });
+    }
+
+    const url =
+      `https://api.geoapify.com/v1/geocode/reverse` +
+      `?lat=${encodeURIComponent(lat)}` +
+      `&lon=${encodeURIComponent(lng)}` +
+      `&apiKey=${apiKey}`;
+
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error("GEOAPIFY REVERSE ERROR:", data);
+
+      return res.status(502).json({
+        error: "Could not resolve pickup address",
+      });
+    }
+
+    const feature = data?.features?.[0];
+    const properties = feature?.properties;
+
+    if (!properties) {
+      return res.json({
+        address: "Current Location",
+        area_name: null,
+      });
+    }
+
+    const address =
+      properties.formatted ||
+      properties.address_line1 ||
+      "Current Location";
+
+    const areaName =
+      properties.suburb ||
+      properties.district ||
+      properties.city ||
+      null;
+
+    res.json({
+      address,
+      area_name: areaName,
+      lat: Number(lat),
+      lng: Number(lng),
+    });
+  } catch (error) {
+    console.error("REVERSE ADDRESS ERROR:", error);
+
+    res.status(500).json({
+      error: "Could not resolve pickup address",
+    });
+  }
+});
 app.get("/dashboard", async (req, res) => {
   try {
 
@@ -3680,31 +3750,48 @@ app.post(
   "/trip-requests/:id/start",
   async (req, res) => {
     try {
-
       const bookingId = req.params.id;
+      const { driverId } = req.body;
 
-      await pool.query(
+      if (!driverId) {
+        return res.status(400).json({
+          error: "Driver ID is required."
+        });
+      }
+
+      const result = await pool.query(
         `
         UPDATE trip_bookings
         SET
           booking_status = 'In Progress',
-          trip_status = 'In Progress'
+          trip_status = 'In Progress',
+          assigned_driver_id = assigned_driver_id,
+          started_at = NOW()
         WHERE id = $1
           AND trip_status = 'Accepted'
+          AND assigned_driver_id = $2
+        RETURNING *
         `,
-        [bookingId]
+        [bookingId, driverId]
       );
 
+      if (result.rows.length === 0) {
+        return res.status(409).json({
+          error: "This ride cannot be started by this driver."
+        });
+      }
+
       res.json({
-        message: "Trip started"
+        message: "Trip started",
+        booking: result.rows[0]
       });
 
     } catch (error) {
+      console.error("START RIDE ERROR:", error);
 
       res.status(500).json({
         error: error.message
       });
-
     }
   }
 );
@@ -3751,7 +3838,12 @@ app.get("/accepted-trips", async (req, res) => {
   p.full_name AS passenger_name,
   p.phone AS passenger_phone,
   p.profile_image AS passenger_profile_image,
-  d.full_name AS driver_name
+  d.full_name AS driver_name,
+d.phone AS driver_phone,
+d.profile_image AS driver_profile_image,
+d.vehicle_type,
+d.vehicle_color,
+d.license_plate
   FROM trip_bookings tb
   JOIN passengers p
     ON tb.passenger_id = p.id
@@ -3780,7 +3872,12 @@ app.get("/in-progress-trips", async (req, res) => {
   p.full_name AS passenger_name,
   p.phone AS passenger_phone,
   p.profile_image AS passenger_profile_image,
-  d.full_name AS driver_name
+  d.full_name AS driver_name,
+d.phone AS driver_phone,
+d.profile_image AS driver_profile_image,
+d.vehicle_type,
+d.vehicle_color,
+d.license_plate
   FROM trip_bookings tb
   JOIN passengers p
     ON tb.passenger_id = p.id
@@ -3803,10 +3900,18 @@ app.get("/completed-trips", async (req, res) => {
 
     const result = await pool.query(`
   SELECT
-    tb.*,
-    p.full_name,
-    p.phone,
-    d.full_name AS driver_name
+  tb.*,
+  p.full_name,
+  p.phone,
+  p.full_name AS passenger_name,
+  p.phone AS passenger_phone,
+  p.profile_image AS passenger_profile_image,
+  d.full_name AS driver_name,
+  d.phone AS driver_phone,
+  d.profile_image AS driver_profile_image,
+  d.vehicle_type,
+  d.vehicle_color,
+  d.license_plate
   FROM trip_bookings tb
   JOIN passengers p
     ON tb.passenger_id = p.id

@@ -614,12 +614,34 @@ export default function DriverPortalPage() {
                         </p>
                       </div>
 
-                      <div className="text-right">
-                        <p className="text-[7px] font-extrabold uppercase tracking-[0.1em] text-[#92959b]">Fare</p>
-                        <p className="mt-0.5 text-[17px] font-black">
-                          R{Number(ride.fare_amount || 0).toFixed(0)}
-                        </p>
-                      </div>
+                     <div className="mt-4 flex items-start justify-between gap-4">
+  <p className="text-[10px] font-black">Ride Now</p>
+
+  <div className="text-right">
+    <p className="text-[7px] font-extrabold uppercase tracking-[0.1em] text-[#92959b]">
+      Full fare
+    </p>
+
+    <p className="mt-0.5 text-[17px] font-black">
+      R{Number(ride.fare_amount || 0).toFixed(0)}
+    </p>
+
+    {Number(ride.discount_amount || 0) > 0 && (
+      <div className="mt-1">
+        <p className="text-[9px] font-black text-[#ff6846]">
+          Passenger pays R
+          {Number(
+            ride.passenger_amount ?? ride.fare_amount ?? 0
+          ).toFixed(0)}
+        </p>
+
+        <p className="mt-0.5 text-[8px] font-semibold text-[#92959b]">
+          RouteX promo R{Number(ride.discount_amount).toFixed(0)}
+        </p>
+      </div>
+    )}
+  </div>
+</div>
                     </div>
 
                     <div className="mt-3 rounded-[16px] bg-[#e7e9ee] px-3.5 py-3 shadow-[inset_2px_2px_5px_#c7c9ce,inset_-2px_-2px_5px_#ffffff]">
@@ -750,21 +772,36 @@ export default function DriverPortalPage() {
                       pickup={ride.pickup_address}
                       destination={ride.dropoff_address}
                     />
+<div className="mt-4 flex items-start justify-between">
+  <div>
+    <p className="text-[7px] font-extrabold uppercase tracking-[0.1em] text-[#92959b]">
+      Full fare
+    </p>
 
-                    <div className="mt-4 flex items-center justify-between">
-                      <div>
-                        <p className="text-[7px] font-extrabold uppercase tracking-[0.1em] text-[#92959b]">
-                          Fare
-                        </p>
-                        <p className="mt-0.5 text-[17px] font-black">
-                          R{Number(ride.fare_amount || 0).toFixed(0)}
-                        </p>
-                      </div>
+    <p className="mt-0.5 text-[17px] font-black">
+      R{Number(ride.fare_amount || 0).toFixed(0)}
+    </p>
 
-                      <p className="text-[8px] font-black text-[#ff6846]">
-                        BK-{ride.id.toString().padStart(4, "0")}
-                      </p>
-                    </div>
+    {Number(ride.discount_amount || 0) > 0 && (
+      <div className="mt-1">
+        <p className="text-[9px] font-black text-[#ff6846]">
+          Passenger pays R
+          {Number(
+            ride.passenger_amount ?? ride.fare_amount ?? 0
+          ).toFixed(0)}
+        </p>
+
+        <p className="mt-0.5 text-[8px] font-semibold text-[#92959b]">
+          RouteX promo R{Number(ride.discount_amount).toFixed(0)}
+        </p>
+      </div>
+    )}
+  </div>
+
+  <p className="text-[8px] font-black text-[#ff6846]">
+    BK-{ride.id.toString().padStart(4, "0")}
+  </p>
+</div>
 
                     <div className="mt-4 grid grid-cols-2 gap-3">
                       <button
@@ -850,11 +887,20 @@ export default function DriverPortalPage() {
                           <p className="mt-1 truncate text-[15px] font-black">
                             {ride.passenger_name || ride.full_name || "Passenger"}
                           </p>
-                          {ride.passenger_phone && (
-                            <p className="mt-0.5 text-[9px] font-bold text-[#8b8e95]">
-                              {ride.passenger_phone}
-                            </p>
-                          )}
+                         {ride.passenger_phone && (
+  <div className="mt-1 flex items-center gap-2">
+    <p className="text-[9px] font-bold text-[#8b8e95]">
+      {ride.passenger_phone}
+    </p>
+
+    <a
+      href={`tel:${ride.passenger_phone}`}
+      className="rounded-full bg-[#17191f] px-2.5 py-1 text-[8px] font-black text-white"
+    >
+      Call
+    </a>
+  </div>
+)}
                         </div>
                       </div>
 
@@ -1007,19 +1053,36 @@ export default function DriverPortalPage() {
                     destination={ride.dropoff_address}
                   />
 
-                  <div className="mt-4 flex items-center justify-between">
-                    <div>
-                      <p className="text-[7px] font-extrabold uppercase tracking-[0.1em] text-[#92959b]">
-                        Fare
-                      </p>
-                      <p className="mt-0.5 text-[17px] font-black">
-                        R{Number(ride.fare_amount || 0).toFixed(0)}
-                      </p>
-                    </div>
-                    <p className="text-[8px] font-black text-[#ff6846]">
-                      BK-{ride.id.toString().padStart(4, "0")}
-                    </p>
-                  </div>
+                  <div className="mt-4 flex items-start justify-between">
+  <div>
+    <p className="text-[7px] font-extrabold uppercase tracking-[0.1em] text-[#92959b]">
+      Full fare
+    </p>
+
+    <p className="mt-0.5 text-[17px] font-black">
+      R{Number(ride.fare_amount || 0).toFixed(0)}
+    </p>
+
+    {Number(ride.discount_amount || 0) > 0 && (
+      <div className="mt-1">
+        <p className="text-[9px] font-black text-[#ff6846]">
+          Passenger pays R
+          {Number(
+            ride.passenger_amount ?? ride.fare_amount ?? 0
+          ).toFixed(0)}
+        </p>
+
+        <p className="mt-0.5 text-[8px] font-semibold text-[#92959b]">
+          RouteX promo R{Number(ride.discount_amount).toFixed(0)}
+        </p>
+      </div>
+    )}
+  </div>
+
+  <p className="text-[8px] font-black text-[#ff6846]">
+    BK-{ride.id.toString().padStart(4, "0")}
+  </p>
+</div>
 
                   <div className="mt-4 grid grid-cols-2 gap-3">
                     <button
@@ -1083,10 +1146,34 @@ export default function DriverPortalPage() {
                   <div key={ride.id} className="rounded-[21px] bg-[#e7e9ee] p-4 shadow-[5px_5px_12px_#c4c6ca,-5px_-5px_12px_#ffffff]">
                     <PassengerInfo ride={ride} />
 
-                    <div className="mt-4 flex items-center justify-between">
-                      <p className="text-[10px] font-black">Ride Now</p>
-                      <p className="text-[15px] font-black">R{Number(ride.fare_amount || 0).toFixed(0)}</p>
-                    </div>
+                    <div className="mt-4 flex items-start justify-between gap-4">
+  <p className="text-[10px] font-black">Ride Now</p>
+
+  <div className="text-right">
+    <p className="text-[7px] font-extrabold uppercase tracking-[0.1em] text-[#92959b]">
+      Full fare
+    </p>
+
+    <p className="mt-0.5 text-[17px] font-black">
+      R{Number(ride.fare_amount || 0).toFixed(0)}
+    </p>
+
+    {Number(ride.discount_amount || 0) > 0 && (
+      <div className="mt-1">
+        <p className="text-[9px] font-black text-[#ff6846]">
+          Passenger pays R
+          {Number(
+            ride.passenger_amount ?? ride.fare_amount ?? 0
+          ).toFixed(0)}
+        </p>
+
+        <p className="mt-0.5 text-[8px] font-semibold text-[#92959b]">
+          RouteX promo R{Number(ride.discount_amount).toFixed(0)}
+        </p>
+      </div>
+    )}
+  </div>
+</div>
                     <RouteBox pickup={ride.pickup_address} destination={ride.dropoff_address} />
                     <button
                       type="button"

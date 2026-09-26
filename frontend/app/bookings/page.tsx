@@ -31,6 +31,7 @@ const [selectedDestination, setSelectedDestination] =
   const [locationConfirmed, setLocationConfirmed] =
     useState(false);
   const [gpsLocation, setGpsLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [gpsAddress, setGpsAddress] = useState("");
   const [gettingLocation, setGettingLocation] = useState(false);
   const [promoCode, setPromoCode] = useState("");
   const [rideType, setRideType] = useState<"now" | "scheduled">("now");
@@ -287,14 +288,37 @@ calculateFare();
     setOutOfTownFee(0);
 
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setGpsLocation({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-        });
-        setLocationConfirmed(true);
-        setGettingLocation(false);
-      },
+      async (position) => {
+  const lat = position.coords.latitude;
+  const lng = position.coords.longitude;
+
+  setGpsLocation({
+    lat,
+    lng,
+  });
+
+  try {
+    const response = await fetch(
+      `${API_URL}/addresses/reverse?lat=${lat}&lng=${lng}`
+    );
+
+    const data = await response.json();
+
+    console.log("GPS ADDRESS:", data);
+
+    if (response.ok && data?.address) {
+      setGpsAddress(data.address);
+    } else {
+      setGpsAddress("Current Location");
+    }
+  } catch (error) {
+    console.error("REVERSE ADDRESS ERROR:", error);
+    setGpsAddress("Current Location");
+  }
+
+  setLocationConfirmed(true);
+  setGettingLocation(false);
+},
       (error) => {
         console.error("GPS ERROR:", error);
         setGpsLocation(null);
@@ -371,7 +395,7 @@ dropoff_area:
 
 pickup_address:
   rideType === "now"
-    ? "Current Location"
+    ? gpsAddress || "Current Location"
     : selectedPickup!.address,
 
 dropoff_address:

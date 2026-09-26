@@ -78,7 +78,11 @@ export default function PassengerPortalPage() {
     id: number;
     pickup_address: string;
     dropoff_address: string;
-    fare_amount: number | string;
+   fare_amount: number | string;
+    passenger_amount?: number | string | null;
+    discount_amount?: number | string | null;
+    promo_code?: string | null;
+
     scheduled_pickup_at: string;
     matching_opens_at?: string | null;
     booking_status: string;
@@ -226,19 +230,24 @@ export default function PassengerPortalPage() {
     }
   );
 };
-  const bookingResult =
-  typeof window !== "undefined"
-    ? new URLSearchParams(window.location.search).get("booking")
-    : null;
-  const [showBookingSuccess, setShowBookingSuccess] = useState(
-    bookingResult === "scheduled" || bookingResult === "requested"
-  );
-  const bookingWasScheduled = bookingResult === "scheduled";
+  const [showBookingSuccess, setShowBookingSuccess] = useState(false);
+const [bookingWasScheduled, setBookingWasScheduled] = useState(false);
 
-  const closeBookingSuccess = () => {
-    setShowBookingSuccess(false);
-    router.replace("/passenger-portal");
-  };
+useEffect(() => {
+  const bookingResult = new URLSearchParams(window.location.search).get(
+    "booking"
+  );
+
+  if (bookingResult === "scheduled" || bookingResult === "requested") {
+    setBookingWasScheduled(bookingResult === "scheduled");
+    setShowBookingSuccess(true);
+  }
+}, []);
+
+const closeBookingSuccess = () => {
+  setShowBookingSuccess(false);
+  router.replace("/passenger-portal");
+};
   /* =======================================================
      LOCAL PHOTO PREVIEW
   ======================================================= */
@@ -869,7 +878,29 @@ const upcomingScheduledRides = scheduledRides.filter((ride) => {
                     {availableDrivers.length} nearby driver{availableDrivers.length === 1 ? "" : "s"} found
                   </p>
                 )}
+<div className="mt-4 flex items-end justify-between">
+  <div>
+    <p className="text-[8px] font-extrabold uppercase tracking-[0.12em] text-[#9a9da3]">
+      Your fare
+    </p>
 
+    <p className="mt-0.5 text-[18px] font-black">
+      R{Number(trip.passenger_amount ?? trip.fare_amount ?? 0).toFixed(0)}
+    </p>
+  </div>
+
+  {Number(trip.discount_amount || 0) > 0 && (
+    <div className="text-right">
+      <p className="text-[9px] font-bold text-[#ff6846]">
+        {trip.promo_code || "Promo"}: -R{Number(trip.discount_amount).toFixed(0)}
+      </p>
+
+      <p className="mt-0.5 text-[8px] font-semibold text-[#9a9da3]">
+        Original fare R{Number(trip.fare_amount || 0).toFixed(0)}
+      </p>
+    </div>
+  )}
+</div>
                 <button
                   type="button"
                   onClick={() => cancelBooking(trip.id)}
@@ -950,7 +981,34 @@ const upcomingScheduledRides = scheduledRides.filter((ride) => {
                 <div className="ml-[5px] h-4 border-l border-dashed border-[#b5b8be]" />
                 <RoutePoint type="destination" label="Destination" value={activeTrip.dropoff_address || "Destination"} />
               </div>
+<div className="mt-4 flex items-end justify-between">
+  <div>
+    <p className="text-[8px] font-extrabold uppercase tracking-[0.12em] text-[#9a9da3]">
+      Your fare
+    </p>
 
+    <p className="mt-0.5 text-[18px] font-black">
+      R{Number(
+        activeTrip.passenger_amount ??
+        activeTrip.fare_amount ??
+        0
+      ).toFixed(0)}
+    </p>
+  </div>
+
+  {Number(activeTrip.discount_amount || 0) > 0 && (
+    <div className="text-right">
+      <p className="text-[9px] font-bold text-[#ff6846]">
+        {activeTrip.promo_code || "Promo"}: -R
+        {Number(activeTrip.discount_amount).toFixed(0)}
+      </p>
+
+      <p className="mt-0.5 text-[8px] font-semibold text-[#9a9da3]">
+        Original fare R{Number(activeTrip.fare_amount || 0).toFixed(0)}
+      </p>
+    </div>
+  )}
+</div>
               <div className={`mt-4 grid ${activeTrip.driver_phone ? "grid-cols-2" : "grid-cols-1"} gap-3`}>
                 {driverLocation &&
                   driverLocation.driver_lat &&
@@ -1157,9 +1215,21 @@ const upcomingScheduledRides = scheduledRides.filter((ride) => {
                               <p className="text-[8px] font-extrabold uppercase tracking-[0.12em] text-[#9a9da3]">
                                 Fare
                               </p>
-                              <p className="mt-0.5 text-[16px] font-black">
-                                R{Number(ride.fare_amount || 0).toFixed(0)}
-                              </p>
+                             <p className="mt-0.5 text-[16px] font-black">
+  R{Number(ride.passenger_amount ?? ride.fare_amount ?? 0).toFixed(0)}
+</p>
+
+{Number(ride.discount_amount || 0) > 0 && (
+  <div className="mt-1">
+    <p className="text-[9px] font-bold text-[#ff6846]">
+      {ride.promo_code || "Promo"}: -R{Number(ride.discount_amount).toFixed(0)}
+    </p>
+
+    <p className="text-[8px] font-semibold text-[#9a9da3]">
+      Original fare R{Number(ride.fare_amount || 0).toFixed(0)}
+    </p>
+  </div>
+)}
                             </div>
 
                             {(isScheduled || isWaiting) && (
