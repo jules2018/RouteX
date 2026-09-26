@@ -837,14 +837,34 @@ const upcomingScheduledRides = scheduledRides.filter((ride) => {
             </div>
           </a>
 
-          <div className="mt-3 flex items-center gap-2 px-1">
-            <span className={`h-2 w-2 rounded-full ${onlineDrivers > 0 ? "bg-[#ff6846]" : "bg-[#aeb1b7]"}`} />
-            <span className="text-[10px] font-bold text-[#85888f]">
-              {onlineDrivers > 0
-                ? `${onlineDrivers} driver${onlineDrivers === 1 ? "" : "s"} available now`
-                : "No drivers currently online"}
-            </span>
-          </div>
+        {onlineDrivers > 0 ? (
+  <div className="mt-3 flex items-center gap-2 px-1">
+    <span className="h-2 w-2 rounded-full bg-[#ff6846]" />
+
+    <span className="text-[10px] font-bold text-[#85888f]">
+      {onlineDrivers} driver{onlineDrivers === 1 ? "" : "s"} available now
+    </span>
+  </div>
+) : (
+  <div className="mt-4 rounded-[18px] bg-[#e7e9ee] p-4 shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff]">
+    <div className="flex items-start gap-3">
+
+      <div className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-[#aeb1b7]" />
+
+      <div>
+        <p className="text-[11px] font-black text-[#17191f]">
+          No drivers available right now
+        </p>
+
+        <p className="mt-1 text-[9px] font-semibold leading-4 text-[#85888f]">
+          There are currently no RouteX drivers online.
+          You can try again shortly or schedule a ride for later.
+        </p>
+      </div>
+
+    </div>
+  </div>
+)}
         </section>
 
         {waitingTrips.length > 0 && (

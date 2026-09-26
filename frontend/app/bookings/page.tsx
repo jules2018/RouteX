@@ -35,6 +35,7 @@ const [selectedDestination, setSelectedDestination] =
   const [gettingLocation, setGettingLocation] = useState(false);
   const [promoCode, setPromoCode] = useState("");
   const [rideType, setRideType] = useState<"now" | "scheduled">("now");
+  const [onlineDrivers, setOnlineDrivers] = useState<number>(0);
   const [pickupTime, setPickupTime] = useState("");
   const [appPopup, setAppPopup] = useState<{
     title: string;
@@ -50,6 +51,25 @@ const [selectedDestination, setSelectedDestination] =
   const [travelDate, setTravelDate] = useState(
     new Date().toISOString().split("T")[0]
   );
+
+  useEffect(() => {
+  const fetchOnlineDrivers = async () => {
+    try {
+      const res = await fetch(`${API_URL}/online-drivers`);
+      const data = await res.json();
+
+      setOnlineDrivers(Number(data.total ?? 0));
+    } catch (error) {
+      console.error("Failed to fetch online drivers:", error);
+    }
+  };
+
+  fetchOnlineDrivers();
+
+  const interval = setInterval(fetchOnlineDrivers, 5000);
+
+  return () => clearInterval(interval);
+}, []);
 
   useEffect(() => {
     const storedPassenger = localStorage.getItem("passenger");
@@ -576,6 +596,37 @@ pickup_lng:
               </p>
             </button>
           </div>
+          {/* LIVE DRIVER AVAILABILITY */}
+{rideType === "now" && (
+  <div className="mt-4">
+    {onlineDrivers > 0 ? (
+      <div className="flex items-center gap-2 px-1">
+        <span className="h-2 w-2 rounded-full bg-[#ff6846]" />
+
+        <p className="text-[10px] font-bold text-[#85888f]">
+          {onlineDrivers} driver{onlineDrivers === 1 ? "" : "s"} available now
+        </p>
+      </div>
+    ) : (
+      <div className="rounded-[18px] bg-[#e7e9ee] p-4 shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff]">
+        <div className="flex items-start gap-3">
+          <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-[#aeb1b7]" />
+
+          <div>
+            <p className="text-[11px] font-black text-[#17191f]">
+              No drivers available right now
+            </p>
+
+            <p className="mt-1 text-[9px] font-semibold leading-4 text-[#85888f]">
+              There are currently no RouteX drivers online. Try again shortly
+              or choose Scheduled Ride for later.
+            </p>
+          </div>
+        </div>
+      </div>
+    )}
+  </div>
+)}
         </section>
 
         {/* ROUTE CARD */}

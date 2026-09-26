@@ -901,9 +901,233 @@ else:
             "Ride Now should require confirmed GPS before the passenger "
             "can request the ride."
         )
+        
+        
+        # ============================================================
+# 12C. ROUTEX RIDE NOW / PROMO SAFETY CONTRACT
 # ============================================================
-# 13. PRODUCTION BACKEND
+
+# ------------------------------------------------------------
+# RIDE NOW READABLE PICKUP ADDRESS
+# ------------------------------------------------------------
+
+if "gpsAddress" in booking_text:
+    pass_check("Ride Now readable GPS address")
+else:
+    fail_check(
+        "Ride Now readable GPS address",
+        "Likely area: frontend/app/bookings/page.tsx\n"
+        "Could not verify gpsAddress for the Ride Now pickup."
+    )
+
+
+# ------------------------------------------------------------
+# REVERSE GEOCODING
+# ------------------------------------------------------------
+
+if (
+    "/addresses/reverse" in server_text
+    and "/addresses/reverse" in booking_text
+):
+    pass_check("Ride Now reverse geocoding")
+else:
+    fail_check(
+        "Ride Now reverse geocoding",
+        "Could not verify /addresses/reverse in both backend/server.js "
+        "and frontend/app/bookings/page.tsx."
+    )
+
+
+# ------------------------------------------------------------
+# RIDE NOW GPS COORDINATE PROTECTION
+# ------------------------------------------------------------
+
+if (
+    "gpsLocation!.lat" in booking_text
+    and "gpsLocation!.lng" in booking_text
+):
+    pass_check("Ride Now GPS coordinate protection")
+else:
+    fail_check(
+        "Ride Now GPS coordinate protection",
+        "Ride Now must continue using gpsLocation coordinates for "
+        "pickup, fare calculation and navigation."
+    )
+
+
+# ------------------------------------------------------------
+# RIDE NOW PICKUP ADDRESS STORAGE
+# ------------------------------------------------------------
+
+if (
+    "pickup_address:" in booking_text
+    and "gpsAddress" in booking_text
+):
+    pass_check("Ride Now pickup address storage")
+else:
+    fail_check(
+        "Ride Now pickup address storage",
+        "Could not verify that Ride Now stores the reverse-geocoded "
+        "GPS pickup address."
+    )
+
+
 # ============================================================
+# PROMO CONTRACT
+# ============================================================
+
+promo_fields = [
+    "fare_amount",
+    "discount_amount",
+    "passenger_amount",
+    "promo_code",
+]
+
+
+# ------------------------------------------------------------
+# BACKEND PROMO FIELDS
+# ------------------------------------------------------------
+
+missing = [
+    field
+    for field in promo_fields
+    if field not in server_text
+]
+
+if missing:
+    fail_check(
+        "Promo backend contract",
+        "backend/server.js is missing: " + ", ".join(missing)
+    )
+else:
+    pass_check("Promo backend contract")
+
+
+# ------------------------------------------------------------
+# WELCOME20 ONE USE PER PASSENGER
+# ------------------------------------------------------------
+
+if (
+    "existingPassengerPromo" in server_text
+    and "WELCOME20" in server_text
+    and "discount_amount > 0" in server_text
+):
+    pass_check("WELCOME20 passenger limit")
+else:
+    fail_check(
+        "WELCOME20 passenger limit",
+        "Could not verify that WELCOME20 is limited to one "
+        "successful discounted booking per passenger."
+    )
+
+
+# ------------------------------------------------------------
+# WELCOME20 GLOBAL 10-PERSON LIMIT
+# ------------------------------------------------------------
+
+if (
+    "totalPromoUses" in server_text
+    and "promoUses >= 10" in server_text
+):
+    pass_check("WELCOME20 global limit")
+else:
+    fail_check(
+        "WELCOME20 global limit",
+        "Could not verify the global 10-person WELCOME20 limit."
+    )
+
+
+# ------------------------------------------------------------
+# PASSENGER PROMO DATA
+# ------------------------------------------------------------
+
+missing = [
+    field
+    for field in promo_fields
+    if field not in passenger_portal_text
+]
+
+if missing:
+    fail_check(
+        "Passenger promo display",
+        "Passenger portal is missing: " + ", ".join(missing)
+    )
+else:
+    pass_check("Passenger promo display")
+
+
+# ------------------------------------------------------------
+# DRIVER PROMO DATA
+# ------------------------------------------------------------
+
+driver_required_promo_fields = [
+    "fare_amount",
+    "discount_amount",
+    "passenger_amount",
+]
+
+missing = [
+    field
+    for field in driver_required_promo_fields
+    if field not in driver_portal_text
+]
+
+if missing:
+    fail_check(
+        "Driver promo display",
+        "Driver portal is missing: " + ", ".join(missing)
+    )
+else:
+    pass_check("Driver promo display")
+
+# ============================================================
+# PROMO DATA THROUGH THE RIDE LIFECYCLE
+# ============================================================
+
+promo_endpoints = [
+    ("/trip-requests", "Waiting ride promo data"),
+    ("/accepted-trips", "Accepted ride promo data"),
+    ("/in-progress-trips", "In Progress ride promo data"),
+    ("/completed-trips", "Completed ride promo data"),
+]
+
+for endpoint, check_name in promo_endpoints:
+
+    position = server_text.find(
+        'app.get("' + endpoint + '"'
+    )
+
+    if position == -1:
+        fail_check(
+            check_name,
+            "Endpoint not found: " + endpoint
+        )
+        continue
+
+    section = server_text[
+        position:position + 7000
+    ]
+
+    # tb.* means all trip_bookings columns are returned,
+    # including fare and promo fields.
+    if "tb.*" in section:
+        missing = []
+    else:
+        missing = [
+            field
+            for field in promo_fields
+            if field not in section
+        ]
+
+    if missing:
+        fail_check(
+            check_name,
+            endpoint + " is missing: " + ", ".join(missing)
+        )
+    else:
+        pass_check(check_name)
+
+
 
 print("Checking production backend...")
 
