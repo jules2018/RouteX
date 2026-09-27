@@ -1098,7 +1098,36 @@ else:
         "GPS pickup address."
     )
 
+# ============================================================
+# ADDRESS LEARNING SAFETY
+# ============================================================
 
+if (
+    "passengerEnteredHouseNumber" in server_text
+    and "streetAddress" in server_text
+    and "if (passengerEnteredHouseNumber && streetAddress)" in server_text
+):
+    pass_check("Residential address learning")
+else:
+    fail_check(
+        "Residential address learning",
+        "Address search should prefer the actual house number + street "
+        "for numbered residential searches instead of learning a nearby POI name."
+    )
+
+
+if (
+    "!passengerEnteredHouseNumber" in server_text
+    and "!placeName" in server_text
+    and "item.display_name" in server_text
+):
+    pass_check("POI address protection")
+else:
+    fail_check(
+        "POI address protection",
+        "OSM display-name fallback should not overwrite a numbered "
+        "residential street address with a POI or business name."
+    )
 # ============================================================
 # PROMO CONTRACT
 # ============================================================

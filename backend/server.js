@@ -2753,10 +2753,24 @@ const searchQueries = [
         item.name ||
         "";
 
-     let shortAddress =
-  placeName ||
-  streetAddress ||
-  query;
+  // For numbered address searches, prefer the actual
+// house number + street returned by OSM.
+// This prevents POI names such as schools from being
+// learned as fake residential addresses.
+
+const passengerEnteredHouseNumber =
+  /^\s*\d+[A-Za-z]?\s+/.test(query);
+
+let shortAddress;
+
+if (passengerEnteredHouseNumber && streetAddress) {
+  shortAddress = streetAddress;
+} else {
+  shortAddress =
+    placeName ||
+    streetAddress ||
+    query;
+}
 
 // If we had to fall back by removing the house number,
 // keep the customer's original typed address.
@@ -2784,10 +2798,11 @@ if (
       // If Nominatim doesn't expose item.name,
       // display_name's first section is often`
       // the POI/business name.
-      if (
-        !placeName &&
-        item.display_name
-      ) {
+  if (
+  !passengerEnteredHouseNumber &&
+  !placeName &&
+  item.display_name
+) {
         const firstPart =
           item.display_name
             .split(",")[0]
