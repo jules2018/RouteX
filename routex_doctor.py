@@ -763,6 +763,133 @@ for endpoint, name in [
     else:
         pass_check(name)
 
+# ============================================================
+# DRIVER AVAILABILITY / BUSY STATE CONTRACT
+# ============================================================
+
+# ------------------------------------------------------------
+# ACCEPTING A RIDE MUST MAKE DRIVER BUSY
+# ------------------------------------------------------------
+
+pos = server_text.find('"/trip-requests/:id/accept"')
+
+if pos != -1:
+    section = server_text[pos:pos + 9000]
+
+    if (
+        "UPDATE drivers" in section
+        and "status = 'Busy'" in section
+    ):
+        pass_check("Driver busy on ride")
+    else:
+        fail_check(
+            "Driver busy on ride",
+            "Likely area: backend/server.js -> POST /trip-requests/:id/accept\n"
+            "Accepting a ride must change the assigned driver's status to Busy."
+        )
+else:
+    fail_check(
+        "Driver busy on ride",
+        "POST /trip-requests/:id/accept not found."
+    )
+
+
+# ------------------------------------------------------------
+# ONLY AVAILABLE + ONLINE DRIVER MAY ACCEPT
+# ------------------------------------------------------------
+
+pos = server_text.find('"/trip-requests/:id/accept"')
+
+if pos != -1:
+    section = server_text[pos:pos + 9000]
+
+    if (
+        "status = 'Available'" in section
+        and "is_online = true" in section
+    ):
+        pass_check("Busy driver double-book protection")
+    else:
+        fail_check(
+            "Busy driver double-book protection",
+            "Accept endpoint must verify that the driver is Available "
+            "and online before allowing another ride."
+        )
+
+
+# ------------------------------------------------------------
+# COMPLETING RIDE MUST RETURN DRIVER TO AVAILABLE
+# ------------------------------------------------------------
+
+pos = server_text.find('"/trip-requests/:id/complete"')
+
+if pos != -1:
+    section = server_text[pos:pos + 7000]
+
+    if (
+        "UPDATE drivers" in section
+        and "status = 'Available'" in section
+    ):
+        pass_check("Driver available after completion")
+    else:
+        fail_check(
+            "Driver available after completion",
+            "Likely area: backend/server.js -> POST /trip-requests/:id/complete\n"
+            "Completing a ride must return the assigned driver to Available."
+        )
+else:
+    fail_check(
+        "Driver available after completion",
+        "POST /trip-requests/:id/complete not found."
+    )
+
+
+# ------------------------------------------------------------
+# COMPLETING RIDE MUST RECORD COMPLETED_AT
+# ------------------------------------------------------------
+
+pos = server_text.find('"/trip-requests/:id/complete"')
+
+if pos != -1:
+    section = server_text[pos:pos + 7000]
+
+    if (
+        "completed_at" in section
+        and "NOW()" in section
+    ):
+        pass_check("Trip completion timestamp")
+    else:
+        fail_check(
+            "Trip completion timestamp",
+            "Completed rides should record completed_at = NOW()."
+        )
+
+
+# ------------------------------------------------------------
+# ONLINE DRIVER COUNT MUST EXCLUDE BUSY DRIVERS
+# ------------------------------------------------------------
+
+pos = server_text.find('"/online-drivers"')
+
+if pos != -1:
+    section = server_text[pos:pos + 5000]
+
+    if (
+        "is_online = true" in section
+        and "status = 'Available'" in section
+    ):
+        pass_check("Busy driver availability exclusion")
+    else:
+        fail_check(
+            "Busy driver availability exclusion",
+            "/online-drivers must count only drivers who are both "
+            "online and Available. Busy drivers must not be shown "
+            "to passengers as available."
+        )
+else:
+    fail_check(
+        "Busy driver availability exclusion",
+        "GET /online-drivers endpoint not found."
+    )
 # Fare protection: GPS confirmation should not visibly recalculate fare.
 confirmation_positions = [
     p for p in (

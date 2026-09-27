@@ -3655,6 +3655,24 @@ app.post(
       const bookingId = req.params.id;
       const { driverId } = req.body;
 
+      // Make sure the driver is actually available
+const driverCheck = await pool.query(
+  `
+  SELECT id, status, is_online
+  FROM drivers
+  WHERE id = $1
+    AND status = 'Available'
+    AND is_online = true
+  `,
+  [driverId]
+);
+
+if (driverCheck.rows.length === 0) {
+  return res.status(409).json({
+    error: "You are not available to accept another ride."
+  });
+}
+
       // A driver must never be able to accept an expired request.
       await pool.query(
         `
@@ -3693,6 +3711,20 @@ app.post(
         });
       }
 
+      // Driver now has an active ride.
+// Remove them from the available driver pool.
+await pool.query(
+  `
+  UPDATE drivers
+  SET
+    status = 'Busy',
+    is_online = true
+  WHERE id = $1
+  `,
+  [driverId]
+);
+
+console.log(`DRIVER ${driverId} STATUS -> BUSY`);
 await pool.query(
   `
   INSERT INTO notifications
@@ -3799,31 +3831,59 @@ app.post(
   "/trip-requests/:id/complete",
   async (req, res) => {
     try {
-
       const bookingId = req.params.id;
 
-      await pool.query(
+      // Complete the trip and get the assigned driver
+      const result = await pool.query(
         `
         UPDATE trip_bookings
         SET
           booking_status = 'Completed',
-          trip_status = 'Completed'
+          trip_status = 'Completed',
+          completed_at = NOW()
         WHERE id = $1
           AND trip_status = 'In Progress'
+        RETURNING *
         `,
         [bookingId]
       );
-      
+
+      if (result.rows.length === 0) {
+        return res.status(409).json({
+          error: "This trip cannot be completed."
+        });
+      }
+
+      const booking = result.rows[0];
+      const driverId = booking.assigned_driver_id;
+
+      // Driver has finished the ride and becomes available again
+      if (driverId) {
+        await pool.query(
+          `
+          UPDATE drivers
+          SET
+            status = 'Available',
+            is_online = true
+          WHERE id = $1
+          `,
+          [driverId]
+        );
+
+        console.log(`DRIVER ${driverId} STATUS -> AVAILABLE`);
+      }
+
       res.json({
-        message: "Trip completed"
+        message: "Trip completed",
+        booking
       });
 
     } catch (error) {
+      console.error("COMPLETE TRIP ERROR:", error);
 
       res.status(500).json({
         error: error.message
       });
-
     }
   }
 );
