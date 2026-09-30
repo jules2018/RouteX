@@ -2196,6 +2196,37 @@ const isUpingtonGeoResult = (item) => {
 
   return searchableLocation.includes("upington");
 };
+
+const geoResultMatchesStreet = (item, searchQuery) => {
+  const resultText = [
+    item.address_line1,
+    item.address_line2,
+    item.formatted,
+    item.street,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  // Remove house number and road terminology so we're comparing
+  // the actual street name.
+  const streetName = String(searchQuery || "")
+    .replace(/^\s*\d+[A-Za-z]?\s+/, "")
+    .replace(
+      /\b(avenue|ave|laan|street|st|straat|road|rd|weg|crescent|singel|drive|dr|rylaan)\b\.?/gi,
+      ""
+    )
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+
+  // If there is no meaningful street name, don't block the result.
+  if (streetName.length < 3) {
+    return true;
+  }
+
+  return resultText.includes(streetName);
+};
     // =====================================================
     // 1. SEARCH ROUTEX LOCAL DATABASE FIRST
     // =====================================================
@@ -2290,7 +2321,25 @@ const translatedStreetQuery = queryWithoutHouseNumber
   .replace(/\bave\.?\b/gi, "Avenue")
   .replace(/\bdr\.?\b/gi, "Drive");
 
+// English -> Afrikaans street terminology fallback.
+// Some Upington streets are mapped under their Afrikaans road type.
+const afrikaansStreetQuery = queryWithoutHouseNumber
+  .replace(/\bcrescent\b/gi, "Singel")
+  .replace(/\bstreet\b/gi, "Straat")
+  .replace(/\broad\b/gi, "Weg")
+  .replace(/\bavenue\b/gi, "Laan")
+  .replace(/\bdrive\b/gi, "Rylaan")
+  .trim();
 
+// Street name without the road type.
+// Example: "Saturnus Avenue" -> "Saturnus"
+const bareStreetQuery = queryWithoutHouseNumber
+  .replace(
+    /\b(avenue|laan|street|straat|road|weg|crescent|singel|drive|rylaan)\b/gi,
+    ""
+  )
+  .replace(/\s+/g, " ")
+  .trim();
 // -----------------------------------------------------
 // First try exactly what the passenger entered
 // -----------------------------------------------------
@@ -2309,14 +2358,15 @@ let usefulGeoResults = geoResults.filter((item) => {
   const lat = Number(item.lat);
   const lng = Number(item.lon);
 
-  return (
-    Number.isFinite(lat) &&
-    Number.isFinite(lng) &&
-    isUpingtonGeoResult(item) &&
-    !["city", "county", "state", "country"].includes(
-      String(item.result_type || "").toLowerCase()
-    )
-  );
+ return (
+  Number.isFinite(lat) &&
+  Number.isFinite(lng) &&
+  isUpingtonGeoResult(item) &&
+  geoResultMatchesStreet(item, queryWithoutHouseNumber) &&
+  !["city", "county", "state", "country"].includes(
+    String(item.result_type || "").toLowerCase()
+  )
+);
 });
 
 
@@ -2329,37 +2379,72 @@ let usefulGeoResults = geoResults.filter((item) => {
 // Hantam Crescent
 // -----------------------------------------------------
 
-if (
-  usefulGeoResults.length === 0 &&
-  translatedStreetQuery.toLowerCase() !==
-    queryWithoutHouseNumber.toLowerCase()
-) {
-  console.log(
-    "GEOAPIFY NORMALIZED FALLBACK:",
-    query,
-    "->",
-    translatedStreetQuery
+// -----------------------------------------------------
+// ROUTEX SMART GEOAPIFY FALLBACKS
+// -----------------------------------------------------
+
+const geoapifyFallbackQueries = [
+  queryWithoutHouseNumber,
+  translatedStreetQuery,
+  afrikaansStreetQuery,
+  bareStreetQuery,
+]
+  .map((value) => String(value || "").trim())
+  .filter(Boolean)
+  .filter(
+    (value, index, array) =>
+      array.findIndex(
+        (other) => other.toLowerCase() === value.toLowerCase()
+      ) === index
   );
 
-  geoResults = await searchGeoapifyAddress(
-    `${translatedStreetQuery}, Upington, South Africa`
-  );
+if (usefulGeoResults.length === 0) {
+  for (const fallbackQuery of geoapifyFallbackQueries) {
+    // Exact passenger query was already attempted above.
+    if (fallbackQuery.toLowerCase() === query.toLowerCase()) {
+      continue;
+    }
 
-  usefulGeoResults = geoResults.filter((item) => {
-    const lat = Number(item.lat);
-    const lng = Number(item.lon);
-
-    return (
-      Number.isFinite(lat) &&
-      Number.isFinite(lng) &&
-     isUpingtonGeoResult(item) &&
-      !["city", "county", "state", "country"].includes(
-        String(item.result_type || "").toLowerCase()
-      )
+    console.log(
+      "GEOAPIFY SMART FALLBACK:",
+      query,
+      "->",
+      fallbackQuery
     );
-  });
-}
 
+    const fallbackResults = await searchGeoapifyAddress(
+      `${fallbackQuery}, Upington, South Africa`
+    );
+
+    const validFallbackResults = fallbackResults.filter((item) => {
+      const lat = Number(item.lat);
+      const lng = Number(item.lon);
+
+     return (
+  Number.isFinite(lat) &&
+  Number.isFinite(lng) &&
+  isUpingtonGeoResult(item) &&
+  geoResultMatchesStreet(item, fallbackQuery) &&
+  !["city", "county", "state", "country"].includes(
+    String(item.result_type || "").toLowerCase()
+  )
+);
+    });
+
+    if (validFallbackResults.length > 0) {
+      geoResults = fallbackResults;
+      usefulGeoResults = validFallbackResults;
+
+      console.log(
+        "GEOAPIFY FALLBACK SUCCESS:",
+        fallbackQuery,
+        validFallbackResults.length
+      );
+
+      break;
+    }
+  }
+}
 
 // -----------------------------------------------------
 // Return Geoapify suggestions immediately when useful.
@@ -2371,11 +2456,7 @@ if (usefulGeoResults.length > 0) {
     .map((item) => ({
       // Keep what the passenger typed when we had
       // to normalize the address.
-      address:
-        translatedStreetQuery.toLowerCase() !==
-        queryWithoutHouseNumber.toLowerCase()
-          ? query
-          : item.address_line1 || query,
+     address: item.address_line1 || query,
 
       full_address:
         item.formatted ||
@@ -2558,31 +2639,38 @@ if (usefulGeoResults.length > 0) {
 
 // Build our different search attempts
 const searchQueries = [
-  // 1. Exact address first
+  // 1. Exact passenger address
   `${query}, Upington, South Africa`,
   `${query}, Upington`,
 
-  // 2. Try without the house number
-  ...(queryWithoutHouseNumber !== query
-    ? [
-        `${queryWithoutHouseNumber}, Upington, South Africa`,
-        `${queryWithoutHouseNumber}, Upington`,
-      ]
-    : []),
+  // 2. Without house number
+  `${queryWithoutHouseNumber}, Upington, South Africa`,
+  `${queryWithoutHouseNumber}, Upington`,
 
-  // 3. Try English street terminology
-  ...(translatedStreetQuery.toLowerCase() !==
-  queryWithoutHouseNumber.toLowerCase()
-    ? [
-        `${translatedStreetQuery}, Upington, South Africa`,
-        `${translatedStreetQuery}, Upington`,
-      ]
-    : []),
+  // 3. Afrikaans -> English road terminology
+  `${translatedStreetQuery}, Upington, South Africa`,
+  `${translatedStreetQuery}, Upington`,
 
-  // 4. Existing broader fallbacks
+  // 4. English -> Afrikaans road terminology
+  `${afrikaansStreetQuery}, Upington, South Africa`,
+  `${afrikaansStreetQuery}, Upington`,
+
+  // 5. Street name only
+  `${bareStreetQuery}, Upington, South Africa`,
+  `${bareStreetQuery}, Upington`,
+
+  // 6. Wider fallbacks
   `${query}, Northern Cape, South Africa`,
   query,
-];
+]
+  .map((value) => value.trim())
+  .filter(Boolean)
+  .filter(
+    (value, index, array) =>
+      array.findIndex(
+        (other) => other.toLowerCase() === value.toLowerCase()
+      ) === index
+  );
     const allOsmResults = [];
 
     for (const searchQuery of searchQueries) {
