@@ -2,8 +2,6 @@
 
 "use client";
 
-
-
 import {
 
   useEffect,
@@ -11,6 +9,7 @@ import {
   useMemo,
 
   useState,
+  Suspense,
 
 } from "react";
 
@@ -258,8 +257,7 @@ function formatEta(
 
 
 
-export default function PassengerPage() {
-
+function PassengerPageContent() {
   const searchParams = useSearchParams();
 
   const bookingParam = searchParams.get("booking");
@@ -1594,5 +1592,20 @@ if (tripInProgress) {
         </>
       )}
     </main>
+  );
+}
+export default function PassengerPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="flex min-h-screen items-center justify-center bg-white">
+          <p className="text-sm font-semibold text-black/50">
+            Loading your ride...
+          </p>
+        </main>
+      }
+    >
+      <PassengerPageContent />
+    </Suspense>
   );
 }
