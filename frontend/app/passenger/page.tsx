@@ -414,18 +414,56 @@ function PassengerPageContent() {
 
 
 
-   loadBooking();
-
-const interval = window.setInterval(() => {
-  loadBooking();
-}, 5000);
-
-return () => {
-  window.clearInterval(interval);
-};
+loadBooking();
 
 }, [bookingId]);
+useEffect(() => {
+  if (!bookingId) return;
 
+  async function refreshBookingStatus() {
+    const { data, error } = await supabase
+      .from("trip_bookings")
+      .select(`
+        id,
+        passenger_id,
+        assigned_driver_id,
+        pickup_address,
+        dropoff_address,
+        pickup_lat,
+        pickup_lng,
+        destination_lat,
+        destination_lng,
+        confirmed_pickup_lat,
+        confirmed_pickup_lng,
+        booking_status,
+        trip_status
+      `)
+      .eq("id", bookingId)
+      .single();
+
+    if (error || !data) {
+      console.error("BOOKING STATUS REFRESH ERROR:", error);
+      return;
+    }
+
+    setBooking((current) => {
+      if (!current) return data as Booking;
+
+      return {
+        ...current,
+        ...(data as Booking),
+      };
+    });
+  }
+
+  const interval = window.setInterval(() => {
+    refreshBookingStatus();
+  }, 5000);
+
+  return () => {
+    window.clearInterval(interval);
+  };
+}, [bookingId]);
 // ==========================================================
 // REALTIME BOOKING STATUS
 // ==========================================================
