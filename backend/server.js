@@ -5765,10 +5765,12 @@ function calculateDistanceKm(lat1, lng1, lat2, lng2) {
 
           let fare;
 
-          if (distanceKm <= 3) {
-  fare = 55;
+ if (distanceKm <= 2) {
+  fare = 40;
+} else if (distanceKm <= 4) {
+  fare = 45;
 } else if (distanceKm <= 5) {
-  fare = 70;
+  fare = 60;
 } else if (distanceKm <= 7) {
   fare = 85;
 } else if (distanceKm <= 9) {
@@ -5780,10 +5782,9 @@ function calculateDistanceKm(lat1, lng1, lat2, lng2) {
 } else if (distanceKm <= 20) {
   fare = 150;
 } else if (distanceKm <= 25) {
-  fare = 175;
+  fare = 160;
 } else {
-  // Trips over 25 km
-  fare = 175 + Math.ceil(distanceKm - 25) * 6;
+  fare = 160 + Math.ceil(distanceKm - 25) * 3;
 }
             // =========================================
 // OUT-OF-TOWN PICKUP FEE
