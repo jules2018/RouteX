@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+
 import AuthGuard from "../components/AuthGuard";
 import { showNotification } from "../lib/notifications";
 import { API_URL } from "../lib/api";
@@ -10,6 +11,10 @@ export default function DriverPortalPage() {
 
   const [status, setStatus] = useState<"available" | "offline">("available");
   const [driver, setDriver] = useState<any>(null);
+  const [driverLocation, setDriverLocation] = useState<{
+  lat: number;
+  lng: number;
+} | null>(null);
   const [scheduledRides, setScheduledRides] = useState<any[]>([]);
   const [liveRequests, setLiveRequests] = useState<any[]>([]);
   const [acceptedTrips, setAcceptedTrips] = useState<any[]>([]);
@@ -234,7 +239,11 @@ export default function DriverPortalPage() {
 
     const watchId = navigator.geolocation.watchPosition(
       async (position) => {
-        try {
+        setDriverLocation({
+        lat: position.coords.latitude,
+        lng: position.coords.longitude,
+      });
+              try {
           await fetch(`${API_URL}/drivers/${driver.id}/location`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -772,6 +781,7 @@ export default function DriverPortalPage() {
                       pickup={ride.pickup_address}
                       destination={ride.dropoff_address}
                     />
+                   
 <div className="mt-4 flex items-start justify-between">
   <div>
     <p className="text-[7px] font-extrabold uppercase tracking-[0.1em] text-[#92959b]">

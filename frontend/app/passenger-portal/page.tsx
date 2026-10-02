@@ -70,6 +70,7 @@ export default function PassengerPortalPage() {
   const [driverLocation, setDriverLocation] = useState<any>(null);
   const [showCompletedTrips, setShowCompletedTrips] = useState(false);
   const [showLiveTrip, setShowLiveTrip] = useState(false);
+  
 
   const router = useRouter();
  
@@ -307,62 +308,93 @@ const loadDriverLocation = async (
 
 
   const loadTrips = async (passengerId: number) => {
-    try {
-      const response = await fetch(
-        `${API_URL}/passenger-bookings/${passengerId}`
-      );
-
-      if (!response.ok) {
-        throw new Error(
-          `Failed to load trips: ${response.status}`
-        );
+  try {
+    const response = await fetch(
+      `${API_URL}/passenger-bookings/${passengerId}`,
+      {
+        cache: "no-store",
       }
+    );
 
-      const data = await response.json();
+    if (!response.ok) {
+      throw new Error(
+        `Failed to load trips: ${response.status}`
+      );
+    }
 
-      setTrips(Array.isArray(data) ? data : []);
-      const activeTrip = Array.isArray(data)
-  ? data.find(
-      (trip: any) =>
+    const data = await response.json();
+    const rides = Array.isArray(data) ? data : [];
+
+    console.log("PASSENGER TRIPS REFRESH:", rides);
+
+    setTrips(rides);
+
+    // Find the passenger's current active ride.
+    const activeTrip = rides.find((trip: any) => {
+      const status = String(
+        trip.trip_status ??
+          trip.booking_status ??
+          ""
+      )
+        .trim()
+        .toLowerCase()
+        .replace(/-/g, "_")
+        .replace(/\s+/g, "_");
+
+      return (
         trip.assigned_driver_id &&
         (
-          trip.trip_status === "Accepted" ||
-          trip.trip_status === "In Progress"
+          status === "accepted" ||
+          status === "in_progress"
         )
-    )
-  : null;
+      );
+    });
 
-if (activeTrip) {
-  loadDriverLocation(
-    Number(passengerId),
-    Number(activeTrip.id)
-  );
-} else {
-  setDriverLocation(null);
-}
-      const waitingTrip = Array.isArray(data)
-  ? data.find(
-      (trip: any) =>
-        trip.trip_status === "Waiting" &&
+    if (activeTrip) {
+      console.log(
+        "PASSENGER ACTIVE TRIP:",
+        activeTrip.id,
+        activeTrip.trip_status,
+        activeTrip.booking_status
+      );
+
+      loadDriverLocation(
+        Number(passengerId),
+        Number(activeTrip.id)
+      );
+    } else {
+      setDriverLocation(null);
+    }
+
+    // Find a ride that is still waiting for a driver.
+    const waitingTrip = rides.find((trip: any) => {
+      const status = String(
+        trip.trip_status ??
+          trip.booking_status ??
+          ""
+      )
+        .trim()
+        .toLowerCase();
+
+      return (
+        status === "waiting" &&
         trip.pickup_lat &&
         trip.pickup_lng
-    )
-  : null;
+      );
+    });
 
-if (waitingTrip) {
-  loadAvailableDrivers(
-    Number(waitingTrip.pickup_lat),
-    Number(waitingTrip.pickup_lng)
-  );
-} else {
-  setAvailableDrivers([]);
-}
-
-      console.log("TRIPS:", data);
-    } catch (error) {
-      console.error("Error loading trips:", error);
+    if (waitingTrip) {
+      loadAvailableDrivers(
+        Number(waitingTrip.pickup_lat),
+        Number(waitingTrip.pickup_lng)
+      );
+    } else {
+      setAvailableDrivers([]);
     }
-  };
+  } catch (error) {
+    console.error("Error loading trips:", error);
+  }
+};
 
   const cancelBooking = async (bookingId: number) => {
   const confirmed = window.confirm(
@@ -673,9 +705,19 @@ const upcomingScheduledRides = scheduledRides.filter((ride) => {
   return [
     "scheduled",
     "waiting",
-    "accepted",
-    "in progress",
   ].includes(status);
+});
+const activeScheduledRide = scheduledRides.find((ride) => {
+  const status = String(
+    ride.trip_status || ride.booking_status || ""
+  )
+    .trim()
+    .toLowerCase();
+
+  return (
+    ride.id === activeTrip?.id &&
+    ["accepted", "in progress"].includes(status)
+  );
 });
   const otherTrips = trips.filter((trip) => {
     const status = normalizedStatus(trip);
@@ -893,11 +935,31 @@ const upcomingScheduledRides = scheduledRides.filter((ride) => {
                   <RoutePoint type="destination" label="Destination" value={trip.dropoff_address || "Destination"} />
                 </div>
 
-                {availableDrivers.length > 0 && (
-                  <p className="mt-3 text-[10px] font-bold text-[#85888f]">
-                    {availableDrivers.length} nearby driver{availableDrivers.length === 1 ? "" : "s"} found
-                  </p>
-                )}
+                <div className="mt-4 rounded-[15px] bg-white px-4 py-3 shadow-[inset_2px_2px_5px_rgba(0,0,0,0.05),inset_-2px_-2px_5px_#ffffff]">
+  <div className="flex items-center justify-between">
+    <div className="flex items-center gap-2">
+      <span className="h-2 w-2 rounded-full bg-green-500" />
+
+      <span className="text-[10px] font-extrabold text-black/60">
+        Drivers online
+      </span>
+    </div>
+
+    <span className="text-[13px] font-black text-black">
+      {onlineDrivers}
+    </span>
+  </div>
+
+  <p className="mt-1.5 text-[9px] font-medium text-black/40">
+    {availableDrivers.length > 0
+      ? `${availableDrivers.length} nearby driver${
+          availableDrivers.length === 1 ? "" : "s"
+        } available for your request`
+      : onlineDrivers > 0
+        ? "Your request is still being sent to available drivers"
+        : "No drivers are currently online"}
+  </p>
+</div>
 <div className="mt-4 flex items-end justify-between">
   <div>
     <p className="text-[8px] font-extrabold uppercase tracking-[0.12em] text-[#9a9da3]">
@@ -1035,13 +1097,17 @@ const upcomingScheduledRides = scheduledRides.filter((ride) => {
                   driverLocation.driver_lng &&
                   driverLocation.pickup_lat &&
                   driverLocation.pickup_lng && (
-                    <button
-                      type="button"
-                      onClick={() => setShowLiveTrip((value) => !value)}
-                      className="rounded-[14px] bg-[#17191f] py-3 text-[10px] font-extrabold text-white"
-                    >
-                      {showLiveTrip ? "Hide live trip" : "View live trip"}
-                    </button>
+                 <button
+  type="button"
+  onClick={() =>
+    router.push(
+      `/passenger?booking=${activeTrip.id}`
+    )
+  }
+  className="rounded-[14px] bg-[#17191f] py-3 text-[10px] font-extrabold text-white transition active:scale-[0.98]"
+>
+  Track driver
+</button>
                   )}
 
                 {activeTrip.driver_phone && (
@@ -1060,6 +1126,43 @@ const upcomingScheduledRides = scheduledRides.filter((ride) => {
                 )}
               </div>
 
+{/* SCHEDULED RIDE PICKUP CONFIRMATION */}
+{activeScheduledRide && (
+  <>
+    {!activeScheduledRide.pickup_location_confirmed_at ? (
+      <div className="mt-4 rounded-[17px] bg-white p-4 shadow-[5px_5px_12px_rgba(0,0,0,0.08),-5px_-5px_12px_rgba(255,255,255,1)]">
+        <p className="text-[11px] font-extrabold text-[#17191f]">
+          Confirm your pickup location
+        </p>
+
+        <p className="mt-1 text-[9px] font-medium leading-relaxed text-[#85888f]">
+          When you are at your pickup point, confirm your location so your
+          driver can navigate directly to you.
+        </p>
+
+        <button
+          type="button"
+          onClick={() =>
+            confirmScheduledPickupLocation(activeScheduledRide.id)
+          }
+          className="mt-3 w-full rounded-[14px] bg-[#ff6846] py-3 text-[10px] font-extrabold text-white transition active:scale-[0.98]"
+        >
+          Confirm pickup location
+        </button>
+      </div>
+    ) : (
+      <div className="mt-4 rounded-[17px] bg-white p-4 text-center shadow-[inset_3px_3px_7px_rgba(0,0,0,0.06),inset_-3px_-3px_7px_rgba(255,255,255,1)]">
+        <p className="text-[11px] font-extrabold text-[#17191f]">
+          ✓ Pickup location confirmed
+        </p>
+
+        <p className="mt-1 text-[9px] font-medium text-[#85888f]">
+          Your driver will use this location for navigation.
+        </p>
+      </div>
+    )}
+  </>
+)}
               {showLiveTrip &&
                 driverLocation &&
                 driverLocation.driver_lat &&

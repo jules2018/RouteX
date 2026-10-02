@@ -2148,7 +2148,86 @@ app.get("/addresses/search", async (req, res) => {
       return res.json([]);
     }
 
+    const getRoadType = (value) => {
+  const text = String(value || "").toLowerCase();
+
+  if (/\b(street|st|straat)\b\.?/i.test(text)) {
+    return "street";
+  }
+
+  if (/\b(road|rd|weg)\b\.?/i.test(text)) {
+    return "road";
+  }
+
+  if (/\b(avenue|ave|laan)\b\.?/i.test(text)) {
+    return "avenue";
+  }
+
+  if (/\b(crescent|singel)\b/i.test(text)) {
+    return "crescent";
+  }
+
+  if (/\b(drive|dr|rylaan)\b\.?/i.test(text)) {
+    return "drive";
+  }
+
+  return null;
+};
     console.log("ADDRESS SEARCH:", query);
+    // =====================================================
+// ROUTEX LOCAL SEARCH NORMALIZATION
+// =====================================================
+
+// Remove a leading house number.
+// Example: "11B Schroder Street" -> "Schroder Street"
+const localQueryWithoutHouseNumber = query
+  .replace(/^\s*\d+[A-Za-z]?\s+/, "")
+  .trim();
+
+// Afrikaans -> English road terminology.
+const localEnglishVariant = localQueryWithoutHouseNumber
+  .replace(/\bsingel\b/gi, "Crescent")
+  .replace(/\bstraat\b/gi, "Street")
+  .replace(/\bweg\b/gi, "Road")
+  .replace(/\blaan\b/gi, "Avenue")
+  .replace(/\brylaan\b/gi, "Drive")
+  .trim();
+
+// English -> Afrikaans road terminology.
+const localAfrikaansVariant = localQueryWithoutHouseNumber
+  .replace(/\bcrescent\b/gi, "Singel")
+  .replace(/\bstreet\b/gi, "Straat")
+  .replace(/\broad\b/gi, "Weg")
+  .replace(/\bavenue\b/gi, "Laan")
+  .replace(/\bdrive\b/gi, "Rylaan")
+  .trim();
+
+// Remove road terminology completely.
+// Example: "Saturnus Avenue" -> "Saturnus"
+const localBareStreet = localQueryWithoutHouseNumber
+  .replace(
+    /\b(avenue|ave|laan|street|st|straat|road|rd|weg|crescent|singel|drive|dr|rylaan)\b\.?/gi,
+    ""
+  )
+  .replace(/\s+/g, " ")
+  .trim();
+
+const localSearchVariants = [
+  query,
+  localQueryWithoutHouseNumber,
+  localEnglishVariant,
+  localAfrikaansVariant,
+  localBareStreet,
+]
+  .map((value) => String(value || "").trim())
+  .filter(Boolean)
+  .filter(
+    (value, index, array) =>
+      array.findIndex(
+        (other) =>
+          other.toLowerCase() === value.toLowerCase()
+      ) === index
+  );
 
     const knownAreas = [
       "Augrabies Park",
@@ -2198,71 +2277,305 @@ const isUpingtonGeoResult = (item) => {
 };
 
 const geoResultMatchesStreet = (item, searchQuery) => {
-  const resultText = [
-    item.address_line1,
-    item.address_line2,
-    item.formatted,
-    item.street,
-  ]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase();
+  const normalizeRoadType = (value) => {
+    const text = String(value || "").toLowerCase();
 
-  // Remove house number and road terminology so we're comparing
-  // the actual street name.
-  const streetName = String(searchQuery || "")
-    .replace(/^\s*\d+[A-Za-z]?\s+/, "")
-    .replace(
-      /\b(avenue|ave|laan|street|st|straat|road|rd|weg|crescent|singel|drive|dr|rylaan)\b\.?/gi,
-      ""
-    )
-    .replace(/\s+/g, " ")
-    .trim()
-    .toLowerCase();
+    if (/\b(street|st|straat)\b\.?/i.test(text)) {
+      return "street";
+    }
 
-  // If there is no meaningful street name, don't block the result.
-  if (streetName.length < 3) {
-    return true;
+    if (/\b(road|rd|weg)\b\.?/i.test(text)) {
+      return "road";
+    }
+
+    if (/\b(avenue|ave|laan)\b\.?/i.test(text)) {
+      return "avenue";
+    }
+
+    if (/\b(crescent|singel)\b/i.test(text)) {
+      return "crescent";
+    }
+
+    if (/\b(drive|dr|rylaan)\b\.?/i.test(text)) {
+      return "drive";
+    }
+
+    if (/\b(lane|ln)\b\.?/i.test(text)) {
+      return "lane";
+    }
+
+    return null;
+  };
+
+  const removeRoadType = (value) =>
+    String(value || "")
+      // Remove house number at beginning
+      .replace(/^\s*\d+[A-Za-z]?\s+/, "")
+
+      // Remove road terminology
+      .replace(
+        /\b(avenue|ave|laan|street|st|straat|road|rd|weg|crescent|singel|drive|dr|rylaan|lane|ln)\b\.?/gi,
+        ""
+      )
+
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase();
+
+  const queryText = String(searchQuery || "").trim();
+
+  /*
+   * Prefer address_line1 because Geoapify sometimes returns:
+   *
+   * address_line1: "23 Street"
+   * street: "Street"
+   *
+   * Using item.street in that situation would leave us with
+   * an empty street name after normalization.
+   */
+  const resultText =
+    item.address_line1 ||
+    item.street ||
+    "";
+
+  const queryStreetName = removeRoadType(queryText);
+  const resultStreetName = removeRoadType(resultText);
+
+  // Query must contain a meaningful street name.
+  if (queryStreetName.length < 3) {
+    return false;
   }
 
-  return resultText.includes(streetName);
+  // Geoapify must also return a meaningful street name.
+  // This prevents results such as "23 Street" -> "" from matching.
+  if (resultStreetName.length < 3) {
+    return false;
+  }
+
+  /*
+   * Require the actual street names to correspond.
+   *
+   * Examples:
+   *
+   * Khata Street -> 23 Street             ❌
+   * Khata Street -> Khata Street          ✓
+   * 82 Honeysuckle Street -> Honeysuckle Street ✓
+   */
+  const streetNameMatches =
+    resultStreetName === queryStreetName ||
+    resultStreetName.startsWith(queryStreetName + " ") ||
+    queryStreetName.startsWith(resultStreetName + " ");
+
+  if (!streetNameMatches) {
+    return false;
+  }
+
+  const requestedRoadType =
+    normalizeRoadType(queryText);
+
+  const returnedRoadType =
+    normalizeRoadType(resultText);
+
+  /*
+   * If both specify a road type, they must agree.
+   *
+   * Street = Straat
+   * Road = Weg
+   * Avenue = Laan
+   * Crescent = Singel
+   * Drive = Rylaan
+   */
+  if (
+    requestedRoadType &&
+    returnedRoadType &&
+    requestedRoadType !== returnedRoadType
+  ) {
+    return false;
+  }
+
+  return true;
 };
     // =====================================================
     // 1. SEARCH ROUTEX LOCAL DATABASE FIRST
     // =====================================================
 
-    const localResult = await pool.query(
-      `
-      SELECT
-        id,
-        address,
-        full_address,
-        area_name,
-        latitude,
-        longitude,
-        place_type
-      FROM public.addresses
-      WHERE
-        address ILIKE $1
-        OR full_address ILIKE $1
-      ORDER BY
-        CASE
-          WHEN LOWER(address) = LOWER($2) THEN 0
-          WHEN LOWER(address) LIKE LOWER($2 || '%') THEN 1
-          ELSE 2
-        END,
-        address
-      LIMIT 10
-      `,
-      [`%${query}%`, query]
-    );
+const localResult = await pool.query(
+  `
+    SELECT
+      id,
+      address,
+      full_address,
+      area_name,
+      latitude,
+      longitude,
+      place_type,
 
+      GREATEST(
+        similarity(LOWER(address), LOWER($2)),
+        similarity(LOWER(address), LOWER($3)),
+        similarity(LOWER(address), LOWER($4)),
+        similarity(
+  LOWER(
+    regexp_replace(
+      address,
+      '\s+(avenue|ave|laan|street|st|straat|road|rd|weg|crescent|singel|drive|dr|rylaan)\.?$',
+      '',
+      'i'
+    )
+  ),
+  LOWER($5)
+),
+        similarity(
+          LOWER(COALESCE(full_address, '')),
+          LOWER($2)
+        )
+      ) AS similarity_score
+
+    FROM public.addresses
+
+    WHERE
+  -- Direct match against what the passenger actually typed
+  address ILIKE $1
+  OR full_address ILIKE $1
+
+  -- English/Afrikaans variants are useful, but only when
+  -- they contain enough characters to be meaningful.
+  OR (
+    LENGTH($3) >= 5
+    AND address ILIKE '%' || $3 || '%'
+  )
+
+  OR (
+    LENGTH($4) >= 5
+    AND address ILIKE '%' || $4 || '%'
+  )
+
+  -- Bare street-name matching.
+  OR (
+    LENGTH($5) >= 5
+    AND address ILIKE '%' || $5 || '%'
+  )
+
+  -- Fuzzy matching must be reasonably strong.
+  OR similarity(
+    LOWER(address),
+    LOWER($2)
+  ) > 0.65
+
+  OR (
+    LENGTH($3) >= 5
+    AND similarity(
+      LOWER(address),
+      LOWER($3)
+    ) > 0.65
+  )
+
+  OR (
+    LENGTH($4) >= 5
+    AND similarity(
+      LOWER(address),
+      LOWER($4)
+    ) > 0.65
+  )
+
+  OR (
+    LENGTH($5) >= 5
+    AND similarity(
+      LOWER(
+        regexp_replace(
+          address,
+          '\s+(avenue|ave|laan|street|st|straat|road|rd|weg|crescent|singel|drive|dr|rylaan)\.?$',
+          '',
+          'i'
+        )
+      ),
+      LOWER($5)
+    ) > 0.65
+  )
+
+    ORDER BY
+      CASE
+        WHEN LOWER(address) = LOWER($2) THEN 0
+
+        WHEN LOWER(address) = LOWER($3)
+          OR LOWER(address) = LOWER($4) THEN 1
+
+        WHEN LOWER(address) LIKE LOWER($2 || '%') THEN 2
+
+        WHEN address ILIKE $1 THEN 3
+
+        ELSE 4
+      END,
+
+      similarity_score DESC,
+      address
+
+    LIMIT 10
+  `,
+  [
+    `%${query}%`,
+    query,
+    localEnglishVariant,
+    localAfrikaansVariant,
+    localBareStreet,
+  ]
+);
     // Return usable local matches immediately.
-    const localWithCoordinates = localResult.rows.filter(
-      (item) =>
-        item.latitude !== null &&
-        item.longitude !== null
-    );
+    const localWithCoordinates =
+  localResult.rows.filter((item) => {
+    if (
+      item.latitude === null ||
+      item.longitude === null
+    ) {
+      return false;
+    }
+
+    const score = Number(item.similarity_score || 0);
+
+    const address = String(item.address || "")
+      .toLowerCase();
+
+    const originalQuery = query.toLowerCase();
+
+    const englishVariant =
+      localEnglishVariant.toLowerCase();
+
+    const afrikaansVariant =
+      localAfrikaansVariant.toLowerCase();
+
+    const bareVariant =
+      localBareStreet.toLowerCase();
+
+    const directMatch =
+      address.includes(originalQuery) ||
+      originalQuery.includes(address) ||
+      address.includes(englishVariant) ||
+      address.includes(afrikaansVariant) ||
+      (
+        bareVariant.length >= 4 &&
+        address.includes(bareVariant)
+      );
+
+    // Make sure different road types are not confused.
+// Examples:
+// Quarry Street != Quarry Road
+// Saturnus Laan == Saturnus Avenue
+// Hantam Singel == Hantam Crescent
+
+const requestedRoadType = getRoadType(query);
+const resultRoadType = getRoadType(item.address);
+
+if (
+  requestedRoadType &&
+  resultRoadType &&
+  requestedRoadType !== resultRoadType
+) {
+  return false;
+}
+
+// Only show genuinely relevant local results.
+return directMatch || score >= 0.75;
+  });
 
     if (localWithCoordinates.length > 0) {
       console.log(
@@ -2347,7 +2660,21 @@ const bareStreetQuery = queryWithoutHouseNumber
 let geoResults = await searchGeoapifyAddress(
   `${query}, Upington, South Africa`
 );
-
+console.log(
+  "RAW GEOAPIFY RESULTS:",
+  query,
+  geoResults.map((item) => ({
+    address_line1: item.address_line1,
+    street: item.street,
+    formatted: item.formatted,
+    suburb: item.suburb,
+    district: item.district,
+    city: item.city,
+    result_type: item.result_type,
+    lat: item.lat,
+    lon: item.lon,
+  }))
+);
 
 // -----------------------------------------------------
 // Check whether Geoapify returned a useful location
@@ -2463,10 +2790,47 @@ if (usefulGeoResults.length > 0) {
         item.address_line1 ||
         query,
 
-      area_name:
-        item.suburb ||
-        item.district ||
-        "",
+     area_name: (() => {
+  const locationText = [
+    item.suburb,
+    item.district,
+    item.city,
+    item.town,
+    item.address_line1,
+    item.address_line2,
+    item.formatted,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  // Prefer RouteX's known passenger-facing area names.
+  for (const knownArea of knownAreas) {
+    if (
+      locationText.includes(
+        knownArea.toLowerCase()
+      )
+    ) {
+      return knownArea;
+    }
+  }
+
+  // Geoapify sometimes returns municipal wards instead
+  // of a useful suburb name.
+  const rawArea =
+    item.suburb ||
+    item.district ||
+    "";
+
+  if (
+    /ward\s*\d+/i.test(rawArea) ||
+    /khara hais ward/i.test(rawArea)
+  ) {
+    return "Upington";
+  }
+
+  return rawArea || "Upington";
+})(),
 
       place_type:
         item.result_type ||
@@ -2484,24 +2848,140 @@ if (usefulGeoResults.length > 0) {
         item.rank?.confidence_building_level ?? null,
     }));
 
-  console.log(
-    "GEOAPIFY RESULTS:",
-    query,
-    formattedGeoResults.length
-  );
+console.log(
+  "GEOAPIFY RESULTS:",
+  query,
+  formattedGeoResults.length
+);
 
-  return res.json(formattedGeoResults);
+// =====================================================
+// CACHE GOOD GEOAPIFY RESULTS IN ROUTEX
+// =====================================================
+
+for (const result of formattedGeoResults) {
+  try {
+    // Safety check: never cache unusable coordinates.
+    if (
+      !Number.isFinite(result.lat) ||
+      !Number.isFinite(result.lng)
+    ) {
+      continue;
+    }
+
+    // Check whether RouteX already knows this location.
+    const existing = await pool.query(
+      `
+        SELECT id
+        FROM public.addresses
+        WHERE
+          LOWER(TRIM(address)) = LOWER(TRIM($1))
+          AND ABS(latitude - $2) < 0.0001
+          AND ABS(longitude - $3) < 0.0001
+        LIMIT 1
+      `,
+      [
+        result.address,
+        result.lat,
+        result.lng,
+      ]
+    );
+
+    if (existing.rows.length > 0) {
+      continue;
+    }
+
+    await pool.query(
+      `
+        INSERT INTO public.addresses (
+          address,
+          full_address,
+          area_name,
+          latitude,
+          longitude,
+          place_type
+        )
+        VALUES (
+          $1,
+          $2,
+          $3,
+          $4,
+          $5,
+          $6
+        )
+      `,
+      [
+        result.address,
+        result.full_address,
+        result.area_name || "",
+        result.lat,
+        result.lng,
+        result.place_type,
+      ]
+    );
+
+    console.log(
+      "CACHED GEOAPIFY ADDRESS:",
+      result.address,
+      result.area_name || "",
+      result.lat,
+      result.lng
+    );
+  } catch (cacheError) {
+    // A caching failure must never stop a passenger
+    // from receiving valid search results.
+    console.error(
+      "FAILED TO CACHE GEOAPIFY ADDRESS:",
+      result.address,
+      cacheError.message
+    );
+  }
+}
+
+return res.json(formattedGeoResults);
 }
     // =====================================================
     // 2. TRY TO GEOCODE LOCAL MATCHES WITHOUT COORDINATES
     // =====================================================
 
-    const localWithoutCoordinates =
-      localResult.rows.filter(
-        (item) =>
-          item.latitude === null ||
-          item.longitude === null
+ const localWithoutCoordinates =
+  localResult.rows.filter((item) => {
+    const missingCoordinates =
+      item.latitude === null ||
+      item.longitude === null;
+
+    if (!missingCoordinates) {
+      return false;
+    }
+
+    const score = Number(item.similarity_score || 0);
+
+    const address = String(item.address || "")
+      .toLowerCase();
+
+    const originalQuery = query.toLowerCase();
+
+    const englishVariant =
+      localEnglishVariant.toLowerCase();
+
+    const afrikaansVariant =
+      localAfrikaansVariant.toLowerCase();
+
+    const bareVariant =
+      localBareStreet.toLowerCase();
+
+    const directMatch =
+      address.includes(originalQuery) ||
+      originalQuery.includes(address) ||
+      address.includes(englishVariant) ||
+      address.includes(afrikaansVariant) ||
+      (
+        bareVariant.length >= 4 &&
+        address.includes(bareVariant)
       );
+
+    // Only geocode genuinely relevant local records.
+    return directMatch || score >= 0.75;
+  });
 
     for (const place of localWithoutCoordinates) {
       const geocodeQueries = [
@@ -4920,6 +5400,34 @@ app.get("/admin/stats", async (req, res) => {
     });
   }
 });
+
+// =====================================================
+// AVAILABLE DRIVER COUNT
+// =====================================================
+app.get("/drivers/available-count", async (req, res) => {
+  try {
+    const result = await pool.query(
+      `
+      SELECT COUNT(*) AS total
+      FROM drivers
+      WHERE status = 'Available'
+        AND is_online = true
+      `
+    );
+
+    res.json({
+      onlineDrivers: Number(result.rows[0].total),
+    });
+  } catch (error) {
+    console.error("AVAILABLE DRIVER COUNT ERROR:", error);
+
+    res.status(500).json({
+      error: "Unable to load available driver count",
+    });
+  }
+});
+
+
 app.get("/admin/applications", async (req, res) => {
   try {
 
@@ -5258,26 +5766,25 @@ function calculateDistanceKm(lat1, lng1, lat2, lng2) {
           let fare;
 
           if (distanceKm <= 3) {
-            fare = 55;
-          } else if (distanceKm <= 5) {
-            fare = 65;
-          } else if (distanceKm <= 7) {
-            fare = 75;
-          } else if (distanceKm <= 9) {
-            fare = 85;
-          } else if (distanceKm <= 12) {
-            fare = 100;
-          } else if (distanceKm <= 15) {
-            fare = 115;
-          } else if (distanceKm <= 20) {
-            fare = 135;
-          } else if (distanceKm <= 25) {
-            fare = 160;
-          } else {
-            // Temporary rule for trips over 25 km
-            fare = 160 + Math.ceil(distanceKm - 25) * 6;
-          }
-
+  fare = 55;
+} else if (distanceKm <= 5) {
+  fare = 70;
+} else if (distanceKm <= 7) {
+  fare = 85;
+} else if (distanceKm <= 9) {
+  fare = 100;
+} else if (distanceKm <= 12) {
+  fare = 115;
+} else if (distanceKm <= 15) {
+  fare = 130;
+} else if (distanceKm <= 20) {
+  fare = 150;
+} else if (distanceKm <= 25) {
+  fare = 175;
+} else {
+  // Trips over 25 km
+  fare = 175 + Math.ceil(distanceKm - 25) * 6;
+}
             // =========================================
 // OUT-OF-TOWN PICKUP FEE
 // =========================================
@@ -5376,7 +5883,7 @@ fare += outOfTownFee;
     let baseFare;
 
     if (pickup_area === dropoff_area) {
-      fare = 50;
+      fare =40;
       baseFare = fare;
     } else {
       const fareResult = await pool.query(
