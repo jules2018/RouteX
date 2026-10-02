@@ -414,9 +414,17 @@ function PassengerPageContent() {
 
 
 
-    loadBooking();
+   loadBooking();
 
-  }, [bookingId]);
+const interval = window.setInterval(() => {
+  loadBooking();
+}, 5000);
+
+return () => {
+  window.clearInterval(interval);
+};
+
+}, [bookingId]);
 
 // ==========================================================
 // REALTIME BOOKING STATUS
