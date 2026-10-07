@@ -23,15 +23,25 @@ export default function PassengerLoginPage() {
   // EXISTING PASSENGER SESSION
   // =========================================
 
-  useEffect(() => {
-    const passenger = JSON.parse(
-      localStorage.getItem("passenger") || "null"
-    );
+useEffect(() => {
+  const resetSuccess =
+    new URLSearchParams(window.location.search).get("reset") === "success";
 
-    if (passenger) {
-      router.push("/passenger-portal");
-    }
-  }, [router]);
+  if (resetSuccess) {
+    showNotice(
+      "Your password was changed successfully.",
+      "success"
+    );
+  }
+
+  const passenger = JSON.parse(
+    localStorage.getItem("passenger") || "null"
+  );
+
+  if (passenger) {
+    router.push("/passenger-portal");
+  }
+}, [router]);
 
   // =========================================
   // ROUTEX NOTICE
@@ -386,6 +396,15 @@ export default function PassengerLoginPage() {
                     placeholder:text-[#9b9ea5]
                   "
                 />
+                <div className="mt-3 text-right">
+                <button
+                  type="button"
+                  onClick={() => router.push("/forgot-password")}
+                  className="text-[11px] font-bold text-[#ff6846]"
+                >
+                  Forgot password?
+                </button>
+              </div>
               </div>
             </div>
 

@@ -91,6 +91,7 @@ const [availableDrivers, setAvailableDrivers] = useState<any[]>([]);
   const [requestState, setRequestState] = useState<
     "idle" | "searching" | "no_driver"
   >("idle");
+  const [searchSecondsLeft, setSearchSecondsLeft] = useState(10 * 60);
   const [activeBookingId, setActiveBookingId] = useState<number | null>(null);
 
   const [loading, setLoading] = useState(false);
@@ -436,6 +437,24 @@ useEffect(() => {
 }, [requestState, selectedPickup]);
 
 
+useEffect(() => {
+  if (requestState !== "searching") return;
+
+  const interval = window.setInterval(() => {
+   setSearchSecondsLeft((current) => {
+  if (current <= 1) {
+    window.clearInterval(interval);
+    setRequestState("no_driver");
+    return 0;
+  }
+
+  return current - 1;
+});
+  }, 1000);
+
+  return () => window.clearInterval(interval);
+}, [requestState]);
+
   const changeScheduledDate = (days: number) => {
     const current = new Date(`${travelDate}T12:00:00`);
     current.setDate(current.getDate() + days);
@@ -491,12 +510,44 @@ useEffect(() => {
     !loading &&
     scheduledTimeIsValid;
 
+const cancelBooking = async () => {
+  if (!activeBookingId) return;
+
+  try {
+    const response = await fetch(
+      `${API_URL}/bookings/${activeBookingId}/cancel`,
+      {
+        method: "PATCH",
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data?.error || "Unable to cancel booking.");
+    }
+
+    window.location.href = "/passenger-portal";
+  } catch (error) {
+    console.error("CANCEL BOOKING ERROR:", error);
+
+    showAppPopup(
+      "Unable to cancel",
+      error instanceof Error
+        ? error.message
+        : "The booking could not be cancelled.",
+      "error"
+    );
+  }
+};
+
 const waitForDriverAcceptance = async (bookingId: number | null) => {
   setRequestState("searching");
+  setSearchSecondsLeft(10 * 60);
 
   const startedAt = Date.now();
 
-  while (Date.now() - startedAt < 60000) {
+  while (Date.now() - startedAt < 10 * 60 * 1000) {
     try {
       const response = await fetch(
         `${API_URL}/passenger-bookings/${passenger.id}`,
@@ -562,6 +613,11 @@ const waitForDriverAcceptance = async (bookingId: number | null) => {
             const driverAccepted =
               Boolean(assignedDriverId) ||
               acceptedStatuses.includes(status);
+
+              if (status === "expired") {
+                setRequestState("no_driver");
+                return;
+              }
 
             if (driverAccepted) {
               const acceptedId = Number(
@@ -1075,108 +1131,225 @@ window.location.href = "/passenger-portal";
         ) : (
           <section className="flex min-h-[62dvh] flex-col items-center justify-center text-center">
             {requestState === "searching" ? (
-              <>
-                <div className="relative flex h-20 w-20 items-center justify-center">
-                  <span className="absolute h-20 w-20 animate-ping rounded-full bg-[#ff6846]/15" />
-                  <span className="relative flex h-14 w-14 items-center justify-center rounded-full bg-[#ff6846]">
-                    <span className="h-4 w-4 rounded-full border-[3px] border-white" />
-                  </span>
-                </div>
+     <>
+  {/* SEARCHING HEADER */}
+  <div className="flex flex-col items-center text-center">
+    <div className="relative flex h-16 w-16 items-center justify-center">
+      <span className="absolute h-16 w-16 animate-ping rounded-full bg-[#ff6846]/10" />
 
-                <h2 className="mt-7 text-[24px] font-black tracking-[-0.04em]">
-                  Finding your driver...
-                </h2>
-                <p className="mt-2 max-w-[290px] text-[11px] leading-5 text-black/40">
-                  We're sending your request to nearby RouteX drivers.
-                </p>
+      <span className="relative flex h-12 w-12 items-center justify-center rounded-full bg-[#ff6846] shadow-[5px_5px_12px_rgba(0,0,0,0.12),-5px_-5px_12px_rgba(255,255,255,0.95)]">
+        <span className="h-4 w-4 rounded-full border-[3px] border-white" />
+      </span>
+    </div>
 
-                <div className="mt-7 w-full rounded-[18px] border border-black/[0.08] px-4 py-4 text-left">
-                  <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-black/35">
-                    Your trip
-                  </p>
-                  <p className="mt-2 truncate text-[13px] font-bold">
-                    {selectedPickup?.address}
-                  </p>
-                  <p className="my-1 text-[10px] text-black/25">↓</p>
-                  <p className="truncate text-[13px] font-bold">
-                    {selectedDestination?.address}
-                  </p>
-                  <p className="mt-3 text-[11px] font-black text-[#ff6846]">
-                    R{fare}
-                  </p>
-                </div>
-{availableDrivers.length > 0 && (
-  <div className="mt-4 w-full">
-    <p className="mb-2 text-left text-[8px] font-black uppercase tracking-[0.14em] text-black/30">
-      Available near you
+    <h2 className="mt-5 text-[23px] font-black tracking-[-0.045em]">
+      Finding your driver...
+    </h2>
+
+    <p className="mt-1.5 max-w-[280px] text-[10px] leading-5 text-black/45">
+      We're sending your request to nearby RouteX drivers.
+    </p>
+  </div>
+
+  {/* MAIN RIDE PANEL */}
+<div className="mt-6 w-full rounded-[28px] bg-[#f8f8f8] p-5 text-left shadow-[12px_12px_24px_rgba(0,0,0,0.10),-10px_-10px_22px_rgba(255,255,255,0.95)]">
+
+  {/* HEADER */}
+  <div className="flex items-center justify-between">
+
+    <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-[#e95432]">
+      Your trip
     </p>
 
-    {availableDrivers.slice(0, 3).map((driver) => (
-      <div
-        key={driver.id}
-        className="mb-2 flex w-full items-center gap-3 rounded-[17px] bg-white px-3 py-3 text-left shadow-[4px_4px_12px_rgba(0,0,0,0.07),-4px_-4px_12px_rgba(255,255,255,1)]"
-      >
-        <div className="h-11 w-11 shrink-0 overflow-hidden rounded-full bg-black/[0.04]">
-          {driver.profile_image ? (
-            <img
-              src={driver.profile_image}
-              alt={driver.first_name || "RouteX driver"}
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center text-[14px] font-black text-black/30">
-              {driver.first_name?.charAt(0)?.toUpperCase() || "D"}
-            </div>
-          )}
-        </div>
+    <div className="flex items-center gap-2">
+      <span
+        className={`h-1.5 w-1.5 rounded-full ${
+          onlineDrivers > 0 ? "bg-green-500" : "bg-[#e95432]"
+        }`}
+      />
 
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5">
-            <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+      <span className="text-[8px] font-semibold text-black/50">
+        {onlineDrivers === 0
+          ? "No drivers online"
+          : `${onlineDrivers} online`}
+      </span>
+    </div>
 
-            <p className="truncate text-[12px] font-black">
-              {driver.first_name}
-            </p>
-          </div>
+  </div>
 
-          <p className="mt-0.5 truncate text-[9px] font-semibold text-black/45">
-            {[driver.vehicle_color, driver.vehicle_type]
-              .filter(Boolean)
-              .join(" ")}
+  {/* ROUTE */}
+  <div className="mt-5 rounded-[20px] bg-[#f8f8f8] p-4 shadow-[inset_3px_3px_7px_rgba(0,0,0,0.06),inset_-3px_-3px_7px_rgba(255,255,255,0.95)]">
+
+    <div className="flex gap-4">
+
+      <div className="flex w-3 shrink-0 flex-col items-center">
+
+        <span className="mt-1 h-3 w-3 rounded-full border-[2px] border-[#17191f] bg-[#f8f8f8]" />
+
+        <span className="my-1.5 h-9 w-px bg-[#e95432]/45" />
+
+        <span className="h-3 w-3 rounded-[3px] bg-[#e95432]" />
+
+      </div>
+
+      <div className="min-w-0 flex-1">
+
+        <div>
+          <p className="truncate text-[14px] font-bold tracking-[-0.015em] text-[#17191f]">
+            {selectedPickup?.address}
           </p>
 
-          {driver.distance_km && (
-            <p className="mt-0.5 text-[8px] font-medium text-black/30">
-              {driver.distance_km} km away
-            </p>
-          )}
+          <p className="mt-1 text-[7px] font-semibold uppercase tracking-[0.14em] text-black/30">
+            Pickup
+          </p>
         </div>
 
-        <span className="rounded-full bg-[#fff0eb] px-2.5 py-1.5 text-[8px] font-black text-[#ff6846]">
-          Available
-        </span>
-      </div>
-    ))}
-  </div>
-)}
-                <div className="mt-5 flex items-center gap-2 rounded-full bg-white px-4 py-2.5 shadow-[3px_3px_8px_rgba(0,0,0,0.06),-3px_-3px_8px_rgba(255,255,255,1)]">
-  <span
-    className={`h-2 w-2 rounded-full ${
-      onlineDrivers > 0 ? "bg-green-500" : "bg-black/20"
-    }`}
-  />
+        <div className="mt-5">
+          <p className="truncate text-[14px] font-bold tracking-[-0.015em] text-[#17191f]">
+            {selectedDestination?.address}
+          </p>
 
-  <p className="text-[10px] font-bold text-black/55">
-    {onlineDrivers === 0
-      ? "No drivers currently online"
-      : `${onlineDrivers} driver${onlineDrivers === 1 ? "" : "s"} online`}
-  </p>
+          <p className="mt-1 text-[7px] font-semibold uppercase tracking-[0.14em] text-black/30">
+            Destination
+          </p>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  {/* FARE */}
+  <div className="mt-5 flex items-end justify-between px-1">
+
+    <div>
+      <p className="text-[7px] font-semibold uppercase tracking-[0.15em] text-black/30">
+        Estimated fare
+      </p>
+
+      <p className="mt-1 text-[27px] font-bold tracking-[-0.05em] text-[#e95432]">
+        R{fare}
+      </p>
+    </div>
+
+    <div className="text-right">
+      <p className="text-[7px] font-semibold uppercase tracking-[0.15em] text-black/25">
+        Ride type
+      </p>
+
+      <p className="mt-1 text-[9px] font-semibold text-[#17191f]">
+        Ride Now
+      </p>
+    </div>
+
+  </div>
+
+  {/* SEARCH STATUS */}
+  <div className="mt-5 rounded-[20px] bg-[#202126] px-4 py-3.5 shadow-[inset_3px_3px_7px_rgba(0,0,0,0.35),6px_6px_12px_rgba(0,0,0,0.10)]">
+
+    <div className="flex items-center justify-between gap-4">
+
+      <div className="min-w-0">
+
+        <div className="flex items-center gap-2">
+          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#ff6846]" />
+
+          <p className="text-[8px] font-semibold uppercase tracking-[0.13em] text-white/75">
+            Finding your driver
+          </p>
+        </div>
+
+        <p className="mt-1 text-[7px] font-normal text-white/35">
+          Searching nearby RouteX drivers
+        </p>
+
+      </div>
+
+      <p className="shrink-0 text-[23px] font-bold tracking-[-0.04em] text-white">
+        {Math.floor(searchSecondsLeft / 60)}:
+        {String(searchSecondsLeft % 60).padStart(2, "0")}
+      </p>
+
+    </div>
+
+  </div>
+
+  {/* AVAILABLE DRIVERS */}
+  {availableDrivers.length > 0 && (
+    <div className="mt-5">
+
+      <p className="mb-2 px-1 text-[7px] font-semibold uppercase tracking-[0.15em] text-black/30">
+        Available nearby
+      </p>
+
+      {availableDrivers.slice(0, 3).map((driver) => (
+        <div
+          key={driver.id}
+          className="mb-2 flex items-center gap-3 rounded-[16px] bg-[#f8f8f8] px-3 py-3 shadow-[5px_5px_10px_rgba(0,0,0,0.06),-4px_-4px_9px_rgba(255,255,255,0.95)]"
+        >
+
+          <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-[#f8f8f8] shadow-[inset_2px_2px_4px_rgba(0,0,0,0.07),inset_-2px_-2px_4px_rgba(255,255,255,1)]">
+
+            {driver.profile_image ? (
+              <img
+                src={driver.profile_image}
+                alt={driver.first_name || "RouteX driver"}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-[11px] font-bold text-[#e95432]">
+                {driver.first_name?.charAt(0)?.toUpperCase() || "D"}
+              </div>
+            )}
+
+          </div>
+
+          <div className="min-w-0 flex-1">
+
+            <p className="truncate text-[10px] font-semibold text-[#17191f]">
+              {driver.first_name}
+            </p>
+
+            <p className="mt-0.5 truncate text-[7px] font-normal text-black/40">
+              {[driver.vehicle_color, driver.vehicle_type]
+                .filter(Boolean)
+                .join(" ")}
+            </p>
+
+            {driver.distance_km && (
+              <p className="mt-0.5 text-[7px] font-normal text-black/25">
+                {driver.distance_km} km away
+              </p>
+            )}
+
+          </div>
+
+          <span className="text-[7px] font-semibold text-[#e95432]">
+            Available
+          </span>
+
+        </div>
+      ))}
+
+    </div>
+  )}
+
+  {/* CANCEL */}
+  <button
+    type="button"
+    onClick={cancelBooking}
+    className="mt-5 w-full rounded-[15px] bg-[#e95432] px-5 py-3 text-[10px] font-semibold text-white shadow-[5px_5px_11px_rgba(0,0,0,0.12),-4px_-4px_9px_rgba(255,255,255,0.95)] transition active:scale-[0.985] active:shadow-[inset_3px_3px_6px_rgba(0,0,0,0.16),inset_-2px_-2px_5px_rgba(255,255,255,0.7)]"
+  >
+    Cancel booking
+  </button>
+
 </div>
 
-<p className="mt-3 text-[9px] font-semibold text-black/30">
-  This can take up to 60 seconds.
-</p>
-              </>
+  <p className="mt-4 text-[8px] font-medium text-black/25">
+    We will keep searching until the timer reaches zero.
+  </p>
+</>
             ) : (
               <>
                 <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#f3f3f3] text-[24px] font-black text-black/35">
@@ -1186,7 +1359,7 @@ window.location.href = "/passenger-portal";
                   No driver accepted your ride
                 </h2>
                 <p className="mt-2 max-w-[300px] text-[11px] leading-5 text-black/40">
-                  No RouteX driver accepted within 60 seconds. You can try again or schedule the ride for later.
+                 No RouteX driver accepted your ride within 10 minutes. You can try again or schedule the ride for later.
                 </p>
 
                 <button
