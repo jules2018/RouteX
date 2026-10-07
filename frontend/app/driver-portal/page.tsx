@@ -230,9 +230,33 @@ export default function DriverPortalPage() {
     }
   }, []);
 
+
+
   /* =========================
      LIVE DRIVER GPS TRACKING
   ========================= */
+
+  useEffect(() => {
+  if (!driver?.id || status !== "available") return;
+
+  const sendHeartbeat = async () => {
+    try {
+      await fetch(`${API_URL}/drivers/${driver.id}/heartbeat`, {
+        method: "POST",
+      });
+    } catch (error) {
+      console.error("DRIVER HEARTBEAT ERROR:", error);
+    }
+  };
+
+  sendHeartbeat();
+
+  const interval = window.setInterval(sendHeartbeat, 30000);
+
+  return () => window.clearInterval(interval);
+}, [driver?.id, status]);
+
+
   useEffect(() => {
     if (!driver?.id || status !== "available") return;
     if (!navigator.geolocation) return;
