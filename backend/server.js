@@ -5060,6 +5060,121 @@ app.post("/auth/verify-reset-code", async (req, res) => {
   }
 });
 
+app.post("/auth/reset-password", async (req, res) => {
+  try {
+    const { phone, code, newPassword } = req.body;
+
+    if (!phone || !code || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Mobile number, verification code and new password are required",
+      });
+    }
+
+    if (newPassword.length < 8) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must be at least 8 characters",
+      });
+    }
+
+    // Normalize South African mobile number
+    const normalizedPhone = phone.replace(/\D/g, "");
+
+    let phoneVariants = [normalizedPhone];
+
+    if (normalizedPhone.startsWith("27")) {
+      phoneVariants.push("0" + normalizedPhone.substring(2));
+    }
+
+    if (normalizedPhone.startsWith("0")) {
+      phoneVariants.push("27" + normalizedPhone.substring(1));
+    }
+
+    // Find passenger
+    const passengerResult = await pool.query(
+      `SELECT u.id, u.email, u.role
+       FROM public.users u
+       JOIN public.passengers p ON p.email = u.email
+       WHERE REGEXP_REPLACE(p.phone, '[^0-9]', '', 'g') = ANY($1)
+         AND u.role = 'passenger'
+       LIMIT 1`,
+      [phoneVariants]
+    );
+
+    if (passengerResult.rows.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Unable to reset password",
+      });
+    }
+
+    const user = passengerResult.rows[0];
+
+    // Find verified reset code
+    const resetResult = await pool.query(
+      `SELECT id, code_hash, expires_at, verified_at
+       FROM password_reset_codes
+       WHERE user_id = $1
+         AND role = 'passenger'
+         AND used = FALSE
+         AND verified_at IS NOT NULL
+         AND expires_at > NOW()
+       ORDER BY created_at DESC
+       LIMIT 1`,
+      [user.id]
+    );
+
+    if (resetResult.rows.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Verification has expired. Please request a new code.",
+      });
+    }
+
+    const resetCode = resetResult.rows[0];
+    const codeHash = hashResetCode(code.toString());
+
+    if (codeHash !== resetCode.code_hash) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid verification code",
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await pool.query(
+      `UPDATE public.users
+       SET password = $1
+       WHERE id = $2
+         AND role = 'passenger'`,
+      [hashedPassword, user.id]
+    );
+
+    await pool.query(
+      `UPDATE password_reset_codes
+       SET used = TRUE
+       WHERE id = $1`,
+      [resetCode.id]
+    );
+
+    return res.json({
+      success: true,
+      message: "Password reset successfully",
+    });
+
+  } catch (error) {
+    console.error("Reset password error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to reset password",
+    });
+  }
+});
+
+
 app.post("/drivers/:id/status", async (req, res) => {
   try {
     const driverId = req.params.id;
