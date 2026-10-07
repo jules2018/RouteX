@@ -6626,6 +6626,22 @@ app.get("/drivers/:id/reviews", async (req, res) => {
   }
 });
 
+setInterval(async () => {
+  try {
+    await pool.query(`
+      UPDATE drivers
+      SET
+        is_online = false,
+        status = 'Offline'
+      WHERE is_online = true
+        AND last_online_at IS NOT NULL
+        AND last_online_at < NOW() - INTERVAL '30 minutes'
+    `);
+  } catch (error) {
+    console.error("DRIVER ONLINE CLEANUP ERROR:", error);
+  }
+}, 60 * 1000);
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
