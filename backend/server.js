@@ -471,23 +471,36 @@ app.get("/drivers", async (req, res) => {
 
 app.post("/auth/forgot-password", async (req, res) => {
   try {
-    const { phone } = req.body;
+ const { phone } = req.body;
 
-    if (!phone) {
-      return res.status(400).json({
-        success: false,
-        message: "Mobile number is required",
-      });
-    }
+if (!phone) {
+  return res.status(400).json({
+    success: false,
+    message: "Mobile number is required",
+  });
+}
+
+// Normalize South African mobile numbers
+const normalizedPhone = phone.replace(/\D/g, "");
+
+let phoneVariants = [normalizedPhone];
+
+if (normalizedPhone.startsWith("27")) {
+  phoneVariants.push("0" + normalizedPhone.substring(2));
+}
+
+if (normalizedPhone.startsWith("0")) {
+  phoneVariants.push("27" + normalizedPhone.substring(1));
+}
 
     const passengerResult = await pool.query(
       `SELECT u.id, u.email, u.role
        FROM public.users u
        JOIN public.passengers p ON p.email = u.email
-       WHERE p.phone = $1
+       WHERE REGEXP_REPLACE(p.phone, '[^0-9]', '', 'g') = ANY($1)
          AND u.role = 'passenger'
        LIMIT 1`,
-      [phone]
+      [phoneVariants]
     );
 
     if (passengerResult.rows.length === 0) {
