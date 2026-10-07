@@ -4965,6 +4965,101 @@ app.post("/driver-login", async (req, res) => {
   }
 });
 
+app.post("/auth/verify-reset-code", async (req, res) => {
+  try {
+    const { phone, code } = req.body;
+
+    if (!phone || !code) {
+      return res.status(400).json({
+        success: false,
+        message: "Mobile number and verification code are required",
+      });
+    }
+
+    // Normalize South African mobile number
+    const normalizedPhone = phone.replace(/\D/g, "");
+
+    let phoneVariants = [normalizedPhone];
+
+    if (normalizedPhone.startsWith("27")) {
+      phoneVariants.push("0" + normalizedPhone.substring(2));
+    }
+
+    if (normalizedPhone.startsWith("0")) {
+      phoneVariants.push("27" + normalizedPhone.substring(1));
+    }
+
+    // Find passenger
+    const passengerResult = await pool.query(
+      `SELECT u.id, u.email, u.role
+       FROM public.users u
+       JOIN public.passengers p ON p.email = u.email
+       WHERE REGEXP_REPLACE(p.phone, '[^0-9]', '', 'g') = ANY($1)
+         AND u.role = 'passenger'
+       LIMIT 1`,
+      [phoneVariants]
+    );
+
+    if (passengerResult.rows.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or expired verification code",
+      });
+    }
+
+    const user = passengerResult.rows[0];
+
+    const resetResult = await pool.query(
+      `SELECT id, code_hash, expires_at, used
+       FROM password_reset_codes
+       WHERE user_id = $1
+         AND role = 'passenger'
+         AND used = FALSE
+         AND expires_at > NOW()
+       ORDER BY created_at DESC
+       LIMIT 1`,
+      [user.id]
+    );
+
+    if (resetResult.rows.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or expired verification code",
+      });
+    }
+
+    const resetCode = resetResult.rows[0];
+    const codeHash = hashResetCode(code.toString());
+
+    if (codeHash !== resetCode.code_hash) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or expired verification code",
+      });
+    }
+
+    await pool.query(
+      `UPDATE password_reset_codes
+       SET verified_at = NOW()
+       WHERE id = $1`,
+      [resetCode.id]
+    );
+
+    return res.json({
+      success: true,
+      message: "Verification code confirmed",
+    });
+
+  } catch (error) {
+    console.error("Verify reset code error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to verify code",
+    });
+  }
+});
+
 app.post("/drivers/:id/status", async (req, res) => {
   try {
     const driverId = req.params.id;
