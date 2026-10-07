@@ -4781,8 +4781,9 @@ app.get("/available-drivers", async (req, res) => {
   1
 ) AS distance_km
       FROM drivers
-     WHERE status = 'Available'
+  WHERE status = 'Available'
   AND is_online = true
+  AND last_online_at > NOW() - INTERVAL '2 minutes'
   AND current_lat IS NOT NULL
   AND current_lng IS NOT NULL
   AND (
