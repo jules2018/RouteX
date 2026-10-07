@@ -5185,10 +5185,14 @@ app.post("/drivers/:id/status", async (req, res) => {
       `
       UPDATE drivers
       SET
-        status = $1,
-        is_online = $2,
-        current_lat = $3,
-        current_lng = $4
+  status = $1,
+  is_online = $2,
+  current_lat = $3,
+  current_lng = $4,
+  last_online_at = CASE
+    WHEN $2 = true THEN NOW()
+    ELSE last_online_at
+  END
       WHERE id = $5
       RETURNING *
       `,
@@ -5213,6 +5217,41 @@ app.post("/drivers/:id/status", async (req, res) => {
 /* =========================
    DRIVER LIVE LOCATION
 ========================= */
+
+app.post("/drivers/:id/heartbeat", async (req, res) => {
+  try {
+    const driverId = req.params.id;
+
+    const result = await pool.query(
+      `
+      UPDATE drivers
+      SET last_online_at = NOW()
+      WHERE id = $1
+        AND is_online = true
+      RETURNING id, last_online_at
+      `,
+      [driverId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        error: "Driver is not online."
+      });
+    }
+
+    res.json({
+      success: true,
+      last_online_at: result.rows[0].last_online_at
+    });
+
+  } catch (error) {
+    console.error("DRIVER HEARTBEAT ERROR:", error);
+
+    res.status(500).json({
+      error: "Unable to update driver activity"
+    });
+  }
+});
 
 app.post("/drivers/:id/location", async (req, res) => {
   try {
