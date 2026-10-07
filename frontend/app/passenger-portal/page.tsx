@@ -893,16 +893,19 @@ const activeScheduledRide = scheduledRides.find((ride) => {
 
       <div className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-[#aeb1b7]" />
 
-      <div>
-        <p className="text-[11px] font-black text-[#17191f]">
-          No drivers available right now
-        </p>
+    <div>
+  <p className="text-[14px] font-black tracking-[-0.02em] text-[#17191f]">
+    No drivers available right now
+  </p>
 
-        <p className="mt-1 text-[9px] font-semibold leading-4 text-[#85888f]">
-          There are currently no RouteX drivers online.
-          You can try again shortly or schedule a ride for later.
-        </p>
-      </div>
+  <p className="mt-1.5 text-[10px] font-semibold leading-4 text-[#85888f]">
+    There are no drivers available to accept your ride at the moment.
+  </p>
+
+  <p className="mt-1 text-[10px] font-semibold leading-4 text-[#85888f]">
+    Try again shortly or schedule your ride for later.
+  </p>
+</div>
 
     </div>
   </div>
