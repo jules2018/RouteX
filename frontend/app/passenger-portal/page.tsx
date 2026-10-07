@@ -893,7 +893,7 @@ const activeScheduledRide = scheduledRides.find((ride) => {
 
       <div className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-[#aeb1b7]" />
 
-    <div>
+ <div>
   <p className="text-[14px] font-black tracking-[-0.02em] text-[#17191f]">
     No drivers available right now
   </p>
@@ -905,6 +905,33 @@ const activeScheduledRide = scheduledRides.find((ride) => {
   <p className="mt-1 text-[10px] font-semibold leading-4 text-[#85888f]">
     Try again shortly or schedule your ride for later.
   </p>
+
+  <div className="mt-4 rounded-[14px] bg-[#e7e9ee] px-3.5 py-3 shadow-[inset_2px_2px_5px_rgba(0,0,0,0.06),inset_-2px_-2px_5px_rgba(255,255,255,0.9)]">
+    <p className="text-[10px] font-black text-[#ff6846]">
+      Know someone who could drive with RouteX?
+    </p>
+
+    <p className="mt-1 text-[9px] font-semibold leading-4 text-[#85888f]">
+      RouteX is growing and we're looking for more drivers in your area.
+    </p>
+
+   <button
+  type="button"
+  onClick={() => {
+    const message = encodeURIComponent(
+      "Hi! I found RouteX, a local ride-booking service in Upington. They are currently looking for more drivers to join the platform. If you're interested in becoming a RouteX driver, you can find out more here."
+    );
+
+    window.open(
+      `https://wa.me/?text=${message}`,
+      "_blank"
+    );
+  }}
+  className="mt-3 inline-flex items-center rounded-full bg-white px-4 py-2 text-[9px] font-black text-[#17191f] shadow-[3px_3px_7px_rgba(0,0,0,0.08),-3px_-3px_7px_rgba(255,255,255,0.9)] transition active:scale-95"
+>
+  Refer a driver →
+</button>
+  </div>
 </div>
 
     </div>
