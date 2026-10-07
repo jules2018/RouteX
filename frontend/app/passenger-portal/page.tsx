@@ -919,7 +919,7 @@ const activeScheduledRide = scheduledRides.find((ride) => {
   type="button"
   onClick={() => {
     const message = encodeURIComponent(
-      "Hi! I found RouteX, a local ride-booking service in Upington. They are currently looking for more drivers to join the platform. If you're interested in becoming a RouteX driver, you can find out more here."
+      "Hi! I found RouteX, a local ride-booking service in Upington. They are currently looking for more drivers to join the platform. If you're interested in becoming a RouteX driver, you can find out more here: https://routex-frontend.onrender.com/"
     );
 
     window.open(
