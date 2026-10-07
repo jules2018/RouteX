@@ -8,24 +8,44 @@ const multer = require("multer");
 const { createClient } = require("@supabase/supabase-js");
 const fs = require("fs");
 const bcrypt = require("bcryptjs");
-const { Resend } = require("resend");
-const resend = new Resend(process.env.RESEND_API_KEY);
+
 async function sendResetEmail(email, code) {
-  await resend.emails.send({
-    from: "RouteX <onboarding@resend.dev>",
-    to: email,
-    subject: "Your RouteX password reset code",
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 500px;">
-        <h2>RouteX Password Reset</h2>
-        <p>Your password reset code is:</p>
-        <h1 style="letter-spacing: 6px;">${code}</h1>
-        <p>This code expires in 10 minutes.</p>
-        <p>If you did not request a password reset, you can ignore this email.</p>
-      </div>
-    `,
+  const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+    method: "POST",
+    headers: {
+      "accept": "application/json",
+      "api-key": process.env.BREVO_API_KEY,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      sender: {
+        name: "RouteX",
+        email: "julietta.esterhuizen@outlook.com",
+      },
+      to: [
+        {
+          email: email,
+        },
+      ],
+      subject: "Your RouteX password reset code",
+      htmlContent: `
+        <div style="font-family: Arial, sans-serif; max-width: 500px;">
+          <h2>RouteX Password Reset</h2>
+          <p>Your password reset code is:</p>
+          <h1 style="letter-spacing: 6px;">${code}</h1>
+          <p>This code expires in 10 minutes.</p>
+          <p>If you did not request a password reset, you can ignore this email.</p>
+        </div>
+      `,
+    }),
   });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Brevo email failed: ${response.status} ${errorText}`);
+  }
 }
+
 
 function hashResetCode(code) {
   return crypto
