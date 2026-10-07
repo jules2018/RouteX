@@ -27,6 +27,13 @@ async function sendResetEmail(email, code) {
   });
 }
 
+function hashResetCode(code) {
+  return crypto
+    .createHash("sha256")
+    .update(code)
+    .digest("hex");
+}
+
 
 require("dotenv").config();
 
@@ -440,6 +447,75 @@ app.get("/drivers", async (req, res) => {
     });
   }
 });
+
+
+app.post("/auth/forgot-password", async (req, res) => {
+  try {
+    const { phone } = req.body;
+
+    if (!phone) {
+      return res.status(400).json({
+        success: false,
+        message: "Mobile number is required",
+      });
+    }
+
+    const passengerResult = await pool.query(
+      `SELECT u.id, u.email, u.role
+       FROM public.users u
+       JOIN public.passengers p ON p.email = u.email
+       WHERE p.phone = $1
+         AND u.role = 'passenger'
+       LIMIT 1`,
+      [phone]
+    );
+
+    if (passengerResult.rows.length === 0) {
+      return res.json({
+        success: true,
+        message: "If an account exists, a verification code has been sent.",
+      });
+    }
+
+    const user = passengerResult.rows[0];
+
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const codeHash = hashResetCode(code);
+
+    await pool.query(
+      `UPDATE password_reset_codes
+       SET used = TRUE
+       WHERE user_id = $1
+         AND role = 'passenger'
+         AND used = FALSE`,
+      [user.id]
+    );
+
+    await pool.query(
+      `INSERT INTO password_reset_codes
+       (user_id, role, code_hash, expires_at)
+       VALUES ($1, $2, $3, NOW() + INTERVAL '10 minutes')`,
+      [user.id, "passenger", codeHash]
+    );
+
+    await sendResetEmail(user.email, code);
+
+    return res.json({
+      success: true,
+      message: "If an account exists, a verification code has been sent.",
+    });
+
+  } catch (error) {
+    console.error("Forgot password error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to process password reset request.",
+    });
+  }
+});
+
+
 app.post("/drivers", async (req, res) => {
   try {
     const {
