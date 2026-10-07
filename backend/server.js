@@ -8,6 +8,24 @@ const multer = require("multer");
 const { createClient } = require("@supabase/supabase-js");
 const fs = require("fs");
 const bcrypt = require("bcryptjs");
+const { Resend } = require("resend");
+const resend = new Resend(process.env.RESEND_API_KEY);
+async function sendResetEmail(email, code) {
+  await resend.emails.send({
+    from: "RouteX <onboarding@resend.dev>",
+    to: email,
+    subject: "Your RouteX password reset code",
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 500px;">
+        <h2>RouteX Password Reset</h2>
+        <p>Your password reset code is:</p>
+        <h1 style="letter-spacing: 6px;">${code}</h1>
+        <p>This code expires in 10 minutes.</p>
+        <p>If you did not request a password reset, you can ignore this email.</p>
+      </div>
+    `,
+  });
+}
 require("dotenv").config();
 
 async function sendWhatsAppBookingAlert(
@@ -5038,6 +5056,8 @@ app.get("/ambassador/:code/referrals", async (req, res) => {
 
   }
 });
+
+
 app.post("/passenger-login", async (req, res) => {
   try {
     const { email, password } = req.body;
