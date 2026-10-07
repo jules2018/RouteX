@@ -189,24 +189,6 @@ async function sendWhatsAppDriverApproved(
 const app = express();
 
 
-app.get("/test-email", async (req, res) => {
-  try {
-    await sendResetEmail("julietta.esterhuizen@outlook.com", "123456");
-
-    res.json({
-      success: true,
-      message: "Test email sent",
-    });
-  } catch (error) {
-    console.error("TEST EMAIL ERROR:", error);
-
-    res.status(500).json({
-      success: false,
-      error: error.message,
-    });
-  }
-});
-
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
