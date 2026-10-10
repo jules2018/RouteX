@@ -998,6 +998,155 @@ app.post(
   }
 );
 
+// ------------------------------------------------------------
+// SHARED SERVER-SIDE ROUTEX FARE CALCULATION
+// Keep this function as the single source of truth for both
+// fare quotes and booking creation.
+// ------------------------------------------------------------
+const ROUTEX_UPINGTON_CENTRE_LAT = -28.4575;
+const ROUTEX_UPINGTON_CENTRE_LNG = 21.2427;
+
+function routeXDistanceKm(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function routeXDistanceFare(distanceKm) {
+  // Revised RouteX local fares: smoother increases between distance bands.
+  // Keep OSRM road distance and the separate out-of-town fee unchanged.
+  if (distanceKm <= 2) return 40;
+  if (distanceKm <= 4) return 45;
+  if (distanceKm <= 5) return 60;
+  if (distanceKm <= 6) return 65;
+  if (distanceKm <= 7) return 70;
+  if (distanceKm <= 9) return 80;
+  if (distanceKm <= 12) return 95;
+  if (distanceKm <= 15) return 110;
+  if (distanceKm <= 20) return 130;
+  if (distanceKm <= 25) return 160;
+  return 160 + Math.ceil(distanceKm - 25) * 3;
+}
+
+async function calculateRouteXFare({
+  pickup_area,
+  dropoff_area,
+  pickup_lat,
+  pickup_lng,
+  dropoff_lat,
+  dropoff_lng,
+}) {
+  const pickupLat = Number(pickup_lat);
+  const pickupLng = Number(pickup_lng);
+  const dropoffLat = Number(dropoff_lat);
+  const dropoffLng = Number(dropoff_lng);
+  const hasCoordinates =
+    pickup_lat != null && pickup_lng != null &&
+    dropoff_lat != null && dropoff_lng != null &&
+    Number.isFinite(pickupLat) && Number.isFinite(pickupLng) &&
+    Number.isFinite(dropoffLat) && Number.isFinite(dropoffLng) &&
+    pickupLat >= -90 && pickupLat <= 90 &&
+    dropoffLat >= -90 && dropoffLat <= 90 &&
+    pickupLng >= -180 && pickupLng <= 180 &&
+    dropoffLng >= -180 && dropoffLng <= 180;
+
+  if (hasCoordinates) {
+    try {
+      const routeUrl =
+        `https://router.project-osrm.org/route/v1/driving/` +
+        `${pickupLng},${pickupLat};${dropoffLng},${dropoffLat}?overview=false`;
+      const routeResponse = await fetch(routeUrl);
+      if (routeResponse.ok) {
+        const routeData = await routeResponse.json();
+        if (routeData.code === "Ok" && Array.isArray(routeData.routes) && routeData.routes.length > 0) {
+          const distanceKm = Number(routeData.routes[0].distance) / 1000;
+          if (Number.isFinite(distanceKm) && distanceKm >= 0) {
+            const baseFare = routeXDistanceFare(distanceKm);
+            const pickupDistanceFromUpington = routeXDistanceKm(
+              pickupLat, pickupLng,
+              ROUTEX_UPINGTON_CENTRE_LAT, ROUTEX_UPINGTON_CENTRE_LNG
+            );
+            const dropoffDistanceFromUpington = routeXDistanceKm(
+              dropoffLat, dropoffLng,
+              ROUTEX_UPINGTON_CENTRE_LAT, ROUTEX_UPINGTON_CENTRE_LNG
+            );
+            const outOfTownFee =
+              pickupDistanceFromUpington > 20 || dropoffDistanceFromUpington > 20 ? 50 : 0;
+            return {
+              pricing_method: "distance",
+              distance_km: Number(distanceKm.toFixed(2)),
+              base_fare: baseFare,
+              out_of_town_fee: outOfTownFee,
+              pickup_distance_from_upington: Number(pickupDistanceFromUpington.toFixed(2)),
+              discount: 0,
+              fare: baseFare + outOfTownFee,
+            };
+          }
+        }
+      }
+      console.warn("OSRM route unavailable; using RouteX area fare fallback.");
+    } catch (error) {
+      console.warn("OSRM fare calculation failed; using RouteX area fare fallback:", error.message);
+    }
+  }
+
+  const pickupResult = await pool.query(
+    `SELECT category FROM public.areas WHERE area_name = $1`,
+    [pickup_area]
+  );
+  const dropoffResult = await pool.query(
+    `SELECT category FROM public.areas WHERE area_name = $1`,
+    [dropoff_area]
+  );
+
+  if (pickupResult.rows.length === 0 || dropoffResult.rows.length === 0) {
+    const error = new Error("Pickup or drop-off area was not recognised. Please select an address from the search results.");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const pickupCategory = pickupResult.rows[0].category;
+  const dropoffCategory = dropoffResult.rows[0].category;
+  let baseFare;
+
+  if (pickup_area === dropoff_area) {
+    baseFare = 40;
+  } else {
+    const fareResult = await pool.query(
+      `SELECT fare FROM public.fare_matrix WHERE from_category = $1 AND to_category = $2`,
+      [pickupCategory, dropoffCategory]
+    );
+    if (fareResult.rows.length === 0) {
+      const error = new Error("Fare is not configured for this route yet. Please try another address or contact RouteX.");
+      error.statusCode = 400;
+      throw error;
+    }
+    baseFare = Number(fareResult.rows[0].fare);
+    if (!Number.isFinite(baseFare) || baseFare <= 0) {
+      throw new Error("The configured fare for this route is invalid.");
+    }
+  }
+
+  // Keep the area-matrix fallback shape consistent with distance pricing.
+  return {
+    pricing_method: "area",
+    distance_km: null,
+    pickup_category: pickupCategory,
+    dropoff_category: dropoffCategory,
+    base_fare: baseFare,
+    out_of_town_fee: 0,
+    pickup_distance_from_upington: null,
+    discount: 0,
+    fare: baseFare,
+  };
+}
+
 app.post("/bookings", async (req, res) => {
   try {
     console.log("BOOKINGS ROUTE HIT");
@@ -1022,6 +1171,20 @@ const {
 } = req.body;
 
 const isScheduledRide = ride_type === "scheduled";
+
+if (!passenger_id || !pickup_address || !dropoff_address) {
+  return res.status(400).json({
+    error: "Passenger, pickup address and destination address are required."
+  });
+}
+
+if (!Number.isFinite(Number(fare_amount)) || Number(fare_amount) <= 0) {
+  return res.status(400).json({ error: "A valid quoted fare is required. Please recalculate the fare and try again." });
+}
+
+if (ride_type !== "now" && ride_type !== "scheduled") {
+  return res.status(400).json({ error: "Invalid ride type." });
+}
 
 let scheduledPickupAt = null;
 let matchingOpensAt = null;
@@ -1153,6 +1316,20 @@ const destinationLng =
     ? Number(dropoff_lng)
     : dropoffAreaResult.rows[0]?.longitude;
 
+if (
+  !Number.isFinite(Number(pickupLat)) ||
+  Number(pickupLat) < -90 || Number(pickupLat) > 90 ||
+  !Number.isFinite(Number(pickupLng)) ||
+  Number(pickupLng) < -180 || Number(pickupLng) > 180 ||
+  !Number.isFinite(Number(destinationLat)) ||
+  Number(destinationLat) < -90 || Number(destinationLat) > 90 ||
+  !Number.isFinite(Number(destinationLng)) ||
+  Number(destinationLng) < -180 || Number(destinationLng) > 180
+) {
+  return res.status(400).json({
+    error: "The pickup or destination address has invalid GPS coordinates. Please select the address again."
+  });
+}
 
 console.log("FINAL PICKUP GPS:", {
   lat: pickupLat,
@@ -1164,7 +1341,38 @@ console.log("FINAL DESTINATION GPS:", {
   lng: destinationLng,
 });
 
-  const baseFare = Number(fare_amount);
+  // Recalculate on the server at booking time. Never trust a fare supplied
+  // by the browser as the amount to store.
+  const verifiedFare = await calculateRouteXFare({
+    pickup_area,
+    dropoff_area,
+    pickup_lat: pickupLat,
+    pickup_lng: pickupLng,
+    dropoff_lat: destinationLat,
+    dropoff_lng: destinationLng,
+  });
+
+  const quotedFare = Number(fare_amount);
+  const baseFare = Number(verifiedFare.fare);
+
+  if (!Number.isFinite(baseFare) || baseFare <= 0) {
+    return res.status(400).json({ error: "The fare could not be verified. Please try again." });
+  }
+
+  // If the route/price changed between quote and submission, update the
+  // passenger's displayed quote and require a fresh confirmation.
+  if (Math.abs(quotedFare - baseFare) > 0.01) {
+    return res.status(409).json({
+      fare_changed: true,
+      error: "The fare has changed. Please review the updated fare and submit your booking again.",
+      fare: baseFare,
+      pricing_method: verifiedFare.pricing_method,
+      distance_km: verifiedFare.distance_km,
+      out_of_town_fee: verifiedFare.out_of_town_fee,
+      base_fare: verifiedFare.base_fare,
+      pickup_distance_from_upington: verifiedFare.pickup_distance_from_upington,
+    });
+  }
 
 let discountAmount = 0;
 
@@ -1436,6 +1644,12 @@ console.log("WHATSAPP DRIVER ALERTS FINISHED");
 
 res.status(201).json({
   message: "Booking created",
+  fare: baseFare,
+  discount: discountAmount,
+  passenger_amount: passengerAmount,
+  pricing_method: verifiedFare.pricing_method,
+  distance_km: verifiedFare.distance_km,
+  out_of_town_fee: verifiedFare.out_of_town_fee,
   booking: newBooking
 });
 
@@ -6082,246 +6296,41 @@ app.post("/admin/applications/:id/reject", async (req, res) => {
   }
 });
 app.get("/calculate-fare", async (req, res) => {
+  console.log("FARE INPUT:", {
+  pickup_area: req.query.pickup_area,
+  dropoff_area: req.query.dropoff_area,
+  pickup_lat: req.query.pickup_lat,
+  pickup_lng: req.query.pickup_lng,
+  dropoff_lat: req.query.dropoff_lat,
+  dropoff_lng: req.query.dropoff_lng,
+});
   try {
-    const pickup_area = req.query.pickup_area;
-    const dropoff_area = req.query.dropoff_area;
-
-    const pickup_lat = Number(req.query.pickup_lat);
-    const pickup_lng = Number(req.query.pickup_lng);
-    const dropoff_lat = Number(req.query.dropoff_lat);
-    const dropoff_lng = Number(req.query.dropoff_lng);
-
-    const hasCoordinates =
-      Number.isFinite(pickup_lat) &&
-      Number.isFinite(pickup_lng) &&
-      Number.isFinite(dropoff_lat) &&
-      Number.isFinite(dropoff_lng);
-
-
-      // Central Upington reference point
-      const UPINGTON_CENTRE_LAT = -28.4575;
-      const UPINGTON_CENTRE_LNG = 21.2427;
-
-      // Calculate straight-line distance between two GPS points
-function calculateDistanceKm(lat1, lng1, lat2, lng2) {
-  const R = 6371;
-
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLng = ((lng2 - lng1) * Math.PI) / 180;
-
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLng / 2) ** 2;
-
-  const c = 2 * Math.atan2(
-    Math.sqrt(a),
-    Math.sqrt(1 - a)
-  );
-
-  return R * c;
-}
-    // =========================================
-    // 1. ROAD DISTANCE PRICING
-    // =========================================
-
-    if (hasCoordinates) {
-      const routeUrl =
-        `https://router.project-osrm.org/route/v1/driving/` +
-        `${pickup_lng},${pickup_lat};${dropoff_lng},${dropoff_lat}` +
-        `?overview=false`;
-
-      const routeResponse = await fetch(routeUrl);
-
-      if (routeResponse.ok) {
-        const routeData = await routeResponse.json();
-
-        if (
-          routeData.code === "Ok" &&
-          routeData.routes &&
-          routeData.routes.length > 0
-        ) {
-          const distanceKm =
-            routeData.routes[0].distance / 1000;
-
-          let fare;
-
- if (distanceKm <= 2) {
-  fare = 40;
-} else if (distanceKm <= 4) {
-  fare = 45;
-} else if (distanceKm <= 5) {
-  fare = 60;
-} else if (distanceKm <= 7) {
-  fare = 85;
-} else if (distanceKm <= 9) {
-  fare = 100;
-} else if (distanceKm <= 12) {
-  fare = 115;
-} else if (distanceKm <= 15) {
-  fare = 130;
-} else if (distanceKm <= 20) {
-  fare = 150;
-} else if (distanceKm <= 25) {
-  fare = 160;
-} else {
-  fare = 160 + Math.ceil(distanceKm - 25) * 3;
-}
-            // =========================================
-// OUT-OF-TOWN PICKUP FEE
-// =========================================
-
-            const pickupDistanceFromUpington =
-  calculateDistanceKm(
-    Number(pickup_lat),
-    Number(pickup_lng),
-    UPINGTON_CENTRE_LAT,
-    UPINGTON_CENTRE_LNG
-  );
-
-const dropoffDistanceFromUpington =
-  calculateDistanceKm(
-    Number(dropoff_lat),
-    Number(dropoff_lng),
-    UPINGTON_CENTRE_LAT,
-    UPINGTON_CENTRE_LNG
-  );
-
-const isOutOfTown =
-  pickupDistanceFromUpington > 20 ||
-  dropoffDistanceFromUpington > 20;
-
-const outOfTownFee = isOutOfTown ? 50 : 0;
-
-fare += outOfTownFee;
-
-          const discount = 0;
-          const finalFare = fare - discount;
-
-          console.log("Distance fare response", {
-            distance_km: distanceKm,
-            base_fare: fare,
-            discount,
-            fare: finalFare,
-          });
-
-       return res.json({
-          pricing_method: "distance",
-          distance_km: Number(distanceKm.toFixed(2)),
-          base_fare: fare - outOfTownFee,
-          out_of_town_fee: outOfTownFee,
-          pickup_distance_from_upington: Number(
-            pickupDistanceFromUpington.toFixed(2)
-          ),
-          discount,
-          fare: finalFare,
-        });
-        }
-      }
-
-      console.log(
-        "Road distance unavailable - using area fare fallback"
-      );
-    }
-
-    // =========================================
-    // 2. AREA MATRIX FALLBACK
-    // =========================================
-
-    const pickupResult = await pool.query(
-      `
-      SELECT category
-      FROM public.areas
-      WHERE area_name = $1
-      `,
-      [pickup_area]
-    );
-
-    const dropoffResult = await pool.query(
-      `
-      SELECT category
-      FROM public.areas
-      WHERE area_name = $1
-      `,
-      [dropoff_area]
-    );
-
-    if (
-      pickupResult.rows.length === 0 ||
-      dropoffResult.rows.length === 0
-    ) {
-      return res.status(400).json({
-        error: "Pickup or drop-off area was not recognised",
-      });
-    }
-
-    const pickupCategory =
-      pickupResult.rows[0].category;
-
-    const dropoffCategory =
-      dropoffResult.rows[0].category;
-
-    let fare;
-    let baseFare;
-
-    if (pickup_area === dropoff_area) {
-      fare =40;
-      baseFare = fare;
-    } else {
-      const fareResult = await pool.query(
-        `
-        SELECT fare
-        FROM public.fare_matrix
-        WHERE from_category = $1
-        AND to_category = $2
-        `,
-        [
-          pickupCategory,
-          dropoffCategory
-        ]
-      );
-
-      if (fareResult.rows.length === 0) {
-        return res.status(400).json({
-          error: "Fare not configured for this route",
-        });
-      }
-
-      fare = Number(fareResult.rows[0].fare);
-      baseFare = fare;
-    }
-
-    const discount = 0;
-
-    fare = fare - discount;
-
-    console.log("Area fare response", {
-      pricing_method: "area",
-      pickup_category: pickupCategory,
-      dropoff_category: dropoffCategory,
-      base_fare: baseFare,
-      discount,
-      fare,
+    const result = await calculateRouteXFare({
+      pickup_area: req.query.pickup_area,
+      dropoff_area: req.query.dropoff_area,
+      pickup_lat: req.query.pickup_lat,
+      pickup_lng: req.query.pickup_lng,
+      dropoff_lat: req.query.dropoff_lat,
+      dropoff_lng: req.query.dropoff_lng,
     });
-
-    res.json({
-      pricing_method: "area",
-      pickup_category: pickupCategory,
-      dropoff_category: dropoffCategory,
-      base_fare: baseFare,
-      discount,
-      fare,
-    });
-
+console.log("FARE INPUT:", {
+  pickup_area: req.query.pickup_area,
+  dropoff_area: req.query.dropoff_area,
+  pickup_lat: req.query.pickup_lat,
+  pickup_lng: req.query.pickup_lng,
+  dropoff_lat: req.query.dropoff_lat,
+  dropoff_lng: req.query.dropoff_lng,
+});
+    console.log("RouteX fare quote:", result);
+    return res.json(result);
   } catch (error) {
     console.error("CALCULATE FARE ERROR:", error);
-
-    res.status(500).json({
-      error: error.message,
+    return res.status(error.statusCode || 500).json({
+      error: error.statusCode ? error.message : "Fare calculation is temporarily unavailable. Please try again later.",
     });
   }
 });
+
 
 app.get("/passenger-trips/:id", async (req, res) => {
   try {
