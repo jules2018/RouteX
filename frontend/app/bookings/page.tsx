@@ -332,6 +332,16 @@ const [availabilityStatus, setAvailabilityStatus] = useState<"idle" | "checking"
 
   const [outOfTownFee, setOutOfTownFee] = useState(0);
 
+  const [pickupSurcharge, setPickupSurcharge] = useState(0);
+
+  const [pickupDistanceKm, setPickupDistanceKm] = useState<number | null>(null);
+
+  const [fareQuoteToken, setFareQuoteToken] = useState("");
+
+  const [fareError, setFareError] = useState("");
+
+  const [fareRetryKey, setFareRetryKey] = useState(0);
+
 
 
   const [calculatingFare, setCalculatingFare] = useState(false);
@@ -486,17 +496,21 @@ const [availabilityStatus, setAvailabilityStatus] = useState<"idle" | "checking"
 
 
 
+      setFareError("");
+
       setFare("");
 
 
 
       setDistanceKm(null);
 
-
-
       setOutOfTownFee(0);
 
+      setPickupSurcharge(0);
 
+      setPickupDistanceKm(null);
+
+      setFareQuoteToken("");
 
       setCalculatingFare(false);
 
@@ -531,6 +545,8 @@ const [availabilityStatus, setAvailabilityStatus] = useState<"idle" | "checking"
 
 
         setCalculatingFare(true);
+
+        setFareError("");
 
 
 
@@ -648,6 +664,8 @@ const [availabilityStatus, setAvailabilityStatus] = useState<"idle" | "checking"
 
         setFare(String(numericFare));
 
+        setFareError("");
+
 
 
         setDistanceKm(
@@ -664,7 +682,17 @@ const [availabilityStatus, setAvailabilityStatus] = useState<"idle" | "checking"
 
         setOutOfTownFee(Number(data.out_of_town_fee || 0));
 
+        setPickupSurcharge(Number(data.pickup_surcharge || 0));
 
+        setPickupDistanceKm(
+          data.pickup_distance_km == null ? null : Number(data.pickup_distance_km)
+        );
+
+        setFareQuoteToken(String(data.fare_quote_token || ""));
+
+        if (!data.fare_quote_token) {
+          throw new Error("Fare quote could not be secured");
+        }
 
       } catch (error) {
 
@@ -680,6 +708,12 @@ const [availabilityStatus, setAvailabilityStatus] = useState<"idle" | "checking"
 
         if (!cancelled) {
 
+          setFareError(
+            error instanceof Error && error.message.includes("No available driver")
+              ? "No available driver with a recent GPS location is available to estimate the pickup fee. Please try again later."
+              : "We couldn't calculate this route right now. Please try again later."
+          );
+
 
 
           setFare("");
@@ -688,11 +722,13 @@ const [availabilityStatus, setAvailabilityStatus] = useState<"idle" | "checking"
 
           setDistanceKm(null);
 
-
-
           setOutOfTownFee(0);
 
+          setPickupSurcharge(0);
 
+          setPickupDistanceKm(null);
+
+          setFareQuoteToken("");
 
         }
 
@@ -738,7 +774,7 @@ const [availabilityStatus, setAvailabilityStatus] = useState<"idle" | "checking"
 
 
 
-  }, [selectedPickup, selectedDestination]);
+  }, [selectedPickup, selectedDestination, fareRetryKey]);
 
 
 
@@ -2108,7 +2144,7 @@ useEffect(() => {
 
     Boolean(fare) &&
 
-
+    Boolean(fareQuoteToken) &&
 
     !calculatingFare &&
 
@@ -2924,6 +2960,8 @@ window.location.href = "/passenger-portal";
 
           fare_amount: numericFare,
 
+          fare_quote_token: fareQuoteToken,
+
 
 
           promo_code: promoCode.trim(),
@@ -2957,6 +2995,33 @@ window.location.href = "/passenger-portal";
 
 
 
+
+      if (response.status === 409 && data?.quote_expired === true) {
+        setFare("");
+        setFareQuoteToken("");
+        setFareRetryKey((value) => value + 1);
+        showAppPopup(
+          "Fare refreshed",
+          "Your previous fare quote expired. Please review the refreshed total before requesting RouteX again.",
+          "info"
+        );
+        return;
+      }
+
+      if (response.status === 409 && data?.fare_changed === true) {
+        setFare(String(Number(data.fare)));
+        setDistanceKm(data.distance_km == null ? null : Number(data.distance_km));
+        setOutOfTownFee(Number(data.out_of_town_fee || 0));
+        setPickupSurcharge(Number(data.pickup_surcharge || 0));
+        setPickupDistanceKm(data.pickup_distance_km == null ? null : Number(data.pickup_distance_km));
+        setFareQuoteToken(String(data.fare_quote_token || ""));
+        showAppPopup(
+          "Fare updated",
+          "The fare was refreshed using the latest route calculation. Please review the new fare and tap Request RouteX again.",
+          "info"
+        );
+        return;
+      }
 
       if (!response.ok) {
 
@@ -4338,22 +4403,29 @@ window.location.href = "/passenger-portal";
 
 
 
-          {fare && outOfTownFee > 0 && (
+          {fare && (
+            <div className="mt-2 space-y-1 text-[10px] text-black/55">
+              <p>Trip fare: R{Math.max(0, Number(fare) - pickupSurcharge - outOfTownFee)}</p>
+              <p>
+                Driver pickup ({pickupDistanceKm == null ? "distance unavailable" : `${pickupDistanceKm.toFixed(1)} km by road`}): R{pickupSurcharge}
+              </p>
+              {outOfTownFee > 0 && <p>Out-of-town fee: R{outOfTownFee}</p>}
+              <p className="font-bold text-[#17191f]">Total before promo code: R{fare}</p>
+            </div>
+          )}
 
-
-
-            <p className="mt-1 text-[9px] font-semibold text-black/35">
-
-
-
-              Includes R{outOfTownFee} out-of-town fee
-
-
-
-            </p>
-
-
-
+          {fareError && (
+            <div className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-3" role="alert" aria-live="polite">
+              <p className="text-[11px] font-semibold text-red-700">{fareError}</p>
+              <button
+                type="button"
+                onClick={() => setFareRetryKey((value) => value + 1)}
+                disabled={calculatingFare}
+                className="mt-2 rounded-full bg-[#17191f] px-4 py-2 text-[10px] font-bold text-white disabled:opacity-50"
+              >
+                {calculatingFare ? "Trying again..." : "Try again"}
+              </button>
+            </div>
           )}
 
 
@@ -4450,6 +4522,11 @@ window.location.href = "/passenger-portal";
 
 
 
+          {promoCode.trim().toUpperCase() === "WELCOME20" && (
+            <p className="mt-2 px-1 text-[10px] leading-4 text-black/45" role="status">
+              WELCOME20 offers R20 off an eligible booking. RouteX will confirm eligibility when you submit your ride.
+            </p>
+          )}
         </section>
 
 

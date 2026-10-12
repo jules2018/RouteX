@@ -1,4 +1,4 @@
-
+﻿
 "use client";
 
 import { useEffect, useState } from "react";
@@ -280,9 +280,17 @@ export default function DriverPortalPage() {
           console.error("DRIVER LOCATION UPDATE ERROR:", error);
         }
       },
-      (error) => {
-        console.error("DRIVER GPS WATCH ERROR:", error);
-      },
+
+(error) => {
+  console.error("DRIVER GPS WATCH ERROR:", {
+    code: error.code,
+    message: error.message,
+    PERMISSION_DENIED: error.PERMISSION_DENIED,
+    POSITION_UNAVAILABLE: error.POSITION_UNAVAILABLE,
+    TIMEOUT: error.TIMEOUT,
+  });
+},
+
       {
         enableHighAccuracy: true,
         maximumAge: 5000,
@@ -478,7 +486,7 @@ export default function DriverPortalPage() {
             Route<span className="text-[#ff6846]">X</span>
           </h1>
 
-        
+
         </header>
 
         {/* DRIVER */}
@@ -551,7 +559,7 @@ export default function DriverPortalPage() {
                   : "New"}
               </span>
               <span className="text-[9px] font-semibold text-[#92959b]">
-                · RouteX Driver
+                Â· RouteX Driver
               </span>
             </div>
           </div>
@@ -805,7 +813,7 @@ export default function DriverPortalPage() {
                       pickup={ride.pickup_address}
                       destination={ride.dropoff_address}
                     />
-                   
+
 <div className="mt-4 flex items-start justify-between">
   <div>
     <p className="text-[7px] font-extrabold uppercase tracking-[0.1em] text-[#92959b]">
@@ -948,7 +956,7 @@ export default function DriverPortalPage() {
                         Scheduled pickup
                       </p>
                       <p className="mt-1 text-[15px] font-black">
-                        {formatRideDate(ride.scheduled_pickup_at)} · {formatRideTime(ride.scheduled_pickup_at)}
+                        {formatRideDate(ride.scheduled_pickup_at)} Â· {formatRideTime(ride.scheduled_pickup_at)}
                       </p>
                     </div>
 
@@ -1311,7 +1319,7 @@ export default function DriverPortalPage() {
                       {review.passenger_name || "Passenger"}
                     </p>
                     <p className="text-[9px] font-black text-[#ff6846]">
-                      {Number(review.rating || 0).toFixed(1)} ★
+                      {Number(review.rating || 0).toFixed(1)} â˜…
                     </p>
                   </div>
                   {review.review_text && (
@@ -1362,7 +1370,7 @@ export default function DriverPortalPage() {
 
         <footer className="pt-10 text-center">
           <p className="text-[9px] font-semibold text-[#a0a3a9]">
-            RouteX • Driver Portal
+            RouteX â€¢ Driver Portal
           </p>
         </footer>
       </div>
@@ -1484,7 +1492,7 @@ function HistoryRide({ trip }: { trip: any }) {
           {trip.dropoff_address || "Completed ride"}
         </p>
         <p className="mt-0.5 text-[8px] font-semibold text-[#999ca2]">
-          Completed · BK-{trip.id.toString().padStart(4, "0")}
+          Completed Â· BK-{trip.id.toString().padStart(4, "0")}
         </p>
       </div>
       <p className="text-[11px] font-black">R{trip.fare_amount}</p>
