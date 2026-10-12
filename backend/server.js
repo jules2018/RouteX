@@ -998,6 +998,159 @@ app.post(
   }
 );
 
+// Signed, short-lived fare quotes ensure the passenger's displayed fare
+// is the same fare verified when the booking is submitted.
+const ROUTEX_FARE_QUOTE_TTL_MS = 10 * 60 * 1000;
+
+function routeXFareQuoteSecret() {
+  const secret =
+    process.env.ROUTEX_FARE_QUOTE_SECRET ||
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error("A stable ROUTEX_FARE_QUOTE_SECRET must be configured.");
+  }
+  return secret;
+}
+
+function signRouteXFareQuote(payload) {
+  const encodedPayload = Buffer.from(JSON.stringify(payload)).toString("base64url");
+  const signature = crypto
+    .createHmac("sha256", routeXFareQuoteSecret())
+    .update(encodedPayload)
+    .digest("base64url");
+  return `${encodedPayload}.${signature}`;
+}
+
+function verifyRouteXFareQuote(token) {
+  if (typeof token !== "string") return null;
+  const parts = token.split(".");
+  if (parts.length !== 2) return null;
+
+  const [encodedPayload, suppliedSignature] = parts;
+  const expectedSignature = crypto
+    .createHmac("sha256", routeXFareQuoteSecret())
+    .update(encodedPayload)
+    .digest();
+
+  let actualSignature;
+  try {
+    actualSignature = Buffer.from(suppliedSignature, "base64url");
+  } catch {
+    return null;
+  }
+
+  if (
+    actualSignature.length !== expectedSignature.length ||
+    !crypto.timingSafeEqual(actualSignature, expectedSignature)
+  ) {
+    return null;
+  }
+
+  try {
+    const payload = JSON.parse(Buffer.from(encodedPayload, "base64url").toString("utf8"));
+    if (!Number.isFinite(payload.expires_at) || payload.expires_at < Date.now()) {
+      return null;
+    }
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
+function routeXPickupSurcharge(distanceKm) {
+  if (distanceKm <= 3) return 0;
+  if (distanceKm <= 5) return 10;
+  if (distanceKm <= 8) return 20;
+  return 30;
+}
+
+async function calculateRouteXPickupDistance(pickupLat, pickupLng) {
+  const candidatesResult = await pool.query(
+    `
+    SELECT
+      id,
+      current_lat,
+      current_lng,
+      (
+        6371 * ACOS(
+          LEAST(1, GREATEST(-1,
+            COS(RADIANS($1)) * COS(RADIANS(current_lat)) *
+            COS(RADIANS(current_lng) - RADIANS($2)) +
+            SIN(RADIANS($1)) * SIN(RADIANS(current_lat))
+          ))
+        )
+      ) AS straight_distance_km
+    FROM drivers
+    WHERE status = 'Available'
+      AND is_online = true
+      AND last_online_at > NOW() - INTERVAL '2 minutes'
+      AND current_lat IS NOT NULL
+      AND current_lng IS NOT NULL
+      AND (
+        6371 * ACOS(
+          LEAST(1, GREATEST(-1,
+            COS(RADIANS($1)) * COS(RADIANS(current_lat)) *
+            COS(RADIANS(current_lng) - RADIANS($2)) +
+            SIN(RADIANS($1)) * SIN(RADIANS(current_lat))
+          ))
+        )
+      ) <= 30
+    ORDER BY straight_distance_km ASC
+    LIMIT 8
+    `,
+    [pickupLat, pickupLng]
+  );
+
+  const candidates = candidatesResult.rows;
+  if (!candidates.length) {
+    const error = new Error("No available driver with a recent GPS location can be used to estimate this pickup fee. Please try again later.");
+    error.statusCode = 503;
+    throw error;
+  }
+
+  // Ask OSRM for road distances from the eight closest GPS candidates to pickup.
+  // This compares road distance rather than relying on straight-line distance.
+  const coordinates = [
+    ...candidates.map((driver) => `${Number(driver.current_lng)},${Number(driver.current_lat)}`),
+    `${pickupLng},${pickupLat}`,
+  ].join(";");
+  const destinationIndex = candidates.length;
+  const sources = candidates.map((_, index) => index).join(";");
+  const tableUrl =
+    `https://router.project-osrm.org/table/v1/driving/${coordinates}` +
+    `?sources=${sources}&destinations=${destinationIndex}&annotations=distance`;
+
+  const response = await fetch(tableUrl);
+  if (!response.ok) {
+    const error = new Error("Driver pickup distance could not be calculated. Please try again later.");
+    error.statusCode = 503;
+    throw error;
+  }
+
+  const table = await response.json();
+  const distances = Array.isArray(table.distances) ? table.distances : [];
+  const ranked = candidates
+    .map((driver, index) => ({
+      driver_id: Number(driver.id),
+      distance_km: Number(distances[index]?.[0]) / 1000,
+    }))
+    .filter((entry) => Number.isFinite(entry.distance_km) && entry.distance_km >= 0)
+    .sort((a, b) => a.distance_km - b.distance_km);
+
+  if (table.code !== "Ok" || !ranked.length) {
+    const error = new Error("Driver pickup distance could not be calculated. Please try again later.");
+    error.statusCode = 503;
+    throw error;
+  }
+
+  return {
+    driver_id: ranked[0].driver_id,
+    distance_km: Number(ranked[0].distance_km.toFixed(2)),
+    surcharge: routeXPickupSurcharge(ranked[0].distance_km),
+  };
+}
+
 // ------------------------------------------------------------
 // SHARED SERVER-SIDE ROUTEX FARE CALCULATION
 // Keep this function as the single source of truth for both
@@ -1019,19 +1172,23 @@ function routeXDistanceKm(lat1, lng1, lat2, lng2) {
 }
 
 function routeXDistanceFare(distanceKm) {
-  // Revised RouteX local fares: smoother increases between distance bands.
-  // Keep OSRM road distance and the separate out-of-town fee unchanged.
-  if (distanceKm <= 2) return 40;
-  if (distanceKm <= 4) return 45;
-  if (distanceKm <= 5) return 60;
-  if (distanceKm <= 6) return 65;
-  if (distanceKm <= 7) return 70;
-  if (distanceKm <= 9) return 80;
-  if (distanceKm <= 12) return 95;
-  if (distanceKm <= 15) return 110;
-  if (distanceKm <= 20) return 130;
-  if (distanceKm <= 25) return 160;
-  return 160 + Math.ceil(distanceKm - 25) * 3;
+  // RouteX trial pricing: higher rate for short trips, tapered rate for longer trips.
+  // First 2 km: R50 minimum. From 2 km to 10 km: R8 per additional km.
+  // Beyond 10 km: R2 per additional km to keep longer trips affordable.
+  // Round up to the next R5. Pickup surcharge and out-of-town fee are separate.
+  if (!Number.isFinite(distanceKm) || distanceKm < 0) {
+    throw new Error("Invalid route distance for fare calculation.");
+  }
+
+  const minimumFare = 50;
+  const shortTripRate = 8;
+  const longTripRate = 2;
+  const shortRateDistance = Math.min(Math.max(distanceKm - 2, 0), 8);
+  const longRateDistance = Math.max(distanceKm - 10, 0);
+  const rawFare = minimumFare +
+    shortRateDistance * shortTripRate +
+    longRateDistance * longTripRate;
+  return Math.ceil(rawFare / 5) * 5;
 }
 
 async function calculateRouteXFare({
@@ -1167,6 +1324,7 @@ const {
   pickup_time,
   ride_type = "now",
   fare_amount,
+  fare_quote_token,
   promo_code
 } = req.body;
 
@@ -1341,17 +1499,39 @@ console.log("FINAL DESTINATION GPS:", {
   lng: destinationLng,
 });
 
-  // Recalculate on the server at booking time. Never trust a fare supplied
-  // by the browser as the amount to store.
-  const verifiedFare = await calculateRouteXFare({
-    pickup_area,
-    dropoff_area,
-    pickup_lat: pickupLat,
-    pickup_lng: pickupLng,
-    dropoff_lat: destinationLat,
-    dropoff_lng: destinationLng,
-  });
+  // Verify the signed quote created by GET /calculate-fare. The token locks
+  // the fare components and route for ten minutes, including the driver pickup estimate.
+  let verifiedFare;
+  let quotePayload;
+  try {
+    quotePayload = verifyRouteXFareQuote(fare_quote_token);
+  } catch (quoteError) {
+    console.error("FARE QUOTE VERIFICATION ERROR:", quoteError.message);
+    quotePayload = null;
+  }
 
+  const sameCoordinate = (a, b) =>
+    Number.isFinite(Number(a)) &&
+    Number.isFinite(Number(b)) &&
+    Math.abs(Number(a) - Number(b)) < 0.000001;
+
+  const quoteMatchesRoute =
+    quotePayload &&
+    sameCoordinate(quotePayload.pickup_lat, pickupLat) &&
+    sameCoordinate(quotePayload.pickup_lng, pickupLng) &&
+    sameCoordinate(quotePayload.dropoff_lat, destinationLat) &&
+    sameCoordinate(quotePayload.dropoff_lng, destinationLng) &&
+    String(quotePayload.pickup_area || "") === String(pickup_area || "") &&
+    String(quotePayload.dropoff_area || "") === String(dropoff_area || "");
+
+  if (!quoteMatchesRoute) {
+    return res.status(409).json({
+      quote_expired: true,
+      error: "Your fare quote has expired or no longer matches this route. Please review a refreshed fare before booking again.",
+    });
+  }
+
+  verifiedFare = quotePayload.fare;
   const quotedFare = Number(fare_amount);
   const baseFare = Number(verifiedFare.fare);
 
@@ -1359,18 +1539,17 @@ console.log("FINAL DESTINATION GPS:", {
     return res.status(400).json({ error: "The fare could not be verified. Please try again." });
   }
 
-  // If the route/price changed between quote and submission, update the
-  // passenger's displayed quote and require a fresh confirmation.
   if (Math.abs(quotedFare - baseFare) > 0.01) {
     return res.status(409).json({
       fare_changed: true,
-      error: "The fare has changed. Please review the updated fare and submit your booking again.",
+      error: "The fare does not match the signed quote. Please review the updated fare and submit your booking again.",
       fare: baseFare,
-      pricing_method: verifiedFare.pricing_method,
-      distance_km: verifiedFare.distance_km,
-      out_of_town_fee: verifiedFare.out_of_town_fee,
       base_fare: verifiedFare.base_fare,
-      pickup_distance_from_upington: verifiedFare.pickup_distance_from_upington,
+      pickup_surcharge: verifiedFare.pickup_surcharge,
+      pickup_distance_km: verifiedFare.pickup_distance_km,
+      out_of_town_fee: verifiedFare.out_of_town_fee,
+      distance_km: verifiedFare.distance_km,
+      fare_quote_token,
     });
   }
 
@@ -6305,7 +6484,7 @@ app.get("/calculate-fare", async (req, res) => {
   dropoff_lng: req.query.dropoff_lng,
 });
   try {
-    const result = await calculateRouteXFare({
+    const routeFare = await calculateRouteXFare({
       pickup_area: req.query.pickup_area,
       dropoff_area: req.query.dropoff_area,
       pickup_lat: req.query.pickup_lat,
@@ -6313,16 +6492,47 @@ app.get("/calculate-fare", async (req, res) => {
       dropoff_lat: req.query.dropoff_lat,
       dropoff_lng: req.query.dropoff_lng,
     });
-console.log("FARE INPUT:", {
-  pickup_area: req.query.pickup_area,
-  dropoff_area: req.query.dropoff_area,
-  pickup_lat: req.query.pickup_lat,
-  pickup_lng: req.query.pickup_lng,
-  dropoff_lat: req.query.dropoff_lat,
-  dropoff_lng: req.query.dropoff_lng,
-});
-    console.log("RouteX fare quote:", result);
-    return res.json(result);
+
+    const pickupLat = Number(req.query.pickup_lat);
+    const pickupLng = Number(req.query.pickup_lng);
+    const dropoffLat = Number(req.query.dropoff_lat);
+    const dropoffLng = Number(req.query.dropoff_lng);
+
+    if (
+      !Number.isFinite(pickupLat) || pickupLat < -90 || pickupLat > 90 ||
+      !Number.isFinite(pickupLng) || pickupLng < -180 || pickupLng > 180 ||
+      !Number.isFinite(dropoffLat) || dropoffLat < -90 || dropoffLat > 90 ||
+      !Number.isFinite(dropoffLng) || dropoffLng < -180 || dropoffLng > 180
+    ) {
+      return res.status(400).json({ error: "Valid pickup and destination coordinates are required." });
+    }
+
+    const pickupEstimate = await calculateRouteXPickupDistance(pickupLat, pickupLng);
+    const fare = {
+      ...routeFare,
+      pickup_surcharge: pickupEstimate.surcharge,
+      pickup_distance_km: pickupEstimate.distance_km,
+      pickup_driver_id: pickupEstimate.driver_id,
+      fare: Number(routeFare.fare) + pickupEstimate.surcharge,
+    };
+
+    const quotePayload = {
+      pickup_area: String(req.query.pickup_area || ""),
+      dropoff_area: String(req.query.dropoff_area || ""),
+      pickup_lat: pickupLat,
+      pickup_lng: pickupLng,
+      dropoff_lat: dropoffLat,
+      dropoff_lng: dropoffLng,
+      fare,
+      expires_at: Date.now() + ROUTEX_FARE_QUOTE_TTL_MS,
+    };
+    const fare_quote_token = signRouteXFareQuote(quotePayload);
+    console.log("RouteX fare quote:", {
+      ...fare,
+      pickup_driver_id: pickupEstimate.driver_id,
+      quote_expires_at: quotePayload.expires_at,
+    });
+    return res.json({ ...fare, fare_quote_token, quote_expires_at: quotePayload.expires_at });
   } catch (error) {
     console.error("CALCULATE FARE ERROR:", error);
     return res.status(error.statusCode || 500).json({
