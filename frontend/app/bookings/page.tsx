@@ -492,7 +492,7 @@ const [availabilityStatus, setAvailabilityStatus] = useState<"idle" | "checking"
 
 
 
-    if (!selectedPickup || !selectedDestination) {
+    if (!selectedPickup || !selectedDestination || (rideType === "now" && availabilityStatus !== "available")) {
 
 
 
@@ -545,6 +545,8 @@ const [availabilityStatus, setAvailabilityStatus] = useState<"idle" | "checking"
 
 
         setCalculatingFare(true);
+        setFare("");
+        setFareQuoteToken("");
 
         setFareError("");
 
@@ -555,6 +557,7 @@ const [availabilityStatus, setAvailabilityStatus] = useState<"idle" | "checking"
 
 
         const params = new URLSearchParams({
+          ride_type: rideType,
 
 
 
@@ -698,6 +701,12 @@ const [availabilityStatus, setAvailabilityStatus] = useState<"idle" | "checking"
 
 
 
+        // An online driver may have stale GPS; treat this as unavailable,
+        // rather than showing a red fare calculation error.
+        if (rideType === "now" && error instanceof Error && error.message.includes("No available driver")) {
+          if (!cancelled) setAvailabilityStatus("none");
+          return;
+        }
         console.error("FARE CALCULATION ERROR:", error);
 
 
@@ -774,7 +783,7 @@ const [availabilityStatus, setAvailabilityStatus] = useState<"idle" | "checking"
 
 
 
-  }, [selectedPickup, selectedDestination, fareRetryKey]);
+  }, [selectedPickup, selectedDestination, rideType, availabilityStatus, fareRetryKey]);
 
 
 
@@ -1600,7 +1609,7 @@ useEffect(() => {
 
 
 
-  if (rideType !== "now" || !selectedPickup) return;
+  if (rideType !== "now") return;
 
 
 
@@ -2158,7 +2167,7 @@ useEffect(() => {
 
 
 
-    !(rideType === "now" && (availabilityStatus === "none" || availabilityStatus === "checking"));
+    !(rideType === "now" && availabilityStatus !== "available");
 
 
 
@@ -4406,15 +4415,15 @@ window.location.href = "/passenger-portal";
           {fare && (
             <div className="mt-2 space-y-1 text-[10px] text-black/55">
               <p>Trip fare: R{Math.max(0, Number(fare) - pickupSurcharge - outOfTownFee)}</p>
-              <p>
-                Driver pickup ({pickupDistanceKm == null ? "distance unavailable" : `${pickupDistanceKm.toFixed(1)} km by road`}): R{pickupSurcharge}
-              </p>
+              {rideType === "now" && (
+                <p>Driver pickup ({pickupDistanceKm == null ? "distance unavailable" : `${pickupDistanceKm.toFixed(1)} km by road`}): R{pickupSurcharge}</p>
+              )}
               {outOfTownFee > 0 && <p>Out-of-town fee: R{outOfTownFee}</p>}
               <p className="font-bold text-[#17191f]">Total before promo code: R{fare}</p>
             </div>
           )}
 
-          {fareError && (
+          {fareError && !(rideType === "now" && availabilityStatus === "none") && (
             <div className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-3" role="alert" aria-live="polite">
               <p className="text-[11px] font-semibold text-red-700">{fareError}</p>
               <button

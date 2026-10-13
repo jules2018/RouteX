@@ -1522,7 +1522,8 @@ console.log("FINAL DESTINATION GPS:", {
     sameCoordinate(quotePayload.dropoff_lat, destinationLat) &&
     sameCoordinate(quotePayload.dropoff_lng, destinationLng) &&
     String(quotePayload.pickup_area || "") === String(pickup_area || "") &&
-    String(quotePayload.dropoff_area || "") === String(dropoff_area || "");
+    String(quotePayload.dropoff_area || "") === String(dropoff_area || "") &&
+    quotePayload.ride_type === ride_type;
 
   if (!quoteMatchesRoute) {
     return res.status(409).json({
@@ -6507,13 +6508,22 @@ app.get("/calculate-fare", async (req, res) => {
       return res.status(400).json({ error: "Valid pickup and destination coordinates are required." });
     }
 
-    const pickupEstimate = await calculateRouteXPickupDistance(pickupLat, pickupLng);
+    const rideType = String(req.query.ride_type || "now");
+    if (rideType !== "now" && rideType !== "scheduled") {
+      return res.status(400).json({ error: "Invalid ride type." });
+    }
+
+    // Scheduled fares do not depend on a driver being online today.
+    // Ride Now retains the existing live-driver pickup surcharge.
+    const pickupEstimate = rideType === "now"
+      ? await calculateRouteXPickupDistance(pickupLat, pickupLng)
+      : null;
     const fare = {
       ...routeFare,
-      pickup_surcharge: pickupEstimate.surcharge,
-      pickup_distance_km: pickupEstimate.distance_km,
-      pickup_driver_id: pickupEstimate.driver_id,
-      fare: Number(routeFare.fare) + pickupEstimate.surcharge,
+      pickup_surcharge: pickupEstimate?.surcharge ?? 0,
+      pickup_distance_km: pickupEstimate?.distance_km ?? null,
+      pickup_driver_id: pickupEstimate?.driver_id ?? null,
+      fare: Number(routeFare.fare) + (pickupEstimate?.surcharge ?? 0),
     };
 
     const quotePayload = {
@@ -6524,12 +6534,13 @@ app.get("/calculate-fare", async (req, res) => {
       dropoff_lat: dropoffLat,
       dropoff_lng: dropoffLng,
       fare,
+      ride_type: rideType,
       expires_at: Date.now() + ROUTEX_FARE_QUOTE_TTL_MS,
     };
     const fare_quote_token = signRouteXFareQuote(quotePayload);
     console.log("RouteX fare quote:", {
       ...fare,
-      pickup_driver_id: pickupEstimate.driver_id,
+      pickup_driver_id: pickupEstimate?.driver_id ?? null,
       quote_expires_at: quotePayload.expires_at,
     });
     return res.json({ ...fare, fare_quote_token, quote_expires_at: quotePayload.expires_at });
