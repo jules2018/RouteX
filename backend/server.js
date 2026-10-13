@@ -1224,7 +1224,7 @@ async function calculateRouteXFare({
         if (routeData.code === "Ok" && Array.isArray(routeData.routes) && routeData.routes.length > 0) {
           const distanceKm = Number(routeData.routes[0].distance) / 1000;
           if (Number.isFinite(distanceKm) && distanceKm >= 0) {
-            const baseFare = routeXDistanceFare(distanceKm);
+            const standardBaseFare = routeXDistanceFare(distanceKm);
             const pickupDistanceFromUpington = routeXDistanceKm(
               pickupLat, pickupLng,
               ROUTEX_UPINGTON_CENTRE_LAT, ROUTEX_UPINGTON_CENTRE_LNG
@@ -1235,6 +1235,13 @@ async function calculateRouteXFare({
             );
             const outOfTownFee =
               pickupDistanceFromUpington > 20 || dropoffDistanceFromUpington > 20 ? 50 : 0;
+            // Only long out-of-town routes get an additional distance allowance.
+            // All local Upington fares and shorter out-of-town fares remain unchanged.
+            // At 26.3 km: standard R150 + R50 allowance = R200 trip fare.
+            const longOutOfTownAllowance = outOfTownFee > 0 && distanceKm > 20
+              ? Math.ceil((8 * (distanceKm - 20)) / 5) * 5
+              : 0;
+            const baseFare = standardBaseFare + longOutOfTownAllowance;
             return {
               pricing_method: "distance",
               distance_km: Number(distanceKm.toFixed(2)),
@@ -6518,12 +6525,22 @@ app.get("/calculate-fare", async (req, res) => {
     const pickupEstimate = rideType === "now"
       ? await calculateRouteXPickupDistance(pickupLat, pickupLng)
       : null;
+    // Long out-of-town rides already include a distance allowance.
+    // Do not add a second driver-pickup surcharge to these rides.
+    // Keep the normal surcharge for local and shorter out-of-town rides.
+    const isLongOutOfTownRide =
+      routeFare.pricing_method === "distance" &&
+      Number(routeFare.out_of_town_fee) > 0 &&
+      Number(routeFare.distance_km) > 20;
+    const pickupSurcharge = isLongOutOfTownRide
+      ? 0
+      : (pickupEstimate?.surcharge ?? 0);
     const fare = {
       ...routeFare,
-      pickup_surcharge: pickupEstimate?.surcharge ?? 0,
+      pickup_surcharge: pickupSurcharge,
       pickup_distance_km: pickupEstimate?.distance_km ?? null,
       pickup_driver_id: pickupEstimate?.driver_id ?? null,
-      fare: Number(routeFare.fare) + (pickupEstimate?.surcharge ?? 0),
+      fare: Number(routeFare.fare) + pickupSurcharge,
     };
 
     const quotePayload = {
