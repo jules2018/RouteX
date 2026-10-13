@@ -50,3 +50,14 @@ frontend/.next/
 backend/node_modules/
 frontend/node_modules/
 frontend/.next/
+# RouteX Doctor generated reports
+/doctor_reports/
+
+# Local diagnostic exports
+/backend.txt
+/frontend.txt
+/frontend/app-pages.txt
+
+# Booking page backups
+/frontend/app/bookings/page -backup.tsx
+/frontend/app/bookings/page.before-pickup-fee.tsx
