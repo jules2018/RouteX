@@ -4762,111 +4762,130 @@ AND (tb.expires_at IS NULL OR tb.expires_at > NOW())
 
   }
 });
-app.post(
-  "/trip-requests/:id/accept",
-  async (req, res) => {
-    try {
-      const bookingId = req.params.id;
-      const { driverId } = req.body;
+app.post("/trip-requests/:id/accept", async (req, res) => {
+  const client = await pool.connect();
 
-      // Make sure the driver is actually available
-const driverCheck = await pool.query(
-  `
-  SELECT id, status, is_online
-  FROM drivers
-  WHERE id = $1
-    AND status = 'Available'
-    AND is_online = true
-  `,
-  [driverId]
-);
+  try {
+    const bookingId = req.params.id;
+    const { driverId } = req.body;
 
-if (driverCheck.rows.length === 0) {
-  return res.status(409).json({
-    error: "You are not available to accept another ride."
-  });
-}
+    if (!driverId) {
+      return res.status(400).json({
+        error: "Driver ID is required."
+      });
+    }
 
-      // A driver must never be able to accept an expired request.
-      await pool.query(
-        `
-        UPDATE trip_bookings
-        SET
-          booking_status = 'Expired',
+    await client.query("BEGIN");
+
+    // Lock this driver to prevent simultaneous acceptances.
+    const driverResult = await client.query(
+      `
+      SELECT id
+      FROM drivers
+      WHERE id = $1
+        AND status = 'Available'
+        AND is_online = true
+      FOR UPDATE
+      `,
+      [driverId]
+    );
+
+    if (driverResult.rows.length === 0) {
+      await client.query("ROLLBACK");
+      return res.status(409).json({
+        error: "You are not available to accept another ride."
+      });
+    }
+
+    // Expire an outdated waiting request.
+    await client.query(
+      `
+      UPDATE trip_bookings
+      SET booking_status = 'Expired',
           trip_status = 'Expired'
-        WHERE id = $1
-          AND booking_status = 'Waiting'
-          AND expires_at IS NOT NULL
-          AND expires_at <= NOW()
-        `,
-        [bookingId]
-      );
+      WHERE id = $1
+        AND booking_status = 'Waiting'
+        AND expires_at IS NOT NULL
+        AND expires_at <= NOW()
+      `,
+      [bookingId]
+    );
 
-      const result = await pool.query(
-        `
-        UPDATE trip_bookings
-        SET
-          booking_status = 'Accepted',
+    // Only one driver can claim a waiting booking.
+    const result = await client.query(
+      `
+      UPDATE trip_bookings
+      SET booking_status = 'Accepted',
           trip_status = 'Accepted',
           assigned_driver_id = $2
-       WHERE id = $1
+      WHERE id = $1
         AND booking_status = 'Waiting'
         AND assigned_driver_id IS NULL
         AND (expires_at IS NULL OR expires_at > NOW())
       RETURNING *
-        `,
-        [bookingId, driverId]
-      );
+      `,
+      [bookingId, driverId]
+    );
 
-      const booking = result.rows[0];
-            if (!booking) {
-        return res.status(409).json({
-          error: "This trip is no longer available. It may have expired, been cancelled, or been accepted by another driver."
-        });
-      }
-
-      // Driver now has an active ride.
-// Remove them from the available driver pool.
-await pool.query(
-  `
-  UPDATE drivers
-  SET
-    status = 'Busy',
-    is_online = true
-  WHERE id = $1
-  `,
-  [driverId]
-);
-
-console.log(`DRIVER ${driverId} STATUS -> BUSY`);
-await pool.query(
-  `
-  INSERT INTO notifications
-  (recipient_type, recipient_id, title, message)
-  VALUES ($1, $2, $3, $4)
-  `,
-  [
-    "passenger",
-    booking.passenger_id,
-    "Driver Assigned",
-    "Your driver is on the way to collect you."
-  ]
-);
-
-      res.json({
-        message: "Trip accepted",
-        booking
-      });
-
-    } catch (error) {
-      console.error("ACCEPT TRIP ERROR:", error);
-
-      res.status(500).json({
-        error: error.message
+    if (result.rows.length === 0) {
+      await client.query("ROLLBACK");
+      return res.status(409).json({
+        error: "This trip is no longer available."
       });
     }
+
+    const booking = result.rows[0];
+
+    await client.query(
+      `
+      UPDATE drivers
+      SET status = 'Busy',
+          is_online = true
+      WHERE id = $1
+      `,
+      [driverId]
+    );
+
+    await client.query(
+      `
+      INSERT INTO notifications
+        (recipient_type, recipient_id, title, message)
+      VALUES ($1, $2, $3, $4)
+      `,
+      [
+        "passenger",
+        booking.passenger_id,
+        "Driver Assigned",
+        "Your driver is on the way to collect you."
+      ]
+    );
+
+    await client.query("COMMIT");
+
+    console.log(`DRIVER ${driverId} STATUS -> BUSY`);
+
+    return res.json({
+      message: "Trip accepted",
+      booking
+    });
+
+  } catch (error) {
+    try {
+      await client.query("ROLLBACK");
+    } catch (rollbackError) {
+      console.error("ACCEPT ROLLBACK ERROR:", rollbackError);
+    }
+
+    console.error("ACCEPT TRIP ERROR:", error);
+
+    return res.status(500).json({
+      error: "Could not accept trip. Please try again."
+    });
+
+  } finally {
+    client.release();
   }
-);
+});
 
 app.get("/notifications/:userId", async (req, res) => {
   try {
@@ -4941,66 +4960,117 @@ app.post(
     }
   }
 );
-app.post(
-  "/trip-requests/:id/complete",
-  async (req, res) => {
-    try {
-      const bookingId = req.params.id;
+app.post("/trip-requests/:id/complete", async (req, res) => {
+  const client = await pool.connect();
 
-      // Complete the trip and get the assigned driver
-      const result = await pool.query(
-        `
-        UPDATE trip_bookings
-        SET
-          booking_status = 'Completed',
-          trip_status = 'Completed',
-          completed_at = NOW()
-        WHERE id = $1
-          AND trip_status = 'In Progress'
-        RETURNING *
-        `,
-        [bookingId]
-      );
+  try {
+    const bookingId = req.params.id;
+    const { driverId } = req.body;
 
-      if (result.rows.length === 0) {
-        return res.status(409).json({
-          error: "This trip cannot be completed."
-        });
-      }
-
-      const booking = result.rows[0];
-      const driverId = booking.assigned_driver_id;
-
-      // Driver has finished the ride and becomes available again
-      if (driverId) {
-        await pool.query(
-          `
-          UPDATE drivers
-          SET
-            status = 'Available',
-            is_online = true
-          WHERE id = $1
-          `,
-          [driverId]
-        );
-
-        console.log(`DRIVER ${driverId} STATUS -> AVAILABLE`);
-      }
-
-      res.json({
-        message: "Trip completed",
-        booking
-      });
-
-    } catch (error) {
-      console.error("COMPLETE TRIP ERROR:", error);
-
-      res.status(500).json({
-        error: error.message
+    if (!driverId) {
+      return res.status(400).json({
+        error: "Driver ID is required."
       });
     }
+
+    await client.query("BEGIN");
+
+    // Find the assigned driver without changing the booking yet.
+    const bookingResult = await client.query(
+      `
+      SELECT id, assigned_driver_id
+      FROM trip_bookings
+      WHERE id = $1
+        AND trip_status = 'In Progress'
+        AND assigned_driver_id = $2
+      `,
+      [bookingId, driverId]
+    );
+
+    if (bookingResult.rows.length === 0) {
+      await client.query("ROLLBACK");
+      return res.status(409).json({
+        error: "This trip cannot be completed by this driver."
+      });
+    }
+
+    // Lock the driver before changing the booking.
+    const driverResult = await client.query(
+      `
+      SELECT id
+      FROM drivers
+      WHERE id = $1
+      FOR UPDATE
+      `,
+      [driverId]
+    );
+
+    if (driverResult.rows.length === 0) {
+      await client.query("ROLLBACK");
+      return res.status(409).json({
+        error: "Assigned driver could not be found."
+      });
+    }
+
+    const result = await client.query(
+      `
+      UPDATE trip_bookings
+      SET booking_status = 'Completed',
+          trip_status = 'Completed',
+          completed_at = NOW()
+      WHERE id = $1
+        AND trip_status = 'In Progress'
+        AND assigned_driver_id = $2
+      RETURNING *
+      `,
+      [bookingId, driverId]
+    );
+
+    if (result.rows.length === 0) {
+      await client.query("ROLLBACK");
+      return res.status(409).json({
+        error: "This trip has already been completed or changed."
+      });
+    }
+
+    const booking = result.rows[0];
+
+    await client.query(
+      `
+      UPDATE drivers
+      SET status = 'Available',
+          is_online = true
+      WHERE id = $1
+      `,
+      [driverId]
+    );
+
+    await client.query("COMMIT");
+
+    console.log(`DRIVER ${driverId} STATUS -> AVAILABLE`);
+
+    return res.json({
+      message: "Trip completed",
+      booking
+    });
+
+  } catch (error) {
+    try {
+      await client.query("ROLLBACK");
+    } catch (rollbackError) {
+      console.error("COMPLETE ROLLBACK ERROR:", rollbackError);
+    }
+
+    console.error("COMPLETE TRIP ERROR:", error);
+
+    return res.status(500).json({
+      error: "Could not complete trip. Please try again."
+    });
+
+  } finally {
+    client.release();
   }
-);
+});
 app.get("/accepted-trips", async (req, res) => {
   try {
 
