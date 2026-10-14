@@ -44,6 +44,20 @@ type Driver = { id: number; full_name: string; vehicle_type: string | null; vehi
 
 
 
+type OperationGroup = "waiting" | "assigned" | "in_progress" | "completed" | "cancelled" | "other";
+
+function operationGroup(booking: Booking): OperationGroup {
+  const statuses = [booking.booking_status, booking.trip_status]
+    .filter((value): value is string => Boolean(value))
+    .map(value => value.toLowerCase().trim().replace(/[\s-]+/g, "_"));
+  if (statuses.some(value => ["cancelled", "canceled", "expired", "rejected"].includes(value))) return "cancelled";
+  if (statuses.some(value => ["completed", "complete", "finished"].includes(value))) return "completed";
+  if (statuses.some(value => ["in_progress", "ongoing", "started"].includes(value))) return "in_progress";
+  if (statuses.some(value => ["accepted", "assigned", "driver_assigned", "confirmed"].includes(value))) return "assigned";
+  if (statuses.some(value => ["waiting", "pending", "requested", "searching", "unassigned"].includes(value))) return "waiting";
+  return "other";
+}
+
 const NAV = [
 
   { id: "overview", label: "Overview", icon: LayoutDashboard },
@@ -366,6 +380,16 @@ export default function AdminDashboardPage() {
     return matchesStatus && matchesSearch;
   }), [bookings, bookingFilter, search]);
 
+  const operationCounts = useMemo(() => {
+    const counts: Record<OperationGroup, number> = { waiting: 0, assigned: 0, in_progress: 0, completed: 0, cancelled: 0, other: 0 };
+    bookings.forEach(booking => { counts[operationGroup(booking)] += 1; });
+    return counts;
+  }, [bookings]);
+
+  const attentionBookings = useMemo(() => bookings.filter(booking =>
+    ["waiting", "assigned", "in_progress"].includes(operationGroup(booking))
+  ), [bookings]);
+
   const filteredDrivers = useMemo(() => drivers.filter(d => `${d.full_name} ${d.vehicle_type || ""} ${d.license_plate || ""}`.toLowerCase().includes(search.toLowerCase().trim())), [drivers, search]);
 
   const driverDirectory = <section className="mt-7"><div className="mb-4 flex flex-wrap items-center justify-between gap-3"><div><h3 className="text-lg font-black">Registered drivers</h3><p className="mt-1 text-xs text-white/40">Names, vehicles and latest reported status</p></div><button type="button" onClick={saveAdminKey} className="rounded-xl border border-[#393d46] bg-[#292d35] px-4 py-2.5 text-xs font-bold text-white">{adminKey ? "Change access key" : "Unlock driver directory"}</button></div>{!adminKey ? <div className="rounded-2xl bg-[#24272e] p-6 text-sm text-white/70">Enter the administrator access key to load driver names securely.</div> : driverError ? <div className="rounded-2xl border border-red-800/50 bg-[#2d2225] p-5 text-sm text-red-200">{driverError}. Verify the backend endpoint and access key.</div> : <div className="grid gap-3 lg:grid-cols-2">{filteredDrivers.length ? filteredDrivers.map(driver => <article key={driver.id} className="rounded-2xl border border-[#363941] bg-[#23262d] p-4"><div className="flex items-start justify-between gap-3"><div><p className="font-black text-white">{driver.full_name}</p><p className="mt-1 text-xs text-white/50">{[driver.vehicle_color, driver.vehicle_type, driver.license_plate].filter(Boolean).join(" · ") || "Vehicle details unavailable"}</p></div><span className={`rounded-full px-3 py-1 text-[11px] font-bold ${driver.is_online && driver.status === "Available" ? "bg-emerald-500/15 text-emerald-300" : driver.is_online ? "bg-orange-500/15 text-orange-300" : "bg-[#1e2127]/10 text-white/50"}`}>{driver.is_online ? (driver.status || "Online") : "Offline"}</span></div><p className="mt-3 text-[11px] text-white/40">Last activity: {driver.last_online_at ? new Date(driver.last_online_at).toLocaleString("en-ZA") : "Not recorded"}</p></article>) : <p className="text-sm text-white/50">No matching drivers found.</p>}</div>}</section>;
@@ -440,7 +464,41 @@ export default function AdminDashboardPage() {
 
         {section === "passengers" && <><SectionHeading eyebrow="Community" title="Passenger directory" description="Search registered passengers and contact them through WhatsApp using your existing welcome promotion."/><div className="mb-5 flex flex-wrap items-center justify-between gap-3"><p className="text-sm font-bold text-white/60">{filteredPassengers.length} passengers shown</p><div className="relative w-full sm:w-80"><Search size={16} className="absolute left-3 top-3 text-white/40"/><input aria-label="Search passengers" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by name or phone" className="w-full rounded-xl border border-[#353942] bg-[#1e2127] py-2.5 pl-10 pr-3 text-sm outline-none focus:border-[#ff754d]"/></div></div>{passengerCards(filteredPassengers)}</>}
 
-        {section === "operations" && <><SectionHeading eyebrow="Live operations" title="Driver availability" description="See the online driver count reported by RouteX. Detailed driver locations and active rides require dedicated backend endpoints."/><div className="grid grid-cols-2 gap-3"><Metric label="Drivers online" value={stats.onlineDrivers} icon={Activity}/><Metric label="Registered drivers" value={stats.drivers} icon={CarFront}/></div><div className="mt-6"><EmptyPanel icon={Activity} title="Live trip monitoring is next" description="The next phase will show driver availability, waiting bookings and trips in progress, using real backend data rather than placeholders."/></div></>}
+        {section === "operations" && <>
+          <SectionHeading eyebrow="Live operations" title="Ride activity" description="Monitor recent booking statuses and driver availability. Booking records refresh every 15 seconds while this section is open."/>
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+            <Metric label="Drivers online" value={stats.onlineDrivers} icon={Activity}/>
+            <Metric label="Waiting" value={operationCounts.waiting} icon={Clock3}/>
+            <Metric label="Assigned" value={operationCounts.assigned} icon={CarFront}/>
+            <Metric label="In progress" value={operationCounts.in_progress} icon={ArrowRight}/>
+            <Metric label="Completed" value={operationCounts.completed} icon={CheckCircle2}/>
+            <Metric label="Cancelled / expired" value={operationCounts.cancelled} icon={X}/>
+          </div>
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs text-white/50">
+            <span>Based on {bookings.length} most recent booking records (maximum 200). {operationCounts.other > 0 ? `${operationCounts.other} record(s) have an unrecognised status.` : ""}</span>
+            <button type="button" onClick={() => void loadBookings()} disabled={!adminKey || bookingLoading} className="inline-flex items-center gap-2 rounded-xl border border-white/15 px-4 py-2.5 font-bold text-white disabled:opacity-40"><RefreshCw size={15} className={bookingLoading ? "animate-spin" : ""}/> Refresh</button>
+          </div>
+          <section className="mt-7">
+            <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
+              <div><h3 className="text-lg font-black">Rides needing attention</h3><p className="mt-1 text-xs text-white/50">Waiting, assigned and in-progress bookings</p></div>
+              <button type="button" onClick={() => navigate("bookings")} className="text-xs font-bold text-[#ff754d]">View booking history <ArrowRight size={14} className="inline"/></button>
+            </div>
+            {!adminKey ? <div className="rounded-2xl border border-[#353942] bg-[#1e2127] p-6"><p className="text-sm text-white/70">Enter your admin access key to load ride activity.</p><button type="button" onClick={saveAdminKey} className="mt-4 rounded-xl bg-[#ff754d] px-4 py-2.5 text-xs font-black text-black">Enter admin access key</button></div>
+            : bookingError ? <div role="alert" className="rounded-2xl border border-red-800/50 bg-[#2d2225] p-5 text-sm text-red-200">{bookingError}</div>
+            : bookingLoading && bookings.length === 0 ? <p className="py-8 text-sm text-white/50">Loading ride activity...</p>
+            : attentionBookings.length === 0 ? <EmptyPanel icon={CheckCircle2} title="No active rides in recent records" description="No waiting, assigned or in-progress rides were found among the booking records returned by the server."/>
+            : <div className="grid gap-3 xl:grid-cols-2">{attentionBookings.map(booking => {
+              const group = operationGroup(booking);
+              const label = group === "in_progress" ? "In progress" : group === "assigned" ? "Assigned" : "Waiting";
+              return <article key={booking.id} className="rounded-2xl border border-[#353942] bg-[#1e2127] p-5">
+                <div className="flex items-center justify-between gap-3"><p className="text-sm font-black">Booking #{booking.id}</p><span className="rounded-full bg-[#ff754d]/10 px-3 py-1 text-[11px] font-bold text-[#ff9b7c]">{label}</span></div>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2"><Detail label="Pickup" value={booking.pickup_address}/><Detail label="Destination" value={booking.dropoff_address}/></div>
+                <div className="mt-4 border-t border-white/10 pt-3 text-xs text-white/60">Driver: <span className="font-bold text-white">{booking.driver_name || (booking.assigned_driver_id ? `Driver #${booking.assigned_driver_id}` : "Not assigned")}</span><span className="ml-3">Passenger #{booking.passenger_id ?? "—"}</span></div>
+                <p className="mt-2 text-[11px] text-white/40">Booking status: {booking.booking_status || "—"} · Trip status: {booking.trip_status || "—"}</p>
+              </article>;
+            })}</div>}
+          </section>
+        </>}
 
         {section === "bookings" && <>
           <SectionHeading eyebrow="Ride management" title="Booking history" description="Review RouteX ride requests, trip statuses and assigned drivers. Data refreshes every 15 seconds while this section is open." />
