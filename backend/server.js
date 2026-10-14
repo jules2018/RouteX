@@ -13,7 +13,7 @@ async function sendResetEmail(email, code) {
   const response = await fetch("https://api.brevo.com/v3/smtp/email", {
     method: "POST",
     headers: {
-      "accept": "application/json",
+      accept: "application/json",
       "api-key": process.env.BREVO_API_KEY,
       "content-type": "application/json",
     },
@@ -46,29 +46,19 @@ async function sendResetEmail(email, code) {
   }
 }
 
-
 function hashResetCode(code) {
-  return crypto
-    .createHash("sha256")
-    .update(code)
-    .digest("hex");
+  return crypto.createHash("sha256").update(code).digest("hex");
 }
-
 
 require("dotenv").config();
 
-async function sendWhatsAppBookingAlert(
-  phone,
-  pickup,
-  destination,
-  fare
-) {
+async function sendWhatsAppBookingAlert(phone, pickup, destination, fare) {
   try {
     let whatsappPhone = String(phone).replace(/\D/g, "");
 
-if (whatsappPhone.startsWith("0")) {
-  whatsappPhone = "27" + whatsappPhone.substring(1);
-}
+    if (whatsappPhone.startsWith("0")) {
+      whatsappPhone = "27" + whatsappPhone.substring(1);
+    }
     const response = await fetch(
       `https://graph.facebook.com/v25.0/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`,
       {
@@ -112,7 +102,7 @@ if (whatsappPhone.startsWith("0")) {
             ],
           },
         }),
-      }
+      },
     );
 
     const data = await response.json();
@@ -120,25 +110,16 @@ if (whatsappPhone.startsWith("0")) {
     console.log("WHATSAPP RESPONSE:", data);
 
     if (!response.ok) {
-      console.error(
-        "WHATSAPP ERROR:",
-        response.status,
-        data
-      );
+      console.error("WHATSAPP ERROR:", response.status, data);
     }
 
     return data;
-
   } catch (error) {
     console.error("WHATSAPP SEND ERROR:", error);
   }
 }
 
-async function sendWhatsAppDriverApproved(
-  phone,
-  driverName,
-  setupLink
-) {
+async function sendWhatsAppDriverApproved(phone, driverName, setupLink) {
   try {
     let whatsappPhone = String(phone).replace(/\D/g, "");
 
@@ -186,39 +167,27 @@ async function sendWhatsAppDriverApproved(
             ],
           },
         }),
-      }
+      },
     );
 
     const data = await response.json();
 
-    console.log(
-      "DRIVER APPROVAL WHATSAPP RESPONSE:",
-      data
-    );
+    console.log("DRIVER APPROVAL WHATSAPP RESPONSE:", data);
 
     if (!response.ok) {
-      console.error(
-        "DRIVER APPROVAL WHATSAPP ERROR:",
-        response.status,
-        data
-      );
+      console.error("DRIVER APPROVAL WHATSAPP ERROR:", response.status, data);
     }
 
     return data;
-
   } catch (error) {
-    console.error(
-      "DRIVER APPROVAL WHATSAPP SEND ERROR:",
-      error
-    );
+    console.error("DRIVER APPROVAL WHATSAPP SEND ERROR:", error);
   }
 }
 const app = express();
 
-
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
 );
 
 if (!fs.existsSync("uploads")) {
@@ -236,9 +205,7 @@ const upload = multer({
     if (file.mimetype.startsWith("image/")) {
       cb(null, true);
     } else {
-      cb(
-        new Error("Only image files are allowed.")
-      );
+      cb(new Error("Only image files are allowed."));
     }
   },
 });
@@ -256,10 +223,7 @@ app.get("/whatsapp-webhook", (req, res) => {
   const token = req.query["hub.verify_token"];
   const challenge = req.query["hub.challenge"];
 
-  if (
-    mode === "subscribe" &&
-    token === process.env.WHATSAPP_VERIFY_TOKEN
-  ) {
+  if (mode === "subscribe" && token === process.env.WHATSAPP_VERIFY_TOKEN) {
     console.log("WHATSAPP WEBHOOK VERIFIED");
 
     return res.status(200).send(challenge);
@@ -297,7 +261,6 @@ app.post("/whatsapp-webhook", (req, res) => {
     }
 
     return res.sendStatus(200);
-
   } catch (error) {
     console.error("WHATSAPP WEBHOOK ERROR:", error);
 
@@ -349,7 +312,7 @@ app.get("/test-db", async (req, res) => {
 app.get("/passengers", async (req, res) => {
   try {
     const result = await pool.query(
-      "SELECT * FROM passengers ORDER BY id DESC"
+      "SELECT * FROM passengers ORDER BY id DESC",
     );
 
     res.json(result.rows);
@@ -399,7 +362,7 @@ app.post("/passengers", async (req, res) => {
         dropoff_town,
         dropoff_address,
         travel_date,
-      ]
+      ],
     );
     console.log(result.rows[0]);
     res.status(201).json(result.rows[0]);
@@ -414,9 +377,7 @@ app.post("/passengers", async (req, res) => {
 
 app.get("/vehicles", async (req, res) => {
   try {
-    const result = await pool.query(
-      "SELECT * FROM vehicles ORDER BY id DESC"
-    );
+    const result = await pool.query("SELECT * FROM vehicles ORDER BY id DESC");
 
     res.json(result.rows);
   } catch (error) {
@@ -442,7 +403,7 @@ app.post("/vehicles", async (req, res) => {
       VALUES ($1, $2)
       RETURNING *
       `,
-      [registration, capacity]
+      [registration, capacity],
     );
 
     res.status(201).json(result.rows[0]);
@@ -456,9 +417,7 @@ app.post("/vehicles", async (req, res) => {
 });
 app.get("/drivers", async (req, res) => {
   try {
-    const result = await pool.query(
-      "SELECT * FROM drivers ORDER BY id DESC"
-    );
+    const result = await pool.query("SELECT * FROM drivers ORDER BY id DESC");
 
     res.json(result.rows);
   } catch (error) {
@@ -468,30 +427,29 @@ app.get("/drivers", async (req, res) => {
   }
 });
 
-
 app.post("/auth/forgot-password", async (req, res) => {
   try {
- const { phone } = req.body;
+    const { phone } = req.body;
 
-if (!phone) {
-  return res.status(400).json({
-    success: false,
-    message: "Mobile number is required",
-  });
-}
+    if (!phone) {
+      return res.status(400).json({
+        success: false,
+        message: "Mobile number is required",
+      });
+    }
 
-// Normalize South African mobile numbers
-const normalizedPhone = phone.replace(/\D/g, "");
+    // Normalize South African mobile numbers
+    const normalizedPhone = phone.replace(/\D/g, "");
 
-let phoneVariants = [normalizedPhone];
+    let phoneVariants = [normalizedPhone];
 
-if (normalizedPhone.startsWith("27")) {
-  phoneVariants.push("0" + normalizedPhone.substring(2));
-}
+    if (normalizedPhone.startsWith("27")) {
+      phoneVariants.push("0" + normalizedPhone.substring(2));
+    }
 
-if (normalizedPhone.startsWith("0")) {
-  phoneVariants.push("27" + normalizedPhone.substring(1));
-}
+    if (normalizedPhone.startsWith("0")) {
+      phoneVariants.push("27" + normalizedPhone.substring(1));
+    }
 
     const passengerResult = await pool.query(
       `SELECT u.id, u.email, u.role
@@ -500,7 +458,7 @@ if (normalizedPhone.startsWith("0")) {
        WHERE REGEXP_REPLACE(p.phone, '[^0-9]', '', 'g') = ANY($1)
          AND u.role = 'passenger'
        LIMIT 1`,
-      [phoneVariants]
+      [phoneVariants],
     );
 
     if (passengerResult.rows.length === 0) {
@@ -521,14 +479,14 @@ if (normalizedPhone.startsWith("0")) {
        WHERE user_id = $1
          AND role = 'passenger'
          AND used = FALSE`,
-      [user.id]
+      [user.id],
     );
 
     await pool.query(
       `INSERT INTO password_reset_codes
        (user_id, role, code_hash, expires_at)
        VALUES ($1, $2, $3, NOW() + INTERVAL '10 minutes')`,
-      [user.id, "passenger", codeHash]
+      [user.id, "passenger", codeHash],
     );
 
     await sendResetEmail(user.email, code);
@@ -537,7 +495,6 @@ if (normalizedPhone.startsWith("0")) {
       success: true,
       message: "If an account exists, a verification code has been sent.",
     });
-
   } catch (error) {
     console.error("Forgot password error:", error);
 
@@ -548,20 +505,19 @@ if (normalizedPhone.startsWith("0")) {
   }
 });
 
-
 app.post("/drivers", async (req, res) => {
   try {
     const {
-  full_name,
-  phone,
-  license_number,
-  vehicle_type,
-  vehicle_color,
-  license_plate
-} = req.body;
+      full_name,
+      phone,
+      license_number,
+      vehicle_type,
+      vehicle_color,
+      license_plate,
+    } = req.body;
 
     const result = await pool.query(
-  `
+      `
   INSERT INTO drivers
   (
     full_name,
@@ -582,20 +538,19 @@ app.post("/drivers", async (req, res) => {
   )
   RETURNING *
   `,
-  [
-    full_name,
-    phone,
-    license_number,
-    vehicle_type,
-    vehicle_color,
-    license_plate,
-    "2026-09-14",
-    "2026-09-14"
-  ]
-);
+      [
+        full_name,
+        phone,
+        license_number,
+        vehicle_type,
+        vehicle_color,
+        license_plate,
+        "2026-09-14",
+        "2026-09-14",
+      ],
+    );
 
     res.status(201).json(result.rows[0]);
-
   } catch (error) {
     res.status(500).json({
       error: error.message,
@@ -605,43 +560,38 @@ app.post("/drivers", async (req, res) => {
 
 app.post("/trips", async (req, res) => {
   try {
-    const {
-      route_name,
-      departure_date,
-      vehicle_id,
-      driver_id
-    } = req.body;
+    const { route_name, departure_date, vehicle_id, driver_id } = req.body;
     const vehicleCheck = await pool.query(
-  `
+      `
   SELECT *
   FROM vehicles
   WHERE id = $1
   AND status = 'Available'
   `,
-  [vehicle_id]
-);
+      [vehicle_id],
+    );
 
-if (vehicleCheck.rows.length === 0) {
-  return res.status(400).json({
-    message: "Vehicle not available"
-  });
-}
+    if (vehicleCheck.rows.length === 0) {
+      return res.status(400).json({
+        message: "Vehicle not available",
+      });
+    }
 
-const driverCheck = await pool.query(
-  `
+    const driverCheck = await pool.query(
+      `
   SELECT *
   FROM drivers
   WHERE id = $1
   AND status = 'Available'
   `,
-  [driver_id]
-);
+      [driver_id],
+    );
 
-if (driverCheck.rows.length === 0) {
-  return res.status(400).json({
-    message: "Driver not available"
-  });
-}
+    if (driverCheck.rows.length === 0) {
+      return res.status(400).json({
+        message: "Driver not available",
+      });
+    }
     const result = await pool.query(
       `
       INSERT INTO trips
@@ -654,46 +604,36 @@ if (driverCheck.rows.length === 0) {
       VALUES ($1,$2,$3,$4)
       RETURNING *
       `,
-      [
-        route_name,
-        departure_date,
-        vehicle_id,
-        driver_id
-      ]
+      [route_name, departure_date, vehicle_id, driver_id],
     );
-await pool.query(
-  `
+    await pool.query(
+      `
   UPDATE vehicles
   SET status = 'Assigned'
   WHERE id = $1
   `,
-  [vehicle_id]
-);
+      [vehicle_id],
+    );
 
-await pool.query(
-  `
+    await pool.query(
+      `
   UPDATE drivers
   SET status = 'Assigned'
   WHERE id = $1
   `,
-  [driver_id]
-);
+      [driver_id],
+    );
     res.status(201).json(result.rows[0]);
-
   } catch (error) {
     res.status(500).json({
-      error: error.message
+      error: error.message,
     });
   }
 });
 
 app.post("/trip-bookings", async (req, res) => {
   try {
-    const {
-  trip_id,
-  passenger_id,
-  promo_code
-} = req.body;
+    const { trip_id, passenger_id, promo_code } = req.body;
 
     const result = await pool.query(
       `
@@ -706,107 +646,94 @@ app.post("/trip-bookings", async (req, res) => {
 VALUES ($1,$2,$3)
       RETURNING *
       `,
-      [
-  trip_id,
-  passenger_id,
-  promo_code || null
-]
+      [trip_id, passenger_id, promo_code || null],
     );
 
     res.status(201).json(result.rows[0]);
-
   } catch (error) {
-
     res.status(500).json({
-      error: error.message
-    }); 
-
+      error: error.message,
+    });
   }
 });
 
-app.post(
-  "/driver/upload-photo",
-  upload.single("photo"),
-  async (req, res) => {
-    try {
-      console.log("DRIVER UPLOAD ROUTE HIT");
+app.post("/driver/upload-photo", upload.single("photo"), async (req, res) => {
+  try {
+    console.log("DRIVER UPLOAD ROUTE HIT");
 
-      const { driverId } = req.body;
+    const { driverId } = req.body;
 
-      if (!driverId) {
-        return res.status(400).json({
-          success: false,
-          error: "Driver ID is missing",
-        });
-      }
+    if (!driverId) {
+      return res.status(400).json({
+        success: false,
+        error: "Driver ID is missing",
+      });
+    }
 
-      if (!req.file) {
-        return res.status(400).json({
-          success: false,
-          error: "No file received",
-        });
-      }
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        error: "No file received",
+      });
+    }
 
-      const fileExt =
-        req.file.originalname.split(".").pop() || "jpg";
+    const fileExt = req.file.originalname.split(".").pop() || "jpg";
 
-      const fileName = `drivers/${driverId}-${Date.now()}.${fileExt}`;
+    const fileName = `drivers/${driverId}-${Date.now()}.${fileExt}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from("profile-photos")
-        .upload(fileName, req.file.buffer, {
-          contentType: req.file.mimetype,
-          upsert: true,
-        });
+    const { error: uploadError } = await supabase.storage
+      .from("profile-photos")
+      .upload(fileName, req.file.buffer, {
+        contentType: req.file.mimetype,
+        upsert: true,
+      });
 
-      if (uploadError) {
-        console.error("SUPABASE UPLOAD ERROR:", uploadError);
+    if (uploadError) {
+      console.error("SUPABASE UPLOAD ERROR:", uploadError);
 
-        return res.status(500).json({
-          success: false,
-          error: "Failed to upload driver photo",
-        });
-      }
+      return res.status(500).json({
+        success: false,
+        error: "Failed to upload driver photo",
+      });
+    }
 
-      const { data: publicUrlData } = supabase.storage
-        .from("profile-photos")
-        .getPublicUrl(fileName);
+    const { data: publicUrlData } = supabase.storage
+      .from("profile-photos")
+      .getPublicUrl(fileName);
 
-      const imageUrl = publicUrlData.publicUrl;
+    const imageUrl = publicUrlData.publicUrl;
 
-      const result = await pool.query(
-        `
+    const result = await pool.query(
+      `
         UPDATE drivers
         SET profile_image = $1
         WHERE id = $2
         RETURNING id, profile_image
         `,
-        [imageUrl, driverId]
-      );
+      [imageUrl, driverId],
+    );
 
-      if (result.rows.length === 0) {
-        return res.status(404).json({
-          success: false,
-          error: "Driver not found",
-        });
-      }
-
-      res.json({
-        success: true,
-        image: imageUrl,
-        driver: result.rows[0],
-      });
-
-    } catch (error) {
-      console.error("DRIVER UPLOAD PHOTO ERROR:", error);
-
-      res.status(500).json({
+    if (result.rows.length === 0) {
+      return res.status(404).json({
         success: false,
-        error: error.message,
+        error: "Driver not found",
       });
     }
+
+    res.json({
+      success: true,
+      image: imageUrl,
+      driver: result.rows[0],
+    });
+  } catch (error) {
+    console.error("DRIVER UPLOAD PHOTO ERROR:", error);
+
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
   }
-);
+});
 /* =========================================================
    PASSENGER PROFILE PHOTO
 ========================================================= */
@@ -858,7 +785,7 @@ app.post(
         FROM passengers
         WHERE id = $1
         `,
-        [passengerId]
+        [passengerId],
       );
 
       if (passengerCheck.rows.length === 0) {
@@ -873,13 +800,9 @@ app.post(
       // -----------------------------------------------------
 
       const extension =
-        file.originalname
-          .split(".")
-          .pop()
-          ?.toLowerCase() || "jpg";
+        file.originalname.split(".").pop()?.toLowerCase() || "jpg";
 
-      const fileName =
-        `passengers/${passengerId}-${Date.now()}.${extension}`;
+      const fileName = `passengers/${passengerId}-${Date.now()}.${extension}`;
 
       console.log("Uploading to Supabase:", fileName);
 
@@ -887,23 +810,15 @@ app.post(
       // UPLOAD TO SUPABASE STORAGE
       // -----------------------------------------------------
 
-      const { error: uploadError } =
-        await supabase.storage
-          .from("profile-photos")
-          .upload(
-            fileName,
-            file.buffer,
-            {
-              contentType: file.mimetype,
-              upsert: true,
-            }
-          );
+      const { error: uploadError } = await supabase.storage
+        .from("profile-photos")
+        .upload(fileName, file.buffer, {
+          contentType: file.mimetype,
+          upsert: true,
+        });
 
       if (uploadError) {
-        console.error(
-          "SUPABASE UPLOAD ERROR:",
-          uploadError
-        );
+        console.error("SUPABASE UPLOAD ERROR:", uploadError);
 
         return res.status(500).json({
           success: false,
@@ -915,30 +830,22 @@ app.post(
       // GET PUBLIC PHOTO URL
       // -----------------------------------------------------
 
-      const { data: publicUrlData } =
-        supabase.storage
-          .from("profile-photos")
-          .getPublicUrl(fileName);
+      const { data: publicUrlData } = supabase.storage
+        .from("profile-photos")
+        .getPublicUrl(fileName);
 
-      const imageUrl =
-        publicUrlData?.publicUrl;
+      const imageUrl = publicUrlData?.publicUrl;
 
       if (!imageUrl) {
-        console.error(
-          "Could not create public image URL."
-        );
+        console.error("Could not create public image URL.");
 
         return res.status(500).json({
           success: false,
-          error:
-            "Could not create profile photo URL.",
+          error: "Could not create profile photo URL.",
         });
       }
 
-      console.log(
-        "PROFILE IMAGE URL:",
-        imageUrl
-      );
+      console.log("PROFILE IMAGE URL:", imageUrl);
 
       // -----------------------------------------------------
       // SAVE URL TO POSTGRESQL
@@ -951,7 +858,7 @@ app.post(
         WHERE id = $2
         RETURNING *
         `,
-        [imageUrl, passengerId]
+        [imageUrl, passengerId],
       );
 
       if (result.rows.length === 0) {
@@ -961,9 +868,7 @@ app.post(
         });
       }
 
-      console.log(
-        "PASSENGER PHOTO SAVED"
-      );
+      console.log("PASSENGER PHOTO SAVED");
 
       // -----------------------------------------------------
       // RETURN SAVED PASSENGER + IMAGE
@@ -973,19 +878,13 @@ app.post(
         success: true,
 
         // Makes data.image available
-        image:
-          result.rows[0].profile_image,
+        image: result.rows[0].profile_image,
 
         // Also returns updated passenger
-        passenger:
-          result.rows[0],
+        passenger: result.rows[0],
       });
-
     } catch (error) {
-      console.error(
-        "PASSENGER PHOTO UPLOAD ERROR:",
-        error
-      );
+      console.error("PASSENGER PHOTO UPLOAD ERROR:", error);
 
       return res.status(500).json({
         success: false,
@@ -995,7 +894,7 @@ app.post(
             : "Failed to upload profile photo.",
       });
     }
-  }
+  },
 );
 
 // Signed, short-lived fare quotes ensure the passenger's displayed fare
@@ -1014,7 +913,9 @@ function routeXFareQuoteSecret() {
 }
 
 function signRouteXFareQuote(payload) {
-  const encodedPayload = Buffer.from(JSON.stringify(payload)).toString("base64url");
+  const encodedPayload = Buffer.from(JSON.stringify(payload)).toString(
+    "base64url",
+  );
   const signature = crypto
     .createHmac("sha256", routeXFareQuoteSecret())
     .update(encodedPayload)
@@ -1048,8 +949,13 @@ function verifyRouteXFareQuote(token) {
   }
 
   try {
-    const payload = JSON.parse(Buffer.from(encodedPayload, "base64url").toString("utf8"));
-    if (!Number.isFinite(payload.expires_at) || payload.expires_at < Date.now()) {
+    const payload = JSON.parse(
+      Buffer.from(encodedPayload, "base64url").toString("utf8"),
+    );
+    if (
+      !Number.isFinite(payload.expires_at) ||
+      payload.expires_at < Date.now()
+    ) {
       return null;
     }
     return payload;
@@ -1098,12 +1004,14 @@ async function calculateRouteXPickupDistance(pickupLat, pickupLng) {
     ORDER BY straight_distance_km ASC
     LIMIT 8
     `,
-    [pickupLat, pickupLng]
+    [pickupLat, pickupLng],
   );
 
   const candidates = candidatesResult.rows;
   if (!candidates.length) {
-    const error = new Error("No available driver with a recent GPS location can be used to estimate this pickup fee. Please try again later.");
+    const error = new Error(
+      "No available driver with a recent GPS location can be used to estimate this pickup fee. Please try again later.",
+    );
     error.statusCode = 503;
     throw error;
   }
@@ -1111,7 +1019,9 @@ async function calculateRouteXPickupDistance(pickupLat, pickupLng) {
   // Ask OSRM for road distances from the eight closest GPS candidates to pickup.
   // This compares road distance rather than relying on straight-line distance.
   const coordinates = [
-    ...candidates.map((driver) => `${Number(driver.current_lng)},${Number(driver.current_lat)}`),
+    ...candidates.map(
+      (driver) => `${Number(driver.current_lng)},${Number(driver.current_lat)}`,
+    ),
     `${pickupLng},${pickupLat}`,
   ].join(";");
   const destinationIndex = candidates.length;
@@ -1122,7 +1032,9 @@ async function calculateRouteXPickupDistance(pickupLat, pickupLng) {
 
   const response = await fetch(tableUrl);
   if (!response.ok) {
-    const error = new Error("Driver pickup distance could not be calculated. Please try again later.");
+    const error = new Error(
+      "Driver pickup distance could not be calculated. Please try again later.",
+    );
     error.statusCode = 503;
     throw error;
   }
@@ -1134,11 +1046,15 @@ async function calculateRouteXPickupDistance(pickupLat, pickupLng) {
       driver_id: Number(driver.id),
       distance_km: Number(distances[index]?.[0]) / 1000,
     }))
-    .filter((entry) => Number.isFinite(entry.distance_km) && entry.distance_km >= 0)
+    .filter(
+      (entry) => Number.isFinite(entry.distance_km) && entry.distance_km >= 0,
+    )
     .sort((a, b) => a.distance_km - b.distance_km);
 
   if (table.code !== "Ok" || !ranked.length) {
-    const error = new Error("Driver pickup distance could not be calculated. Please try again later.");
+    const error = new Error(
+      "Driver pickup distance could not be calculated. Please try again later.",
+    );
     error.statusCode = 503;
     throw error;
   }
@@ -1184,7 +1100,8 @@ function routeXDistanceFare(distanceKm) {
   const longTripRate = 2;
   const shortRateDistance = Math.min(Math.max(distanceKm - 2, 0), 8);
   const longRateDistance = Math.max(distanceKm - 10, 0);
-  const rawFare = minimumFare +
+  const rawFare =
+    minimumFare +
     shortRateDistance * shortTripRate +
     longRateDistance * longTripRate;
   return Math.ceil(rawFare / 5) * 5;
@@ -1203,14 +1120,22 @@ async function calculateRouteXFare({
   const dropoffLat = Number(dropoff_lat);
   const dropoffLng = Number(dropoff_lng);
   const hasCoordinates =
-    pickup_lat != null && pickup_lng != null &&
-    dropoff_lat != null && dropoff_lng != null &&
-    Number.isFinite(pickupLat) && Number.isFinite(pickupLng) &&
-    Number.isFinite(dropoffLat) && Number.isFinite(dropoffLng) &&
-    pickupLat >= -90 && pickupLat <= 90 &&
-    dropoffLat >= -90 && dropoffLat <= 90 &&
-    pickupLng >= -180 && pickupLng <= 180 &&
-    dropoffLng >= -180 && dropoffLng <= 180;
+    pickup_lat != null &&
+    pickup_lng != null &&
+    dropoff_lat != null &&
+    dropoff_lng != null &&
+    Number.isFinite(pickupLat) &&
+    Number.isFinite(pickupLng) &&
+    Number.isFinite(dropoffLat) &&
+    Number.isFinite(dropoffLng) &&
+    pickupLat >= -90 &&
+    pickupLat <= 90 &&
+    dropoffLat >= -90 &&
+    dropoffLat <= 90 &&
+    pickupLng >= -180 &&
+    pickupLng <= 180 &&
+    dropoffLng >= -180 &&
+    dropoffLng <= 180;
 
   if (hasCoordinates) {
     try {
@@ -1220,56 +1145,79 @@ async function calculateRouteXFare({
       const routeResponse = await fetch(routeUrl);
       if (routeResponse.ok) {
         const routeData = await routeResponse.json();
-        if (routeData.code === "Ok" && Array.isArray(routeData.routes) && routeData.routes.length > 0) {
+        if (
+          routeData.code === "Ok" &&
+          Array.isArray(routeData.routes) &&
+          routeData.routes.length > 0
+        ) {
           const distanceKm = Number(routeData.routes[0].distance) / 1000;
           if (Number.isFinite(distanceKm) && distanceKm >= 0) {
             const standardBaseFare = routeXDistanceFare(distanceKm);
             const pickupDistanceFromUpington = routeXDistanceKm(
-              pickupLat, pickupLng,
-              ROUTEX_UPINGTON_CENTRE_LAT, ROUTEX_UPINGTON_CENTRE_LNG
+              pickupLat,
+              pickupLng,
+              ROUTEX_UPINGTON_CENTRE_LAT,
+              ROUTEX_UPINGTON_CENTRE_LNG,
             );
             const dropoffDistanceFromUpington = routeXDistanceKm(
-              dropoffLat, dropoffLng,
-              ROUTEX_UPINGTON_CENTRE_LAT, ROUTEX_UPINGTON_CENTRE_LNG
+              dropoffLat,
+              dropoffLng,
+              ROUTEX_UPINGTON_CENTRE_LAT,
+              ROUTEX_UPINGTON_CENTRE_LNG,
             );
             const outOfTownFee =
-              pickupDistanceFromUpington > 20 || dropoffDistanceFromUpington > 20 ? 50 : 0;
+              pickupDistanceFromUpington > 20 ||
+              dropoffDistanceFromUpington > 20
+                ? 50
+                : 0;
             // Only long out-of-town routes get an additional distance allowance.
             // All local Upington fares and shorter out-of-town fares remain unchanged.
             // At 26.3 km: standard R150 + R50 allowance = R200 trip fare.
-            const longOutOfTownAllowance = outOfTownFee > 0 && distanceKm > 20
-              ? Math.ceil((8 * (distanceKm - 20)) / 5) * 5
-              : 0;
+            const longOutOfTownAllowance =
+              outOfTownFee > 0 && distanceKm > 20
+                ? Math.ceil((8 * (distanceKm - 20)) / 5) * 5
+                : 0;
             const baseFare = standardBaseFare + longOutOfTownAllowance;
             return {
               pricing_method: "distance",
               distance_km: Number(distanceKm.toFixed(2)),
               base_fare: baseFare,
               out_of_town_fee: outOfTownFee,
-              pickup_distance_from_upington: Number(pickupDistanceFromUpington.toFixed(2)),
+              pickup_distance_from_upington: Number(
+                pickupDistanceFromUpington.toFixed(2),
+              ),
               discount: 0,
               fare: baseFare + outOfTownFee,
             };
           }
         }
       }
-      console.warn("OSRM route unavailable; using RouteX area fare fallback.");
-    } catch (error) {
-      console.warn("OSRM fare calculation failed; using RouteX area fare fallback:", error.message);
-    }
+
+   console.warn("OSRM route unavailable for coordinate-based fare.");
+} catch (error) {
+  console.error("OSRM fare calculation failed:", error.message);
+}
+
+const error = new Error(
+  "Road distance could not be calculated. Please try again later."
+);
+error.statusCode = 503;
+throw error;
   }
 
   const pickupResult = await pool.query(
     `SELECT category FROM public.areas WHERE area_name = $1`,
-    [pickup_area]
+    [pickup_area],
   );
   const dropoffResult = await pool.query(
     `SELECT category FROM public.areas WHERE area_name = $1`,
-    [dropoff_area]
+    [dropoff_area],
   );
 
   if (pickupResult.rows.length === 0 || dropoffResult.rows.length === 0) {
-    const error = new Error("Pickup or drop-off area was not recognised. Please select an address from the search results.");
+    const error = new Error(
+      "Pickup or drop-off area was not recognised. Please select an address from the search results.",
+    );
     error.statusCode = 400;
     throw error;
   }
@@ -1283,10 +1231,12 @@ async function calculateRouteXFare({
   } else {
     const fareResult = await pool.query(
       `SELECT fare FROM public.fare_matrix WHERE from_category = $1 AND to_category = $2`,
-      [pickupCategory, dropoffCategory]
+      [pickupCategory, dropoffCategory],
     );
     if (fareResult.rows.length === 0) {
-      const error = new Error("Fare is not configured for this route yet. Please try another address or contact RouteX.");
+      const error = new Error(
+        "Fare is not configured for this route yet. Please try another address or contact RouteX.",
+      );
       error.statusCode = 400;
       throw error;
     }
@@ -1314,261 +1264,255 @@ app.post("/bookings", async (req, res) => {
   try {
     console.log("BOOKINGS ROUTE HIT");
 
-const {
-  passenger_id,
-  pickup_area,
-  dropoff_area,
-  pickup_address,
-  dropoff_address,
+    const {
+      passenger_id,
+      pickup_area,
+      dropoff_area,
+      pickup_address,
+      dropoff_address,
 
-  pickup_lat,
-  pickup_lng,
-  dropoff_lat,
-  dropoff_lng,
+      pickup_lat,
+      pickup_lng,
+      dropoff_lat,
+      dropoff_lng,
 
-  travel_date,
-  pickup_time,
-  ride_type = "now",
-  fare_amount,
-  fare_quote_token,
-  promo_code
-} = req.body;
-
-const isScheduledRide = ride_type === "scheduled";
-
-if (!passenger_id || !pickup_address || !dropoff_address) {
-  return res.status(400).json({
-    error: "Passenger, pickup address and destination address are required."
-  });
-}
-
-if (!Number.isFinite(Number(fare_amount)) || Number(fare_amount) <= 0) {
-  return res.status(400).json({ error: "A valid quoted fare is required. Please recalculate the fare and try again." });
-}
-
-if (ride_type !== "now" && ride_type !== "scheduled") {
-  return res.status(400).json({ error: "Invalid ride type." });
-}
-
-let scheduledPickupAt = null;
-let matchingOpensAt = null;
-
-if (isScheduledRide) {
-  if (!travel_date || !pickup_time) {
-    return res.status(400).json({
-      error: "Travel date and pickup time are required for a scheduled ride."
-    });
-  }
-
-  // RouteX operates in South Africa (UTC+2).
-  // Store the scheduled instant as timestamptz.
-  scheduledPickupAt = new Date(`${travel_date}T${pickup_time}:00+02:00`);
-
-  if (Number.isNaN(scheduledPickupAt.getTime())) {
-    return res.status(400).json({
-      error: "Invalid scheduled pickup date or time."
-    });
-  }
-
-  matchingOpensAt = new Date(
-    scheduledPickupAt.getTime() - 30 * 60 * 1000
-  );
-
-  if (scheduledPickupAt <= new Date()) {
-    return res.status(400).json({
-      error: "Scheduled pickup time must be in the future."
-    });
-  }
-}
-
-// Ride Now requires confirmed passenger GPS.
-// Scheduled rides use the selected pickup address coordinates instead.
-const pickupLatNumber = Number(pickup_lat);
-const pickupLngNumber = Number(pickup_lng);
-
-if (
-  !isScheduledRide &&
-  (
-    pickup_lat == null ||
-    pickup_lng == null ||
-    !Number.isFinite(pickupLatNumber) ||
-    !Number.isFinite(pickupLngNumber) ||
-    pickupLatNumber < -90 ||
-    pickupLatNumber > 90 ||
-    pickupLngNumber < -180 ||
-    pickupLngNumber > 180
-  )
-) {
-  return res.status(400).json({
-    error:
-      "A valid passenger GPS pickup location is required to create a Ride Now booking."
-  });
-}
-
-console.log("Pickup Area:", pickup_area);
-console.log("Dropoff Area:", dropoff_area);
-
-
-  
-const pickupAreaResult = await pool.query(
-  `
-  SELECT latitude, longitude
-  FROM areas
-  WHERE area_name = $1
-  `,
-  [pickup_area]
-);
-
-const dropoffAreaResult = await pool.query(
-  `
-  SELECT latitude, longitude
-  FROM areas
-  WHERE area_name = $1
-  `,
-  [dropoff_area]
-);
-console.log(
-  "Pickup Lookup:",
-  pickupAreaResult.rows
-);
-
-console.log(
-  "Dropoff Lookup:",
-  dropoffAreaResult.rows
-);
-// Ride Now uses confirmed passenger GPS.
-// Scheduled rides use the coordinates selected with the pickup address,
-// falling back to the pickup area's coordinates if necessary.
-const scheduledPickupLat =
-  pickup_lat != null && Number.isFinite(Number(pickup_lat))
-    ? Number(pickup_lat)
-    : Number(pickupAreaResult.rows[0]?.latitude);
-
-const scheduledPickupLng =
-  pickup_lng != null && Number.isFinite(Number(pickup_lng))
-    ? Number(pickup_lng)
-    : Number(pickupAreaResult.rows[0]?.longitude);
-
-const pickupLat = isScheduledRide
-  ? scheduledPickupLat
-  : pickupLatNumber;
-
-const pickupLng = isScheduledRide
-  ? scheduledPickupLng
-  : pickupLngNumber;
-
-if (
-  !Number.isFinite(pickupLat) ||
-  !Number.isFinite(pickupLng)
-) {
-  return res.status(400).json({
-    error: isScheduledRide
-      ? "The selected scheduled pickup address does not have valid coordinates."
-      : "A valid pickup location is required."
-  });
-}
-
-// Use the selected destination's coordinates when available.
-// Fall back to the area's coordinates if necessary.
-const destinationLat =
-  dropoff_lat != null
-    ? Number(dropoff_lat)
-    : dropoffAreaResult.rows[0]?.latitude;
-
-const destinationLng =
-  dropoff_lng != null
-    ? Number(dropoff_lng)
-    : dropoffAreaResult.rows[0]?.longitude;
-
-if (
-  !Number.isFinite(Number(pickupLat)) ||
-  Number(pickupLat) < -90 || Number(pickupLat) > 90 ||
-  !Number.isFinite(Number(pickupLng)) ||
-  Number(pickupLng) < -180 || Number(pickupLng) > 180 ||
-  !Number.isFinite(Number(destinationLat)) ||
-  Number(destinationLat) < -90 || Number(destinationLat) > 90 ||
-  !Number.isFinite(Number(destinationLng)) ||
-  Number(destinationLng) < -180 || Number(destinationLng) > 180
-) {
-  return res.status(400).json({
-    error: "The pickup or destination address has invalid GPS coordinates. Please select the address again."
-  });
-}
-
-console.log("FINAL PICKUP GPS:", {
-  lat: pickupLat,
-  lng: pickupLng,
-});
-
-console.log("FINAL DESTINATION GPS:", {
-  lat: destinationLat,
-  lng: destinationLng,
-});
-
-  // Verify the signed quote created by GET /calculate-fare. The token locks
-  // the fare components and route for ten minutes, including the driver pickup estimate.
-  let verifiedFare;
-  let quotePayload;
-  try {
-    quotePayload = verifyRouteXFareQuote(fare_quote_token);
-  } catch (quoteError) {
-    console.error("FARE QUOTE VERIFICATION ERROR:", quoteError.message);
-    quotePayload = null;
-  }
-
-  const sameCoordinate = (a, b) =>
-    Number.isFinite(Number(a)) &&
-    Number.isFinite(Number(b)) &&
-    Math.abs(Number(a) - Number(b)) < 0.000001;
-
-  const quoteMatchesRoute =
-    quotePayload &&
-    sameCoordinate(quotePayload.pickup_lat, pickupLat) &&
-    sameCoordinate(quotePayload.pickup_lng, pickupLng) &&
-    sameCoordinate(quotePayload.dropoff_lat, destinationLat) &&
-    sameCoordinate(quotePayload.dropoff_lng, destinationLng) &&
-    String(quotePayload.pickup_area || "") === String(pickup_area || "") &&
-    String(quotePayload.dropoff_area || "") === String(dropoff_area || "") &&
-    quotePayload.ride_type === ride_type;
-
-  if (!quoteMatchesRoute) {
-    return res.status(409).json({
-      quote_expired: true,
-      error: "Your fare quote has expired or no longer matches this route. Please review a refreshed fare before booking again.",
-    });
-  }
-
-  verifiedFare = quotePayload.fare;
-  const quotedFare = Number(fare_amount);
-  const baseFare = Number(verifiedFare.fare);
-
-  if (!Number.isFinite(baseFare) || baseFare <= 0) {
-    return res.status(400).json({ error: "The fare could not be verified. Please try again." });
-  }
-
-  if (Math.abs(quotedFare - baseFare) > 0.01) {
-    return res.status(409).json({
-      fare_changed: true,
-      error: "The fare does not match the signed quote. Please review the updated fare and submit your booking again.",
-      fare: baseFare,
-      base_fare: verifiedFare.base_fare,
-      pickup_surcharge: verifiedFare.pickup_surcharge,
-      pickup_distance_km: verifiedFare.pickup_distance_km,
-      out_of_town_fee: verifiedFare.out_of_town_fee,
-      distance_km: verifiedFare.distance_km,
+      travel_date,
+      pickup_time,
+      ride_type = "now",
+      fare_amount,
       fare_quote_token,
+      promo_code,
+    } = req.body;
+
+    const isScheduledRide = ride_type === "scheduled";
+
+    if (!passenger_id || !pickup_address || !dropoff_address) {
+      return res.status(400).json({
+        error:
+          "Passenger, pickup address and destination address are required.",
+      });
+    }
+
+    if (!Number.isFinite(Number(fare_amount)) || Number(fare_amount) <= 0) {
+      return res
+        .status(400)
+        .json({
+          error:
+            "A valid quoted fare is required. Please recalculate the fare and try again.",
+        });
+    }
+
+    if (ride_type !== "now" && ride_type !== "scheduled") {
+      return res.status(400).json({ error: "Invalid ride type." });
+    }
+
+    let scheduledPickupAt = null;
+    let matchingOpensAt = null;
+
+    if (isScheduledRide) {
+      if (!travel_date || !pickup_time) {
+        return res.status(400).json({
+          error:
+            "Travel date and pickup time are required for a scheduled ride.",
+        });
+      }
+
+      // RouteX operates in South Africa (UTC+2).
+      // Store the scheduled instant as timestamptz.
+      scheduledPickupAt = new Date(`${travel_date}T${pickup_time}:00+02:00`);
+
+      if (Number.isNaN(scheduledPickupAt.getTime())) {
+        return res.status(400).json({
+          error: "Invalid scheduled pickup date or time.",
+        });
+      }
+
+      matchingOpensAt = new Date(scheduledPickupAt.getTime() - 30 * 60 * 1000);
+
+      if (scheduledPickupAt <= new Date()) {
+        return res.status(400).json({
+          error: "Scheduled pickup time must be in the future.",
+        });
+      }
+    }
+
+    // Ride Now requires confirmed passenger GPS.
+    // Scheduled rides use the selected pickup address coordinates instead.
+    const pickupLatNumber = Number(pickup_lat);
+    const pickupLngNumber = Number(pickup_lng);
+
+    if (
+      !isScheduledRide &&
+      (pickup_lat == null ||
+        pickup_lng == null ||
+        !Number.isFinite(pickupLatNumber) ||
+        !Number.isFinite(pickupLngNumber) ||
+        pickupLatNumber < -90 ||
+        pickupLatNumber > 90 ||
+        pickupLngNumber < -180 ||
+        pickupLngNumber > 180)
+    ) {
+      return res.status(400).json({
+        error:
+          "A valid passenger GPS pickup location is required to create a Ride Now booking.",
+      });
+    }
+
+    console.log("Pickup Area:", pickup_area);
+    console.log("Dropoff Area:", dropoff_area);
+
+    const pickupAreaResult = await pool.query(
+      `
+  SELECT latitude, longitude
+  FROM areas
+  WHERE area_name = $1
+  `,
+      [pickup_area],
+    );
+
+    const dropoffAreaResult = await pool.query(
+      `
+  SELECT latitude, longitude
+  FROM areas
+  WHERE area_name = $1
+  `,
+      [dropoff_area],
+    );
+    console.log("Pickup Lookup:", pickupAreaResult.rows);
+
+    console.log("Dropoff Lookup:", dropoffAreaResult.rows);
+    // Ride Now uses confirmed passenger GPS.
+    // Scheduled rides use the coordinates selected with the pickup address,
+    // falling back to the pickup area's coordinates if necessary.
+    const scheduledPickupLat =
+      pickup_lat != null && Number.isFinite(Number(pickup_lat))
+        ? Number(pickup_lat)
+        : Number(pickupAreaResult.rows[0]?.latitude);
+
+    const scheduledPickupLng =
+      pickup_lng != null && Number.isFinite(Number(pickup_lng))
+        ? Number(pickup_lng)
+        : Number(pickupAreaResult.rows[0]?.longitude);
+
+    const pickupLat = isScheduledRide ? scheduledPickupLat : pickupLatNumber;
+
+    const pickupLng = isScheduledRide ? scheduledPickupLng : pickupLngNumber;
+
+    if (!Number.isFinite(pickupLat) || !Number.isFinite(pickupLng)) {
+      return res.status(400).json({
+        error: isScheduledRide
+          ? "The selected scheduled pickup address does not have valid coordinates."
+          : "A valid pickup location is required.",
+      });
+    }
+
+    // Use the selected destination's coordinates when available.
+    // Fall back to the area's coordinates if necessary.
+    const destinationLat =
+      dropoff_lat != null
+        ? Number(dropoff_lat)
+        : dropoffAreaResult.rows[0]?.latitude;
+
+    const destinationLng =
+      dropoff_lng != null
+        ? Number(dropoff_lng)
+        : dropoffAreaResult.rows[0]?.longitude;
+
+    if (
+      !Number.isFinite(Number(pickupLat)) ||
+      Number(pickupLat) < -90 ||
+      Number(pickupLat) > 90 ||
+      !Number.isFinite(Number(pickupLng)) ||
+      Number(pickupLng) < -180 ||
+      Number(pickupLng) > 180 ||
+      !Number.isFinite(Number(destinationLat)) ||
+      Number(destinationLat) < -90 ||
+      Number(destinationLat) > 90 ||
+      !Number.isFinite(Number(destinationLng)) ||
+      Number(destinationLng) < -180 ||
+      Number(destinationLng) > 180
+    ) {
+      return res.status(400).json({
+        error:
+          "The pickup or destination address has invalid GPS coordinates. Please select the address again.",
+      });
+    }
+
+    console.log("FINAL PICKUP GPS:", {
+      lat: pickupLat,
+      lng: pickupLng,
     });
-  }
 
-let discountAmount = 0;
+    console.log("FINAL DESTINATION GPS:", {
+      lat: destinationLat,
+      lng: destinationLng,
+    });
 
-if (
-  promo_code &&
-  promo_code.trim().toUpperCase() === "WELCOME20"
-) {
-  // Check if this passenger has already used WELCOME20
-  const existingPassengerPromo = await pool.query(
-    `
+    // Verify the signed quote created by GET /calculate-fare. The token locks
+    // the fare components and route for ten minutes, including the driver pickup estimate.
+    let verifiedFare;
+    let quotePayload;
+    try {
+      quotePayload = verifyRouteXFareQuote(fare_quote_token);
+    } catch (quoteError) {
+      console.error("FARE QUOTE VERIFICATION ERROR:", quoteError.message);
+      quotePayload = null;
+    }
+
+    const sameCoordinate = (a, b) =>
+      Number.isFinite(Number(a)) &&
+      Number.isFinite(Number(b)) &&
+      Math.abs(Number(a) - Number(b)) < 0.000001;
+
+    const quoteMatchesRoute =
+      quotePayload &&
+      sameCoordinate(quotePayload.pickup_lat, pickupLat) &&
+      sameCoordinate(quotePayload.pickup_lng, pickupLng) &&
+      sameCoordinate(quotePayload.dropoff_lat, destinationLat) &&
+      sameCoordinate(quotePayload.dropoff_lng, destinationLng) &&
+      String(quotePayload.pickup_area || "") === String(pickup_area || "") &&
+      String(quotePayload.dropoff_area || "") === String(dropoff_area || "") &&
+      quotePayload.ride_type === ride_type;
+
+    if (!quoteMatchesRoute) {
+      return res.status(409).json({
+        quote_expired: true,
+        error:
+          "Your fare quote has expired or no longer matches this route. Please review a refreshed fare before booking again.",
+      });
+    }
+
+    verifiedFare = quotePayload.fare;
+    const quotedFare = Number(fare_amount);
+    const baseFare = Number(verifiedFare.fare);
+
+    if (!Number.isFinite(baseFare) || baseFare <= 0) {
+      return res
+        .status(400)
+        .json({ error: "The fare could not be verified. Please try again." });
+    }
+
+    if (Math.abs(quotedFare - baseFare) > 0.01) {
+      return res.status(409).json({
+        fare_changed: true,
+        error:
+          "The fare does not match the signed quote. Please review the updated fare and submit your booking again.",
+        fare: baseFare,
+        base_fare: verifiedFare.base_fare,
+        pickup_surcharge: verifiedFare.pickup_surcharge,
+        pickup_distance_km: verifiedFare.pickup_distance_km,
+        out_of_town_fee: verifiedFare.out_of_town_fee,
+        distance_km: verifiedFare.distance_km,
+        fare_quote_token,
+      });
+    }
+
+    let discountAmount = 0;
+
+    if (promo_code && promo_code.trim().toUpperCase() === "WELCOME20") {
+      // Check if this passenger has already used WELCOME20
+      const existingPassengerPromo = await pool.query(
+        `
     SELECT id
     FROM trip_bookings
     WHERE passenger_id = $1
@@ -1576,79 +1520,70 @@ if (
       AND discount_amount > 0
     LIMIT 1
     `,
-    [passenger_id]
-  );
+        [passenger_id],
+      );
 
-  // Check how many times WELCOME20 has been used in total
-  const totalPromoUses = await pool.query(
-    `
+      // Check how many times WELCOME20 has been used in total
+      const totalPromoUses = await pool.query(
+        `
     SELECT COUNT(*)::int AS total
     FROM trip_bookings
     WHERE UPPER(TRIM(promo_code)) = 'WELCOME20'
       AND discount_amount > 0
-    `
-  );
+    `,
+      );
 
-  const promoUses = totalPromoUses.rows[0]?.total || 0;
+      const promoUses = totalPromoUses.rows[0]?.total || 0;
 
-  if (existingPassengerPromo.rows.length > 0) {
-  return res.status(400).json({
-    error: "You have already used WELCOME20."
-  });
-}
-  if (promoUses >= 10) {
-  return res.status(400).json({
-    error: "WELCOME20 has reached its 10-person limit."
-  });
-}
+      if (existingPassengerPromo.rows.length > 0) {
+        return res.status(400).json({
+          error: "You have already used WELCOME20.",
+        });
+      }
+      if (promoUses >= 10) {
+        return res.status(400).json({
+          error: "WELCOME20 has reached its 10-person limit.",
+        });
+      }
 
-  // Apply discount only if:
-  // 1. Passenger has never used it
-  // 2. Fewer than 10 people have used it
-  if (
-    existingPassengerPromo.rows.length === 0 &&
-    promoUses < 10
-  ) {
-    discountAmount = 20;
-  }
-}
+      // Apply discount only if:
+      // 1. Passenger has never used it
+      // 2. Fewer than 10 people have used it
+      if (existingPassengerPromo.rows.length === 0 && promoUses < 10) {
+        discountAmount = 20;
+      }
+    }
 
-const passengerAmount = Math.max(
-  0,
-  baseFare - discountAmount
-);
+    const passengerAmount = Math.max(0, baseFare - discountAmount);
 
-console.log("Base Fare:", baseFare);
-console.log("Discount:", discountAmount);
-console.log("Passenger Pays:", passengerAmount);
-console.log("Driver Fare:", baseFare);
+    console.log("Base Fare:", baseFare);
+    console.log("Discount:", discountAmount);
+    console.log("Passenger Pays:", passengerAmount);
+    console.log("Driver Fare:", baseFare);
 
+    console.log("Original Fare:", fare_amount);
+    console.log("Promo Code:", promo_code);
+    console.log("Passenger Pays:", passengerAmount);
 
+    // -----------------------------------------------------
+    // CREATE EXACTLY ONE ACTIVE BOOKING PER PASSENGER
+    // -----------------------------------------------------
+    // The transaction + advisory lock prevents two nearly simultaneous
+    // POST /bookings requests from creating duplicate active bookings.
+    const bookingClient = await pool.connect();
+    let newBooking;
 
-console.log("Original Fare:", fare_amount);
-console.log("Promo Code:", promo_code);
-console.log("Passenger Pays:", passengerAmount);
+    try {
+      await bookingClient.query("BEGIN");
 
-// -----------------------------------------------------
-// CREATE EXACTLY ONE ACTIVE BOOKING PER PASSENGER
-// -----------------------------------------------------
-// The transaction + advisory lock prevents two nearly simultaneous
-// POST /bookings requests from creating duplicate active bookings.
-const bookingClient = await pool.connect();
-let newBooking;
+      // Lock booking creation for this passenger for this transaction.
+      await bookingClient.query("SELECT pg_advisory_xact_lock($1)", [
+        Number(passenger_id),
+      ]);
 
-try {
-  await bookingClient.query("BEGIN");
-
-  // Lock booking creation for this passenger for this transaction.
-  await bookingClient.query(
-    "SELECT pg_advisory_xact_lock($1)",
-    [Number(passenger_id)]
-  );
-
-  // Expire any old waiting request before checking for an active ride.
-  await bookingClient.query(
-    `
+      // Expire any old waiting request before checking for an active ride.
+      await bookingClient.query(
+        `
     UPDATE trip_bookings
     SET
       booking_status = 'Expired',
@@ -1658,19 +1593,19 @@ try {
       AND expires_at IS NOT NULL
       AND expires_at <= NOW()
     `,
-    [passenger_id]
-  );
+        [passenger_id],
+      );
 
-  // A passenger may only have one live ride request at a time.
-  let activeBookingResult;
+      // A passenger may only have one live ride request at a time.
+      let activeBookingResult;
 
-if (isScheduledRide) {
-  // A current Ride Now must NOT prevent the passenger
-  // from booking a future scheduled ride.
-  //
-  // Only check for another future scheduled booking.
-  activeBookingResult = await bookingClient.query(
-    `
+      if (isScheduledRide) {
+        // A current Ride Now must NOT prevent the passenger
+        // from booking a future scheduled ride.
+        //
+        // Only check for another future scheduled booking.
+        activeBookingResult = await bookingClient.query(
+          `
     SELECT
       id,
       booking_status,
@@ -1684,24 +1619,23 @@ if (isScheduledRide) {
     ORDER BY scheduled_pickup_at ASC
     LIMIT 1
     `,
-    [passenger_id]
-  );
+          [passenger_id],
+        );
 
-  if (activeBookingResult.rows.length > 0) {
-    await bookingClient.query("ROLLBACK");
+        if (activeBookingResult.rows.length > 0) {
+          await bookingClient.query("ROLLBACK");
 
-    return res.status(409).json({
-      error: "You already have an upcoming scheduled RouteX ride.",
-      booking: activeBookingResult.rows[0]
-    });
-  }
-
-} else {
-  // Ride Now:
-  // prevent multiple simultaneous immediate rides,
-  // but ignore future Scheduled rides.
-  activeBookingResult = await bookingClient.query(
-    `
+          return res.status(409).json({
+            error: "You already have an upcoming scheduled RouteX ride.",
+            booking: activeBookingResult.rows[0],
+          });
+        }
+      } else {
+        // Ride Now:
+        // prevent multiple simultaneous immediate rides,
+        // but ignore future Scheduled rides.
+        activeBookingResult = await bookingClient.query(
+          `
     SELECT
       id,
       booking_status,
@@ -1714,20 +1648,20 @@ if (isScheduledRide) {
     ORDER BY id DESC
     LIMIT 1
     `,
-    [passenger_id]
-  );
+          [passenger_id],
+        );
 
-  if (activeBookingResult.rows.length > 0) {
-    await bookingClient.query("ROLLBACK");
+        if (activeBookingResult.rows.length > 0) {
+          await bookingClient.query("ROLLBACK");
 
-    return res.status(409).json({
-      error: "You already have an active RouteX ride.",
-      booking: activeBookingResult.rows[0]
-    });
-  }
-}
-  const bookingResult = await bookingClient.query(
-    `
+          return res.status(409).json({
+            error: "You already have an active RouteX ride.",
+            booking: activeBookingResult.rows[0],
+          });
+        }
+      }
+      const bookingResult = await bookingClient.query(
+        `
       INSERT INTO trip_bookings
       (
         passenger_id,
@@ -1755,43 +1689,43 @@ if (isScheduledRide) {
       )
       RETURNING *
     `,
-    [
-      passenger_id,
-      baseFare,
-      discountAmount,
-      passengerAmount,
-      promo_code || null,
-      pickup_address,
-      dropoff_address,
-      travel_date,
-      isScheduledRide ? "Scheduled" : "Waiting",
-      isScheduledRide ? "Scheduled" : "Waiting",
-      pickupLat,
-      pickupLng,
-      destinationLat,
-      destinationLng,
-      isScheduledRide ? null : new Date(Date.now() + 10 * 60 * 1000),
-      isScheduledRide ? "scheduled" : "now",
-      isScheduledRide ? scheduledPickupAt : null,
-      isScheduledRide ? matchingOpensAt : null
-    ]
-  );
+        [
+          passenger_id,
+          baseFare,
+          discountAmount,
+          passengerAmount,
+          promo_code || null,
+          pickup_address,
+          dropoff_address,
+          travel_date,
+          isScheduledRide ? "Scheduled" : "Waiting",
+          isScheduledRide ? "Scheduled" : "Waiting",
+          pickupLat,
+          pickupLng,
+          destinationLat,
+          destinationLng,
+          isScheduledRide ? null : new Date(Date.now() + 10 * 60 * 1000),
+          isScheduledRide ? "scheduled" : "now",
+          isScheduledRide ? scheduledPickupAt : null,
+          isScheduledRide ? matchingOpensAt : null,
+        ],
+      );
 
-  newBooking = bookingResult.rows[0];
-  await bookingClient.query("COMMIT");
-} catch (bookingError) {
-  await bookingClient.query("ROLLBACK");
-  throw bookingError;
-} finally {
-  bookingClient.release();
-}
+      newBooking = bookingResult.rows[0];
+      await bookingClient.query("COMMIT");
+    } catch (bookingError) {
+      await bookingClient.query("ROLLBACK");
+      throw bookingError;
+    } finally {
+      bookingClient.release();
+    }
 
-if (!isScheduledRide) {
-try {
-console.log("LOOKING FOR NEARBY DRIVERS FOR WHATSAPP");
+    if (!isScheduledRide) {
+      try {
+        console.log("LOOKING FOR NEARBY DRIVERS FOR WHATSAPP");
 
-const nearbyDrivers = await pool.query(
-  `
+        const nearbyDrivers = await pool.query(
+          `
   SELECT
     id,
     full_name,
@@ -1800,51 +1734,43 @@ const nearbyDrivers = await pool.query(
   WHERE status = 'Available'
     AND is_online = true
     AND phone IS NOT NULL
-  `
-);
-console.log(
-  `FOUND ${nearbyDrivers.rows.length} NEARBY DRIVERS`
-);
+  `,
+        );
+        console.log(`FOUND ${nearbyDrivers.rows.length} NEARBY DRIVERS`);
 
-await Promise.allSettled(
-  nearbyDrivers.rows.map((driver) => {
-    console.log(
-      `SENDING WHATSAPP TO DRIVER: ${driver.full_name}`
-    );
+        await Promise.allSettled(
+          nearbyDrivers.rows.map((driver) => {
+            console.log(`SENDING WHATSAPP TO DRIVER: ${driver.full_name}`);
 
-    return sendWhatsAppBookingAlert(
-      driver.phone,
-      newBooking.pickup_address || newBooking.pickup_area,
-      newBooking.dropoff_address || newBooking.dropoff_area,
-      Number(newBooking.fare_amount).toFixed(2)
-    );
-  })
-);
+            return sendWhatsAppBookingAlert(
+              driver.phone,
+              newBooking.pickup_address || newBooking.pickup_area,
+              newBooking.dropoff_address || newBooking.dropoff_area,
+              Number(newBooking.fare_amount).toFixed(2),
+            );
+          }),
+        );
 
-console.log("WHATSAPP DRIVER ALERTS FINISHED");
-} catch (whatsappError) {
-  console.error("WHATSAPP ALERTS SKIPPED:", whatsappError.message);
-}
-}
+        console.log("WHATSAPP DRIVER ALERTS FINISHED");
+      } catch (whatsappError) {
+        console.error("WHATSAPP ALERTS SKIPPED:", whatsappError.message);
+      }
+    }
 
-
-res.status(201).json({
-  message: "Booking created",
-  fare: baseFare,
-  discount: discountAmount,
-  passenger_amount: passengerAmount,
-  pricing_method: verifiedFare.pricing_method,
-  distance_km: verifiedFare.distance_km,
-  out_of_town_fee: verifiedFare.out_of_town_fee,
-  booking: newBooking
-});
-
-  } catch (error) {
-
-    res.status(500).json({
-      error: error.message
+    res.status(201).json({
+      message: "Booking created",
+      fare: baseFare,
+      discount: discountAmount,
+      passenger_amount: passengerAmount,
+      pricing_method: verifiedFare.pricing_method,
+      distance_km: verifiedFare.distance_km,
+      out_of_town_fee: verifiedFare.out_of_town_fee,
+      booking: newBooking,
     });
-
+  } catch (error) {
+    res.status(500).json({
+      error: error.message,
+    });
   }
 });
 // ============================================================
@@ -1866,10 +1792,7 @@ app.post("/bookings/:id/confirm-pickup-location", async (req, res) => {
   try {
     const bookingId = req.params.id;
 
-    const {
-      lat,
-      lng
-    } = req.body;
+    const { lat, lng } = req.body;
 
     const confirmedLat = Number(lat);
     const confirmedLng = Number(lng);
@@ -1878,10 +1801,7 @@ app.post("/bookings/:id/confirm-pickup-location", async (req, res) => {
     // Validate GPS coordinates
     // --------------------------------------------------------
 
-    if (
-      !Number.isFinite(confirmedLat) ||
-      !Number.isFinite(confirmedLng)
-    ) {
+    if (!Number.isFinite(confirmedLat) || !Number.isFinite(confirmedLng)) {
       return res.status(400).json({
         error: "Valid pickup GPS coordinates are required.",
       });
@@ -1904,7 +1824,7 @@ app.post("/bookings/:id/confirm-pickup-location", async (req, res) => {
       WHERE id = $1
       LIMIT 1
       `,
-      [bookingId]
+      [bookingId],
     );
 
     if (bookingResult.rows.length === 0) {
@@ -1944,11 +1864,7 @@ app.post("/bookings/:id/confirm-pickup-location", async (req, res) => {
         confirmed_pickup_lng,
         pickup_location_confirmed_at
       `,
-      [
-        confirmedLat,
-        confirmedLng,
-        bookingId
-      ]
+      [confirmedLat, confirmedLng, bookingId],
     );
 
     console.log("SCHEDULED PICKUP GPS CONFIRMED:", {
@@ -1962,7 +1878,6 @@ app.post("/bookings/:id/confirm-pickup-location", async (req, res) => {
       message: "Pickup location confirmed.",
       booking: result.rows[0],
     });
-
   } catch (error) {
     console.error("CONFIRM SCHEDULED PICKUP GPS ERROR:", error);
 
@@ -1999,12 +1914,12 @@ async function releaseScheduledBookings() {
           AND matching_opens_at <= NOW()
           AND scheduled_pickup_at > NOW()
         RETURNING *
-      `
+      `,
     );
 
     if (released.rows.length > 0) {
       console.log(
-        `RELEASED ${released.rows.length} SCHEDULED BOOKING(S) FOR DRIVER MATCHING`
+        `RELEASED ${released.rows.length} SCHEDULED BOOKING(S) FOR DRIVER MATCHING`,
       );
 
       // =====================================================
@@ -2022,41 +1937,39 @@ async function releaseScheduledBookings() {
             WHERE status = 'Available'
               AND is_online = true
               AND phone IS NOT NULL
-          `
+          `,
         );
 
         console.log(
-          `FOUND ${availableDrivers.rows.length} AVAILABLE DRIVER(S) FOR SCHEDULED RIDES`
+          `FOUND ${availableDrivers.rows.length} AVAILABLE DRIVER(S) FOR SCHEDULED RIDES`,
         );
 
         for (const ride of released.rows) {
           console.log(
-            `SENDING SCHEDULED RIDE WHATSAPP ALERTS FOR BOOKING ${ride.id}`
+            `SENDING SCHEDULED RIDE WHATSAPP ALERTS FOR BOOKING ${ride.id}`,
           );
 
           await Promise.allSettled(
             availableDrivers.rows.map((driver) => {
               console.log(
-                `SENDING SCHEDULED RIDE WHATSAPP TO DRIVER: ${driver.full_name}`
+                `SENDING SCHEDULED RIDE WHATSAPP TO DRIVER: ${driver.full_name}`,
               );
 
               return sendWhatsAppBookingAlert(
                 driver.phone,
                 ride.pickup_address || ride.pickup_area,
                 ride.dropoff_address || ride.dropoff_area,
-                Number(ride.fare_amount).toFixed(2)
+                Number(ride.fare_amount).toFixed(2),
               );
-            })
+            }),
           );
         }
 
-        console.log(
-          "SCHEDULED RIDE WHATSAPP DRIVER ALERTS FINISHED"
-        );
+        console.log("SCHEDULED RIDE WHATSAPP DRIVER ALERTS FINISHED");
       } catch (whatsappError) {
         console.error(
           "SCHEDULED RIDE WHATSAPP ALERTS SKIPPED:",
-          whatsappError.message
+          whatsappError.message,
         );
       }
     }
@@ -2078,27 +1991,20 @@ async function releaseScheduledBookings() {
           AND booking_status IN ('Scheduled', 'Waiting')
           AND trip_status IN ('Scheduled', 'Waiting')
         RETURNING *
-      `
+      `,
     );
 
     if (missed.rows.length > 0) {
-      console.log(
-        `EXPIRED ${missed.rows.length} MISSED SCHEDULED BOOKING(S)`
-      );
+      console.log(`EXPIRED ${missed.rows.length} MISSED SCHEDULED BOOKING(S)`);
     }
 
     return released.rows;
-
   } catch (error) {
-    console.error(
-      "SCHEDULED BOOKING RELEASE ERROR:",
-      error
-    );
+    console.error("SCHEDULED BOOKING RELEASE ERROR:", error);
 
     throw error;
   }
 }
-
 
 // Passenger scheduled rides.
 app.get("/passenger-scheduled-bookings/:passengerId", async (req, res) => {
@@ -2136,19 +2042,15 @@ app.get("/passenger-scheduled-bookings/:passengerId", async (req, res) => {
 
         ORDER BY tb.scheduled_pickup_at ASC
       `,
-      [passengerId]
+      [passengerId],
     );
 
     res.json(result.rows);
-
   } catch (error) {
-    console.error(
-      "PASSENGER SCHEDULED BOOKINGS ERROR:",
-      error
-    );
+    console.error("PASSENGER SCHEDULED BOOKINGS ERROR:", error);
 
     res.status(500).json({
-      error: "Failed to load scheduled bookings."
+      error: "Failed to load scheduled bookings.",
     });
   }
 });
@@ -2172,14 +2074,14 @@ app.get("/scheduled-rides", async (req, res) => {
           AND tb.trip_status IN ('Scheduled', 'Waiting')
           AND tb.scheduled_pickup_at > NOW()
         ORDER BY tb.scheduled_pickup_at ASC
-      `
+      `,
     );
 
     res.json(result.rows);
   } catch (error) {
     console.error("SCHEDULED RIDES ERROR:", error);
     res.status(500).json({
-      error: "Failed to load scheduled rides."
+      error: "Failed to load scheduled rides.",
     });
   }
 });
@@ -2202,27 +2104,26 @@ app.patch("/scheduled-bookings/:id/cancel", async (req, res) => {
           AND assigned_driver_id IS NULL
         RETURNING *
       `,
-      [id]
+      [id],
     );
 
     if (result.rows.length === 0) {
       return res.status(400).json({
-        error: "Scheduled booking cannot be cancelled."
+        error: "Scheduled booking cannot be cancelled.",
       });
     }
 
     res.json({
       message: "Scheduled booking cancelled",
-      booking: result.rows[0]
+      booking: result.rows[0],
     });
   } catch (error) {
     console.error("CANCEL SCHEDULED BOOKING ERROR:", error);
     res.status(500).json({
-      error: "Failed to cancel scheduled booking."
+      error: "Failed to cancel scheduled booking.",
     });
   }
 });
-
 
 app.get("/test-route", (req, res) => {
   res.json({ message: "NEW CODE IS RUNNING" });
@@ -2260,8 +2161,7 @@ app.post("/passenger-register", async (req, res) => {
     // =========================================
     if (acceptedTerms !== true || acceptedPrivacy !== true) {
       return res.status(400).json({
-        error:
-          "Terms & Conditions and Privacy Policy must be accepted.",
+        error: "Terms & Conditions and Privacy Policy must be accepted.",
       });
     }
 
@@ -2294,14 +2194,7 @@ app.post("/passenger-register", async (req, res) => {
       )
       RETURNING *
       `,
-      [
-        full_name,
-        phone,
-        email,
-        referral_code,
-        "2026-09-14",
-        "2026-09-14",
-      ]
+      [full_name, phone, email, referral_code, "2026-09-14", "2026-09-14"],
     );
 
     // =========================================
@@ -2319,19 +2212,13 @@ app.post("/passenger-register", async (req, res) => {
       )
       VALUES ($1,$2,$3,$4)
       `,
-      [
-        full_name,
-        email,
-        hashedPassword,
-        "passenger",
-      ]
+      [full_name, email, hashedPassword, "passenger"],
     );
 
     res.status(201).json({
       message: "Passenger registered successfully",
       passenger: passengerResult.rows[0],
     });
-
   } catch (error) {
     console.error("PASSENGER REGISTRATION ERROR:", error);
 
@@ -2364,20 +2251,18 @@ app.get("/trips/:id/occupancy", async (req, res) => {
           t.route_name,
           v.capacity
       `,
-      [tripId]
+      [tripId],
     );
-    
-    res.json(result.rows[0]);
 
+    res.json(result.rows[0]);
   } catch (error) {
     res.status(500).json({
-      error: error.message
+      error: error.message,
     });
   }
 });
 app.post("/auto-assign/:passengerId", async (req, res) => {
   try {
-
     const passengerId = req.params.passengerId;
 
     const tripId = tripResult.rows[0].id;
@@ -2388,12 +2273,12 @@ app.post("/auto-assign/:passengerId", async (req, res) => {
       FROM trip_bookings
       WHERE passenger_id = $1
       `,
-      [passengerId]
+      [passengerId],
     );
 
     if (existingBooking.rows.length > 0) {
       return res.status(400).json({
-        message: "Passenger already assigned"
+        message: "Passenger already assigned",
       });
     }
 
@@ -2407,10 +2292,10 @@ app.post("/auto-assign/:passengerId", async (req, res) => {
       VALUES ($1,$2)
       RETURNING *
       `,
-      [tripId, passengerId]
+      [tripId, passengerId],
     );
     const occupancyCheck = await pool.query(
-  `
+      `
   SELECT
       v.capacity,
       COUNT(tb.id) AS passenger_count
@@ -2422,42 +2307,33 @@ app.post("/auto-assign/:passengerId", async (req, res) => {
   WHERE t.id = $1
   GROUP BY v.capacity
   `,
-  [tripId]
-);
+      [tripId],
+    );
 
-const capacity = Number(
-  occupancyCheck.rows[0].capacity
-);
+    const capacity = Number(occupancyCheck.rows[0].capacity);
 
-const passengerCount = Number(
-  occupancyCheck.rows[0].passenger_count
-);
+    const passengerCount = Number(occupancyCheck.rows[0].passenger_count);
 
-if (passengerCount >= capacity) {
-
-  await pool.query(
-    `
+    if (passengerCount >= capacity) {
+      await pool.query(
+        `
     UPDATE trips
     SET status = 'READY_TO_DEPART'
     WHERE id = $1
     `,
-    [tripId]
-  );
-
-}
+        [tripId],
+      );
+    }
 
     res.json({
       message: "Passenger assigned",
       trip_id: tripId,
-      booking: bookingResult.rows[0]
+      booking: bookingResult.rows[0],
     });
-
   } catch (error) {
-
     res.status(500).json({
-      error: error.message
+      error: error.message,
     });
-
   }
 });
 app.get("/trips/:id/manifest", async (req, res) => {
@@ -2480,7 +2356,7 @@ app.get("/trips/:id/manifest", async (req, res) => {
           ON t.vehicle_id = v.id
       WHERE t.id = $1
       `,
-      [tripId]
+      [tripId],
     );
 
     const passengerResult = await pool.query(
@@ -2496,20 +2372,17 @@ app.get("/trips/:id/manifest", async (req, res) => {
           ON tb.passenger_id = p.id
       WHERE tb.trip_id = $1
       `,
-      [tripId]
+      [tripId],
     );
 
     res.json({
       trip: tripResult.rows[0],
-      passengers: passengerResult.rows
+      passengers: passengerResult.rows,
     });
-
   } catch (error) {
-
     res.status(500).json({
-      error: error.message
+      error: error.message,
     });
-
   }
 });
 app.patch("/bookings/:id/cancel", async (req, res) => {
@@ -2528,7 +2401,7 @@ app.patch("/bookings/:id/cancel", async (req, res) => {
         AND expires_at IS NOT NULL
         AND expires_at <= NOW()
       `,
-      [id]
+      [id],
     );
 
     const result = await pool.query(
@@ -2542,31 +2415,29 @@ app.patch("/bookings/:id/cancel", async (req, res) => {
         AND (expires_at IS NULL OR expires_at > NOW())
       RETURNING *
       `,
-      [id]
+      [id],
     );
 
     if (result.rows.length === 0) {
       return res.status(400).json({
-        error: "Booking cannot be cancelled."
+        error: "Booking cannot be cancelled.",
       });
     }
 
     res.json({
       message: "Booking cancelled",
-      booking: result.rows[0]
+      booking: result.rows[0],
     });
-
   } catch (error) {
     console.error("CANCEL BOOKING ERROR:", error);
 
     res.status(500).json({
-      error: "Failed to cancel booking."
+      error: "Failed to cancel booking.",
     });
   }
 });
 app.get("/trips/:id/drop-order", async (req, res) => {
   try {
-
     const tripId = req.params.id;
 
     const result = await pool.query(
@@ -2583,22 +2454,18 @@ app.get("/trips/:id/drop-order", async (req, res) => {
       WHERE tb.trip_id = $1
       ORDER BY t.route_position
       `,
-      [tripId]
+      [tripId],
     );
 
     res.json(result.rows);
-
   } catch (error) {
-
     res.status(500).json({
-      error: error.message
+      error: error.message,
     });
-
   }
 });
 app.get("/trips/:id/route-manifest", async (req, res) => {
   try {
-
     const tripId = req.params.id;
 
     const result = await pool.query(
@@ -2617,17 +2484,14 @@ app.get("/trips/:id/route-manifest", async (req, res) => {
       WHERE tb.trip_id = $1
       ORDER BY t.route_position
       `,
-      [tripId]
+      [tripId],
     );
 
     res.json(result.rows);
-
   } catch (error) {
-
     res.status(500).json({
-      error: error.message
+      error: error.message,
     });
-
   }
 });
 // =====================================================
@@ -2660,15 +2524,12 @@ async function searchGeoapifyAddress(searchText) {
 
     const data = await response.json();
 
-    return Array.isArray(data.results)
-      ? data.results
-      : [];
+    return Array.isArray(data.results) ? data.results : [];
   } catch (error) {
     console.error("GEOAPIFY SEARCH FAILED:", error.message);
     return [];
   }
 }
-
 
 app.get("/addresses/search", async (req, res) => {
   try {
@@ -2679,85 +2540,84 @@ app.get("/addresses/search", async (req, res) => {
     }
 
     const getRoadType = (value) => {
-  const text = String(value || "").toLowerCase();
+      const text = String(value || "").toLowerCase();
 
-  if (/\b(street|st|straat)\b\.?/i.test(text)) {
-    return "street";
-  }
+      if (/\b(street|st|straat)\b\.?/i.test(text)) {
+        return "street";
+      }
 
-  if (/\b(road|rd|weg)\b\.?/i.test(text)) {
-    return "road";
-  }
+      if (/\b(road|rd|weg)\b\.?/i.test(text)) {
+        return "road";
+      }
 
-  if (/\b(avenue|ave|laan)\b\.?/i.test(text)) {
-    return "avenue";
-  }
+      if (/\b(avenue|ave|laan)\b\.?/i.test(text)) {
+        return "avenue";
+      }
 
-  if (/\b(crescent|singel)\b/i.test(text)) {
-    return "crescent";
-  }
+      if (/\b(crescent|singel)\b/i.test(text)) {
+        return "crescent";
+      }
 
-  if (/\b(drive|dr|rylaan)\b\.?/i.test(text)) {
-    return "drive";
-  }
+      if (/\b(drive|dr|rylaan)\b\.?/i.test(text)) {
+        return "drive";
+      }
 
-  return null;
-};
+      return null;
+    };
     console.log("ADDRESS SEARCH:", query);
     // =====================================================
-// ROUTEX LOCAL SEARCH NORMALIZATION
-// =====================================================
+    // ROUTEX LOCAL SEARCH NORMALIZATION
+    // =====================================================
 
-// Remove a leading house number.
-// Example: "11B Schroder Street" -> "Schroder Street"
-const localQueryWithoutHouseNumber = query
-  .replace(/^\s*\d+[A-Za-z]?\s+/, "")
-  .trim();
+    // Remove a leading house number.
+    // Example: "11B Schroder Street" -> "Schroder Street"
+    const localQueryWithoutHouseNumber = query
+      .replace(/^\s*\d+[A-Za-z]?\s+/, "")
+      .trim();
 
-// Afrikaans -> English road terminology.
-const localEnglishVariant = localQueryWithoutHouseNumber
-  .replace(/\bsingel\b/gi, "Crescent")
-  .replace(/\bstraat\b/gi, "Street")
-  .replace(/\bweg\b/gi, "Road")
-  .replace(/\blaan\b/gi, "Avenue")
-  .replace(/\brylaan\b/gi, "Drive")
-  .trim();
+    // Afrikaans -> English road terminology.
+    const localEnglishVariant = localQueryWithoutHouseNumber
+      .replace(/\bsingel\b/gi, "Crescent")
+      .replace(/\bstraat\b/gi, "Street")
+      .replace(/\bweg\b/gi, "Road")
+      .replace(/\blaan\b/gi, "Avenue")
+      .replace(/\brylaan\b/gi, "Drive")
+      .trim();
 
-// English -> Afrikaans road terminology.
-const localAfrikaansVariant = localQueryWithoutHouseNumber
-  .replace(/\bcrescent\b/gi, "Singel")
-  .replace(/\bstreet\b/gi, "Straat")
-  .replace(/\broad\b/gi, "Weg")
-  .replace(/\bavenue\b/gi, "Laan")
-  .replace(/\bdrive\b/gi, "Rylaan")
-  .trim();
+    // English -> Afrikaans road terminology.
+    const localAfrikaansVariant = localQueryWithoutHouseNumber
+      .replace(/\bcrescent\b/gi, "Singel")
+      .replace(/\bstreet\b/gi, "Straat")
+      .replace(/\broad\b/gi, "Weg")
+      .replace(/\bavenue\b/gi, "Laan")
+      .replace(/\bdrive\b/gi, "Rylaan")
+      .trim();
 
-// Remove road terminology completely.
-// Example: "Saturnus Avenue" -> "Saturnus"
-const localBareStreet = localQueryWithoutHouseNumber
-  .replace(
-    /\b(avenue|ave|laan|street|st|straat|road|rd|weg|crescent|singel|drive|dr|rylaan)\b\.?/gi,
-    ""
-  )
-  .replace(/\s+/g, " ")
-  .trim();
+    // Remove road terminology completely.
+    // Example: "Saturnus Avenue" -> "Saturnus"
+    const localBareStreet = localQueryWithoutHouseNumber
+      .replace(
+        /\b(avenue|ave|laan|street|st|straat|road|rd|weg|crescent|singel|drive|dr|rylaan)\b\.?/gi,
+        "",
+      )
+      .replace(/\s+/g, " ")
+      .trim();
 
-const localSearchVariants = [
-  query,
-  localQueryWithoutHouseNumber,
-  localEnglishVariant,
-  localAfrikaansVariant,
-  localBareStreet,
-]
-  .map((value) => String(value || "").trim())
-  .filter(Boolean)
-  .filter(
-    (value, index, array) =>
-      array.findIndex(
-        (other) =>
-          other.toLowerCase() === value.toLowerCase()
-      ) === index
-  );
+    const localSearchVariants = [
+      query,
+      localQueryWithoutHouseNumber,
+      localEnglishVariant,
+      localAfrikaansVariant,
+      localBareStreet,
+    ]
+      .map((value) => String(value || "").trim())
+      .filter(Boolean)
+      .filter(
+        (value, index, array) =>
+          array.findIndex(
+            (other) => other.toLowerCase() === value.toLowerCase(),
+          ) === index,
+      );
 
     const knownAreas = [
       "Augrabies Park",
@@ -2788,149 +2648,144 @@ const localSearchVariants = [
       "Upington Central",
       "Vaalkroek",
     ];
-const isUpingtonGeoResult = (item) => {
-  const searchableLocation = [
-    item.city,
-    item.town,
-    item.suburb,
-    item.district,
-    item.county,
-    item.formatted,
-    item.address_line1,
-    item.address_line2,
-  ]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase();
+    const isUpingtonGeoResult = (item) => {
+      const searchableLocation = [
+        item.city,
+        item.town,
+        item.suburb,
+        item.district,
+        item.county,
+        item.formatted,
+        item.address_line1,
+        item.address_line2,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
 
-  return searchableLocation.includes("upington");
-};
+      return searchableLocation.includes("upington");
+    };
 
-const geoResultMatchesStreet = (item, searchQuery) => {
-  const normalizeRoadType = (value) => {
-    const text = String(value || "").toLowerCase();
+    const geoResultMatchesStreet = (item, searchQuery) => {
+      const normalizeRoadType = (value) => {
+        const text = String(value || "").toLowerCase();
 
-    if (/\b(street|st|straat)\b\.?/i.test(text)) {
-      return "street";
-    }
+        if (/\b(street|st|straat)\b\.?/i.test(text)) {
+          return "street";
+        }
 
-    if (/\b(road|rd|weg)\b\.?/i.test(text)) {
-      return "road";
-    }
+        if (/\b(road|rd|weg)\b\.?/i.test(text)) {
+          return "road";
+        }
 
-    if (/\b(avenue|ave|laan)\b\.?/i.test(text)) {
-      return "avenue";
-    }
+        if (/\b(avenue|ave|laan)\b\.?/i.test(text)) {
+          return "avenue";
+        }
 
-    if (/\b(crescent|singel)\b/i.test(text)) {
-      return "crescent";
-    }
+        if (/\b(crescent|singel)\b/i.test(text)) {
+          return "crescent";
+        }
 
-    if (/\b(drive|dr|rylaan)\b\.?/i.test(text)) {
-      return "drive";
-    }
+        if (/\b(drive|dr|rylaan)\b\.?/i.test(text)) {
+          return "drive";
+        }
 
-    if (/\b(lane|ln)\b\.?/i.test(text)) {
-      return "lane";
-    }
+        if (/\b(lane|ln)\b\.?/i.test(text)) {
+          return "lane";
+        }
 
-    return null;
-  };
+        return null;
+      };
 
-  const removeRoadType = (value) =>
-    String(value || "")
-      // Remove house number at beginning
-      .replace(/^\s*\d+[A-Za-z]?\s+/, "")
+      const removeRoadType = (value) =>
+        String(value || "")
+          // Remove house number at beginning
+          .replace(/^\s*\d+[A-Za-z]?\s+/, "")
 
-      // Remove road terminology
-      .replace(
-        /\b(avenue|ave|laan|street|st|straat|road|rd|weg|crescent|singel|drive|dr|rylaan|lane|ln)\b\.?/gi,
-        ""
-      )
+          // Remove road terminology
+          .replace(
+            /\b(avenue|ave|laan|street|st|straat|road|rd|weg|crescent|singel|drive|dr|rylaan|lane|ln)\b\.?/gi,
+            "",
+          )
 
-      .replace(/\s+/g, " ")
-      .trim()
-      .toLowerCase();
+          .replace(/\s+/g, " ")
+          .trim()
+          .toLowerCase();
 
-  const queryText = String(searchQuery || "").trim();
+      const queryText = String(searchQuery || "").trim();
 
-  /*
-   * Prefer address_line1 because Geoapify sometimes returns:
-   *
-   * address_line1: "23 Street"
-   * street: "Street"
-   *
-   * Using item.street in that situation would leave us with
-   * an empty street name after normalization.
-   */
-  const resultText =
-    item.address_line1 ||
-    item.street ||
-    "";
+      /*
+       * Prefer address_line1 because Geoapify sometimes returns:
+       *
+       * address_line1: "23 Street"
+       * street: "Street"
+       *
+       * Using item.street in that situation would leave us with
+       * an empty street name after normalization.
+       */
+      const resultText = item.address_line1 || item.street || "";
 
-  const queryStreetName = removeRoadType(queryText);
-  const resultStreetName = removeRoadType(resultText);
+      const queryStreetName = removeRoadType(queryText);
+      const resultStreetName = removeRoadType(resultText);
 
-  // Query must contain a meaningful street name.
-  if (queryStreetName.length < 3) {
-    return false;
-  }
+      // Query must contain a meaningful street name.
+      if (queryStreetName.length < 3) {
+        return false;
+      }
 
-  // Geoapify must also return a meaningful street name.
-  // This prevents results such as "23 Street" -> "" from matching.
-  if (resultStreetName.length < 3) {
-    return false;
-  }
+      // Geoapify must also return a meaningful street name.
+      // This prevents results such as "23 Street" -> "" from matching.
+      if (resultStreetName.length < 3) {
+        return false;
+      }
 
-  /*
-   * Require the actual street names to correspond.
-   *
-   * Examples:
-   *
-   * Khata Street -> 23 Street             ❌
-   * Khata Street -> Khata Street          ✓
-   * 82 Honeysuckle Street -> Honeysuckle Street ✓
-   */
-  const streetNameMatches =
-    resultStreetName === queryStreetName ||
-    resultStreetName.startsWith(queryStreetName + " ") ||
-    queryStreetName.startsWith(resultStreetName + " ");
+      /*
+       * Require the actual street names to correspond.
+       *
+       * Examples:
+       *
+       * Khata Street -> 23 Street             ❌
+       * Khata Street -> Khata Street          ✓
+       * 82 Honeysuckle Street -> Honeysuckle Street ✓
+       */
+      const streetNameMatches =
+        resultStreetName === queryStreetName ||
+        resultStreetName.startsWith(queryStreetName + " ") ||
+        queryStreetName.startsWith(resultStreetName + " ");
 
-  if (!streetNameMatches) {
-    return false;
-  }
+      if (!streetNameMatches) {
+        return false;
+      }
 
-  const requestedRoadType =
-    normalizeRoadType(queryText);
+      const requestedRoadType = normalizeRoadType(queryText);
 
-  const returnedRoadType =
-    normalizeRoadType(resultText);
+      const returnedRoadType = normalizeRoadType(resultText);
 
-  /*
-   * If both specify a road type, they must agree.
-   *
-   * Street = Straat
-   * Road = Weg
-   * Avenue = Laan
-   * Crescent = Singel
-   * Drive = Rylaan
-   */
-  if (
-    requestedRoadType &&
-    returnedRoadType &&
-    requestedRoadType !== returnedRoadType
-  ) {
-    return false;
-  }
+      /*
+       * If both specify a road type, they must agree.
+       *
+       * Street = Straat
+       * Road = Weg
+       * Avenue = Laan
+       * Crescent = Singel
+       * Drive = Rylaan
+       */
+      if (
+        requestedRoadType &&
+        returnedRoadType &&
+        requestedRoadType !== returnedRoadType
+      ) {
+        return false;
+      }
 
-  return true;
-};
+      return true;
+    };
     // =====================================================
     // 1. SEARCH ROUTEX LOCAL DATABASE FIRST
     // =====================================================
 
-const localResult = await pool.query(
-  `
+    const localResult = await pool.query(
+      `
     SELECT
       id,
       address,
@@ -3042,365 +2897,317 @@ const localResult = await pool.query(
 
     LIMIT 10
   `,
-  [
-    `%${query}%`,
-    query,
-    localEnglishVariant,
-    localAfrikaansVariant,
-    localBareStreet,
-  ]
-);
+      [
+        `%${query}%`,
+        query,
+        localEnglishVariant,
+        localAfrikaansVariant,
+        localBareStreet,
+      ],
+    );
     // Return usable local matches immediately.
-    const localWithCoordinates =
-  localResult.rows.filter((item) => {
-    if (
-      item.latitude === null ||
-      item.longitude === null
-    ) {
-      return false;
-    }
+    const localWithCoordinates = localResult.rows.filter((item) => {
+      if (item.latitude === null || item.longitude === null) {
+        return false;
+      }
 
-    const score = Number(item.similarity_score || 0);
+      const score = Number(item.similarity_score || 0);
 
-    const address = String(item.address || "")
-      .toLowerCase();
+      const address = String(item.address || "").toLowerCase();
 
-    const originalQuery = query.toLowerCase();
+      const originalQuery = query.toLowerCase();
 
-    const englishVariant =
-      localEnglishVariant.toLowerCase();
+      const englishVariant = localEnglishVariant.toLowerCase();
 
-    const afrikaansVariant =
-      localAfrikaansVariant.toLowerCase();
+      const afrikaansVariant = localAfrikaansVariant.toLowerCase();
 
-    const bareVariant =
-      localBareStreet.toLowerCase();
+      const bareVariant = localBareStreet.toLowerCase();
 
-    const directMatch =
-      address.includes(originalQuery) ||
-      originalQuery.includes(address) ||
-      address.includes(englishVariant) ||
-      address.includes(afrikaansVariant) ||
-      (
-        bareVariant.length >= 4 &&
-        address.includes(bareVariant)
-      );
+      const directMatch =
+        address.includes(originalQuery) ||
+        originalQuery.includes(address) ||
+        address.includes(englishVariant) ||
+        address.includes(afrikaansVariant) ||
+        (bareVariant.length >= 4 && address.includes(bareVariant));
 
-    // Make sure different road types are not confused.
-// Examples:
-// Quarry Street != Quarry Road
-// Saturnus Laan == Saturnus Avenue
-// Hantam Singel == Hantam Crescent
+      // Make sure different road types are not confused.
+      // Examples:
+      // Quarry Street != Quarry Road
+      // Saturnus Laan == Saturnus Avenue
+      // Hantam Singel == Hantam Crescent
 
-const requestedRoadType = getRoadType(query);
-const resultRoadType = getRoadType(item.address);
+      const requestedRoadType = getRoadType(query);
+      const resultRoadType = getRoadType(item.address);
 
-if (
-  requestedRoadType &&
-  resultRoadType &&
-  requestedRoadType !== resultRoadType
-) {
-  return false;
-}
+      if (
+        requestedRoadType &&
+        resultRoadType &&
+        requestedRoadType !== resultRoadType
+      ) {
+        return false;
+      }
 
-// Only show genuinely relevant local results.
-return directMatch || score >= 0.75;
-  });
+      // Only show genuinely relevant local results.
+      return directMatch || score >= 0.75;
+    });
 
     if (localWithCoordinates.length > 0) {
-      console.log(
-        "LOCAL ADDRESS RESULTS:",
-        localWithCoordinates.length
-      );
+      console.log("LOCAL ADDRESS RESULTS:", localWithCoordinates.length);
 
       return res.json(
         localWithCoordinates.map((item) => ({
           address: item.address,
-          full_address:
-            item.full_address || item.address,
+          full_address: item.full_address || item.address,
           area_name: item.area_name || "",
           place_type: item.place_type,
           lat: Number(item.latitude),
           lng: Number(item.longitude),
           source: "local",
-        }))
+        })),
       );
     }
 
     // =====================================================
-// GEOAPIFY FAST AUTOCOMPLETE
-// =====================================================
-// Clean location information that RouteX already adds itself.
-// Example:
-// "3 Mouton St, Upington, 8801"
-// becomes:
-// "3 Mouton St"
+    // GEOAPIFY FAST AUTOCOMPLETE
+    // =====================================================
+    // Clean location information that RouteX already adds itself.
+    // Example:
+    // "3 Mouton St, Upington, 8801"
+    // becomes:
+    // "3 Mouton St"
 
-const cleanedQuery = query
-  .replace(/,\s*upington\b/gi, "")
-  .replace(/,\s*8\d{3}\b/g, "")
-  .replace(/,\s*south africa\b/gi, "")
-  .replace(/\s+/g, " ")
-  .replace(/,\s*$/, "")
-  .trim();
+    const cleanedQuery = query
+      .replace(/,\s*upington\b/gi, "")
+      .replace(/,\s*8\d{3}\b/g, "")
+      .replace(/,\s*south africa\b/gi, "")
+      .replace(/\s+/g, " ")
+      .replace(/,\s*$/, "")
+      .trim();
 
+    // Remove leading house number for fallback searches.
+    // "11B Schroder Street" -> "Schroder Street"
+    // "06 Hantam Singel"    -> "Hantam Singel"
+    const queryWithoutHouseNumber = cleanedQuery
+      .replace(/^\s*\d+[A-Za-z]?\s+/, "")
+      .trim();
 
-// Remove leading house number for fallback searches.
-// "11B Schroder Street" -> "Schroder Street"
-// "06 Hantam Singel"    -> "Hantam Singel"
-const queryWithoutHouseNumber = cleanedQuery
-  .replace(/^\s*\d+[A-Za-z]?\s+/, "")
-  .trim();
+    // Afrikaans -> English street terminology fallback.
+    const translatedStreetQuery = queryWithoutHouseNumber
+      .replace(/\bsingel\b/gi, "Crescent")
+      .replace(/\bstraat\b/gi, "Street")
+      .replace(/\bweg\b/gi, "Road")
+      .replace(/\blaan\b/gi, "Avenue")
+      .replace(/\brylaan\b/gi, "Drive")
+      .replace(/\bst\.?\b/gi, "Street")
+      .replace(/\brd\.?\b/gi, "Road")
+      .replace(/\bave\.?\b/gi, "Avenue")
+      .replace(/\bdr\.?\b/gi, "Drive");
 
-// Afrikaans -> English street terminology fallback.
-const translatedStreetQuery = queryWithoutHouseNumber
-  .replace(/\bsingel\b/gi, "Crescent")
-  .replace(/\bstraat\b/gi, "Street")
-  .replace(/\bweg\b/gi, "Road")
-  .replace(/\blaan\b/gi, "Avenue")
-  .replace(/\brylaan\b/gi, "Drive")
-  .replace(/\bst\.?\b/gi, "Street")
-  .replace(/\brd\.?\b/gi, "Road")
-  .replace(/\bave\.?\b/gi, "Avenue")
-  .replace(/\bdr\.?\b/gi, "Drive");
+    // English -> Afrikaans street terminology fallback.
+    // Some Upington streets are mapped under their Afrikaans road type.
+    const afrikaansStreetQuery = queryWithoutHouseNumber
+      .replace(/\bcrescent\b/gi, "Singel")
+      .replace(/\bstreet\b/gi, "Straat")
+      .replace(/\broad\b/gi, "Weg")
+      .replace(/\bavenue\b/gi, "Laan")
+      .replace(/\bdrive\b/gi, "Rylaan")
+      .trim();
 
-// English -> Afrikaans street terminology fallback.
-// Some Upington streets are mapped under their Afrikaans road type.
-const afrikaansStreetQuery = queryWithoutHouseNumber
-  .replace(/\bcrescent\b/gi, "Singel")
-  .replace(/\bstreet\b/gi, "Straat")
-  .replace(/\broad\b/gi, "Weg")
-  .replace(/\bavenue\b/gi, "Laan")
-  .replace(/\bdrive\b/gi, "Rylaan")
-  .trim();
+    // Street name without the road type.
+    // Example: "Saturnus Avenue" -> "Saturnus"
+    const bareStreetQuery = queryWithoutHouseNumber
+      .replace(
+        /\b(avenue|laan|street|straat|road|weg|crescent|singel|drive|rylaan)\b/gi,
+        "",
+      )
+      .replace(/\s+/g, " ")
+      .trim();
+    // -----------------------------------------------------
+    // First try exactly what the passenger entered
+    // -----------------------------------------------------
 
-// Street name without the road type.
-// Example: "Saturnus Avenue" -> "Saturnus"
-const bareStreetQuery = queryWithoutHouseNumber
-  .replace(
-    /\b(avenue|laan|street|straat|road|weg|crescent|singel|drive|rylaan)\b/gi,
-    ""
-  )
-  .replace(/\s+/g, " ")
-  .trim();
-// -----------------------------------------------------
-// First try exactly what the passenger entered
-// -----------------------------------------------------
-
-let geoResults = await searchGeoapifyAddress(
-  `${query}, Upington, South Africa`
-);
-console.log(
-  "RAW GEOAPIFY RESULTS:",
-  query,
-  geoResults.map((item) => ({
-    address_line1: item.address_line1,
-    street: item.street,
-    formatted: item.formatted,
-    suburb: item.suburb,
-    district: item.district,
-    city: item.city,
-    result_type: item.result_type,
-    lat: item.lat,
-    lon: item.lon,
-  }))
-);
-
-// -----------------------------------------------------
-// Check whether Geoapify returned a useful location
-// Do NOT accept a city-only result.
-// -----------------------------------------------------
-
-let usefulGeoResults = geoResults.filter((item) => {
-  const lat = Number(item.lat);
-  const lng = Number(item.lon);
-
- return (
-  Number.isFinite(lat) &&
-  Number.isFinite(lng) &&
-  isUpingtonGeoResult(item) &&
-  geoResultMatchesStreet(item, queryWithoutHouseNumber) &&
-  !["city", "county", "state", "country"].includes(
-    String(item.result_type || "").toLowerCase()
-  )
-);
-});
-
-
-// -----------------------------------------------------
-// If exact search failed, try our RouteX normalization.
-//
-// Example:
-// 06 Hantam Singel
-//        ↓
-// Hantam Crescent
-// -----------------------------------------------------
-
-// -----------------------------------------------------
-// ROUTEX SMART GEOAPIFY FALLBACKS
-// -----------------------------------------------------
-
-const geoapifyFallbackQueries = [
-  queryWithoutHouseNumber,
-  translatedStreetQuery,
-  afrikaansStreetQuery,
-  bareStreetQuery,
-]
-  .map((value) => String(value || "").trim())
-  .filter(Boolean)
-  .filter(
-    (value, index, array) =>
-      array.findIndex(
-        (other) => other.toLowerCase() === value.toLowerCase()
-      ) === index
-  );
-
-if (usefulGeoResults.length === 0) {
-  for (const fallbackQuery of geoapifyFallbackQueries) {
-    // Exact passenger query was already attempted above.
-    if (fallbackQuery.toLowerCase() === query.toLowerCase()) {
-      continue;
-    }
-
+    let geoResults = await searchGeoapifyAddress(
+      `${query}, Upington, South Africa`,
+    );
     console.log(
-      "GEOAPIFY SMART FALLBACK:",
+      "RAW GEOAPIFY RESULTS:",
       query,
-      "->",
-      fallbackQuery
+      geoResults.map((item) => ({
+        address_line1: item.address_line1,
+        street: item.street,
+        formatted: item.formatted,
+        suburb: item.suburb,
+        district: item.district,
+        city: item.city,
+        result_type: item.result_type,
+        lat: item.lat,
+        lon: item.lon,
+      })),
     );
 
-    const fallbackResults = await searchGeoapifyAddress(
-      `${fallbackQuery}, Upington, South Africa`
-    );
+    // -----------------------------------------------------
+    // Check whether Geoapify returned a useful location
+    // Do NOT accept a city-only result.
+    // -----------------------------------------------------
 
-    const validFallbackResults = fallbackResults.filter((item) => {
+    let usefulGeoResults = geoResults.filter((item) => {
       const lat = Number(item.lat);
       const lng = Number(item.lon);
 
-     return (
-  Number.isFinite(lat) &&
-  Number.isFinite(lng) &&
-  isUpingtonGeoResult(item) &&
-  geoResultMatchesStreet(item, fallbackQuery) &&
-  !["city", "county", "state", "country"].includes(
-    String(item.result_type || "").toLowerCase()
-  )
-);
+      return (
+        Number.isFinite(lat) &&
+        Number.isFinite(lng) &&
+        isUpingtonGeoResult(item) &&
+        geoResultMatchesStreet(item, queryWithoutHouseNumber) &&
+        !["city", "county", "state", "country"].includes(
+          String(item.result_type || "").toLowerCase(),
+        )
+      );
     });
 
-    if (validFallbackResults.length > 0) {
-      geoResults = fallbackResults;
-      usefulGeoResults = validFallbackResults;
+    // -----------------------------------------------------
+    // If exact search failed, try our RouteX normalization.
+    //
+    // Example:
+    // 06 Hantam Singel
+    //        ↓
+    // Hantam Crescent
+    // -----------------------------------------------------
 
-      console.log(
-        "GEOAPIFY FALLBACK SUCCESS:",
-        fallbackQuery,
-        validFallbackResults.length
+    // -----------------------------------------------------
+    // ROUTEX SMART GEOAPIFY FALLBACKS
+    // -----------------------------------------------------
+
+    const geoapifyFallbackQueries = [
+      queryWithoutHouseNumber,
+      translatedStreetQuery,
+      afrikaansStreetQuery,
+      bareStreetQuery,
+    ]
+      .map((value) => String(value || "").trim())
+      .filter(Boolean)
+      .filter(
+        (value, index, array) =>
+          array.findIndex(
+            (other) => other.toLowerCase() === value.toLowerCase(),
+          ) === index,
       );
 
-      break;
-    }
-  }
-}
+    if (usefulGeoResults.length === 0) {
+      for (const fallbackQuery of geoapifyFallbackQueries) {
+        // Exact passenger query was already attempted above.
+        if (fallbackQuery.toLowerCase() === query.toLowerCase()) {
+          continue;
+        }
 
-// -----------------------------------------------------
-// Return Geoapify suggestions immediately when useful.
-// -----------------------------------------------------
+        console.log("GEOAPIFY SMART FALLBACK:", query, "->", fallbackQuery);
 
-if (usefulGeoResults.length > 0) {
-  const formattedGeoResults = usefulGeoResults
-    .slice(0, 6)
-    .map((item) => ({
-      // Keep what the passenger typed when we had
-      // to normalize the address.
-     address: item.address_line1 || query,
+        const fallbackResults = await searchGeoapifyAddress(
+          `${fallbackQuery}, Upington, South Africa`,
+        );
 
-      full_address:
-        item.formatted ||
-        item.address_line1 ||
-        query,
+        const validFallbackResults = fallbackResults.filter((item) => {
+          const lat = Number(item.lat);
+          const lng = Number(item.lon);
 
-     area_name: (() => {
-  const locationText = [
-    item.suburb,
-    item.district,
-    item.city,
-    item.town,
-    item.address_line1,
-    item.address_line2,
-    item.formatted,
-  ]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase();
+          return (
+            Number.isFinite(lat) &&
+            Number.isFinite(lng) &&
+            isUpingtonGeoResult(item) &&
+            geoResultMatchesStreet(item, fallbackQuery) &&
+            !["city", "county", "state", "country"].includes(
+              String(item.result_type || "").toLowerCase(),
+            )
+          );
+        });
 
-  // Prefer RouteX's known passenger-facing area names.
-  for (const knownArea of knownAreas) {
-    if (
-      locationText.includes(
-        knownArea.toLowerCase()
-      )
-    ) {
-      return knownArea;
-    }
-  }
+        if (validFallbackResults.length > 0) {
+          geoResults = fallbackResults;
+          usefulGeoResults = validFallbackResults;
 
-  // Geoapify sometimes returns municipal wards instead
-  // of a useful suburb name.
-  const rawArea =
-    item.suburb ||
-    item.district ||
-    "";
+          console.log(
+            "GEOAPIFY FALLBACK SUCCESS:",
+            fallbackQuery,
+            validFallbackResults.length,
+          );
 
-  if (
-    /ward\s*\d+/i.test(rawArea) ||
-    /khara hais ward/i.test(rawArea)
-  ) {
-    return "Upington";
-  }
-
-  return rawArea || "Upington";
-})(),
-
-      place_type:
-        item.result_type ||
-        null,
-
-      lat: Number(item.lat),
-      lng: Number(item.lon),
-
-      source: "geoapify",
-
-      confidence:
-        item.rank?.confidence ?? null,
-
-      confidence_building:
-        item.rank?.confidence_building_level ?? null,
-    }));
-
-console.log(
-  "GEOAPIFY RESULTS:",
-  query,
-  formattedGeoResults.length
-);
-
-// =====================================================
-// CACHE GOOD GEOAPIFY RESULTS IN ROUTEX
-// =====================================================
-
-for (const result of formattedGeoResults) {
-  try {
-    // Safety check: never cache unusable coordinates.
-    if (
-      !Number.isFinite(result.lat) ||
-      !Number.isFinite(result.lng)
-    ) {
-      continue;
+          break;
+        }
+      }
     }
 
-    // Check whether RouteX already knows this location.
-    const existing = await pool.query(
-      `
+    // -----------------------------------------------------
+    // Return Geoapify suggestions immediately when useful.
+    // -----------------------------------------------------
+
+    if (usefulGeoResults.length > 0) {
+      const formattedGeoResults = usefulGeoResults.slice(0, 6).map((item) => ({
+        // Keep what the passenger typed when we had
+        // to normalize the address.
+        address: item.address_line1 || query,
+
+        full_address: item.formatted || item.address_line1 || query,
+
+        area_name: (() => {
+          const locationText = [
+            item.suburb,
+            item.district,
+            item.city,
+            item.town,
+            item.address_line1,
+            item.address_line2,
+            item.formatted,
+          ]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase();
+
+          // Prefer RouteX's known passenger-facing area names.
+          for (const knownArea of knownAreas) {
+            if (locationText.includes(knownArea.toLowerCase())) {
+              return knownArea;
+            }
+          }
+
+          // Geoapify sometimes returns municipal wards instead
+          // of a useful suburb name.
+          const rawArea = item.suburb || item.district || "";
+
+          if (/ward\s*\d+/i.test(rawArea) || /khara hais ward/i.test(rawArea)) {
+            return "Upington";
+          }
+
+          return rawArea || "Upington";
+        })(),
+
+        place_type: item.result_type || null,
+
+        lat: Number(item.lat),
+        lng: Number(item.lon),
+
+        source: "geoapify",
+
+        confidence: item.rank?.confidence ?? null,
+
+        confidence_building: item.rank?.confidence_building_level ?? null,
+      }));
+
+      console.log("GEOAPIFY RESULTS:", query, formattedGeoResults.length);
+
+      // =====================================================
+      // CACHE GOOD GEOAPIFY RESULTS IN ROUTEX
+      // =====================================================
+
+      for (const result of formattedGeoResults) {
+        try {
+          // Safety check: never cache unusable coordinates.
+          if (!Number.isFinite(result.lat) || !Number.isFinite(result.lng)) {
+            continue;
+          }
+
+          // Check whether RouteX already knows this location.
+          const existing = await pool.query(
+            `
         SELECT id
         FROM public.addresses
         WHERE
@@ -3409,19 +3216,15 @@ for (const result of formattedGeoResults) {
           AND ABS(longitude - $3) < 0.0001
         LIMIT 1
       `,
-      [
-        result.address,
-        result.lat,
-        result.lng,
-      ]
-    );
+            [result.address, result.lat, result.lng],
+          );
 
-    if (existing.rows.length > 0) {
-      continue;
-    }
+          if (existing.rows.length > 0) {
+            continue;
+          }
 
-    await pool.query(
-      `
+          await pool.query(
+            `
         INSERT INTO public.addresses (
           address,
           full_address,
@@ -3439,85 +3242,74 @@ for (const result of formattedGeoResults) {
           $6
         )
       `,
-      [
-        result.address,
-        result.full_address,
-        result.area_name || "",
-        result.lat,
-        result.lng,
-        result.place_type,
-      ]
-    );
+            [
+              result.address,
+              result.full_address,
+              result.area_name || "",
+              result.lat,
+              result.lng,
+              result.place_type,
+            ],
+          );
 
-    console.log(
-      "CACHED GEOAPIFY ADDRESS:",
-      result.address,
-      result.area_name || "",
-      result.lat,
-      result.lng
-    );
-  } catch (cacheError) {
-    // A caching failure must never stop a passenger
-    // from receiving valid search results.
-    console.error(
-      "FAILED TO CACHE GEOAPIFY ADDRESS:",
-      result.address,
-      cacheError.message
-    );
-  }
-}
+          console.log(
+            "CACHED GEOAPIFY ADDRESS:",
+            result.address,
+            result.area_name || "",
+            result.lat,
+            result.lng,
+          );
+        } catch (cacheError) {
+          // A caching failure must never stop a passenger
+          // from receiving valid search results.
+          console.error(
+            "FAILED TO CACHE GEOAPIFY ADDRESS:",
+            result.address,
+            cacheError.message,
+          );
+        }
+      }
 
-return res.json(formattedGeoResults);
-}
+      return res.json(formattedGeoResults);
+    }
     // =====================================================
     // 2. TRY TO GEOCODE LOCAL MATCHES WITHOUT COORDINATES
     // =====================================================
 
- const localWithoutCoordinates =
-  localResult.rows.filter((item) => {
-    const missingCoordinates =
-      item.latitude === null ||
-      item.longitude === null;
+    const localWithoutCoordinates = localResult.rows.filter((item) => {
+      const missingCoordinates =
+        item.latitude === null || item.longitude === null;
 
-    if (!missingCoordinates) {
-      return false;
-    }
+      if (!missingCoordinates) {
+        return false;
+      }
 
-    const score = Number(item.similarity_score || 0);
+      const score = Number(item.similarity_score || 0);
 
-    const address = String(item.address || "")
-      .toLowerCase();
+      const address = String(item.address || "").toLowerCase();
 
-    const originalQuery = query.toLowerCase();
+      const originalQuery = query.toLowerCase();
 
-    const englishVariant =
-      localEnglishVariant.toLowerCase();
+      const englishVariant = localEnglishVariant.toLowerCase();
 
-    const afrikaansVariant =
-      localAfrikaansVariant.toLowerCase();
+      const afrikaansVariant = localAfrikaansVariant.toLowerCase();
 
-    const bareVariant =
-      localBareStreet.toLowerCase();
+      const bareVariant = localBareStreet.toLowerCase();
 
-    const directMatch =
-      address.includes(originalQuery) ||
-      originalQuery.includes(address) ||
-      address.includes(englishVariant) ||
-      address.includes(afrikaansVariant) ||
-      (
-        bareVariant.length >= 4 &&
-        address.includes(bareVariant)
-      );
+      const directMatch =
+        address.includes(originalQuery) ||
+        originalQuery.includes(address) ||
+        address.includes(englishVariant) ||
+        address.includes(afrikaansVariant) ||
+        (bareVariant.length >= 4 && address.includes(bareVariant));
 
-    // Only geocode genuinely relevant local records.
-    return directMatch || score >= 0.75;
-  });
+      // Only geocode genuinely relevant local records.
+      return directMatch || score >= 0.75;
+    });
 
     for (const place of localWithoutCoordinates) {
       const geocodeQueries = [
-        place.full_address
-          ? `${place.full_address}, South Africa`
-          : null,
+        place.full_address ? `${place.full_address}, South Africa` : null,
 
         place.area_name
           ? `${place.address}, ${place.area_name}, Upington, South Africa`
@@ -3537,22 +3329,18 @@ return res.json(formattedGeoResults);
             `&limit=3` +
             `&countrycodes=za`;
 
-          const geocodeResponse = await fetch(
-            geocodeUrl,
-            {
-              headers: {
-                "User-Agent": "RouteX/1.0",
-                "Accept-Language": "en",
-              },
-            }
-          );
+          const geocodeResponse = await fetch(geocodeUrl, {
+            headers: {
+              "User-Agent": "RouteX/1.0",
+              "Accept-Language": "en",
+            },
+          });
 
           if (!geocodeResponse.ok) {
             continue;
           }
 
-          const geocodeData =
-            await geocodeResponse.json();
+          const geocodeData = await geocodeResponse.json();
 
           if (!geocodeData.length) {
             continue;
@@ -3563,16 +3351,13 @@ return res.json(formattedGeoResults);
             geocodeData.find((item) =>
               String(item.display_name || "")
                 .toLowerCase()
-                .includes("upington")
+                .includes("upington"),
             ) || geocodeData[0];
 
           const lat = Number(match.lat);
           const lng = Number(match.lon);
 
-          if (
-            !Number.isFinite(lat) ||
-            !Number.isFinite(lng)
-          ) {
+          if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
             continue;
           }
 
@@ -3588,34 +3373,19 @@ return res.json(formattedGeoResults);
               )
             WHERE id = $4
             `,
-            [
-              lat,
-              lng,
-              match.display_name,
-              place.id,
-            ]
+            [lat, lng, match.display_name, place.id],
           );
 
-          console.log(
-            "GEOCODED LOCAL PLACE:",
-            place.address,
-            lat,
-            lng
-          );
+          console.log("GEOCODED LOCAL PLACE:", place.address, lat, lng);
 
           return res.json([
             {
               address: place.address,
               full_address:
-                place.full_address ||
-                match.display_name ||
-                place.address,
+                place.full_address || match.display_name || place.address,
               area_name: place.area_name || "",
               place_type:
-                place.place_type ||
-                match.type ||
-                match.category ||
-                null,
+                place.place_type || match.type || match.category || null,
               lat,
               lng,
               source: "local-geocoded",
@@ -3624,7 +3394,7 @@ return res.json(formattedGeoResults);
         } catch (geocodeError) {
           console.error(
             "LOCAL GEOCODING ATTEMPT FAILED:",
-            geocodeError.message
+            geocodeError.message,
           );
         }
       }
@@ -3639,56 +3409,53 @@ return res.json(formattedGeoResults);
     // 3. OPENSTREETMAP / NOMINATIM SEARCH
     // =====================================================
 
-   // Remove a leading house number for fallback searching.
-// Examples:
-// "11B Schroder Street" -> "Schroder Street"
-// "06 Hantam Single"    -> "Hantam Single"
-// =====================================================
-// ADDRESS SEARCH FALLBACKS
-// =====================================================
+    // Remove a leading house number for fallback searching.
+    // Examples:
+    // "11B Schroder Street" -> "Schroder Street"
+    // "06 Hantam Single"    -> "Hantam Single"
+    // =====================================================
+    // ADDRESS SEARCH FALLBACKS
+    // =====================================================
 
-// Build our different search attempts
-const searchQueries = [
-  // 1. Exact passenger address
-  `${query}, Upington, South Africa`,
-  `${query}, Upington`,
+    // Build our different search attempts
+    const searchQueries = [
+      // 1. Exact passenger address
+      `${query}, Upington, South Africa`,
+      `${query}, Upington`,
 
-  // 2. Without house number
-  `${queryWithoutHouseNumber}, Upington, South Africa`,
-  `${queryWithoutHouseNumber}, Upington`,
+      // 2. Without house number
+      `${queryWithoutHouseNumber}, Upington, South Africa`,
+      `${queryWithoutHouseNumber}, Upington`,
 
-  // 3. Afrikaans -> English road terminology
-  `${translatedStreetQuery}, Upington, South Africa`,
-  `${translatedStreetQuery}, Upington`,
+      // 3. Afrikaans -> English road terminology
+      `${translatedStreetQuery}, Upington, South Africa`,
+      `${translatedStreetQuery}, Upington`,
 
-  // 4. English -> Afrikaans road terminology
-  `${afrikaansStreetQuery}, Upington, South Africa`,
-  `${afrikaansStreetQuery}, Upington`,
+      // 4. English -> Afrikaans road terminology
+      `${afrikaansStreetQuery}, Upington, South Africa`,
+      `${afrikaansStreetQuery}, Upington`,
 
-  // 5. Street name only
-  `${bareStreetQuery}, Upington, South Africa`,
-  `${bareStreetQuery}, Upington`,
+      // 5. Street name only
+      `${bareStreetQuery}, Upington, South Africa`,
+      `${bareStreetQuery}, Upington`,
 
-  // 6. Wider fallbacks
-  `${query}, Northern Cape, South Africa`,
-  query,
-]
-  .map((value) => value.trim())
-  .filter(Boolean)
-  .filter(
-    (value, index, array) =>
-      array.findIndex(
-        (other) => other.toLowerCase() === value.toLowerCase()
-      ) === index
-  );
+      // 6. Wider fallbacks
+      `${query}, Northern Cape, South Africa`,
+      query,
+    ]
+      .map((value) => value.trim())
+      .filter(Boolean)
+      .filter(
+        (value, index, array) =>
+          array.findIndex(
+            (other) => other.toLowerCase() === value.toLowerCase(),
+          ) === index,
+      );
     const allOsmResults = [];
 
     for (const searchQuery of searchQueries) {
       try {
-        console.log(
-          "OSM SEARCH:",
-          searchQuery
-        );
+        console.log("OSM SEARCH:", searchQuery);
 
         const url =
           `https://nominatim.openstreetmap.org/search` +
@@ -3707,18 +3474,13 @@ const searchQueries = [
         });
 
         if (response.status === 429) {
-          console.log(
-            "Nominatim rate limited"
-          );
+          console.log("Nominatim rate limited");
 
           break;
         }
 
         if (!response.ok) {
-          console.log(
-            "Nominatim search failed:",
-            response.status
-          );
+          console.log("Nominatim search failed:", response.status);
 
           continue;
         }
@@ -3726,26 +3488,18 @@ const searchQueries = [
         const data = await response.json();
 
         for (const item of data) {
-          const displayName =
-            String(item.display_name || "");
+          const displayName = String(item.display_name || "");
 
           // We only want results relevant to Upington.
-          if (
-            !displayName
-              .toLowerCase()
-              .includes("upington")
-          ) {
+          if (!displayName.toLowerCase().includes("upington")) {
             continue;
           }
 
-          const duplicate =
-            allOsmResults.some(
-              (existing) =>
-                String(existing.osm_type) ===
-                  String(item.osm_type) &&
-                String(existing.osm_id) ===
-                  String(item.osm_id)
-            );
+          const duplicate = allOsmResults.some(
+            (existing) =>
+              String(existing.osm_type) === String(item.osm_type) &&
+              String(existing.osm_id) === String(item.osm_id),
+          );
 
           if (!duplicate) {
             allOsmResults.push(item);
@@ -3758,10 +3512,7 @@ const searchQueries = [
           break;
         }
       } catch (searchError) {
-        console.error(
-          "OSM SEARCH ATTEMPT FAILED:",
-          searchError.message
-        );
+        console.error("OSM SEARCH ATTEMPT FAILED:", searchError.message);
       }
     }
 
@@ -3791,18 +3542,14 @@ const searchQueries = [
         if (
           String(item.display_name || "")
             .toLowerCase()
-            .includes(
-              knownArea.toLowerCase()
-            )
+            .includes(knownArea.toLowerCase())
         ) {
           normalizedArea = knownArea;
           break;
         }
       }
 
-      const fullAddress =
-        String(item.display_name || "")
-          .toLowerCase();
+      const fullAddress = String(item.display_name || "").toLowerCase();
 
       if (
         fullAddress.includes("extension 1") ||
@@ -3811,32 +3558,22 @@ const searchQueries = [
         normalizedArea = "Rosedale";
       }
 
-      if (
-        areaName ===
-        "Louisvale - Upington"
-      ) {
+      if (areaName === "Louisvale - Upington") {
         normalizedArea = "Louisvale";
       }
 
       // Upington business/POI results do not
       // always expose a suburb.
       if (!normalizedArea) {
-        normalizedArea =
-          "Upington Central";
+        normalizedArea = "Upington Central";
       }
 
-      const street =
-        address.road ||
-        address.pedestrian ||
-        "";
+      const street = address.road || address.pedestrian || "";
 
-      const houseNumber =
-        address.house_number || "";
+      const houseNumber = address.house_number || "";
 
       const streetAddress =
-        houseNumber && street
-          ? `${houseNumber} ${street}`
-          : street;
+        houseNumber && street ? `${houseNumber} ${street}` : street;
 
       // Prefer actual POI/business names.
       const placeName =
@@ -3851,60 +3588,49 @@ const searchQueries = [
         item.name ||
         "";
 
-  // For numbered address searches, prefer the actual
-// house number + street returned by OSM.
-// This prevents POI names such as schools from being
-// learned as fake residential addresses.
+      // For numbered address searches, prefer the actual
+      // house number + street returned by OSM.
+      // This prevents POI names such as schools from being
+      // learned as fake residential addresses.
 
-const passengerEnteredHouseNumber =
-  /^\s*\d+[A-Za-z]?\s+/.test(query);
+      const passengerEnteredHouseNumber = /^\s*\d+[A-Za-z]?\s+/.test(query);
 
-let shortAddress;
+      let shortAddress;
 
-if (passengerEnteredHouseNumber && streetAddress) {
-  shortAddress = streetAddress;
-} else {
-  shortAddress =
-    placeName ||
-    streetAddress ||
-    query;
-}
+      if (passengerEnteredHouseNumber && streetAddress) {
+        shortAddress = streetAddress;
+      } else {
+        shortAddress = placeName || streetAddress || query;
+      }
 
-// If we had to fall back by removing the house number,
-// keep the customer's original typed address.
-// Example:
-// Search coordinates using "Schroder Street"
-// Display/save "11B Schroder Street"
-// If RouteX had to use either:
-// - a house-number fallback, or
-// - an Afrikaans/English street-name fallback,
-// keep the passenger's original typed address.
-//
-// Example:
-// Passenger types: "06 Hantam Singel"
-// Coordinates found using: "Hantam Crescent"
-// Address saved/displayed: "06 Hantam Singel"
+      // If we had to fall back by removing the house number,
+      // keep the customer's original typed address.
+      // Example:
+      // Search coordinates using "Schroder Street"
+      // Display/save "11B Schroder Street"
+      // If RouteX had to use either:
+      // - a house-number fallback, or
+      // - an Afrikaans/English street-name fallback,
+      // keep the passenger's original typed address.
+      //
+      // Example:
+      // Passenger types: "06 Hantam Singel"
+      // Coordinates found using: "Hantam Crescent"
+      // Address saved/displayed: "06 Hantam Singel"
 
-if (
-  queryWithoutHouseNumber !== query ||
-  translatedStreetQuery.toLowerCase() !==
-    queryWithoutHouseNumber.toLowerCase()
-) {
-  shortAddress = query;
-}
+      if (
+        queryWithoutHouseNumber !== query ||
+        translatedStreetQuery.toLowerCase() !==
+          queryWithoutHouseNumber.toLowerCase()
+      ) {
+        shortAddress = query;
+      }
 
       // If Nominatim doesn't expose item.name,
       // display_name's first section is often`
       // the POI/business name.
-  if (
-  !passengerEnteredHouseNumber &&
-  !placeName &&
-  item.display_name
-) {
-        const firstPart =
-          item.display_name
-            .split(",")[0]
-            .trim();
+      if (!passengerEnteredHouseNumber && !placeName && item.display_name) {
+        const firstPart = item.display_name.split(",")[0].trim();
 
         if (firstPart) {
           shortAddress = firstPart;
@@ -3914,23 +3640,15 @@ if (
       const lat = Number(item.lat);
       const lng = Number(item.lon);
 
-      if (
-        !Number.isFinite(lat) ||
-        !Number.isFinite(lng)
-      ) {
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
         continue;
       }
 
       const result = {
         address: shortAddress,
-        full_address:
-          item.display_name ||
-          shortAddress,
+        full_address: item.display_name || shortAddress,
         area_name: normalizedArea,
-        place_type:
-          item.type ||
-          item.category ||
-          null,
+        place_type: item.type || item.category || null,
         lat,
         lng,
         source: "osm",
@@ -3970,28 +3688,18 @@ if (
             result.lat,
             result.lng,
             result.place_type,
-          ]
+          ],
         );
       } catch (saveError) {
-        console.error(
-          "FAILED TO CACHE ADDRESS:",
-          saveError.message
-        );
+        console.error("FAILED TO CACHE ADDRESS:", saveError.message);
       }
     }
 
-    console.log(
-      "ADDRESS SEARCH RESULTS:",
-      query,
-      results.length
-    );
+    console.log("ADDRESS SEARCH RESULTS:", query, results.length);
 
     return res.json(results.slice(0, 10));
   } catch (error) {
-    console.error(
-      "ADDRESS SEARCH ERROR:",
-      error
-    );
+    console.error("ADDRESS SEARCH ERROR:", error);
 
     res.status(500).json({
       error: error.message,
@@ -4044,15 +3752,10 @@ app.get("/addresses/reverse", async (req, res) => {
     }
 
     const address =
-      properties.formatted ||
-      properties.address_line1 ||
-      "Current Location";
+      properties.formatted || properties.address_line1 || "Current Location";
 
     const areaName =
-      properties.suburb ||
-      properties.district ||
-      properties.city ||
-      null;
+      properties.suburb || properties.district || properties.city || null;
 
     res.json({
       address,
@@ -4070,41 +3773,28 @@ app.get("/addresses/reverse", async (req, res) => {
 });
 app.get("/dashboard", async (req, res) => {
   try {
+    const passengerCount = await pool.query("SELECT COUNT(*) FROM passengers");
 
-    const passengerCount = await pool.query(
-      "SELECT COUNT(*) FROM passengers"
-    );
+    const vehicleCount = await pool.query("SELECT COUNT(*) FROM vehicles");
 
-    const vehicleCount = await pool.query(
-      "SELECT COUNT(*) FROM vehicles"
-    );
+    const driverCount = await pool.query("SELECT COUNT(*) FROM drivers");
 
-    const driverCount = await pool.query(
-      "SELECT COUNT(*) FROM drivers"
-    );
-
-    const tripCount = await pool.query(
-      "SELECT COUNT(*) FROM trips"
-    );
+    const tripCount = await pool.query("SELECT COUNT(*) FROM trips");
 
     res.json({
       passengers: passengerCount.rows[0].count,
       vehicles: vehicleCount.rows[0].count,
       drivers: driverCount.rows[0].count,
-      trips: tripCount.rows[0].count
+      trips: tripCount.rows[0].count,
     });
-
   } catch (error) {
-
     res.status(500).json({
-      error: error.message
+      error: error.message,
     });
-
   }
 });
 app.get("/trips/:id/summary", async (req, res) => {
   try {
-
     const tripId = req.params.id;
 
     const result = await pool.query(
@@ -4132,22 +3822,18 @@ app.get("/trips/:id/summary", async (req, res) => {
           v.registration,
           v.capacity
       `,
-      [tripId]
+      [tripId],
     );
 
     res.json(result.rows[0]);
-
   } catch (error) {
-
     res.status(500).json({
-      error: error.message
+      error: error.message,
     });
-
   }
 });
 app.get("/trips/:id/status", async (req, res) => {
   try {
-
     const tripId = req.params.id;
 
     const result = await pool.query(
@@ -4173,22 +3859,18 @@ app.get("/trips/:id/status", async (req, res) => {
           t.route_name,
           v.capacity
       `,
-      [tripId]
+      [tripId],
     );
 
     res.json(result.rows[0]);
-
   } catch (error) {
-
     res.status(500).json({
-      error: error.message
+      error: error.message,
     });
-
   }
 });
 app.get("/trip-capacity", async (req, res) => {
   try {
-
     const result = await pool.query(`
       SELECT
           t.id,
@@ -4211,18 +3893,14 @@ app.get("/trip-capacity", async (req, res) => {
     `);
 
     res.json(result.rows);
-
   } catch (error) {
-
     res.status(500).json({
-      error: error.message
+      error: error.message,
     });
-
   }
 });
 app.get("/trips", async (req, res) => {
   try {
-
     const result = await pool.query(`
       SELECT
     t.id,
@@ -4250,18 +3928,14 @@ app.get("/trips", async (req, res) => {
     `);
 
     res.json(result.rows);
-
   } catch (error) {
-
     res.status(500).json({
-      error: error.message
+      error: error.message,
     });
-
   }
 });
 app.get("/trips/:id/passengers", async (req, res) => {
   try {
-
     const tripId = req.params.id;
 
     const result = await pool.query(
@@ -4278,22 +3952,18 @@ app.get("/trips/:id/passengers", async (req, res) => {
       WHERE tb.trip_id = $1
       ORDER BY p.full_name
       `,
-      [tripId]
+      [tripId],
     );
 
     res.json(result.rows);
-
   } catch (error) {
-
     res.status(500).json({
-      error: error.message
+      error: error.message,
     });
-
   }
 });
 app.get("/trips/:id/pickup-order", async (req, res) => {
   try {
-
     const tripId = req.params.id;
 
     const result = await pool.query(
@@ -4311,26 +3981,22 @@ app.get("/trips/:id/pickup-order", async (req, res) => {
       WHERE tb.trip_id = $1
       ORDER BY pickup.route_position
       `,
-      [tripId]
+      [tripId],
     );
 
     res.json(result.rows);
-
   } catch (error) {
-
     res.status(500).json({
-      error: error.message
+      error: error.message,
     });
-
   }
 });
 app.get("/trips/:id/pickup-stops", async (req, res) => {
   try {
-
     const tripId = req.params.id;
 
     const result = await pool.query(
-  `
+      `
   SELECT
       p.pickup_town,
       COUNT(*) AS passenger_count,
@@ -4347,22 +4013,18 @@ app.get("/trips/:id/pickup-stops", async (req, res) => {
   ORDER BY
       t.route_position
   `,
-  [tripId]
-);
+      [tripId],
+    );
 
     res.json(result.rows);
-
   } catch (error) {
-
     res.status(500).json({
-      error: error.message
+      error: error.message,
     });
-
   }
 });
 app.get("/trips/:id/dropoff-stops", async (req, res) => {
   try {
-
     const tripId = req.params.id;
 
     const result = await pool.query(
@@ -4383,24 +4045,21 @@ app.get("/trips/:id/dropoff-stops", async (req, res) => {
       ORDER BY
           t.route_position
       `,
-      [tripId]
+      [tripId],
     );
 
     res.json(result.rows);
-
   } catch (error) {
-
     res.status(500).json({
-      error: error.message
+      error: error.message,
     });
-
   }
 });
 app.get("/trips/:id/driver-manifest", async (req, res) => {
   try {
     const tripId = req.params.id;
     const tripInfo = await pool.query(
-  `
+      `
   SELECT
       t.id,
       t.route_name,
@@ -4415,8 +4074,8 @@ app.get("/trips/:id/driver-manifest", async (req, res) => {
       ON t.vehicle_id = v.id
   WHERE t.id = $1
   `,
-  [tripId]
-);;
+      [tripId],
+    );
 
     const pickupStops = await pool.query(
       `
@@ -4436,7 +4095,7 @@ app.get("/trips/:id/driver-manifest", async (req, res) => {
       ORDER BY
           t.route_position
       `,
-      [tripId]
+      [tripId],
     );
 
     const dropoffStops = await pool.query(
@@ -4457,49 +4116,41 @@ app.get("/trips/:id/driver-manifest", async (req, res) => {
       ORDER BY
           t.route_position
       `,
-      [tripId]
+      [tripId],
     );
 
     res.json({
       trip: tripInfo.rows[0],
       pickup_stops: pickupStops.rows,
-      dropoff_stops: dropoffStops.rows
+      dropoff_stops: dropoffStops.rows,
     });
-
   } catch (error) {
-
     res.status(500).json({
-      error: error.message
+      error: error.message,
     });
-
   }
 });
 app.get("/available-vehicles", async (req, res) => {
   try {
-
     const result = await pool.query(
       `
       SELECT *
       FROM vehicles
       WHERE status = 'Available'
       ORDER BY id
-      `
+      `,
     );
 
     res.json(result.rows);
-
   } catch (error) {
-
     res.status(500).json({
-      error: error.message
+      error: error.message,
     });
-
   }
 });
 
 app.get("/trip-bookings", async (req, res) => {
   try {
-
     const result = await pool.query(`
       SELECT
           tb.id,
@@ -4515,18 +4166,14 @@ app.get("/trip-bookings", async (req, res) => {
     `);
 
     res.json(result.rows);
-
   } catch (error) {
-
     res.status(500).json({
-      error: error.message
+      error: error.message,
     });
-
   }
 });
 app.post("/trips/:id/depart", async (req, res) => {
   try {
-
     const tripId = req.params.id;
 
     await pool.query(
@@ -4535,25 +4182,21 @@ app.post("/trips/:id/depart", async (req, res) => {
       SET status = 'IN_TRANSIT'
       WHERE id = $1
       `,
-      [tripId]
+      [tripId],
     );
 
     res.json({
       message: "Trip departed",
-      trip_id: tripId
+      trip_id: tripId,
     });
-
   } catch (error) {
-
     res.status(500).json({
-      error: error.message
+      error: error.message,
     });
-
   }
 });
 app.post("/trips/:id/complete", async (req, res) => {
   try {
-
     const tripId = req.params.id;
 
     const tripResult = await pool.query(
@@ -4564,7 +4207,7 @@ app.post("/trips/:id/complete", async (req, res) => {
       FROM trips
       WHERE id = $1
       `,
-      [tripId]
+      [tripId],
     );
 
     const vehicleId = tripResult.rows[0].vehicle_id;
@@ -4576,7 +4219,7 @@ app.post("/trips/:id/complete", async (req, res) => {
       SET status = 'COMPLETED'
       WHERE id = $1
       `,
-      [tripId]
+      [tripId],
     );
 
     await pool.query(
@@ -4585,7 +4228,7 @@ app.post("/trips/:id/complete", async (req, res) => {
       SET status = 'Available'
       WHERE id = $1
       `,
-      [vehicleId]
+      [vehicleId],
     );
 
     await pool.query(
@@ -4594,25 +4237,21 @@ app.post("/trips/:id/complete", async (req, res) => {
       SET status = 'Available'
       WHERE id = $1
       `,
-      [driverId]
+      [driverId],
     );
 
     res.json({
       message: "Trip completed",
-      trip_id: tripId
+      trip_id: tripId,
     });
-
   } catch (error) {
-
     res.status(500).json({
-      error: error.message
+      error: error.message,
     });
-
   }
 });
 app.post("/login", async (req, res) => {
   try {
-
     const { email, password } = req.body;
 
     const result = await pool.query(
@@ -4622,12 +4261,12 @@ app.post("/login", async (req, res) => {
       WHERE email = $1
       AND password = $2
       `,
-      [email, password]
+      [email, password],
     );
 
     if (result.rows.length === 0) {
       return res.status(401).json({
-        message: "Invalid email or password"
+        message: "Invalid email or password",
       });
     }
 
@@ -4637,21 +4276,17 @@ app.post("/login", async (req, res) => {
         id: result.rows[0].id,
         full_name: result.rows[0].full_name,
         email: result.rows[0].email,
-        role: result.rows[0].role
-      }
+        role: result.rows[0].role,
+      },
     });
-
   } catch (error) {
-
     res.status(500).json({
-      error: error.message
+      error: error.message,
     });
-
   }
 });
 app.get("/revenue-summary", async (req, res) => {
   try {
-
     const totalRevenue = await pool.query(`
       SELECT
         COALESCE(SUM(fare), 0) AS revenue
@@ -4667,23 +4302,17 @@ app.get("/revenue-summary", async (req, res) => {
     `);
 
     res.json({
-      revenue:
-        totalRevenue.rows[0].revenue,
-      outstanding:
-        outstandingPayments.rows[0].outstanding
+      revenue: totalRevenue.rows[0].revenue,
+      outstanding: outstandingPayments.rows[0].outstanding,
     });
-
   } catch (error) {
-
     res.status(500).json({
-      error: error.message
+      error: error.message,
     });
-
   }
 });
 app.post("/passengers/:id/pay", async (req, res) => {
   try {
-
     const passengerId = req.params.id;
 
     await pool.query(
@@ -4692,24 +4321,20 @@ app.post("/passengers/:id/pay", async (req, res) => {
       SET payment_status = 'Paid'
       WHERE id = $1
       `,
-      [passengerId]
+      [passengerId],
     );
 
     res.json({
-      message: "Payment recorded"
+      message: "Payment recorded",
     });
-
   } catch (error) {
-
     res.status(500).json({
-      error: error.message
+      error: error.message,
     });
-
   }
 });
 app.get("/trip-requests", async (req, res) => {
   try {
-
     // Expire overdue waiting requests before drivers receive the queue.
     await pool.query(`
       UPDATE trip_bookings
@@ -4721,7 +4346,7 @@ app.get("/trip-requests", async (req, res) => {
         AND expires_at <= NOW()
     `);
 
-   const result = await pool.query(`
+    const result = await pool.query(`
   SELECT
       tb.id,
       tb.passenger_id,
@@ -4752,13 +4377,10 @@ AND (tb.expires_at IS NULL OR tb.expires_at > NOW())
   ORDER BY tb.id DESC
 `);
     res.json(result.rows);
-
   } catch (error) {
-
     res.status(500).json({
-      error: error.message
+      error: error.message,
     });
-
   }
 });
 app.post("/trip-requests/:id/accept", async (req, res) => {
@@ -4770,7 +4392,7 @@ app.post("/trip-requests/:id/accept", async (req, res) => {
 
     if (!driverId) {
       return res.status(400).json({
-        error: "Driver ID is required."
+        error: "Driver ID is required.",
       });
     }
 
@@ -4786,13 +4408,13 @@ app.post("/trip-requests/:id/accept", async (req, res) => {
         AND is_online = true
       FOR UPDATE
       `,
-      [driverId]
+      [driverId],
     );
 
     if (driverResult.rows.length === 0) {
       await client.query("ROLLBACK");
       return res.status(409).json({
-        error: "You are not available to accept another ride."
+        error: "You are not available to accept another ride.",
       });
     }
 
@@ -4807,7 +4429,7 @@ app.post("/trip-requests/:id/accept", async (req, res) => {
         AND expires_at IS NOT NULL
         AND expires_at <= NOW()
       `,
-      [bookingId]
+      [bookingId],
     );
 
     // Only one driver can claim a waiting booking.
@@ -4823,13 +4445,13 @@ app.post("/trip-requests/:id/accept", async (req, res) => {
         AND (expires_at IS NULL OR expires_at > NOW())
       RETURNING *
       `,
-      [bookingId, driverId]
+      [bookingId, driverId],
     );
 
     if (result.rows.length === 0) {
       await client.query("ROLLBACK");
       return res.status(409).json({
-        error: "This trip is no longer available."
+        error: "This trip is no longer available.",
       });
     }
 
@@ -4842,7 +4464,7 @@ app.post("/trip-requests/:id/accept", async (req, res) => {
           is_online = true
       WHERE id = $1
       `,
-      [driverId]
+      [driverId],
     );
 
     await client.query(
@@ -4855,8 +4477,8 @@ app.post("/trip-requests/:id/accept", async (req, res) => {
         "passenger",
         booking.passenger_id,
         "Driver Assigned",
-        "Your driver is on the way to collect you."
-      ]
+        "Your driver is on the way to collect you.",
+      ],
     );
 
     await client.query("COMMIT");
@@ -4865,9 +4487,8 @@ app.post("/trip-requests/:id/accept", async (req, res) => {
 
     return res.json({
       message: "Trip accepted",
-      booking
+      booking,
     });
-
   } catch (error) {
     try {
       await client.query("ROLLBACK");
@@ -4878,9 +4499,8 @@ app.post("/trip-requests/:id/accept", async (req, res) => {
     console.error("ACCEPT TRIP ERROR:", error);
 
     return res.status(500).json({
-      error: "Could not accept trip. Please try again."
+      error: "Could not accept trip. Please try again.",
     });
-
   } finally {
     client.release();
   }
@@ -4898,7 +4518,7 @@ app.get("/notifications/:userId", async (req, res) => {
         AND recipient_id = $1
         ORDER BY created_at DESC
       `,
-      [userId]
+      [userId],
     );
 
     res.json(result.rows);
@@ -4908,23 +4528,21 @@ app.get("/notifications/:userId", async (req, res) => {
       error: "Failed to load notifications",
     });
   }
-})
+});
 
-app.post(
-  "/trip-requests/:id/start",
-  async (req, res) => {
-    try {
-      const bookingId = req.params.id;
-      const { driverId } = req.body;
+app.post("/trip-requests/:id/start", async (req, res) => {
+  try {
+    const bookingId = req.params.id;
+    const { driverId } = req.body;
 
-      if (!driverId) {
-        return res.status(400).json({
-          error: "Driver ID is required."
-        });
-      }
+    if (!driverId) {
+      return res.status(400).json({
+        error: "Driver ID is required.",
+      });
+    }
 
-      const result = await pool.query(
-        `
+    const result = await pool.query(
+      `
         UPDATE trip_bookings
         SET
           booking_status = 'In Progress',
@@ -4936,29 +4554,27 @@ app.post(
           AND assigned_driver_id = $2
         RETURNING *
         `,
-        [bookingId, driverId]
-      );
+      [bookingId, driverId],
+    );
 
-      if (result.rows.length === 0) {
-        return res.status(409).json({
-          error: "This ride cannot be started by this driver."
-        });
-      }
-
-      res.json({
-        message: "Trip started",
-        booking: result.rows[0]
-      });
-
-    } catch (error) {
-      console.error("START RIDE ERROR:", error);
-
-      res.status(500).json({
-        error: error.message
+    if (result.rows.length === 0) {
+      return res.status(409).json({
+        error: "This ride cannot be started by this driver.",
       });
     }
+
+    res.json({
+      message: "Trip started",
+      booking: result.rows[0],
+    });
+  } catch (error) {
+    console.error("START RIDE ERROR:", error);
+
+    res.status(500).json({
+      error: error.message,
+    });
   }
-);
+});
 app.post("/trip-requests/:id/complete", async (req, res) => {
   const client = await pool.connect();
 
@@ -4968,7 +4584,7 @@ app.post("/trip-requests/:id/complete", async (req, res) => {
 
     if (!driverId) {
       return res.status(400).json({
-        error: "Driver ID is required."
+        error: "Driver ID is required.",
       });
     }
 
@@ -4983,13 +4599,13 @@ app.post("/trip-requests/:id/complete", async (req, res) => {
         AND trip_status = 'In Progress'
         AND assigned_driver_id = $2
       `,
-      [bookingId, driverId]
+      [bookingId, driverId],
     );
 
     if (bookingResult.rows.length === 0) {
       await client.query("ROLLBACK");
       return res.status(409).json({
-        error: "This trip cannot be completed by this driver."
+        error: "This trip cannot be completed by this driver.",
       });
     }
 
@@ -5001,13 +4617,13 @@ app.post("/trip-requests/:id/complete", async (req, res) => {
       WHERE id = $1
       FOR UPDATE
       `,
-      [driverId]
+      [driverId],
     );
 
     if (driverResult.rows.length === 0) {
       await client.query("ROLLBACK");
       return res.status(409).json({
-        error: "Assigned driver could not be found."
+        error: "Assigned driver could not be found.",
       });
     }
 
@@ -5022,13 +4638,13 @@ app.post("/trip-requests/:id/complete", async (req, res) => {
         AND assigned_driver_id = $2
       RETURNING *
       `,
-      [bookingId, driverId]
+      [bookingId, driverId],
     );
 
     if (result.rows.length === 0) {
       await client.query("ROLLBACK");
       return res.status(409).json({
-        error: "This trip has already been completed or changed."
+        error: "This trip has already been completed or changed.",
       });
     }
 
@@ -5041,7 +4657,7 @@ app.post("/trip-requests/:id/complete", async (req, res) => {
           is_online = true
       WHERE id = $1
       `,
-      [driverId]
+      [driverId],
     );
 
     await client.query("COMMIT");
@@ -5050,9 +4666,8 @@ app.post("/trip-requests/:id/complete", async (req, res) => {
 
     return res.json({
       message: "Trip completed",
-      booking
+      booking,
     });
-
   } catch (error) {
     try {
       await client.query("ROLLBACK");
@@ -5063,17 +4678,15 @@ app.post("/trip-requests/:id/complete", async (req, res) => {
     console.error("COMPLETE TRIP ERROR:", error);
 
     return res.status(500).json({
-      error: "Could not complete trip. Please try again."
+      error: "Could not complete trip. Please try again.",
     });
-
   } finally {
     client.release();
   }
 });
 app.get("/accepted-trips", async (req, res) => {
   try {
-
-   const result = await pool.query(`
+    const result = await pool.query(`
  SELECT
   tb.*,
   p.full_name,
@@ -5097,7 +4710,6 @@ d.license_plate
 `);
 
     res.json(result.rows);
-
   } catch (error) {
     console.error("ACCEPTED-TRIPS ERROR:", error);
     res.json([]);
@@ -5106,8 +4718,7 @@ d.license_plate
 
 app.get("/in-progress-trips", async (req, res) => {
   try {
-
-   const result = await pool.query(`
+    const result = await pool.query(`
   SELECT
   tb.*,
   p.full_name,
@@ -5130,9 +4741,7 @@ d.license_plate
   ORDER BY tb.id DESC
 `);
 
-
     res.json(result.rows);
-
   } catch (error) {
     console.error("IN-PROGRESS-TRIPS ERROR:", error);
     res.json([]);
@@ -5140,7 +4749,6 @@ d.license_plate
 });
 app.get("/completed-trips", async (req, res) => {
   try {
-
     const result = await pool.query(`
   SELECT
   tb.*,
@@ -5165,7 +4773,6 @@ app.get("/completed-trips", async (req, res) => {
 `);
 
     res.json(result.rows);
-
   } catch (error) {
     console.error("COMPLETED-TRIPS ERROR:", error);
     res.json([]);
@@ -5173,7 +4780,6 @@ app.get("/completed-trips", async (req, res) => {
 });
 app.get("/driver-list", async (req, res) => {
   try {
-
     const result = await pool.query(`
       SELECT id, full_name, status
       FROM drivers
@@ -5181,7 +4787,6 @@ app.get("/driver-list", async (req, res) => {
     `);
 
     res.json(result.rows);
-
   } catch (error) {
     console.error("DRIVER LIST ERROR:", error);
     res.json([]);
@@ -5190,8 +4795,7 @@ app.get("/driver-list", async (req, res) => {
 
 app.get("/online-drivers", async (req, res) => {
   try {
-
-   const result = await pool.query(`
+    const result = await pool.query(`
   SELECT COUNT(*) AS total
   FROM drivers
   WHERE status = 'Available'
@@ -5199,13 +4803,10 @@ app.get("/online-drivers", async (req, res) => {
 `);
 
     res.json(result.rows[0]);
-
   } catch (error) {
-
     res.status(500).json({
-      error: error.message
+      error: error.message,
     });
-
   }
 });
 
@@ -5275,14 +4876,10 @@ app.get("/available-drivers", async (req, res) => {
   ) <= 30
 ORDER BY distance_km ASC
       `,
-      [
-        Number(pickup_lat),
-        Number(pickup_lng),
-      ]
+      [Number(pickup_lat), Number(pickup_lng)],
     );
 
     res.json(result.rows);
-
   } catch (error) {
     console.error("AVAILABLE DRIVERS ERROR:", error);
 
@@ -5319,7 +4916,7 @@ app.post("/driver-set-password", async (req, res) => {
         AND password_setup_expires > NOW()
       LIMIT 1
       `,
-      [token]
+      [token],
     );
 
     if (driverResult.rows.length === 0) {
@@ -5341,13 +4938,12 @@ app.post("/driver-set-password", async (req, res) => {
         password_setup_expires = NULL
       WHERE id = $2
       `,
-      [hashedPassword, driverId]
+      [hashedPassword, driverId],
     );
 
     res.json({
       message: "Password created successfully",
     });
-
   } catch (error) {
     console.error("DRIVER SET PASSWORD ERROR:", error);
 
@@ -5373,7 +4969,7 @@ app.post("/driver-login", async (req, res) => {
       WHERE phone = $1
       LIMIT 1
       `,
-      [phone]
+      [phone],
     );
 
     if (result.rows.length === 0) {
@@ -5388,10 +4984,7 @@ app.post("/driver-login", async (req, res) => {
 
     // Driver already has a bcrypt password
     if (driver.password?.startsWith("$2")) {
-      passwordMatches = await bcrypt.compare(
-        password,
-        driver.password
-      );
+      passwordMatches = await bcrypt.compare(password, driver.password);
     } else {
       // Temporary support for existing plaintext passwords
       passwordMatches = password === driver.password;
@@ -5406,12 +4999,10 @@ app.post("/driver-login", async (req, res) => {
           SET password = $1
           WHERE id = $2
           `,
-          [hashedPassword, driver.id]
+          [hashedPassword, driver.id],
         );
 
-        console.log(
-          `DRIVER PASSWORD UPGRADED: ${driver.id}`
-        );
+        console.log(`DRIVER PASSWORD UPGRADED: ${driver.id}`);
       }
     }
 
@@ -5425,7 +5016,6 @@ app.post("/driver-login", async (req, res) => {
     const { password: _password, ...safeDriver } = driver;
 
     res.json(safeDriver);
-
   } catch (error) {
     console.error("DRIVER LOGIN ERROR:", error);
 
@@ -5467,7 +5057,7 @@ app.post("/auth/verify-reset-code", async (req, res) => {
        WHERE REGEXP_REPLACE(p.phone, '[^0-9]', '', 'g') = ANY($1)
          AND u.role = 'passenger'
        LIMIT 1`,
-      [phoneVariants]
+      [phoneVariants],
     );
 
     if (passengerResult.rows.length === 0) {
@@ -5488,7 +5078,7 @@ app.post("/auth/verify-reset-code", async (req, res) => {
          AND expires_at > NOW()
        ORDER BY created_at DESC
        LIMIT 1`,
-      [user.id]
+      [user.id],
     );
 
     if (resetResult.rows.length === 0) {
@@ -5512,14 +5102,13 @@ app.post("/auth/verify-reset-code", async (req, res) => {
       `UPDATE password_reset_codes
        SET verified_at = NOW()
        WHERE id = $1`,
-      [resetCode.id]
+      [resetCode.id],
     );
 
     return res.json({
       success: true,
       message: "Verification code confirmed",
     });
-
   } catch (error) {
     console.error("Verify reset code error:", error);
 
@@ -5537,7 +5126,8 @@ app.post("/auth/reset-password", async (req, res) => {
     if (!phone || !code || !newPassword) {
       return res.status(400).json({
         success: false,
-        message: "Mobile number, verification code and new password are required",
+        message:
+          "Mobile number, verification code and new password are required",
       });
     }
 
@@ -5569,7 +5159,7 @@ app.post("/auth/reset-password", async (req, res) => {
        WHERE REGEXP_REPLACE(p.phone, '[^0-9]', '', 'g') = ANY($1)
          AND u.role = 'passenger'
        LIMIT 1`,
-      [phoneVariants]
+      [phoneVariants],
     );
 
     if (passengerResult.rows.length === 0) {
@@ -5592,7 +5182,7 @@ app.post("/auth/reset-password", async (req, res) => {
          AND expires_at > NOW()
        ORDER BY created_at DESC
        LIMIT 1`,
-      [user.id]
+      [user.id],
     );
 
     if (resetResult.rows.length === 0) {
@@ -5619,21 +5209,20 @@ app.post("/auth/reset-password", async (req, res) => {
        SET password = $1
        WHERE id = $2
          AND role = 'passenger'`,
-      [hashedPassword, user.id]
+      [hashedPassword, user.id],
     );
 
     await pool.query(
       `UPDATE password_reset_codes
        SET used = TRUE
        WHERE id = $1`,
-      [resetCode.id]
+      [resetCode.id],
     );
 
     return res.json({
       success: true,
       message: "Password reset successfully",
     });
-
   } catch (error) {
     console.error("Reset password error:", error);
 
@@ -5643,7 +5232,6 @@ app.post("/auth/reset-password", async (req, res) => {
     });
   }
 });
-
 
 app.post("/drivers/:id/status", async (req, res) => {
   try {
@@ -5666,7 +5254,7 @@ app.post("/drivers/:id/status", async (req, res) => {
       WHERE id = $5
       RETURNING *
       `,
-      [status, goingOnline, current_lat ?? null, current_lng ?? null, driverId]
+      [status, goingOnline, current_lat ?? null, current_lng ?? null, driverId],
     );
 
     if (result.rows.length === 0) {
@@ -5700,25 +5288,24 @@ app.post("/drivers/:id/heartbeat", async (req, res) => {
         AND is_online = true
       RETURNING id, last_online_at
       `,
-      [driverId]
+      [driverId],
     );
 
     if (result.rows.length === 0) {
       return res.status(404).json({
-        error: "Driver is not online."
+        error: "Driver is not online.",
       });
     }
 
     res.json({
       success: true,
-      last_online_at: result.rows[0].last_online_at
+      last_online_at: result.rows[0].last_online_at,
     });
-
   } catch (error) {
     console.error("DRIVER HEARTBEAT ERROR:", error);
 
     res.status(500).json({
-      error: "Unable to update driver activity"
+      error: "Unable to update driver activity",
     });
   }
 });
@@ -5753,7 +5340,7 @@ app.post("/drivers/:id/location", async (req, res) => {
       WHERE id = $3
       RETURNING id, current_lat, current_lng
       `,
-      [lat, lng, driverId]
+      [lat, lng, driverId],
     );
 
     if (result.rows.length === 0) {
@@ -5766,7 +5353,6 @@ app.post("/drivers/:id/location", async (req, res) => {
       success: true,
       location: result.rows[0],
     });
-
   } catch (error) {
     console.error("DRIVER LOCATION ERROR:", error);
 
@@ -5777,7 +5363,6 @@ app.post("/drivers/:id/location", async (req, res) => {
 });
 app.post("/ambassador-login", async (req, res) => {
   try {
-
     const { phone, password } = req.body;
 
     console.log("AMBASSADOR PHONE:", phone);
@@ -5790,28 +5375,24 @@ app.post("/ambassador-login", async (req, res) => {
       WHERE phone = $1
       AND password = $2
       `,
-      [phone, password]
+      [phone, password],
     );
 
     if (result.rows.length === 0) {
       return res.status(401).json({
-        error: "Invalid credentials"
+        error: "Invalid credentials",
       });
     }
 
     res.json(result.rows[0]);
-
   } catch (error) {
-
     res.status(500).json({
-      error: error.message
+      error: error.message,
     });
-
   }
 });
 app.get("/ambassador/:code/stats", async (req, res) => {
   try {
-
     const referralCode = req.params.code;
 
     const registrations = await pool.query(
@@ -5820,43 +5401,35 @@ app.get("/ambassador/:code/stats", async (req, res) => {
       FROM passengers
       WHERE referral_code = $1
       `,
-      [referralCode]
+      [referralCode],
     );
     const bookings = await pool.query(
-  `
+      `
   SELECT COUNT(*) AS total
   FROM trip_bookings tb
   JOIN passengers p
     ON tb.passenger_id = p.id
   WHERE p.referral_code = $1
   `,
-  [referralCode]
-);
+      [referralCode],
+    );
 
-   res.json({
-  registrations: Number(
-    registrations.rows[0].total
-  ),
-  bookings: Number(
-    bookings.rows[0].total
-  )
-});
-
-  } catch (error) {
-
-    res.status(500).json({
-      error: error.message
+    res.json({
+      registrations: Number(registrations.rows[0].total),
+      bookings: Number(bookings.rows[0].total),
     });
-
+  } catch (error) {
+    res.status(500).json({
+      error: error.message,
+    });
   }
 });
 app.get("/ambassador/:code/referrals", async (req, res) => {
   try {
-
     const referralCode = req.params.code;
 
-  const result = await pool.query(
-  `
+    const result = await pool.query(
+      `
   SELECT
     p.full_name,
     p.phone,
@@ -5874,20 +5447,16 @@ app.get("/ambassador/:code/referrals", async (req, res) => {
     p.phone
   ORDER BY p.full_name
   `,
-  [referralCode]
-);
+      [referralCode],
+    );
 
     res.json(result.rows);
-
   } catch (error) {
-
     res.status(500).json({
-      error: error.message
+      error: error.message,
     });
-
   }
 });
-
 
 app.post("/passenger-login", async (req, res) => {
   try {
@@ -5909,7 +5478,7 @@ app.post("/passenger-login", async (req, res) => {
         AND role = 'passenger'
       LIMIT 1
       `,
-      [email]
+      [email],
     );
 
     if (result.rows.length === 0) {
@@ -5923,10 +5492,7 @@ app.post("/passenger-login", async (req, res) => {
 
     // New bcrypt password
     if (user.password?.startsWith("$2")) {
-      passwordMatches = await bcrypt.compare(
-        password,
-        user.password
-      );
+      passwordMatches = await bcrypt.compare(password, user.password);
     } else {
       // Temporary support for existing plaintext accounts
       passwordMatches = password === user.password;
@@ -5941,12 +5507,10 @@ app.post("/passenger-login", async (req, res) => {
           SET password = $1
           WHERE id = $2
           `,
-          [hashedPassword, user.id]
+          [hashedPassword, user.id],
         );
 
-        console.log(
-          `PASSENGER PASSWORD UPGRADED: ${user.id}`
-        );
+        console.log(`PASSENGER PASSWORD UPGRADED: ${user.id}`);
       }
     }
 
@@ -5963,7 +5527,7 @@ app.post("/passenger-login", async (req, res) => {
       WHERE email = $1
       LIMIT 1
       `,
-      [email]
+      [email],
     );
 
     if (passengerResult.rows.length === 0) {
@@ -5973,7 +5537,6 @@ app.post("/passenger-login", async (req, res) => {
     }
 
     res.json(passengerResult.rows[0]);
-
   } catch (error) {
     console.error("PASSENGER LOGIN ERROR:", error);
 
@@ -6003,142 +5566,112 @@ app.post(
         residential_address,
         id_passport_number,
       } = req.body;
-if (
-  !full_name?.trim() ||
-  !phone?.trim() ||
-  !residential_address?.trim() ||
-  !id_passport_number?.trim() ||
-  !vehicle_type?.trim() ||
-  !vehicle_color?.trim() ||
-  !license_plate?.trim()
-) {
-  return res.status(400).json({
-    error: "Please complete all required driver information.",
-  });
-}
+      if (
+        !full_name?.trim() ||
+        !phone?.trim() ||
+        !residential_address?.trim() ||
+        !id_passport_number?.trim() ||
+        !vehicle_type?.trim() ||
+        !vehicle_color?.trim() ||
+        !license_plate?.trim()
+      ) {
+        return res.status(400).json({
+          error: "Please complete all required driver information.",
+        });
+      }
 
-if (!req.files?.vehicle_photo?.[0]) {
-  return res.status(400).json({
-    error: "A vehicle photo is required.",
-  });
-}
+      if (!req.files?.vehicle_photo?.[0]) {
+        return res.status(400).json({
+          error: "A vehicle photo is required.",
+        });
+      }
 
-if (!req.files?.profile_photo?.[0]) {
-  return res.status(400).json({
-    error: "A profile photo is required.",
-  });
-}
+      if (!req.files?.profile_photo?.[0]) {
+        return res.status(400).json({
+          error: "A profile photo is required.",
+        });
+      }
 
       // =========================================
       // REQUIRE LEGAL ACCEPTANCE
       // =========================================
-      if (
-        acceptedDriverTerms !== "true" ||
-        acceptedPrivacy !== "true"
-      ) {
+      if (acceptedDriverTerms !== "true" || acceptedPrivacy !== "true") {
         return res.status(400).json({
-          error:
-            "Driver Terms and Privacy Policy must be accepted.",
+          error: "Driver Terms and Privacy Policy must be accepted.",
         });
       }
 
-        console.log("DRIVER APPLICATION FILES:", req.files);
-     // =========================================
-// UPLOAD DRIVER PHOTOS TO SUPABASE STORAGE
-// =========================================
+      console.log("DRIVER APPLICATION FILES:", req.files);
+      // =========================================
+      // UPLOAD DRIVER PHOTOS TO SUPABASE STORAGE
+      // =========================================
 
-let vehicleImage = null;
-let profileImage = null;
+      let vehicleImage = null;
+      let profileImage = null;
 
-// Vehicle photo
-const vehicleFile =
-  req.files?.vehicle_photo?.[0];
+      // Vehicle photo
+      const vehicleFile = req.files?.vehicle_photo?.[0];
 
-if (vehicleFile) {
-  const fileExtension =
-    vehicleFile.originalname.split(".").pop();
+      if (vehicleFile) {
+        const fileExtension = vehicleFile.originalname.split(".").pop();
 
-  const fileName =
-    `vehicle-${Date.now()}-${Math.random()
-      .toString(36)
-      .substring(2, 8)}.${fileExtension}`;
+        const fileName = `vehicle-${Date.now()}-${Math.random()
+          .toString(36)
+          .substring(2, 8)}.${fileExtension}`;
 
-  const { error: uploadError } =
-    await supabase.storage
-      .from("vehicle-photos")
-      .upload(
-        fileName,
-        vehicleFile.buffer,
-        {
-          contentType: vehicleFile.mimetype,
-          upsert: false,
+        const { error: uploadError } = await supabase.storage
+          .from("vehicle-photos")
+          .upload(fileName, vehicleFile.buffer, {
+            contentType: vehicleFile.mimetype,
+            upsert: false,
+          });
+
+        if (uploadError) {
+          console.error("VEHICLE PHOTO UPLOAD ERROR:", uploadError);
+
+          return res.status(500).json({
+            error: "Unable to upload vehicle photo",
+          });
         }
-      );
 
-  if (uploadError) {
-    console.error(
-      "VEHICLE PHOTO UPLOAD ERROR:",
-      uploadError
-    );
+        const { data: publicUrlData } = supabase.storage
+          .from("vehicle-photos")
+          .getPublicUrl(fileName);
 
-    return res.status(500).json({
-      error: "Unable to upload vehicle photo",
-    });
-  }
+        vehicleImage = publicUrlData?.publicUrl || null;
+      }
 
-  const { data: publicUrlData } =
-    supabase.storage
-      .from("vehicle-photos")
-      .getPublicUrl(fileName);
+      // Profile photo
+      const profileFile = req.files?.profile_photo?.[0];
 
-  vehicleImage =
-    publicUrlData?.publicUrl || null;
-}
+      if (profileFile) {
+        const fileExtension = profileFile.originalname.split(".").pop();
 
-// Profile photo
-const profileFile =
-  req.files?.profile_photo?.[0];
+        const fileName = `driver-${Date.now()}-${Math.random()
+          .toString(36)
+          .substring(2, 8)}.${fileExtension}`;
 
-if (profileFile) {
-  const fileExtension =
-    profileFile.originalname.split(".").pop();
+        const { error: uploadError } = await supabase.storage
+          .from("profile-photos")
+          .upload(fileName, profileFile.buffer, {
+            contentType: profileFile.mimetype,
+            upsert: false,
+          });
 
-  const fileName =
-    `driver-${Date.now()}-${Math.random()
-      .toString(36)
-      .substring(2, 8)}.${fileExtension}`;
+        if (uploadError) {
+          console.error("PROFILE PHOTO UPLOAD ERROR:", uploadError);
 
-  const { error: uploadError } =
-    await supabase.storage
-      .from("profile-photos")
-      .upload(
-        fileName,
-        profileFile.buffer,
-        {
-          contentType: profileFile.mimetype,
-          upsert: false,
+          return res.status(500).json({
+            error: "Unable to upload profile photo",
+          });
         }
-      );
 
-  if (uploadError) {
-    console.error(
-      "PROFILE PHOTO UPLOAD ERROR:",
-      uploadError
-    );
+        const { data: publicUrlData } = supabase.storage
+          .from("profile-photos")
+          .getPublicUrl(fileName);
 
-    return res.status(500).json({
-      error: "Unable to upload profile photo",
-    });
-  }
-
-  const { data: publicUrlData } =
-    supabase.storage
-      .from("profile-photos")
-      .getPublicUrl(fileName);
-
-  profileImage =
-    publicUrlData?.publicUrl || null;
-}
+        profileImage = publicUrlData?.publicUrl || null;
+      }
 
       const result = await pool.query(
         `
@@ -6178,23 +5711,22 @@ if (profileFile) {
 )
 RETURNING *
 `,
-[
-  full_name,
-  phone,
-  residential_address,
-  id_passport_number,
-  vehicle_type,
-  vehicle_color,
-  license_plate,
-  referral_code,
-  vehicleImage,
-  profileImage,
-  "2026-09-14",
-  "2026-09-14",
-]
-);
+        [
+          full_name,
+          phone,
+          residential_address,
+          id_passport_number,
+          vehicle_type,
+          vehicle_color,
+          license_plate,
+          referral_code,
+          vehicleImage,
+          profileImage,
+          "2026-09-14",
+          "2026-09-14",
+        ],
+      );
       res.json(result.rows[0]);
-
     } catch (error) {
       console.error("DRIVER APPLICATION ERROR:", error);
 
@@ -6202,20 +5734,18 @@ RETURNING *
         error: error.message,
       });
     }
-  }
+  },
 );
 app.get("/admin/stats", async (req, res) => {
   try {
     const passengers = await pool.query(
-      "SELECT COUNT(*) AS total FROM passengers"
+      "SELECT COUNT(*) AS total FROM passengers",
     );
 
-    const drivers = await pool.query(
-      "SELECT COUNT(*) AS total FROM drivers"
-    );
+    const drivers = await pool.query("SELECT COUNT(*) AS total FROM drivers");
 
     const bookings = await pool.query(
-      "SELECT COUNT(*) AS total FROM trip_bookings"
+      "SELECT COUNT(*) AS total FROM trip_bookings",
     );
 
     const onlineDrivers = await pool.query(
@@ -6224,7 +5754,7 @@ app.get("/admin/stats", async (req, res) => {
       FROM drivers
       WHERE status = 'Available'
         AND is_online = true
-      `
+      `,
     );
 
     const applications = await pool.query(
@@ -6232,7 +5762,7 @@ app.get("/admin/stats", async (req, res) => {
       SELECT COUNT(*) AS total
       FROM driver_applications
       WHERE status = 'Pending'
-      `
+      `,
     );
 
     res.json({
@@ -6242,7 +5772,6 @@ app.get("/admin/stats", async (req, res) => {
       onlineDrivers: Number(onlineDrivers.rows[0].total),
       pendingApplications: Number(applications.rows[0].total),
     });
-
   } catch (error) {
     console.error("ADMIN STATS ERROR:", error);
 
@@ -6263,7 +5792,7 @@ app.get("/drivers/available-count", async (req, res) => {
       FROM drivers
       WHERE status = 'Available'
         AND is_online = true
-      `
+      `,
     );
 
     res.json({
@@ -6278,33 +5807,27 @@ app.get("/drivers/available-count", async (req, res) => {
   }
 });
 
-
 app.get("/admin/applications", async (req, res) => {
   try {
-
     const result = await pool.query(
       `
       SELECT *
       FROM driver_applications
       WHERE status = 'Pending'
       ORDER BY created_at DESC
-      `
+      `,
     );
 
     res.json(result.rows);
-
   } catch (error) {
-
     res.status(500).json({
-      error: error.message
+      error: error.message,
     });
-
   }
 });
 
 app.post("/admin/applications/:id/approve", async (req, res) => {
   try {
-
     const applicationId = req.params.id;
 
     const application = await pool.query(
@@ -6313,27 +5836,25 @@ app.post("/admin/applications/:id/approve", async (req, res) => {
       FROM driver_applications
       WHERE id = $1
       `,
-      [applicationId]
+      [applicationId],
     );
 
     if (application.rows.length === 0) {
       return res.status(404).json({
-        error: "Application not found"
+        error: "Application not found",
       });
     }
 
- const appData = application.rows[0];
+    const appData = application.rows[0];
 
-// Create a secure one-time password setup token
-const setupToken = crypto.randomBytes(32).toString("hex");
+    // Create a secure one-time password setup token
+    const setupToken = crypto.randomBytes(32).toString("hex");
 
-// Token expires after 24 hours
-const setupExpires = new Date(
-  Date.now() + 24 * 60 * 60 * 1000
-);
+    // Token expires after 24 hours
+    const setupExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
- await pool.query(
-  `
+    await pool.query(
+      `
   INSERT INTO drivers
   (
     full_name,
@@ -6369,58 +5890,51 @@ const setupExpires = new Date(
     $11
   )
   `,
-  [
-    appData.full_name,
-    appData.phone,
-    appData.vehicle_type,
-    appData.vehicle_color,
-    appData.license_plate,
-    appData.referral_code,
-    appData.profile_image,
-    appData.residential_address,
-    appData.id_passport_number,
-    setupToken,
-    setupExpires,
-  ]
-);
+      [
+        appData.full_name,
+        appData.phone,
+        appData.vehicle_type,
+        appData.vehicle_color,
+        appData.license_plate,
+        appData.referral_code,
+        appData.profile_image,
+        appData.residential_address,
+        appData.id_passport_number,
+        setupToken,
+        setupExpires,
+      ],
+    );
     await pool.query(
       `
       UPDATE driver_applications
       SET status = 'Approved'
       WHERE id = $1
       `,
-      [applicationId]
+      [applicationId],
     );
 
-  const setupLink =
-  `https://routex-frontend.onrender.com/driver-set-password?token=${setupToken}`;
+    const setupLink = `https://routex-frontend.onrender.com/driver-set-password?token=${setupToken}`;
 
-// Send the approved driver their RouteX account setup link
-try {
-  await sendWhatsAppDriverApproved(
-    appData.phone,
-    appData.full_name,
-    setupLink
-  );
+    // Send the approved driver their RouteX account setup link
+    try {
+      await sendWhatsAppDriverApproved(
+        appData.phone,
+        appData.full_name,
+        setupLink,
+      );
 
-  console.log(
-    `DRIVER APPROVAL WHATSAPP SENT TO: ${appData.full_name}`
-  );
-} catch (whatsappError) {
-  console.error(
-    "DRIVER APPROVAL WHATSAPP FAILED:",
-    whatsappError
-  );
-}
+      console.log(`DRIVER APPROVAL WHATSAPP SENT TO: ${appData.full_name}`);
+    } catch (whatsappError) {
+      console.error("DRIVER APPROVAL WHATSAPP FAILED:", whatsappError);
+    }
 
-res.json({
-  message: "Application approved",
-  setup_link: setupLink,
-});
-
+    res.json({
+      message: "Application approved",
+      setup_link: setupLink,
+    });
   } catch (error) {
     res.status(500).json({
-      error: error.message
+      error: error.message,
     });
   }
 });
@@ -6442,11 +5956,11 @@ app.post("/driver-set-password", async (req, res) => {
       });
     }
 
-if (password.length < 8) {
-  return res.status(400).json({
-    error: "Password must be at least 8 characters",
-  });
-}
+    if (password.length < 8) {
+      return res.status(400).json({
+        error: "Password must be at least 8 characters",
+      });
+    }
 
     // -----------------------------------------
     // FIND DRIVER USING TOKEN
@@ -6461,13 +5975,12 @@ if (password.length < 8) {
         AND password_setup_expires > NOW()
       LIMIT 1
       `,
-      [token]
+      [token],
     );
 
     if (driverResult.rows.length === 0) {
       return res.status(400).json({
-        error:
-          "This password setup link is invalid or has expired.",
+        error: "This password setup link is invalid or has expired.",
       });
     }
 
@@ -6477,10 +5990,7 @@ if (password.length < 8) {
     // HASH NEW PASSWORD
     // -----------------------------------------
 
-    const hashedPassword = await bcrypt.hash(
-      password,
-      12
-    );
+    const hashedPassword = await bcrypt.hash(password, 12);
 
     // -----------------------------------------
     // SAVE PASSWORD
@@ -6499,27 +6009,16 @@ if (password.length < 8) {
         password_setup_expires = NULL
       WHERE id = $2
       `,
-      [
-        hashedPassword,
-        driver.id,
-      ]
+      [hashedPassword, driver.id],
     );
 
-    console.log(
-      "DRIVER PASSWORD CREATED:",
-      driver.id,
-      driver.full_name
-    );
+    console.log("DRIVER PASSWORD CREATED:", driver.id, driver.full_name);
 
     return res.json({
       message: "Password created successfully",
     });
-
   } catch (error) {
-    console.error(
-      "DRIVER SET PASSWORD ERROR:",
-      error
-    );
+    console.error("DRIVER SET PASSWORD ERROR:", error);
 
     return res.status(500).json({
       error: "Unable to create password",
@@ -6528,7 +6027,6 @@ if (password.length < 8) {
 });
 app.post("/admin/applications/:id/reject", async (req, res) => {
   try {
-
     const applicationId = req.params.id;
 
     await pool.query(
@@ -6537,30 +6035,56 @@ app.post("/admin/applications/:id/reject", async (req, res) => {
       SET status = 'Rejected'
       WHERE id = $1
       `,
-      [applicationId]
+      [applicationId],
     );
 
     res.json({
-      message: "Application rejected"
+      message: "Application rejected",
     });
-
   } catch (error) {
     res.status(500).json({
-      error: error.message
+      error: error.message,
     });
   }
 });
 app.get("/calculate-fare", async (req, res) => {
   console.log("FARE INPUT:", {
-  pickup_area: req.query.pickup_area,
-  dropoff_area: req.query.dropoff_area,
-  pickup_lat: req.query.pickup_lat,
-  pickup_lng: req.query.pickup_lng,
-  dropoff_lat: req.query.dropoff_lat,
-  dropoff_lng: req.query.dropoff_lng,
-});
+    pickup_area: req.query.pickup_area,
+    dropoff_area: req.query.dropoff_area,
+    pickup_lat: req.query.pickup_lat,
+    pickup_lng: req.query.pickup_lng,
+    dropoff_lat: req.query.dropoff_lat,
+    dropoff_lng: req.query.dropoff_lng,
+  });
   try {
-    const routeFare = await calculateRouteXFare({
+   
+    const pickupLat = Number(req.query.pickup_lat);
+    const pickupLng = Number(req.query.pickup_lng);
+    const dropoffLat = Number(req.query.dropoff_lat);
+    const dropoffLng = Number(req.query.dropoff_lng);
+
+    if (
+      !Number.isFinite(pickupLat) ||
+      pickupLat < -90 ||
+      pickupLat > 90 ||
+      !Number.isFinite(pickupLng) ||
+      pickupLng < -180 ||
+      pickupLng > 180 ||
+      !Number.isFinite(dropoffLat) ||
+      dropoffLat < -90 ||
+      dropoffLat > 90 ||
+      !Number.isFinite(dropoffLng) ||
+      dropoffLng < -180 ||
+      dropoffLng > 180
+    ) {
+      return res
+        .status(400)
+        .json({
+          error: "Valid pickup and destination coordinates are required.",
+        });
+    }
+
+     const routeFare = await calculateRouteXFare({
       pickup_area: req.query.pickup_area,
       dropoff_area: req.query.dropoff_area,
       pickup_lat: req.query.pickup_lat,
@@ -6569,20 +6093,6 @@ app.get("/calculate-fare", async (req, res) => {
       dropoff_lng: req.query.dropoff_lng,
     });
 
-    const pickupLat = Number(req.query.pickup_lat);
-    const pickupLng = Number(req.query.pickup_lng);
-    const dropoffLat = Number(req.query.dropoff_lat);
-    const dropoffLng = Number(req.query.dropoff_lng);
-
-    if (
-      !Number.isFinite(pickupLat) || pickupLat < -90 || pickupLat > 90 ||
-      !Number.isFinite(pickupLng) || pickupLng < -180 || pickupLng > 180 ||
-      !Number.isFinite(dropoffLat) || dropoffLat < -90 || dropoffLat > 90 ||
-      !Number.isFinite(dropoffLng) || dropoffLng < -180 || dropoffLng > 180
-    ) {
-      return res.status(400).json({ error: "Valid pickup and destination coordinates are required." });
-    }
-
     const rideType = String(req.query.ride_type || "now");
     if (rideType !== "now" && rideType !== "scheduled") {
       return res.status(400).json({ error: "Invalid ride type." });
@@ -6590,9 +6100,10 @@ app.get("/calculate-fare", async (req, res) => {
 
     // Scheduled fares do not depend on a driver being online today.
     // Ride Now retains the existing live-driver pickup surcharge.
-    const pickupEstimate = rideType === "now"
-      ? await calculateRouteXPickupDistance(pickupLat, pickupLng)
-      : null;
+    const pickupEstimate =
+      rideType === "now"
+        ? await calculateRouteXPickupDistance(pickupLat, pickupLng)
+        : null;
     // Long out-of-town rides already include a distance allowance.
     // Do not add a second driver-pickup surcharge to these rides.
     // Keep the normal surcharge for local and shorter out-of-town rides.
@@ -6628,15 +6139,20 @@ app.get("/calculate-fare", async (req, res) => {
       pickup_driver_id: pickupEstimate?.driver_id ?? null,
       quote_expires_at: quotePayload.expires_at,
     });
-    return res.json({ ...fare, fare_quote_token, quote_expires_at: quotePayload.expires_at });
+    return res.json({
+      ...fare,
+      fare_quote_token,
+      quote_expires_at: quotePayload.expires_at,
+    });
   } catch (error) {
     console.error("CALCULATE FARE ERROR:", error);
     return res.status(error.statusCode || 500).json({
-      error: error.statusCode ? error.message : "Fare calculation is temporarily unavailable. Please try again later.",
+      error: error.statusCode
+        ? error.message
+        : "Fare calculation is temporarily unavailable. Please try again later.",
     });
   }
 });
-
 
 app.get("/passenger-trips/:id", async (req, res) => {
   try {
@@ -6649,20 +6165,18 @@ app.get("/passenger-trips/:id", async (req, res) => {
       WHERE passenger_id = $1
       ORDER BY id DESC
       `,
-      [passengerId]
+      [passengerId],
     );
 
     res.json(result.rows);
-
   } catch (error) {
     console.error("PASSENGER TRIPS ERROR:", error);
 
     res.status(500).json({
-      error: error.message
+      error: error.message,
     });
   }
 });
-
 
 app.get("/passenger-bookings/:id", async (req, res) => {
   try {
@@ -6680,7 +6194,7 @@ app.get("/passenger-bookings/:id", async (req, res) => {
         AND expires_at IS NOT NULL
         AND expires_at <= NOW()
       `,
-      [passengerId]
+      [passengerId],
     );
 
     // Load passenger booking history
@@ -6718,16 +6232,15 @@ FROM trip_bookings tb
       WHERE tb.passenger_id = $1
       ORDER BY tb.id DESC
       `,
-      [passengerId]
+      [passengerId],
     );
 
     res.json(result.rows);
-
   } catch (error) {
     console.error("PASSENGER BOOKINGS ERROR:", error);
 
     res.status(500).json({
-      error: error.message
+      error: error.message,
     });
   }
 });
@@ -6772,7 +6285,7 @@ app.get(
 
         LIMIT 1
         `,
-        [bookingId, passengerId]
+        [bookingId, passengerId],
       );
 
       if (result.rows.length === 0) {
@@ -6782,29 +6295,20 @@ app.get(
       }
 
       res.json(result.rows[0]);
-
     } catch (error) {
-      console.error(
-        "PASSENGER DRIVER LOCATION ERROR:",
-        error
-      );
+      console.error("PASSENGER DRIVER LOCATION ERROR:", error);
 
       res.status(500).json({
         error: "Unable to load driver location",
       });
     }
-  }
+  },
 );
 const PORT = process.env.PORT || 5000;
 
 app.post("/driver-reviews", async (req, res) => {
   try {
-    const {
-      booking_id,
-      passenger_id,
-      rating,
-      review_text,
-    } = req.body;
+    const { booking_id, passenger_id, rating, review_text } = req.body;
 
     // Check that this was a completed trip
     // belonging to this passenger and that a driver was assigned.
@@ -6817,7 +6321,7 @@ app.post("/driver-reviews", async (req, res) => {
         AND trip_status = 'Completed'
         AND assigned_driver_id IS NOT NULL
       `,
-      [booking_id, passenger_id]
+      [booking_id, passenger_id],
     );
 
     if (bookingResult.rows.length === 0) {
@@ -6859,14 +6363,13 @@ app.post("/driver-reviews", async (req, res) => {
         passenger_id,
         numericRating,
         review_text?.trim() || null,
-      ]
+      ],
     );
 
     res.status(201).json({
       message: "Review submitted successfully.",
       review: result.rows[0],
     });
-
   } catch (error) {
     console.error("DRIVER REVIEW ERROR:", error);
 
@@ -6895,18 +6398,15 @@ app.get("/drivers/:id/rating", async (req, res) => {
       FROM driver_reviews
       WHERE driver_id = $1
       `,
-      [driverId]
+      [driverId],
     );
 
     res.json({
-      average_rating:
-        result.rows[0].average_rating
-          ? Number(result.rows[0].average_rating)
-          : null,
-      review_count:
-        Number(result.rows[0].review_count) || 0,
+      average_rating: result.rows[0].average_rating
+        ? Number(result.rows[0].average_rating)
+        : null,
+      review_count: Number(result.rows[0].review_count) || 0,
     });
-
   } catch (error) {
     console.error("DRIVER RATING ERROR:", error);
 
@@ -6929,11 +6429,10 @@ app.get("/drivers/:id/reviews", async (req, res) => {
       WHERE dr.driver_id = $1
       ORDER BY dr.created_at DESC
       `,
-      [driverId]
+      [driverId],
     );
 
     res.json(result.rows);
-
   } catch (error) {
     console.error("DRIVER REVIEWS ERROR:", error);
 
