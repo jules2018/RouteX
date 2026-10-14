@@ -5737,6 +5737,48 @@ RETURNING *
   },
 );
 
+app.get("/admin/bookings", async (req, res) => {
+  const expected = process.env.ADMIN_DASHBOARD_KEY;
+  const provided = req.get("X-RouteX-Admin-Key") || "";
+
+  if (!expected || !provided) {
+    return res.status(403).json({ error: "Admin access required" });
+  }
+
+  const a = Buffer.from(expected);
+  const b = Buffer.from(provided);
+
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+    return res.status(403).json({ error: "Admin access denied" });
+  }
+
+  try {
+    const result = await pool.query(`
+      SELECT
+        tb.id,
+        tb.passenger_id,
+        tb.pickup_address,
+        tb.dropoff_address,
+        tb.booking_status,
+        tb.trip_status,
+        tb.assigned_driver_id,
+        d.full_name AS driver_name
+      FROM trip_bookings tb
+      LEFT JOIN drivers d
+        ON tb.assigned_driver_id = d.id
+      ORDER BY tb.id DESC
+      LIMIT 200
+    `);
+
+    return res.json(result.rows);
+  } catch (error) {
+    console.error("ADMIN BOOKINGS ERROR:", error);
+    return res.status(500).json({
+      error: "Unable to load booking history"
+    });
+  }
+});
+
 // ROUTEX ADMIN DRIVER DIRECTORY — add before app.get("/admin/stats", ...)
 // Set ADMIN_DASHBOARD_KEY as a strong, private Render environment variable.
 app.get("/admin/driver-directory", async (req, res) => {
