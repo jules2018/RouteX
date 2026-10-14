@@ -5736,6 +5736,30 @@ RETURNING *
     }
   },
 );
+
+// ROUTEX ADMIN DRIVER DIRECTORY — add before app.get("/admin/stats", ...)
+// Set ADMIN_DASHBOARD_KEY as a strong, private Render environment variable.
+app.get("/admin/driver-directory", async (req, res) => {
+  const expected = process.env.ADMIN_DASHBOARD_KEY;
+  const provided = req.get("X-RouteX-Admin-Key") || "";
+  if (!expected || !provided) return res.status(403).json({ error: "Admin access required" });
+  const a = Buffer.from(expected);
+  const b = Buffer.from(provided);
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return res.status(403).json({ error: "Admin access denied" });
+  try {
+    const result = await pool.query(`
+      SELECT id, full_name, vehicle_type, vehicle_color, license_plate,
+             status, is_online, last_online_at
+      FROM drivers ORDER BY full_name ASC
+    `);
+    return res.json(result.rows);
+  } catch (error) {
+    console.error("ADMIN DRIVER DIRECTORY ERROR:", error);
+    return res.status(500).json({ error: "Unable to load driver directory" });
+  }
+});
+
+
 app.get("/admin/stats", async (req, res) => {
   try {
     const passengers = await pool.query(
