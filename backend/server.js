@@ -1084,7 +1084,6 @@ async function calculateRouteXPickupDistance(pickupLat, pickupLng) {
     FROM drivers
     WHERE status = 'Available'
       AND is_online = true
-      AND last_online_at > NOW() - INTERVAL '2 minutes'
       AND current_lat IS NOT NULL
       AND current_lng IS NOT NULL
       AND (
@@ -5254,7 +5253,6 @@ app.get("/available-drivers", async (req, res) => {
       FROM drivers
   WHERE status = 'Available'
   AND is_online = true
-  AND last_online_at > NOW() - INTERVAL '2 minutes'
   AND current_lat IS NOT NULL
   AND current_lng IS NOT NULL
   AND (
