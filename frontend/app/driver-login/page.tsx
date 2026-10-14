@@ -17,20 +17,32 @@ export default function DriverLoginPage() {
     type: "error" | "success";
   } | null>(null);
 
-  useEffect(() => {
-    const driver = JSON.parse(
-      localStorage.getItem("driver") || "null"
-    );
+useEffect(() => {
+  const storedDriver = localStorage.getItem("driver");
+  const token = sessionStorage.getItem("driverToken");
 
-    if (driver) {
-      router.push("/driver-portal");
+  if (!storedDriver || !token) {
+    localStorage.removeItem("driver");
+    sessionStorage.removeItem("driverToken");
+    return;
+  }
+
+  try {
+    const driver = JSON.parse(storedDriver);
+
+    if (driver?.id) {
+      router.replace("/driver-portal");
+    } else {
+      localStorage.removeItem("driver");
+      sessionStorage.removeItem("driverToken");
     }
-  }, [router]);
+  } catch {
+    localStorage.removeItem("driver");
+    sessionStorage.removeItem("driverToken");
+  }
+}, [router]);
 
-  const showNotice = (
-    message: string,
-    type: "error" | "success" = "error"
-  ) => {
+  const showNotice = (message: string, type: "error" | "success" = "error") => {
     setNotice({ message, type });
 
     window.setTimeout(() => {
@@ -42,9 +54,7 @@ export default function DriverLoginPage() {
     e?.preventDefault();
 
     if (!phone.trim() || !password) {
-      showNotice(
-        "Please enter your phone number and password."
-      );
+      showNotice("Please enter your phone number and password.");
       return;
     }
 
@@ -53,43 +63,40 @@ export default function DriverLoginPage() {
     setLoading(true);
 
     try {
-      const response = await fetch(
-        `${API_URL}/driver-login`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            phone: phone.trim(),
-            password,
-          }),
-        }
-      );
+      const response = await fetch(`${API_URL}/driver-login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          phone: phone.trim(),
+          password,
+        }),
+      });
 
       const data = await response.json();
 
       console.log("Driver login response:", data);
 
       if (!response.ok) {
-        showNotice(
-          data.error || "Unable to sign in."
-        );
+        showNotice(data.error || "Unable to sign in.");
         return;
       }
 
       localStorage.removeItem("passenger");
       localStorage.removeItem("user");
 
-      localStorage.setItem(
-        "driver",
-        JSON.stringify(data)
-      );
+      const { token, ...driverData } = data;
 
-      showNotice(
-        "Welcome back. Opening your driver portal...",
-        "success"
-      );
+if (token) {
+  sessionStorage.setItem("driverToken", token);
+} else {
+  sessionStorage.removeItem("driverToken");
+}
+
+localStorage.setItem("driver", JSON.stringify(driverData));
+
+      showNotice("Welcome back. Opening your driver portal...", "success");
 
       window.setTimeout(() => {
         window.location.href = "/driver-portal";
@@ -97,9 +104,7 @@ export default function DriverLoginPage() {
     } catch (error) {
       console.error("DRIVER LOGIN ERROR:", error);
 
-      showNotice(
-        "Unable to connect to RouteX. Please try again."
-      );
+      showNotice("Unable to connect to RouteX. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -108,7 +113,6 @@ export default function DriverLoginPage() {
   return (
     <main className="min-h-[100dvh] bg-[#e7e9ee] text-[#17191f]">
       <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col px-5 pb-8">
-
         {/* HEADER */}
         <header className="flex items-center justify-between pt-6">
           <a
@@ -164,11 +168,7 @@ export default function DriverLoginPage() {
                 }
               `}
             >
-              {notice.type === "success" ? (
-                <CheckIcon />
-              ) : (
-                <InfoIcon />
-              )}
+              {notice.type === "success" ? <CheckIcon /> : <InfoIcon />}
             </span>
 
             <p className="pt-1 text-[10px] font-bold leading-4">
@@ -203,8 +203,8 @@ export default function DriverLoginPage() {
           </h2>
 
           <p className="mt-3 max-w-[290px] text-[13px] font-medium leading-5 text-[#7d8087]">
-            Sign in to go online, receive ride requests and manage
-            your RouteX trips.
+            Sign in to go online, receive ride requests and manage your RouteX
+            trips.
           </p>
         </section>
 
@@ -242,9 +242,7 @@ export default function DriverLoginPage() {
                 inputMode="tel"
                 autoComplete="tel"
                 value={phone}
-                onChange={(e) =>
-                  setPhone(e.target.value)
-                }
+                onChange={(e) => setPhone(e.target.value)}
                 placeholder="082 123 4567"
                 className="
                   min-w-0 flex-1
@@ -284,9 +282,7 @@ export default function DriverLoginPage() {
                 type={showPassword ? "text" : "password"}
                 autoComplete="current-password"
                 value={password}
-                onChange={(e) =>
-                  setPassword(e.target.value)
-                }
+                onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter your password"
                 className="
                   min-w-0 flex-1
@@ -303,9 +299,7 @@ export default function DriverLoginPage() {
 
               <button
                 type="button"
-                onClick={() =>
-                  setShowPassword((current) => !current)
-                }
+                onClick={() => setShowPassword((current) => !current)}
                 className="
                   mr-2
                   flex h-9 w-9
@@ -316,17 +310,9 @@ export default function DriverLoginPage() {
                   transition
                   active:scale-90
                 "
-                aria-label={
-                  showPassword
-                    ? "Hide password"
-                    : "Show password"
-                }
+                aria-label={showPassword ? "Hide password" : "Show password"}
               >
-                {showPassword ? (
-                  <EyeOffIcon />
-                ) : (
-                  <EyeIcon />
-                )}
+                {showPassword ? <EyeOffIcon /> : <EyeIcon />}
               </button>
             </div>
           </div>
@@ -352,9 +338,7 @@ export default function DriverLoginPage() {
           >
             <div className="text-left">
               <p className="text-[13px] font-black">
-                {loading
-                  ? "Signing in..."
-                  : "Sign in as driver"}
+                {loading ? "Signing in..." : "Sign in as driver"}
               </p>
 
               <p className="mt-0.5 text-[8px] font-semibold text-white/45">
@@ -370,11 +354,7 @@ export default function DriverLoginPage() {
                 bg-[#ff6846]
               "
             >
-              {loading ? (
-                <Spinner />
-              ) : (
-                <ArrowIcon />
-              )}
+              {loading ? <Spinner /> : <ArrowIcon />}
             </span>
           </button>
         </form>
@@ -405,9 +385,7 @@ export default function DriverLoginPage() {
           </div>
 
           <div>
-            <p className="text-[10px] font-extrabold">
-              Approved drivers only
-            </p>
+            <p className="text-[10px] font-extrabold">Approved drivers only</p>
 
             <p className="mt-0.5 text-[8px] font-semibold leading-4 text-[#92959b]">
               Driver accounts are activated after RouteX verification.

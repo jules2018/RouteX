@@ -8,6 +8,7 @@ const multer = require("multer");
 const { createClient } = require("@supabase/supabase-js");
 const fs = require("fs");
 const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 async function sendResetEmail(email, code) {
   const response = await fetch("https://api.brevo.com/v3/smtp/email", {
@@ -210,8 +211,48 @@ const upload = multer({
   },
 });
 
-app.use(cors());
+app.use(
+  cors({
+    origin: [
+      "https://routex-frontend.onrender.com",
+      "http://localhost:3000",
+    ],
+    credentials: true,
+  })
+);
 app.use(express.json());
+function authenticateDriver(req, res, next) {
+  const authHeader = req.headers.authorization || "";
+
+  if (!authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({
+      error: "Driver authentication required. Please sign in again.",
+    });
+  }
+
+  const token = authHeader.slice(7);
+
+  try {
+    const decoded = jwt.verify(
+      token,
+      process.env.DRIVER_JWT_SECRET,
+      { algorithms: ["HS256"] }
+    );
+
+    if (decoded.role !== "driver" || !decoded.driverId) {
+      return res.status(403).json({
+        error: "Invalid driver permissions.",
+      });
+    }
+
+    req.authenticatedDriverId = String(decoded.driverId);
+    next();
+  } catch (error) {
+    return res.status(401).json({
+      error: "Driver session expired or invalid. Please sign in again.",
+    });
+  }
+}
 app.use("/uploads", express.static("uploads"));
 
 // =====================================
@@ -657,12 +698,21 @@ VALUES ($1,$2,$3)
   }
 });
 
-app.post("/driver/upload-photo", upload.single("photo"), async (req, res) => {
+app.post(
+  "/driver/upload-photo",
+  authenticateDriver,
+  upload.single("photo"),
+  async (req, res) => {
   try {
     console.log("DRIVER UPLOAD ROUTE HIT");
 
     const { driverId } = req.body;
-
+if (String(driverId) !== req.authenticatedDriverId) {
+  return res.status(403).json({
+    success: false,
+    error: "You are not authorized to update another driver's photo.",
+  });
+}
     if (!driverId) {
       return res.status(400).json({
         success: false,
@@ -1193,16 +1243,16 @@ async function calculateRouteXFare({
         }
       }
 
-   console.warn("OSRM route unavailable for coordinate-based fare.");
-} catch (error) {
-  console.error("OSRM fare calculation failed:", error.message);
-}
+      console.warn("OSRM route unavailable for coordinate-based fare.");
+    } catch (error) {
+      console.error("OSRM fare calculation failed:", error.message);
+    }
 
-const error = new Error(
-  "Road distance could not be calculated. Please try again later."
-);
-error.statusCode = 503;
-throw error;
+    const error = new Error(
+      "Road distance could not be calculated. Please try again later.",
+    );
+    error.statusCode = 503;
+    throw error;
   }
 
   const pickupResult = await pool.query(
@@ -1294,12 +1344,10 @@ app.post("/bookings", async (req, res) => {
     }
 
     if (!Number.isFinite(Number(fare_amount)) || Number(fare_amount) <= 0) {
-      return res
-        .status(400)
-        .json({
-          error:
-            "A valid quoted fare is required. Please recalculate the fare and try again.",
-        });
+      return res.status(400).json({
+        error:
+          "A valid quoted fare is required. Please recalculate the fare and try again.",
+      });
     }
 
     if (ride_type !== "now" && ride_type !== "scheduled") {
@@ -4383,12 +4431,17 @@ AND (tb.expires_at IS NULL OR tb.expires_at > NOW())
     });
   }
 });
-app.post("/trip-requests/:id/accept", async (req, res) => {
+app.post("/trip-requests/:id/accept", authenticateDriver, async (req, res) => {
   const client = await pool.connect();
 
   try {
     const bookingId = req.params.id;
     const { driverId } = req.body;
+    if (String(driverId) !== req.authenticatedDriverId) {
+  return res.status(403).json({
+    error: "You are not authorized to accept rides for another driver.",
+  });
+}
 
     if (!driverId) {
       return res.status(400).json({
@@ -4530,10 +4583,15 @@ app.get("/notifications/:userId", async (req, res) => {
   }
 });
 
-app.post("/trip-requests/:id/start", async (req, res) => {
+app.post("/trip-requests/:id/start", authenticateDriver, async (req, res) => {
   try {
     const bookingId = req.params.id;
     const { driverId } = req.body;
+if (String(driverId) !== req.authenticatedDriverId) {
+  return res.status(403).json({
+    error: "You are not authorized to start rides for another driver.",
+  });
+}
 
     if (!driverId) {
       return res.status(400).json({
@@ -4575,12 +4633,17 @@ app.post("/trip-requests/:id/start", async (req, res) => {
     });
   }
 });
-app.post("/trip-requests/:id/complete", async (req, res) => {
+app.post("/trip-requests/:id/complete", authenticateDriver, async (req, res) => {
   const client = await pool.connect();
 
   try {
     const bookingId = req.params.id;
     const { driverId } = req.body;
+    if (String(driverId) !== req.authenticatedDriverId) {
+  return res.status(403).json({
+    error: "You are not authorized to complete rides for another driver.",
+  });
+}
 
     if (!driverId) {
       return res.status(400).json({
@@ -5012,10 +5075,35 @@ app.post("/driver-login", async (req, res) => {
       });
     }
 
-    // Never send the password back to the frontend
-    const { password: _password, ...safeDriver } = driver;
+   // Never send the password back to the frontend
+const { password: _password, ...safeDriver } = driver;
 
-    res.json(safeDriver);
+const secret = process.env.DRIVER_JWT_SECRET;
+
+if (!secret) {
+  console.error("DRIVER_JWT_SECRET is not configured");
+  return res.status(503).json({
+    error: "Driver authentication is temporarily unavailable",
+  });
+}
+
+const token = jwt.sign(
+  {
+    driverId: driver.id,
+    role: "driver",
+  },
+  secret,
+  {
+    expiresIn: "7d",
+    algorithm: "HS256",
+  }
+);
+
+res.json({
+  ...safeDriver,
+  token,
+});
+
   } catch (error) {
     console.error("DRIVER LOGIN ERROR:", error);
 
@@ -5233,10 +5321,15 @@ app.post("/auth/reset-password", async (req, res) => {
   }
 });
 
-app.post("/drivers/:id/status", async (req, res) => {
+app.post("/drivers/:id/status", authenticateDriver, async (req, res) => {
   try {
     const driverId = req.params.id;
     const { status, current_lat, current_lng } = req.body;
+    if (String(driverId) !== req.authenticatedDriverId) {
+  return res.status(403).json({
+    error: "You are not authorized to change another driver's status.",
+  });
+}
     const goingOnline = status === "Available";
 
     const result = await pool.query(
@@ -5276,10 +5369,14 @@ app.post("/drivers/:id/status", async (req, res) => {
    DRIVER LIVE LOCATION
 ========================= */
 
-app.post("/drivers/:id/heartbeat", async (req, res) => {
+app.post("/drivers/:id/heartbeat", authenticateDriver, async (req, res) => {
   try {
     const driverId = req.params.id;
-
+if (String(driverId) !== req.authenticatedDriverId) {
+  return res.status(403).json({
+    error: "You are not authorized to update another driver's heartbeat.",
+  });
+}
     const result = await pool.query(
       `
       UPDATE drivers
@@ -5310,11 +5407,15 @@ app.post("/drivers/:id/heartbeat", async (req, res) => {
   }
 });
 
-app.post("/drivers/:id/location", async (req, res) => {
+app.post("/drivers/:id/location", authenticateDriver, async (req, res) => {
   try {
     const driverId = req.params.id;
     const { latitude, longitude } = req.body;
-
+if (String(driverId) !== req.authenticatedDriverId) {
+  return res.status(403).json({
+    error: "You are not authorized to update another driver's location.",
+  });
+}
     const lat = Number(latitude);
     const lng = Number(longitude);
 
@@ -5774,7 +5875,7 @@ app.get("/admin/bookings", async (req, res) => {
   } catch (error) {
     console.error("ADMIN BOOKINGS ERROR:", error);
     return res.status(500).json({
-      error: "Unable to load booking history"
+      error: "Unable to load booking history",
     });
   }
 });
@@ -5784,10 +5885,12 @@ app.get("/admin/bookings", async (req, res) => {
 app.get("/admin/driver-directory", async (req, res) => {
   const expected = process.env.ADMIN_DASHBOARD_KEY;
   const provided = req.get("X-RouteX-Admin-Key") || "";
-  if (!expected || !provided) return res.status(403).json({ error: "Admin access required" });
+  if (!expected || !provided)
+    return res.status(403).json({ error: "Admin access required" });
   const a = Buffer.from(expected);
   const b = Buffer.from(provided);
-  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return res.status(403).json({ error: "Admin access denied" });
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b))
+    return res.status(403).json({ error: "Admin access denied" });
   try {
     const result = await pool.query(`
       SELECT id, full_name, vehicle_type, vehicle_color, license_plate,
@@ -5800,7 +5903,6 @@ app.get("/admin/driver-directory", async (req, res) => {
     return res.status(500).json({ error: "Unable to load driver directory" });
   }
 });
-
 
 app.get("/admin/stats", async (req, res) => {
   try {
@@ -6004,93 +6106,7 @@ app.post("/admin/applications/:id/approve", async (req, res) => {
     });
   }
 });
-// =====================================================
-// DRIVER - SET PASSWORD FROM APPROVAL LINK
-// =====================================================
 
-app.post("/driver-set-password", async (req, res) => {
-  try {
-    const { token, password } = req.body;
-
-    // -----------------------------------------
-    // VALIDATE REQUEST
-    // -----------------------------------------
-
-    if (!token || !password) {
-      return res.status(400).json({
-        error: "Token and password are required",
-      });
-    }
-
-    if (password.length < 8) {
-      return res.status(400).json({
-        error: "Password must be at least 8 characters",
-      });
-    }
-
-    // -----------------------------------------
-    // FIND DRIVER USING TOKEN
-    // Token must also still be valid
-    // -----------------------------------------
-
-    const driverResult = await pool.query(
-      `
-      SELECT id, full_name, phone
-      FROM drivers
-      WHERE password_setup_token = $1
-        AND password_setup_expires > NOW()
-      LIMIT 1
-      `,
-      [token],
-    );
-
-    if (driverResult.rows.length === 0) {
-      return res.status(400).json({
-        error: "This password setup link is invalid or has expired.",
-      });
-    }
-
-    const driver = driverResult.rows[0];
-
-    // -----------------------------------------
-    // HASH NEW PASSWORD
-    // -----------------------------------------
-
-    const hashedPassword = await bcrypt.hash(password, 12);
-
-    // -----------------------------------------
-    // SAVE PASSWORD
-    //
-    // IMPORTANT:
-    // Clear token + expiry so the link
-    // cannot be used again.
-    // -----------------------------------------
-
-    await pool.query(
-      `
-      UPDATE drivers
-      SET
-        password = $1,
-        password_setup_token = NULL,
-        password_setup_expires = NULL
-      WHERE id = $2
-      `,
-      [hashedPassword, driver.id],
-    );
-
-    console.log("DRIVER PASSWORD CREATED:", driver.id, driver.full_name);
-
-    return res.json({
-      message: "Password created successfully",
-    });
-  } catch (error) {
-    console.error("DRIVER SET PASSWORD ERROR:", error);
-
-    return res.status(500).json({
-      error: "Unable to create password",
-    });
-  }
-});
 app.post("/admin/applications/:id/reject", async (req, res) => {
   try {
     const applicationId = req.params.id;
@@ -6123,7 +6139,6 @@ app.get("/calculate-fare", async (req, res) => {
     dropoff_lng: req.query.dropoff_lng,
   });
   try {
-   
     const pickupLat = Number(req.query.pickup_lat);
     const pickupLng = Number(req.query.pickup_lng);
     const dropoffLat = Number(req.query.dropoff_lat);
@@ -6143,14 +6158,12 @@ app.get("/calculate-fare", async (req, res) => {
       dropoffLng < -180 ||
       dropoffLng > 180
     ) {
-      return res
-        .status(400)
-        .json({
-          error: "Valid pickup and destination coordinates are required.",
-        });
+      return res.status(400).json({
+        error: "Valid pickup and destination coordinates are required.",
+      });
     }
 
-     const routeFare = await calculateRouteXFare({
+    const routeFare = await calculateRouteXFare({
       pickup_area: req.query.pickup_area,
       dropoff_area: req.query.dropoff_area,
       pickup_lat: req.query.pickup_lat,
