@@ -1095,8 +1095,8 @@ export default function BookingTestPage() {
   };
 
   return (
-    <main className="min-h-[100dvh] bg-[#f5f5f5] text-[#17191f]">
-      <div className="mx-auto min-h-[100dvh] w-full max-w-md bg-white px-5 pb-8 pt-5">
+    <main className="min-h-[100dvh] bg-[#f1f2f6] dark:bg-[#111216] text-[#17191f] dark:text-[#f5f6f8]">
+      <div className="mx-auto min-h-[100dvh] w-full max-w-md bg-[#e9ebf1] dark:bg-[#1c1e24] px-5 pb-8 pt-5">
         {/* HEADER */}
 
         <header className="mb-7">
@@ -1126,11 +1126,11 @@ export default function BookingTestPage() {
 
 
 
-    bg-white
+    bg-[#e9ebf1] dark:bg-[#1c1e24]
 
 
 
-    shadow-[7px_7px_18px_rgba(0,0,0,0.08),-7px_-7px_18px_rgba(255,255,255,1)]
+    shadow-[5px_5px_13px_rgba(0,0,0,0.10),-5px_-5px_13px_rgba(255,255,255,0.95)] dark:shadow-[7px_7px_18px_rgba(0,0,0,0.08),-7px_-7px_18px_rgba(48,51,61,0.85)]
 
 
 
@@ -1149,7 +1149,7 @@ export default function BookingTestPage() {
 
 
 
-  bg-white px-5 py-5 text-left
+  bg-[#e9ebf1] dark:bg-[#1c1e24] px-5 py-5 text-left
 
 
 
@@ -1157,20 +1157,20 @@ export default function BookingTestPage() {
 
 
 
-  hover:bg-black/[0.01]
+  hover:bg-black/[0.04] dark:hover:bg-white/[0.04]
 
 
 
-  active:shadow-[inset_3px_3px_8px_rgba(0,0,0,0.06),inset_-3px_-3px_8px_rgba(255,255,255,1)]
+  active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.10),inset_-3px_-3px_7px_rgba(255,255,255,0.9)] dark:active:shadow-[inset_3px_3px_8px_rgba(0,0,0,0.06),inset_-3px_-3px_8px_rgba(48,51,61,0.85)]
 
 
 
 "
               >
-                <span className="h-3 w-3 shrink-0 rounded-full border-[3px] border-[#17191f]" />
+                <span className="h-3 w-3 shrink-0 rounded-full border-[3px] border-[#17191f] dark:border-[#17191f]" />
 
                 <div className="min-w-0 flex-1">
-                  <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-black/40">
+                  <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-[#6c7280] dark:text-white/68">
                     Pickup
                   </p>
 
@@ -1181,16 +1181,16 @@ export default function BookingTestPage() {
                   </p>
 
                   {selectedPickup?.area_name && (
-                    <p className="mt-0.5 truncate text-[9px] font-medium text-black/35">
+                    <p className="mt-0.5 truncate text-[9px] font-medium text-[#6c7280] dark:text-white/63">
                       {selectedPickup.area_name}
                     </p>
                   )}
                 </div>
 
-                <span className="text-xl text-black/30">›</span>
+                <span className="text-xl text-[#6c7280] dark:text-white/58">›</span>
               </button>
 
-              <div className="ml-16 h-px bg-black/[0.06]" />
+              <div className="ml-16 h-px bg-black/[0.08] dark:bg-white/[0.10]" />
 
               <button
                 type="button"
@@ -1205,7 +1205,7 @@ export default function BookingTestPage() {
 
 
 
-  bg-white px-5 py-5 text-left
+  bg-[#e9ebf1] dark:bg-[#1c1e24] px-5 py-5 text-left
 
 
 
@@ -1213,11 +1213,11 @@ export default function BookingTestPage() {
 
 
 
-  hover:bg-black/[0.01]
+  hover:bg-black/[0.04] dark:hover:bg-white/[0.04]
 
 
 
-  active:shadow-[inset_3px_3px_8px_rgba(0,0,0,0.06),inset_-3px_-3px_8px_rgba(255,255,255,1)]
+  active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.10),inset_-3px_-3px_7px_rgba(255,255,255,0.9)] dark:active:shadow-[inset_3px_3px_8px_rgba(0,0,0,0.06),inset_-3px_-3px_8px_rgba(48,51,61,0.85)]
 
 
 
@@ -1226,13 +1226,13 @@ export default function BookingTestPage() {
                 <span className="h-3 w-3 shrink-0 rounded-[3px] bg-[#ff6846]" />
 
                 <div className="min-w-0 flex-1">
-                  <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-black/40">
+                  <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-[#6c7280] dark:text-white/68">
                     Destination
                   </p>
 
                   <p
                     className={`mt-1 truncate text-[14px] font-bold ${
-                      selectedDestination ? "text-[#17191f]" : "text-black/40"
+                      selectedDestination ? "text-[#17191f] dark:text-[#f5f6f8]" : "text-[#6c7280] dark:text-white/68"
                     }`}
                   >
                     {selectedDestination
@@ -1241,13 +1241,13 @@ export default function BookingTestPage() {
                   </p>
 
                   {selectedDestination?.area_name && (
-                    <p className="mt-0.5 truncate text-[9px] font-medium text-black/35">
+                    <p className="mt-0.5 truncate text-[9px] font-medium text-[#6c7280] dark:text-white/63">
                       {selectedDestination.area_name}
                     </p>
                   )}
                 </div>
 
-                <span className="text-xl text-black/30">›</span>
+                <span className="text-xl text-[#6c7280] dark:text-white/58">›</span>
               </button>
             </section>
 
@@ -1267,11 +1267,11 @@ export default function BookingTestPage() {
 
 
 
-    bg-white p-1.5
+    bg-[#e9ebf1] dark:bg-[#1c1e24] p-1.5
 
 
 
-    shadow-[inset_3px_3px_8px_rgba(0,0,0,0.07),inset_-3px_-3px_8px_rgba(255,255,255,1)]
+    shadow-[inset_3px_3px_7px_rgba(0,0,0,0.10),inset_-3px_-3px_7px_rgba(255,255,255,0.9)] dark:shadow-[inset_3px_3px_8px_rgba(0,0,0,0.07),inset_-3px_-3px_8px_rgba(48,51,61,0.85)]
 
 
 
@@ -1285,7 +1285,7 @@ export default function BookingTestPage() {
                   className={`rounded-[13px] px-4 py-3 text-[12px] font-bold transition ${
                     rideType === "now"
                       ? "bg-[#17191f] text-white"
-                      : "text-black/45"
+                      : "text-[#6c7280] dark:text-white/73"
                   }`}
                 >
                   Ride now
@@ -1299,7 +1299,7 @@ export default function BookingTestPage() {
                   className={`rounded-[13px] px-4 py-3 text-[12px] font-bold transition ${
                     rideType === "scheduled"
                       ? "bg-[#17191f] text-white"
-                      : "text-black/45"
+                      : "text-[#6c7280] dark:text-white/73"
                   }`}
                 >
                   Schedule
@@ -1319,11 +1319,11 @@ export default function BookingTestPage() {
 
 
 
-    bg-white p-4
+    bg-[#e9ebf1] dark:bg-[#1c1e24] p-4
 
 
 
-    shadow-[7px_7px_18px_rgba(0,0,0,0.07),-7px_-7px_18px_rgba(255,255,255,1)]
+    shadow-[5px_5px_13px_rgba(0,0,0,0.10),-5px_-5px_13px_rgba(255,255,255,0.95)] dark:shadow-[7px_7px_18px_rgba(0,0,0,0.07),-7px_-7px_18px_rgba(48,51,61,0.85)]
 
 
 
@@ -1332,11 +1332,11 @@ export default function BookingTestPage() {
                 {/* HEADER */}
 
                 <div className="mb-4">
-                  <p className="text-[8px] font-bold uppercase tracking-[0.14em] text-black/35">
+                  <p className="text-[8px] font-bold uppercase tracking-[0.14em] text-[#6c7280] dark:text-white/63">
                     Trip details
                   </p>
 
-                  <h2 className="mt-1 text-[16px] font-black tracking-[-0.02em] text-[#17191f]">
+                  <h2 className="mt-1 text-[16px] font-black tracking-[-0.02em] text-[#17191f] dark:text-[#f5f6f8]">
                     Choose pickup time
                   </h2>
                 </div>
@@ -1344,7 +1344,7 @@ export default function BookingTestPage() {
                 {/* DATE */}
 
                 <div>
-                  <p className="mb-2 text-[8px] font-bold uppercase tracking-[0.12em] text-black/35">
+                  <p className="mb-2 text-[8px] font-bold uppercase tracking-[0.12em] text-[#6c7280] dark:text-white/63">
                     Travel date
                   </p>
 
@@ -1362,7 +1362,7 @@ export default function BookingTestPage() {
 
 
 
-  rounded-[14px] bg-white
+  rounded-[14px] bg-[#e9ebf1] dark:bg-[#1c1e24]
 
 
 
@@ -1370,7 +1370,7 @@ export default function BookingTestPage() {
 
 
 
-  shadow-[4px_4px_10px_rgba(0,0,0,0.09),-4px_-4px_10px_rgba(255,255,255,1)]
+  shadow-[5px_5px_13px_rgba(0,0,0,0.10),-5px_-5px_13px_rgba(255,255,255,0.95)] dark:shadow-[4px_4px_10px_rgba(0,0,0,0.09),-4px_-4px_10px_rgba(48,51,61,0.85)]
 
 
 
@@ -1382,7 +1382,7 @@ export default function BookingTestPage() {
 
 
 
-  active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.08),inset_-3px_-3px_7px_rgba(255,255,255,1)]
+  active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.10),inset_-3px_-3px_7px_rgba(255,255,255,0.9)] dark:active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.08),inset_-3px_-3px_7px_rgba(48,51,61,0.85)]
 
 
 
@@ -1402,21 +1402,21 @@ export default function BookingTestPage() {
 
 
 
-    rounded-[14px] bg-white px-2
+    rounded-[14px] bg-[#e9ebf1] dark:bg-[#1c1e24] px-2
 
 
 
-    shadow-[inset_3px_3px_7px_rgba(0,0,0,0.07),inset_-3px_-3px_7px_rgba(255,255,255,1)]
+    shadow-[inset_3px_3px_7px_rgba(0,0,0,0.10),inset_-3px_-3px_7px_rgba(255,255,255,0.9)] dark:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.07),inset_-3px_-3px_7px_rgba(48,51,61,0.85)]
 
 
 
   "
                     >
-                      <p className="truncate text-[13px] font-bold text-[#17191f]">
+                      <p className="truncate text-[13px] font-bold text-[#17191f] dark:text-[#f5f6f8]">
                         {formattedTravelDate}
                       </p>
 
-                      <p className="text-[8px] font-medium text-black/35">
+                      <p className="text-[8px] font-medium text-[#6c7280] dark:text-white/63">
                         {travelDate}
                       </p>
                     </div>
@@ -1426,7 +1426,7 @@ export default function BookingTestPage() {
 
                       onClick={() => changeScheduledDate(1)}
 
-                      className="flex h-12 items-center justify-center rounded-[13px] bg-[#f3f3f3] text-[20px] font-bold"
+                      className="flex h-12 items-center justify-center rounded-[13px] bg-[#f0f1f5] dark:bg-[#292c35] text-[20px] font-bold"
 
                       aria-label="Next day"
                     >
@@ -1439,11 +1439,11 @@ export default function BookingTestPage() {
 
                 <div className="mt-4">
                   <div className="mb-2 flex items-center justify-between">
-                    <p className="text-[8px] font-bold uppercase tracking-[0.12em] text-black/35">
+                    <p className="text-[8px] font-bold uppercase tracking-[0.12em] text-[#6c7280] dark:text-white/63">
                       Pickup time
                     </p>
 
-                    <p className="text-[8px] font-medium text-black/30">
+                    <p className="text-[8px] font-medium text-[#6c7280] dark:text-white/58">
                       15 min intervals
                     </p>
                   </div>
@@ -1466,15 +1466,15 @@ export default function BookingTestPage() {
 
 
 
-  bg-white
+  bg-[#e9ebf1] dark:bg-[#1c1e24]
 
 
 
-  text-[20px] font-bold text-[#17191f]
+  text-[20px] font-bold text-[#17191f] dark:text-[#f5f6f8]
 
 
 
-  shadow-[4px_4px_10px_rgba(0,0,0,0.09),-4px_-4px_10px_rgba(255,255,255,1)]
+  shadow-[5px_5px_13px_rgba(0,0,0,0.10),-5px_-5px_13px_rgba(255,255,255,0.95)] dark:shadow-[4px_4px_10px_rgba(0,0,0,0.09),-4px_-4px_10px_rgba(48,51,61,0.85)]
 
 
 
@@ -1486,7 +1486,7 @@ export default function BookingTestPage() {
 
 
 
-  active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.08),inset_-3px_-3px_7px_rgba(255,255,255,1)]
+  active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.10),inset_-3px_-3px_7px_rgba(255,255,255,0.9)] dark:active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.08),inset_-3px_-3px_7px_rgba(48,51,61,0.85)]
 
 
 
@@ -1518,15 +1518,15 @@ export default function BookingTestPage() {
 
 
 
-  bg-white
+  bg-[#e9ebf1] dark:bg-[#1c1e24]
 
 
 
-  text-[20px] font-bold text-[#17191f]
+  text-[20px] font-bold text-[#17191f] dark:text-[#f5f6f8]
 
 
 
-  shadow-[4px_4px_10px_rgba(0,0,0,0.09),-4px_-4px_10px_rgba(255,255,255,1)]
+  shadow-[5px_5px_13px_rgba(0,0,0,0.10),-5px_-5px_13px_rgba(255,255,255,0.95)] dark:shadow-[4px_4px_10px_rgba(0,0,0,0.09),-4px_-4px_10px_rgba(48,51,61,0.85)]
 
 
 
@@ -1538,7 +1538,7 @@ export default function BookingTestPage() {
 
 
 
-  active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.08),inset_-3px_-3px_7px_rgba(255,255,255,1)]
+  active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.10),inset_-3px_-3px_7px_rgba(255,255,255,0.9)] dark:active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.08),inset_-3px_-3px_7px_rgba(48,51,61,0.85)]
 
 
 
@@ -1562,7 +1562,7 @@ export default function BookingTestPage() {
 
 
 
-    bg-white px-3 py-2.5
+    bg-[#e9ebf1] dark:bg-[#1c1e24] px-3 py-2.5
 
 
 
@@ -1570,17 +1570,17 @@ export default function BookingTestPage() {
 
 
 
-    shadow-[inset_2px_2px_6px_rgba(0,0,0,0.045),inset_-2px_-2px_6px_rgba(255,255,255,1)]
+    shadow-[inset_3px_3px_7px_rgba(0,0,0,0.10),inset_-3px_-3px_7px_rgba(255,255,255,0.9)] dark:shadow-[inset_2px_2px_6px_rgba(0,0,0,0.045),inset_-2px_-2px_6px_rgba(48,51,61,0.85)]
 
 
 
   "
                 >
-                  <p className="text-[10px] font-bold text-[#17191f]">
+                  <p className="text-[10px] font-bold text-[#17191f] dark:text-[#f5f6f8]">
                     Schedule at least 30 minutes ahead
                   </p>
 
-                  <p className="mt-0.5 text-[9px] leading-4 text-black/45">
+                  <p className="mt-0.5 text-[9px] leading-4 text-[#6c7280] dark:text-white/73">
                     Scheduled rides must be booked at least 30 minutes before
                     pickup.
                   </p>
@@ -1597,7 +1597,7 @@ export default function BookingTestPage() {
             {/* FARE */}
 
             <section className="mt-7 text-center">
-              <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-black/35">
+              <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-[#6c7280] dark:text-white/63">
                 Estimated fare
               </p>
 
@@ -1605,7 +1605,7 @@ export default function BookingTestPage() {
                 {calculatingFare ? "..." : fare ? `R${fare}` : "—"}
               </p>
 
-              <p className="mt-1 text-[10px] font-medium text-black/35">
+              <p className="mt-1 text-[10px] font-medium text-[#6c7280] dark:text-white/63">
                 {calculatingFare
                   ? "Calculating your route..."
                   : fare && distanceKm !== null
@@ -1614,7 +1614,7 @@ export default function BookingTestPage() {
               </p>
 
               {fare && (
-                <div className="mt-2 space-y-1 text-[10px] text-black/55">
+                <div className="mt-2 space-y-1 text-[10px] text-[#6c7280] dark:text-white/83">
                   <p>
                     Trip fare: R
                     {Math.max(0, Number(fare) - pickupSurcharge - outOfTownFee)}
@@ -1629,7 +1629,7 @@ export default function BookingTestPage() {
                     </p>
                   )}
                   {outOfTownFee > 0 && <p>Out-of-town fee: R{outOfTownFee}</p>}
-                  <p className="font-bold text-[#17191f]">
+                  <p className="font-bold text-[#17191f] dark:text-[#f5f6f8]">
                     Total before promo code: R{fare}
                   </p>
                 </div>
@@ -1642,7 +1642,7 @@ export default function BookingTestPage() {
                     role="alert"
                     aria-live="polite"
                   >
-                    <p className="text-[11px] font-semibold text-red-700">
+                    <p className="text-[11px] font-semibold text-red-300">
                       {fareError}
                     </p>
                     <button
@@ -1681,7 +1681,7 @@ export default function BookingTestPage() {
 
 
 
-  bg-white
+  bg-[#e9ebf1] dark:bg-[#1c1e24]
 
 
 
@@ -1701,7 +1701,7 @@ export default function BookingTestPage() {
 
 
 
-  shadow-[inset_2px_2px_6px_rgba(0,0,0,0.05),inset_-2px_-2px_6px_rgba(255,255,255,1)]
+  shadow-[inset_3px_3px_7px_rgba(0,0,0,0.10),inset_-3px_-3px_7px_rgba(255,255,255,0.9)] dark:shadow-[inset_2px_2px_6px_rgba(0,0,0,0.05),inset_-2px_-2px_6px_rgba(48,51,61,0.85)]
 
 
 
@@ -1709,7 +1709,7 @@ export default function BookingTestPage() {
 
 
 
-  placeholder:text-black/30
+  placeholder:text-[#858a96] dark:placeholder:text-white/58
 
 
 
@@ -1718,7 +1718,7 @@ export default function BookingTestPage() {
 
               {promoCode.trim().toUpperCase() === "WELCOME20" && (
                 <p
-                  className="mt-2 px-1 text-[10px] leading-4 text-black/45"
+                  className="mt-2 px-1 text-[10px] leading-4 text-[#6c7280] dark:text-white/73"
                   role="status"
                 >
                   WELCOME20 offers R20 off an eligible booking. RouteX will
@@ -1745,14 +1745,14 @@ export default function BookingTestPage() {
                       No Drivers Available
                     </p>
 
-                    <p className="mt-1 text-[11px] leading-4 text-white/80">
+                    <p className="mt-1 text-[11px] leading-4 text-[#6c7280] dark:text-white/80">
                       No drivers are available for an immediate ride right now.
                       Please try again soon or contact us to check availability.
                     </p>
                   </div>
                 </div>
 
-                <div className="mt-4 border-t border-white/15 pt-3">
+                <div className="mt-4 border-t border-black/15 dark:border-white/15 pt-3">
                   <a
                     href="https://wa.me/27799132513?text=Hi%20RouteX%2C%20are%20there%20any%20drivers%20available%20for%20an%20immediate%20ride%20in%20Upington%3F"
 
@@ -1801,7 +1801,7 @@ export default function BookingTestPage() {
                         : "Request RouteX"}
                   </p>
 
-                  <p className="mt-0.5 text-[8px] font-semibold text-white/45">
+                  <p className="mt-0.5 text-[8px] font-semibold text-[#6c7280] dark:text-white/45">
                     {rideType === "scheduled"
                       ? `${formattedTravelDate} at ${pickupTime}`
                       : fare
@@ -1816,7 +1816,7 @@ export default function BookingTestPage() {
               </button>
             )}
 
-            <p className="mt-5 text-center text-[9px] font-medium text-black/30">
+            <p className="mt-5 text-center text-[9px] font-medium text-[#6c7280] dark:text-white/58">
               RouteX · Getting Upington Moving
             </p>
           </>
@@ -1830,7 +1830,7 @@ export default function BookingTestPage() {
                   <div className="relative flex h-16 w-16 items-center justify-center">
                     <span className="absolute h-16 w-16 animate-ping rounded-full bg-[#ff6846]/10" />
 
-                    <span className="relative flex h-12 w-12 items-center justify-center rounded-full bg-[#ff6846] shadow-[5px_5px_12px_rgba(0,0,0,0.12),-5px_-5px_12px_rgba(255,255,255,0.95)]">
+                    <span className="relative flex h-12 w-12 items-center justify-center rounded-full bg-[#ff6846] shadow-[5px_5px_13px_rgba(0,0,0,0.10),-5px_-5px_13px_rgba(255,255,255,0.95)] dark:shadow-[5px_5px_12px_rgba(0,0,0,0.12),-5px_-5px_12px_rgba(48,51,61,0.65)]">
                       <span className="h-4 w-4 rounded-full border-[3px] border-white" />
                     </span>
                   </div>
@@ -1839,14 +1839,14 @@ export default function BookingTestPage() {
                     Finding your driver...
                   </h2>
 
-                  <p className="mt-1.5 max-w-[280px] text-[10px] leading-5 text-black/45">
+                  <p className="mt-1.5 max-w-[280px] text-[10px] leading-5 text-[#6c7280] dark:text-white/73">
                     We're sending your request to nearby RouteX drivers.
                   </p>
                 </div>
 
                 {/* MAIN RIDE PANEL */}
 
-                <div className="mt-6 w-full rounded-[28px] bg-[#f8f8f8] p-5 text-left shadow-[12px_12px_24px_rgba(0,0,0,0.10),-10px_-10px_22px_rgba(255,255,255,0.95)]">
+                <div className="mt-6 w-full rounded-[28px] bg-[#e9ebf1] dark:bg-[#24262e] p-5 text-left shadow-[5px_5px_13px_rgba(0,0,0,0.10),-5px_-5px_13px_rgba(255,255,255,0.95)] dark:shadow-[12px_12px_24px_rgba(0,0,0,0.10),-10px_-10px_22px_rgba(48,51,61,0.65)]">
                   {/* HEADER */}
 
                   <div className="flex items-center justify-between">
@@ -1861,7 +1861,7 @@ export default function BookingTestPage() {
                         }`}
                       />
 
-                      <span className="text-[8px] font-semibold text-black/50">
+                      <span className="text-[8px] font-semibold text-[#6c7280] dark:text-white/78">
                         {onlineDrivers === 0
                           ? "No drivers online"
                           : `${onlineDrivers} online`}
@@ -1871,10 +1871,10 @@ export default function BookingTestPage() {
 
                   {/* ROUTE */}
 
-                  <div className="mt-5 rounded-[20px] bg-[#f8f8f8] p-4 shadow-[inset_3px_3px_7px_rgba(0,0,0,0.06),inset_-3px_-3px_7px_rgba(255,255,255,0.95)]">
+                  <div className="mt-5 rounded-[20px] bg-[#e9ebf1] dark:bg-[#24262e] p-4 shadow-[inset_3px_3px_7px_rgba(0,0,0,0.10),inset_-3px_-3px_7px_rgba(255,255,255,0.9)] dark:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.06),inset_-3px_-3px_7px_rgba(48,51,61,0.65)]">
                     <div className="flex gap-4">
                       <div className="flex w-3 shrink-0 flex-col items-center">
-                        <span className="mt-1 h-3 w-3 rounded-full border-[2px] border-[#17191f] bg-[#f8f8f8]" />
+                        <span className="mt-1 h-3 w-3 rounded-full border-[2px] border-[#17191f] dark:border-[#17191f] bg-[#e9ebf1] dark:bg-[#24262e]" />
 
                         <span className="my-1.5 h-9 w-px bg-[#e95432]/45" />
 
@@ -1883,21 +1883,21 @@ export default function BookingTestPage() {
 
                       <div className="min-w-0 flex-1">
                         <div>
-                          <p className="truncate text-[14px] font-bold tracking-[-0.015em] text-[#17191f]">
+                          <p className="truncate text-[14px] font-bold tracking-[-0.015em] text-[#17191f] dark:text-[#f5f6f8]">
                             {selectedPickup?.address}
                           </p>
 
-                          <p className="mt-1 text-[7px] font-semibold uppercase tracking-[0.14em] text-black/30">
+                          <p className="mt-1 text-[7px] font-semibold uppercase tracking-[0.14em] text-[#6c7280] dark:text-white/58">
                             Pickup
                           </p>
                         </div>
 
                         <div className="mt-5">
-                          <p className="truncate text-[14px] font-bold tracking-[-0.015em] text-[#17191f]">
+                          <p className="truncate text-[14px] font-bold tracking-[-0.015em] text-[#17191f] dark:text-[#f5f6f8]">
                             {selectedDestination?.address}
                           </p>
 
-                          <p className="mt-1 text-[7px] font-semibold uppercase tracking-[0.14em] text-black/30">
+                          <p className="mt-1 text-[7px] font-semibold uppercase tracking-[0.14em] text-[#6c7280] dark:text-white/58">
                             Destination
                           </p>
                         </div>
@@ -1909,7 +1909,7 @@ export default function BookingTestPage() {
 
                   <div className="mt-5 flex items-end justify-between px-1">
                     <div>
-                      <p className="text-[7px] font-semibold uppercase tracking-[0.15em] text-black/30">
+                      <p className="text-[7px] font-semibold uppercase tracking-[0.15em] text-[#6c7280] dark:text-white/58">
                         Estimated fare
                       </p>
 
@@ -1919,11 +1919,11 @@ export default function BookingTestPage() {
                     </div>
 
                     <div className="text-right">
-                      <p className="text-[7px] font-semibold uppercase tracking-[0.15em] text-black/25">
+                      <p className="text-[7px] font-semibold uppercase tracking-[0.15em] text-[#6c7280] dark:text-white/53">
                         Ride type
                       </p>
 
-                      <p className="mt-1 text-[9px] font-semibold text-[#17191f]">
+                      <p className="mt-1 text-[9px] font-semibold text-[#17191f] dark:text-[#f5f6f8]">
                         Ride Now
                       </p>
                     </div>
@@ -1931,23 +1931,23 @@ export default function BookingTestPage() {
 
                   {/* SEARCH STATUS */}
 
-                  <div className="mt-5 rounded-[20px] bg-[#202126] px-4 py-3.5 shadow-[inset_3px_3px_7px_rgba(0,0,0,0.35),6px_6px_12px_rgba(0,0,0,0.10)]">
+                  <div className="mt-5 rounded-[20px] bg-[#e1e3e9] dark:bg-[#202126] px-4 py-3.5 shadow-[inset_3px_3px_7px_rgba(0,0,0,0.35),6px_6px_12px_rgba(0,0,0,0.10)]">
                     <div className="flex items-center justify-between gap-4">
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
                           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#ff6846]" />
 
-                          <p className="text-[8px] font-semibold uppercase tracking-[0.13em] text-white/75">
+                          <p className="text-[8px] font-semibold uppercase tracking-[0.13em] text-[#6c7280] dark:text-white/75">
                             Finding your driver
                           </p>
                         </div>
 
-                        <p className="mt-1 text-[7px] font-normal text-white/35">
+                        <p className="mt-1 text-[7px] font-normal text-[#6c7280] dark:text-white/35">
                           Searching nearby RouteX drivers
                         </p>
                       </div>
 
-                      <p className="shrink-0 text-[23px] font-bold tracking-[-0.04em] text-white">
+                      <p className="shrink-0 text-[23px] font-bold tracking-[-0.04em] text-[#17191f] dark:text-white">
                         {Math.floor(searchSecondsLeft / 60)}:
                         {String(searchSecondsLeft % 60).padStart(2, "0")}
                       </p>
@@ -1958,7 +1958,7 @@ export default function BookingTestPage() {
 
                   {availableDrivers.length > 0 && (
                     <div className="mt-5">
-                      <p className="mb-2 px-1 text-[7px] font-semibold uppercase tracking-[0.15em] text-black/30">
+                      <p className="mb-2 px-1 text-[7px] font-semibold uppercase tracking-[0.15em] text-[#6c7280] dark:text-white/58">
                         Available nearby
                       </p>
 
@@ -1966,9 +1966,9 @@ export default function BookingTestPage() {
                         <div
                           key={driver.id}
 
-                          className="mb-2 flex items-center gap-3 rounded-[16px] bg-[#f8f8f8] px-3 py-3 shadow-[5px_5px_10px_rgba(0,0,0,0.06),-4px_-4px_9px_rgba(255,255,255,0.95)]"
+                          className="mb-2 flex items-center gap-3 rounded-[16px] bg-[#e9ebf1] dark:bg-[#24262e] px-3 py-3 shadow-[5px_5px_13px_rgba(0,0,0,0.10),-5px_-5px_13px_rgba(255,255,255,0.95)] dark:shadow-[5px_5px_10px_rgba(0,0,0,0.06),-4px_-4px_9px_rgba(48,51,61,0.65)]"
                         >
-                          <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-[#f8f8f8] shadow-[inset_2px_2px_4px_rgba(0,0,0,0.07),inset_-2px_-2px_4px_rgba(255,255,255,1)]">
+                          <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-[#e9ebf1] dark:bg-[#24262e] shadow-[inset_3px_3px_7px_rgba(0,0,0,0.10),inset_-3px_-3px_7px_rgba(255,255,255,0.9)] dark:shadow-[inset_2px_2px_4px_rgba(0,0,0,0.07),inset_-2px_-2px_4px_rgba(48,51,61,0.85)]">
                             {driver.profile_image ? (
                               <img
                                 src={driver.profile_image}
@@ -1986,11 +1986,11 @@ export default function BookingTestPage() {
                           </div>
 
                           <div className="min-w-0 flex-1">
-                            <p className="truncate text-[10px] font-semibold text-[#17191f]">
+                            <p className="truncate text-[10px] font-semibold text-[#17191f] dark:text-[#f5f6f8]">
                               {driver.first_name}
                             </p>
 
-                            <p className="mt-0.5 truncate text-[7px] font-normal text-black/40">
+                            <p className="mt-0.5 truncate text-[7px] font-normal text-[#6c7280] dark:text-white/68">
                               {[driver.vehicle_color, driver.vehicle_type]
 
                                 .filter(Boolean)
@@ -1999,7 +1999,7 @@ export default function BookingTestPage() {
                             </p>
 
                             {driver.distance_km && (
-                              <p className="mt-0.5 text-[7px] font-normal text-black/25">
+                              <p className="mt-0.5 text-[7px] font-normal text-[#6c7280] dark:text-white/53">
                                 {driver.distance_km} km away
                               </p>
                             )}
@@ -2020,19 +2020,19 @@ export default function BookingTestPage() {
 
                     onClick={cancelBooking}
 
-                    className="mt-5 w-full rounded-[15px] bg-[#e95432] px-5 py-3 text-[10px] font-semibold text-white shadow-[5px_5px_11px_rgba(0,0,0,0.12),-4px_-4px_9px_rgba(255,255,255,0.95)] transition active:scale-[0.985] active:shadow-[inset_3px_3px_6px_rgba(0,0,0,0.16),inset_-2px_-2px_5px_rgba(255,255,255,0.7)]"
+                    className="mt-5 w-full rounded-[15px] bg-[#e95432] px-5 py-3 text-[10px] font-semibold text-[#17191f] dark:text-white shadow-[5px_5px_13px_rgba(0,0,0,0.10),-5px_-5px_13px_rgba(255,255,255,0.95)] dark:shadow-[5px_5px_11px_rgba(0,0,0,0.12),-4px_-4px_9px_rgba(48,51,61,0.65)] transition active:scale-[0.985] active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.10),inset_-3px_-3px_7px_rgba(255,255,255,0.9)] dark:active:shadow-[inset_3px_3px_6px_rgba(0,0,0,0.16),inset_-2px_-2px_5px_rgba(48,51,61,0.65)]"
                   >
                     Cancel booking
                   </button>
                 </div>
 
-                <p className="mt-4 text-[8px] font-medium text-black/25">
+                <p className="mt-4 text-[8px] font-medium text-[#6c7280] dark:text-white/53">
                   We will keep searching until the timer reaches zero.
                 </p>
               </>
             ) : (
               <>
-                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#f3f3f3] text-[24px] font-black text-black/35">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#f0f1f5] dark:bg-[#292c35] text-[24px] font-black text-[#6c7280] dark:text-white/63">
                   ×
                 </div>
 
@@ -2040,7 +2040,7 @@ export default function BookingTestPage() {
                   No driver accepted your ride
                 </h2>
 
-                <p className="mt-2 max-w-[300px] text-[11px] leading-5 text-black/40">
+                <p className="mt-2 max-w-[300px] text-[11px] leading-5 text-[#6c7280] dark:text-white/68">
                   No RouteX driver accepted your ride within 10 minutes. You can
                   try again or schedule the ride for later.
                 </p>
@@ -2054,7 +2054,7 @@ export default function BookingTestPage() {
                     setActiveBookingId(null);
                   }}
 
-                  className="mt-7 w-full rounded-[17px] bg-[#17191f] px-5 py-4 text-[13px] font-black text-white"
+                  className="mt-7 w-full rounded-[17px] bg-[#17191f] dark:bg-[#17191f] px-5 py-4 text-[13px] font-black text-[#17191f] dark:text-white"
                 >
                   Try again
                 </button>
@@ -2083,8 +2083,8 @@ export default function BookingTestPage() {
       {/* PICKUP SEARCH */}
 
       {showPickupSearch && (
-        <div className="fixed inset-0 z-[100] bg-white">
-          <div className="mx-auto h-[100dvh] w-full max-w-md overflow-y-auto bg-white px-5 pb-6 pt-4">
+        <div className="fixed inset-0 z-[100] bg-[#e9ebf1] dark:bg-[#1c1e24]">
+          <div className="mx-auto h-[100dvh] w-full max-w-md overflow-y-auto bg-[#e9ebf1] dark:bg-[#1c1e24] px-5 pb-6 pt-4">
             <div className="flex items-center">
               <button
                 type="button"
@@ -2099,7 +2099,7 @@ export default function BookingTestPage() {
                   setPickupSearchFinished(false);
                 }}
 
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f5f5f5]"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f1f2f6] dark:bg-[#15171c]"
               >
                 <BackIcon />
               </button>
@@ -2112,7 +2112,7 @@ export default function BookingTestPage() {
                 Where should we pick you up?
               </h2>
 
-              <p className="mt-2 text-[11px] font-medium text-black/40">
+              <p className="mt-2 text-[11px] font-medium text-[#6c7280] dark:text-white/68">
                 Search for your street, address or place.
               </p>
             </div>
@@ -2161,7 +2161,7 @@ export default function BookingTestPage() {
 
 
 
-  bg-white
+  bg-[#e9ebf1] dark:bg-[#1c1e24]
 
 
 
@@ -2173,7 +2173,7 @@ export default function BookingTestPage() {
 
 
 
-  shadow-[5px_5px_14px_rgba(0,0,0,0.07),-5px_-5px_14px_rgba(255,255,255,1)]
+  shadow-[5px_5px_13px_rgba(0,0,0,0.10),-5px_-5px_13px_rgba(255,255,255,0.95)] dark:shadow-[5px_5px_14px_rgba(0,0,0,0.07),-5px_-5px_14px_rgba(48,51,61,0.85)]
 
 
 
@@ -2199,7 +2199,7 @@ export default function BookingTestPage() {
 
 "
               >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#fff0eb] text-[#ff6846]">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#fff0e9] dark:bg-[#35241f] text-[#ff6846]">
                   <GpsIcon />
                 </span>
 
@@ -2210,7 +2210,7 @@ export default function BookingTestPage() {
                       : "Use my current location"}
                   </span>
 
-                  <span className="mt-0.5 block text-[9px] font-medium text-black/35">
+                  <span className="mt-0.5 block text-[9px] font-medium text-[#6c7280] dark:text-white/63">
                     Use your phone's GPS pickup point
                   </span>
                 </span>
@@ -2287,8 +2287,8 @@ export default function BookingTestPage() {
       {/* DESTINATION SEARCH */}
 
       {showDestinationSearch && (
-        <div className="fixed inset-0 z-[100] bg-white">
-          <div className="mx-auto h-[100dvh] w-full max-w-md overflow-y-auto bg-white px-5 pb-6 pt-4">
+        <div className="fixed inset-0 z-[100] bg-[#e9ebf1] dark:bg-[#1c1e24]">
+          <div className="mx-auto h-[100dvh] w-full max-w-md overflow-y-auto bg-[#e9ebf1] dark:bg-[#1c1e24] px-5 pb-6 pt-4">
             <div className="flex items-center">
               <button
                 type="button"
@@ -2303,7 +2303,7 @@ export default function BookingTestPage() {
                   setDestinationSearchFinished(false);
                 }}
 
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f5f5f5]"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f1f2f6] dark:bg-[#15171c]"
               >
                 <BackIcon />
               </button>
@@ -2316,7 +2316,7 @@ export default function BookingTestPage() {
                 Where are you going?
               </h2>
 
-              <p className="mt-2 text-[11px] font-medium text-black/40">
+              <p className="mt-2 text-[11px] font-medium text-[#6c7280] dark:text-white/68">
                 Search for your destination.
               </p>
             </div>
@@ -2411,11 +2411,11 @@ export default function BookingTestPage() {
       {/* APP POPUP */}
 
       {appPopup && (
-        <div className="fixed inset-0 z-[10000] flex items-end justify-center bg-black/35 p-5 sm:items-center">
-          <div className="w-full max-w-sm rounded-[24px] bg-white p-5 shadow-2xl">
+        <div className="fixed inset-0 z-[10000] flex items-end justify-center bg-black/35 dark:bg-black/35 p-5 sm:items-center">
+          <div className="w-full max-w-sm rounded-[24px] bg-[#e9ebf1] dark:bg-[#1c1e24] p-5 shadow-2xl">
             <p className="text-[15px] font-black">{appPopup.title}</p>
 
-            <p className="mt-2 text-[11px] leading-5 text-black/50">
+            <p className="mt-2 text-[11px] leading-5 text-[#6c7280] dark:text-white/78">
               {appPopup.message}
             </p>
 
@@ -2424,7 +2424,7 @@ export default function BookingTestPage() {
 
               onClick={() => setAppPopup(null)}
 
-              className="mt-5 w-full rounded-[15px] bg-[#17191f] px-4 py-3.5 text-[11px] font-black text-white"
+              className="mt-5 w-full rounded-[15px] bg-[#ff6846] px-4 py-3.5 text-[11px] font-black text-[#17191f] dark:text-white"
             >
               OK
             </button>
@@ -2466,7 +2466,7 @@ function SearchBox({
 
 
 
-    bg-white
+    bg-[#e9ebf1] dark:bg-[#1c1e24]
 
 
 
@@ -2478,7 +2478,7 @@ function SearchBox({
 
 
 
-    shadow-[5px_5px_14px_rgba(0,0,0,0.08),-5px_-5px_14px_rgba(255,255,255,1)]
+    shadow-[5px_5px_13px_rgba(0,0,0,0.10),-5px_-5px_13px_rgba(255,255,255,0.95)] dark:shadow-[5px_5px_14px_rgba(0,0,0,0.08),-5px_-5px_14px_rgba(48,51,61,0.85)]
 
 
 
@@ -2515,7 +2515,7 @@ function SearchBox({
 
 
 
-          placeholder:text-black/30
+          placeholder:text-[#858a96] dark:placeholder:text-white/58
 
 
 
@@ -2540,7 +2540,7 @@ function SearchBox({
 
 
 
-            text-[20px] text-black/30
+            text-[20px] text-[#6c7280] dark:text-white/58
 
 
 
@@ -2593,7 +2593,7 @@ function AddressResults({
   if (!query.trim()) {
     return (
       <div className="mt-8 text-center">
-        <p className="text-[10px] font-semibold text-black/30">
+        <p className="text-[10px] font-semibold text-[#6c7280] dark:text-white/58">
           Start typing to search for your {type}.
         </p>
       </div>
@@ -2602,13 +2602,13 @@ function AddressResults({
 
   return (
     <div className="mt-2">
-      <p className="text-[9px] font-black uppercase tracking-[0.14em] text-black/30">
+      <p className="text-[9px] font-black uppercase tracking-[0.14em] text-[#6c7280] dark:text-white/58">
         Search results
       </p>
 
       {searching && (
         <div className="py-7 text-center">
-          <p className="text-[11px] font-semibold text-black/35">
+          <p className="text-[11px] font-semibold text-[#6c7280] dark:text-white/63">
             Searching...
           </p>
         </div>
@@ -2648,7 +2648,7 @@ function AddressResults({
 
 
 
-  ${index !== results.length - 1 ? "border-b border-black/[0.06]" : ""}
+  ${index !== results.length - 1 ? "border-b border-black/[0.07] dark:border-white/[0.07]" : ""}
 
 
 
@@ -2657,15 +2657,15 @@ function AddressResults({
               <span
                 className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
                   type === "destination"
-                    ? "bg-[#fff0eb]"
-                    : "bg-white border border-black/[0.06]"
+                    ? "bg-[#fff0e9] dark:bg-[#35241f]"
+                    : "bg-[#e9ebf1] dark:bg-[#1c1e24] border border-black/[0.07] dark:border-white/[0.07]"
                 }`}
               >
                 <span
                   className={
                     type === "destination"
                       ? "h-3 w-3 rounded-[3px] bg-[#ff6846]"
-                      : "h-3 w-3 rounded-full border-[3px] border-[#17191f]"
+                      : "h-3 w-3 rounded-full border-[3px] border-[#17191f] dark:border-[#17191f]"
                   }
                 />
               </span>
@@ -2675,22 +2675,22 @@ function AddressResults({
                   {result.address}
                 </span>
 
-                <span className="mt-0.5 block truncate text-[9px] font-medium text-black/40">
+                <span className="mt-0.5 block truncate text-[9px] font-medium text-[#6c7280] dark:text-white/68">
                   {result.area_name || result.full_address}
                 </span>
               </span>
 
-              <span className="text-[20px] text-black/20">›</span>
+              <span className="text-[20px] text-[#6c7280] dark:text-white/48">›</span>
             </button>
           ))}
         </div>
       )}
 
       {!searching && finished && results.length === 0 && (
-        <div className="mt-3 rounded-[16px] bg-[#f7f7f7] p-4">
+        <div className="mt-3 rounded-[16px] bg-[#17191f] dark:bg-[#17191f] p-4">
           <p className="text-[11px] font-black">Can't find this address?</p>
 
-          <p className="mt-1 text-[9px] font-medium leading-4 text-black/40">
+          <p className="mt-1 text-[9px] font-medium leading-4 text-[#6c7280] dark:text-white/68">
             Choose the exact {type} point on the map.
           </p>
 
@@ -2699,7 +2699,7 @@ function AddressResults({
 
             onClick={onMap}
 
-            className="mt-3 w-full rounded-[14px] bg-[#17191f] px-4 py-3 text-[11px] font-black text-white active:scale-[0.985]"
+            className="mt-3 w-full rounded-[14px] bg-[#ff6846] px-4 py-3 text-[11px] font-black text-[#17191f] dark:text-white active:scale-[0.985]"
           >
             Choose {type} on map
           </button>
@@ -2752,7 +2752,7 @@ function SearchIcon() {
 
       strokeLinejoin="round"
 
-      className="shrink-0 text-black/35"
+      className="shrink-0 text-[#6c7280] dark:text-white/63"
     >
       <circle cx="11" cy="11" r="7" />
 

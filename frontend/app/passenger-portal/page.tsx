@@ -647,10 +647,10 @@ export default function PassengerPortalPage() {
   ======================================================= */
 
   return (
-    <main className="min-h-[100dvh] bg-[#e7e9ee] text-[#17191f]">
+    <main className="min-h-[100dvh] bg-[#e7e9ee] text-[#17191f] dark:bg-[#17191e] dark:text-[#f5f5f7]">
       {showBookingSuccess && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/35 px-5 backdrop-blur-[3px]">
-          <div className="w-full max-w-[350px] rounded-[28px] bg-[#e7e9ee] p-6 text-[#17191f] shadow-[10px_10px_30px_rgba(0,0,0,0.25),-6px_-6px_18px_rgba(255,255,255,0.8)]">
+          <div className="w-full max-w-[350px] rounded-[28px] bg-[#e7e9ee] p-6 text-[#17191f] shadow-[10px_10px_30px_rgba(0,0,0,0.25),-6px_-6px_18px_rgba(255,255,255,0.8)] dark:bg-[#17191e] dark:text-[#f5f5f7] dark:shadow-[6px_6px_14px_rgba(0,0,0,0.48),-5px_-5px_12px_rgba(255,255,255,0.035)]">
             <div className="flex justify-center">
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#ff6846] text-white">
                 <svg
@@ -674,21 +674,21 @@ export default function PassengerPortalPage() {
               <h2 className="mt-2 text-[24px] font-black tracking-[-0.045em]">
                 {bookingWasScheduled ? "Ride scheduled" : "Ride requested"}
               </h2>
-              <p className="mx-auto mt-2 max-w-[260px] text-[11px] font-semibold leading-5 text-[#85888f]">
+              <p className="mx-auto mt-2 max-w-[260px] text-[11px] font-semibold leading-5 text-[#85888f] dark:text-[#aeb1bd]">
                 {bookingWasScheduled
                   ? "Your ride is booked. RouteX will start matching you with a driver closer to your pickup time."
                   : "Your request has been sent. Nearby RouteX drivers can now accept your ride."}
               </p>
             </div>
             {bookingWasScheduled && (
-              <div className="mt-5 rounded-[18px] bg-[#e7e9ee] px-4 py-3 shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff]">
+              <div className="mt-5 rounded-[18px] bg-[#e7e9ee] px-4 py-3 shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff] dark:bg-[#17191e] dark:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.52),inset_-3px_-3px_7px_rgba(255,255,255,0.035)]">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-[#17191f] text-[#ff6846]">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-[#17191f] text-[#ff6846] dark:bg-[#292c35]">
                     <ClockIcon />
                   </div>
                   <div>
                     <p className="text-[10px] font-black">Scheduled</p>
-                    <p className="mt-0.5 text-[8px] font-semibold text-[#8d9097]">
+                    <p className="mt-0.5 text-[8px] font-semibold text-[#8d9097] dark:text-[#aeb1bd]">
                       Driver matching opens closer to pickup time.
                     </p>
                   </div>
@@ -698,7 +698,7 @@ export default function PassengerPortalPage() {
             <button
               type="button"
               onClick={closeBookingSuccess}
-              className="mt-6 flex w-full items-center justify-center rounded-[16px] bg-[#17191f] px-5 py-4 text-[12px] font-black text-white"
+              className="mt-6 flex w-full items-center justify-center rounded-[16px] bg-[#17191f] px-5 py-4 text-[12px] font-black text-white dark:bg-[#292c35]"
             >
               Done
             </button>
@@ -711,11 +711,11 @@ export default function PassengerPortalPage() {
             Route<span className="text-[#ff6846]">X</span>
           </h1>
 
-          <div className="flex items-center gap-2 rounded-full bg-[#e7e9ee] px-3 py-2 shadow-[3px_3px_7px_#c5c7cc,-3px_-3px_7px_#ffffff]">
+          <div className="flex items-center gap-2 rounded-full bg-[#e7e9ee] px-3 py-2 shadow-[3px_3px_7px_#c5c7cc,-3px_-3px_7px_#ffffff] dark:bg-[#17191e] dark:shadow-[6px_6px_14px_rgba(0,0,0,0.48),-5px_-5px_12px_rgba(255,255,255,0.035)]">
             <span
               className={`relative inline-flex h-2 w-2 rounded-full ${onlineDrivers > 0 ? "bg-[#ff6846]" : "bg-[#aeb1b7]"}`}
             />
-            <span className="text-[10px] font-extrabold text-[#777a81]">
+            <span className="text-[10px] font-extrabold text-[#777a81] dark:text-[#aeb1bd]">
               {onlineDrivers} online
             </span>
           </div>
@@ -730,16 +730,16 @@ export default function PassengerPortalPage() {
               <h2 className="mt-2 text-[29px] font-black leading-none tracking-[-0.045em]">
                 Hi, {firstName}
               </h2>
-              <p className="mt-2 text-[14px] font-medium text-[#7c7f86]">
+              <p className="mt-2 text-[14px] font-medium text-[#7c7f86] dark:text-[#aeb1bd]">
                 Where are you going today?
               </p>
             </div>
 
             <div className="relative shrink-0">
-              <div className="relative flex h-[92px] w-[92px] items-center justify-center rounded-[30px] bg-[#e7e9ee] shadow-[8px_8px_18px_#c1c3c8,-8px_-8px_18px_#ffffff]">
-                <div className="absolute -right-[3px] top-[18px] h-9 w-[5px] rounded-full bg-[#ff6846] shadow-[0_2px_5px_rgba(255,104,70,0.35)]" />
-                <div className="flex h-[72px] w-[72px] items-center justify-center rounded-full bg-[#e7e9ee] p-[5px] shadow-[inset_5px_5px_10px_#c2c4c9,inset_-5px_-5px_10px_#ffffff]">
-                  <div className="relative h-full w-full overflow-hidden rounded-full bg-[#dfe1e6] shadow-[2px_2px_5px_rgba(80,82,88,0.16)]">
+              <div className="relative flex h-[92px] w-[92px] items-center justify-center rounded-[30px] bg-[#e7e9ee] shadow-[8px_8px_18px_#c1c3c8,-8px_-8px_18px_#ffffff] dark:bg-[#17191e] dark:shadow-[6px_6px_14px_rgba(0,0,0,0.48),-5px_-5px_12px_rgba(255,255,255,0.035)]">
+                <div className="absolute -right-[3px] top-[18px] h-9 w-[5px] rounded-full bg-[#ff6846] shadow-[0_2px_5px_rgba(255,104,70,0.35)] dark:shadow-[6px_6px_14px_rgba(0,0,0,0.48),-5px_-5px_12px_rgba(255,255,255,0.035)]" />
+                <div className="flex h-[72px] w-[72px] items-center justify-center rounded-full bg-[#e7e9ee] p-[5px] shadow-[inset_5px_5px_10px_#c2c4c9,inset_-5px_-5px_10px_#ffffff] dark:bg-[#17191e] dark:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.52),inset_-3px_-3px_7px_rgba(255,255,255,0.035)]">
+                  <div className="relative h-full w-full overflow-hidden rounded-full bg-[#dfe1e6] shadow-[2px_2px_5px_rgba(80,82,88,0.16)] dark:bg-[#292c35] dark:shadow-[6px_6px_14px_rgba(0,0,0,0.48),-5px_-5px_12px_rgba(255,255,255,0.035)]">
                     {photo ? (
                       <img
                         src={photoPreviewUrl}
@@ -755,7 +755,7 @@ export default function PassengerPortalPage() {
                       />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center">
-                        <span className="text-[22px] font-black text-[#a0a3aa]">
+                        <span className="text-[22px] font-black text-[#a0a3aa] dark:text-[#aeb1bd]">
                           {firstName.charAt(0).toUpperCase()}
                         </span>
                       </div>
@@ -766,7 +766,7 @@ export default function PassengerPortalPage() {
 
               <label
                 title="Change profile photo"
-                className="absolute -bottom-2 -right-2 flex h-9 w-9 cursor-pointer items-center justify-center rounded-[13px] bg-[#ff6846] text-white shadow-[4px_4px_8px_#bfc1c6,-3px_-3px_7px_#ffffff] transition hover:scale-105 active:scale-90"
+                className="absolute -bottom-2 -right-2 flex h-9 w-9 cursor-pointer items-center justify-center rounded-[13px] bg-[#ff6846] text-white shadow-[4px_4px_8px_#bfc1c6,-3px_-3px_7px_#ffffff] transition hover:scale-105 active:scale-90 dark:shadow-[6px_6px_14px_rgba(0,0,0,0.48),-5px_-5px_12px_rgba(255,255,255,0.035)]"
               >
                 <CameraIcon />
                 <input
@@ -790,22 +790,22 @@ export default function PassengerPortalPage() {
         <section className="mt-8">
           <a
             href="/bookings"
-            className="group flex w-full items-center justify-between rounded-[21px] bg-[#e7e9ee] px-4 py-4 text-left shadow-[6px_6px_13px_#c3c5ca,-6px_-6px_13px_#ffffff] transition active:scale-[0.985]"
+            className="group flex w-full items-center justify-between rounded-[21px] bg-[#e7e9ee] px-4 py-4 text-left shadow-[6px_6px_13px_#c3c5ca,-6px_-6px_13px_#ffffff] transition active:scale-[0.985] dark:bg-[#17191e] dark:shadow-[6px_6px_14px_rgba(0,0,0,0.48),-5px_-5px_12px_rgba(255,255,255,0.035)]"
           >
             <div className="flex min-w-0 items-center gap-3.5">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-[#ff6846] text-white shadow-[3px_3px_7px_#c2c4c9,-3px_-3px_7px_#ffffff]">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-[#ff6846] text-white shadow-[3px_3px_7px_#c2c4c9,-3px_-3px_7px_#ffffff] dark:shadow-[6px_6px_14px_rgba(0,0,0,0.48),-5px_-5px_12px_rgba(255,255,255,0.035)]">
                 <LocationIcon />
               </div>
               <div className="min-w-0">
                 <p className="text-[16px] font-black tracking-[-0.02em]">
                   Book a ride
                 </p>
-                <p className="mt-0.5 text-[11px] font-medium text-[#85888f]">
+                <p className="mt-0.5 text-[11px] font-medium text-[#85888f] dark:text-[#aeb1bd]">
                   Enter your pickup and destination
                 </p>
               </div>
             </div>
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#17191f] text-white">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#17191f] text-white dark:bg-[#292c35]">
               <ArrowRightIcon />
             </div>
           </a>
@@ -814,36 +814,36 @@ export default function PassengerPortalPage() {
             <div className="mt-3 flex items-center gap-2 px-1">
               <span className="h-2 w-2 rounded-full bg-[#ff6846]" />
 
-              <span className="text-[10px] font-bold text-[#85888f]">
+              <span className="text-[10px] font-bold text-[#85888f] dark:text-[#aeb1bd]">
                 {onlineDrivers} driver{onlineDrivers === 1 ? "" : "s"} available
                 now
               </span>
             </div>
           ) : (
-            <div className="mt-4 rounded-[18px] bg-[#e7e9ee] p-4 shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff]">
+            <div className="mt-4 rounded-[18px] bg-[#e7e9ee] p-4 shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff] dark:bg-[#17191e] dark:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.52),inset_-3px_-3px_7px_rgba(255,255,255,0.035)]">
               <div className="flex items-start gap-3">
                 <div className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-[#aeb1b7]" />
 
                 <div>
-                  <p className="text-[14px] font-black tracking-[-0.02em] text-[#17191f]">
+                  <p className="text-[14px] font-black tracking-[-0.02em] text-[#17191f] dark:text-[#f5f5f7]">
                     No drivers available right now
                   </p>
 
-                  <p className="mt-1.5 text-[10px] font-semibold leading-4 text-[#85888f]">
+                  <p className="mt-1.5 text-[10px] font-semibold leading-4 text-[#85888f] dark:text-[#aeb1bd]">
                     There are no drivers available to accept your ride at the
                     moment.
                   </p>
 
-                  <p className="mt-1 text-[10px] font-semibold leading-4 text-[#85888f]">
+                  <p className="mt-1 text-[10px] font-semibold leading-4 text-[#85888f] dark:text-[#aeb1bd]">
                     Try again shortly or schedule your ride for later.
                   </p>
 
-                  <div className="mt-4 rounded-[14px] bg-[#e7e9ee] px-3.5 py-3 shadow-[inset_2px_2px_5px_rgba(0,0,0,0.06),inset_-2px_-2px_5px_rgba(255,255,255,0.9)]">
+                  <div className="mt-4 rounded-[14px] bg-[#e7e9ee] px-3.5 py-3 shadow-[inset_2px_2px_5px_rgba(0,0,0,0.06),inset_-2px_-2px_5px_rgba(255,255,255,0.9)] dark:bg-[#17191e] dark:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.52),inset_-3px_-3px_7px_rgba(255,255,255,0.035)]">
                     <p className="text-[10px] font-black text-[#ff6846]">
                       Know someone who could drive with RouteX?
                     </p>
 
-                    <p className="mt-1 text-[9px] font-semibold leading-4 text-[#85888f]">
+                    <p className="mt-1 text-[9px] font-semibold leading-4 text-[#85888f] dark:text-[#aeb1bd]">
                       RouteX is growing and we're looking for more drivers in
                       your area.
                     </p>
@@ -857,7 +857,7 @@ export default function PassengerPortalPage() {
 
                         window.open(`https://wa.me/?text=${message}`, "_blank");
                       }}
-                      className="mt-3 inline-flex items-center rounded-full bg-white px-4 py-2 text-[9px] font-black text-[#17191f] shadow-[3px_3px_7px_rgba(0,0,0,0.08),-3px_-3px_7px_rgba(255,255,255,0.9)] transition active:scale-95"
+                      className="mt-3 inline-flex items-center rounded-full bg-white px-4 py-2 text-[9px] font-black text-[#17191f] shadow-[3px_3px_7px_rgba(0,0,0,0.08),-3px_-3px_7px_rgba(255,255,255,0.9)] transition active:scale-95 dark:bg-[#22252e] dark:text-[#f5f5f7] dark:shadow-[6px_6px_14px_rgba(0,0,0,0.48),-5px_-5px_12px_rgba(255,255,255,0.035)]"
                     >
                       Refer a driver →
                     </button>
@@ -880,24 +880,24 @@ export default function PassengerPortalPage() {
             {waitingTrips.map((trip) => (
               <div
                 key={trip.id}
-                className="mt-4 rounded-[23px] bg-[#e7e9ee] p-4 shadow-[6px_6px_14px_#c3c5ca,-6px_-6px_14px_#ffffff]"
+                className="mt-4 rounded-[23px] bg-[#e7e9ee] p-4 shadow-[6px_6px_14px_#c3c5ca,-6px_-6px_14px_#ffffff] dark:bg-[#17191e] dark:shadow-[6px_6px_14px_rgba(0,0,0,0.48),-5px_-5px_12px_rgba(255,255,255,0.035)]"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-extrabold text-[#777a81]">
+                  <span className="text-[10px] font-extrabold text-[#777a81] dark:text-[#aeb1bd]">
                     BK-{String(trip.id).padStart(4, "0")}
                   </span>
-                  <span className="rounded-full bg-[#fff0eb] px-3 py-1.5 text-[9px] font-extrabold text-[#ff6846]">
+                  <span className="rounded-full bg-[#fff0eb] px-3 py-1.5 text-[9px] font-extrabold text-[#ff6846] dark:bg-[#39251f]">
                     Waiting
                   </span>
                 </div>
 
-                <div className="mt-4 rounded-[17px] bg-[#e7e9ee] px-4 py-3.5 shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff]">
+                <div className="mt-4 rounded-[17px] bg-[#e7e9ee] px-4 py-3.5 shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff] dark:bg-[#17191e] dark:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.52),inset_-3px_-3px_7px_rgba(255,255,255,0.035)]">
                   <RoutePoint
                     type="pickup"
                     label="Pickup"
                     value={trip.pickup_address || "Pickup"}
                   />
-                  <div className="ml-[5px] h-4 border-l border-dashed border-[#b5b8be]" />
+                  <div className="ml-[5px] h-4 border-l border-dashed border-[#b5b8be] dark:border-[#525662]" />
                   <RoutePoint
                     type="destination"
                     label="Destination"
@@ -905,22 +905,22 @@ export default function PassengerPortalPage() {
                   />
                 </div>
 
-                <div className="mt-4 rounded-[15px] bg-white px-4 py-3 shadow-[inset_2px_2px_5px_rgba(0,0,0,0.05),inset_-2px_-2px_5px_#ffffff]">
+                <div className="mt-4 rounded-[15px] bg-white px-4 py-3 shadow-[inset_2px_2px_5px_rgba(0,0,0,0.05),inset_-2px_-2px_5px_#ffffff] dark:bg-[#22252e] dark:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.52),inset_-3px_-3px_7px_rgba(255,255,255,0.035)]">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className="h-2 w-2 rounded-full bg-green-500" />
 
-                      <span className="text-[10px] font-extrabold text-black/60">
+                      <span className="text-[10px] font-extrabold text-black/60 dark:text-[#f5f5f7] dark:text-white/70">
                         Drivers online
                       </span>
                     </div>
 
-                    <span className="text-[13px] font-black text-black">
+                    <span className="text-[13px] font-black text-black dark:text-[#f5f5f7]">
                       {onlineDrivers}
                     </span>
                   </div>
 
-                  <p className="mt-1.5 text-[9px] font-medium text-black/40">
+                  <p className="mt-1.5 text-[9px] font-medium text-black/40 dark:text-[#f5f5f7] dark:text-white/55">
                     {availableDrivers.length > 0
                       ? `${availableDrivers.length} nearby driver${
                           availableDrivers.length === 1 ? "" : "s"
@@ -932,7 +932,7 @@ export default function PassengerPortalPage() {
                 </div>
                 <div className="mt-4 flex items-end justify-between">
                   <div>
-                    <p className="text-[8px] font-extrabold uppercase tracking-[0.12em] text-[#9a9da3]">
+                    <p className="text-[8px] font-extrabold uppercase tracking-[0.12em] text-[#9a9da3] dark:text-[#aeb1bd]">
                       Your fare
                     </p>
 
@@ -951,7 +951,7 @@ export default function PassengerPortalPage() {
                         {Number(trip.discount_amount).toFixed(0)}
                       </p>
 
-                      <p className="mt-0.5 text-[8px] font-semibold text-[#9a9da3]">
+                      <p className="mt-0.5 text-[8px] font-semibold text-[#9a9da3] dark:text-[#aeb1bd]">
                         Original fare R
                         {Number(trip.fare_amount || 0).toFixed(0)}
                       </p>
@@ -961,7 +961,7 @@ export default function PassengerPortalPage() {
                 <button
                   type="button"
                   onClick={() => cancelBooking(trip.id)}
-                  className="mt-4 w-full rounded-[14px] bg-[#e7e9ee] py-3 text-[10px] font-extrabold text-[#ff6846] shadow-[3px_3px_7px_#c4c6ca,-3px_-3px_7px_#ffffff]"
+                  className="mt-4 w-full rounded-[14px] bg-[#e7e9ee] py-3 text-[10px] font-extrabold text-[#ff6846] shadow-[3px_3px_7px_#c4c6ca,-3px_-3px_7px_#ffffff] dark:bg-[#17191e] dark:shadow-[6px_6px_14px_rgba(0,0,0,0.48),-5px_-5px_12px_rgba(255,255,255,0.035)]"
                 >
                   Cancel booking
                 </button>
@@ -983,15 +983,15 @@ export default function PassengerPortalPage() {
                     : "Your driver is coming"}
                 </h3>
               </div>
-              <span className="rounded-full bg-[#17191f] px-3 py-1.5 text-[9px] font-extrabold text-white">
+              <span className="rounded-full bg-[#17191f] px-3 py-1.5 text-[9px] font-extrabold text-white dark:bg-[#292c35]">
                 {activeTrip.trip_status}
               </span>
             </div>
 
-            <div className="mt-4 rounded-[23px] bg-[#e7e9ee] p-4 shadow-[6px_6px_14px_#c3c5ca,-6px_-6px_14px_#ffffff]">
+            <div className="mt-4 rounded-[23px] bg-[#e7e9ee] p-4 shadow-[6px_6px_14px_#c3c5ca,-6px_-6px_14px_#ffffff] dark:bg-[#17191e] dark:shadow-[6px_6px_14px_rgba(0,0,0,0.48),-5px_-5px_12px_rgba(255,255,255,0.035)]">
               <div className="flex items-center gap-3">
-                <div className="relative flex h-[48px] w-[48px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#e7e9ee] p-[4px] shadow-[inset_3px_3px_7px_#c3c5ca,inset_-3px_-3px_7px_#ffffff]">
-                  <div className="absolute inset-[4px] flex items-center justify-center rounded-full bg-[#dfe1e6]">
+                <div className="relative flex h-[48px] w-[48px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#e7e9ee] p-[4px] shadow-[inset_3px_3px_7px_#c3c5ca,inset_-3px_-3px_7px_#ffffff] dark:bg-[#17191e] dark:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.52),inset_-3px_-3px_7px_rgba(255,255,255,0.035)]">
+                  <div className="absolute inset-[4px] flex items-center justify-center rounded-full bg-[#dfe1e6] dark:bg-[#292c35]">
                     <span className="text-[13px] font-black text-[#ff6846]">
                       {activeTrip.driver_name?.charAt(0)?.toUpperCase() || "D"}
                     </span>
@@ -1016,12 +1016,12 @@ export default function PassengerPortalPage() {
                   <p className="text-[14px] font-black">
                     {activeTrip.driver_name || "Your driver"}
                   </p>
-                  <p className="mt-0.5 truncate text-[11px] font-semibold text-[#777a81]">
+                  <p className="mt-0.5 truncate text-[11px] font-semibold text-[#777a81] dark:text-[#aeb1bd]">
                     {[activeTrip.vehicle_color, activeTrip.vehicle_type]
                       .filter(Boolean)
                       .join(" ") || "Vehicle assigned"}
                   </p>
-                  <p className="mt-0.5 text-[9px] font-bold text-[#a0a3a9]">
+                  <p className="mt-0.5 text-[9px] font-bold text-[#a0a3a9] dark:text-[#aeb1bd]">
                     {activeTrip.license_plate || ""}
                   </p>
                 </div>
@@ -1034,20 +1034,20 @@ export default function PassengerPortalPage() {
                         {Number(activeTrip.average_rating).toFixed(1)}
                       </span>
                     </div>
-                    <p className="mt-0.5 text-[8px] font-bold uppercase tracking-wide text-[#a0a3a9]">
+                    <p className="mt-0.5 text-[8px] font-bold uppercase tracking-wide text-[#a0a3a9] dark:text-[#aeb1bd]">
                       Driver
                     </p>
                   </div>
                 )}
               </div>
 
-              <div className="mt-4 rounded-[17px] bg-[#e7e9ee] px-4 py-3.5 shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff]">
+              <div className="mt-4 rounded-[17px] bg-[#e7e9ee] px-4 py-3.5 shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff] dark:bg-[#17191e] dark:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.52),inset_-3px_-3px_7px_rgba(255,255,255,0.035)]">
                 <RoutePoint
                   type="pickup"
                   label="Pickup"
                   value={activeTrip.pickup_address || "Pickup"}
                 />
-                <div className="ml-[5px] h-4 border-l border-dashed border-[#b5b8be]" />
+                <div className="ml-[5px] h-4 border-l border-dashed border-[#b5b8be] dark:border-[#525662]" />
                 <RoutePoint
                   type="destination"
                   label="Destination"
@@ -1056,7 +1056,7 @@ export default function PassengerPortalPage() {
               </div>
               <div className="mt-4 flex items-end justify-between">
                 <div>
-                  <p className="text-[8px] font-extrabold uppercase tracking-[0.12em] text-[#9a9da3]">
+                  <p className="text-[8px] font-extrabold uppercase tracking-[0.12em] text-[#9a9da3] dark:text-[#aeb1bd]">
                     Your fare
                   </p>
 
@@ -1077,7 +1077,7 @@ export default function PassengerPortalPage() {
                       {Number(activeTrip.discount_amount).toFixed(0)}
                     </p>
 
-                    <p className="mt-0.5 text-[8px] font-semibold text-[#9a9da3]">
+                    <p className="mt-0.5 text-[8px] font-semibold text-[#9a9da3] dark:text-[#aeb1bd]">
                       Original fare R
                       {Number(activeTrip.fare_amount || 0).toFixed(0)}
                     </p>
@@ -1097,7 +1097,7 @@ export default function PassengerPortalPage() {
                       onClick={() =>
                         router.push(`/passenger?booking=${activeTrip.id}`)
                       }
-                      className="rounded-[14px] bg-[#17191f] py-3 text-[10px] font-extrabold text-white transition active:scale-[0.98]"
+                      className="rounded-[14px] bg-[#17191f] py-3 text-[10px] font-extrabold text-white transition active:scale-[0.98] dark:bg-[#292c35]"
                     >
                       Track driver
                     </button>
@@ -1112,7 +1112,7 @@ export default function PassengerPortalPage() {
                     )}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center justify-center rounded-[14px] bg-[#e7e9ee] py-3 text-[10px] font-extrabold text-[#ff6846] shadow-[3px_3px_7px_#c4c6ca,-3px_-3px_7px_#ffffff]"
+                    className="flex items-center justify-center rounded-[14px] bg-[#e7e9ee] py-3 text-[10px] font-extrabold text-[#ff6846] shadow-[3px_3px_7px_#c4c6ca,-3px_-3px_7px_#ffffff] dark:bg-[#17191e] dark:shadow-[6px_6px_14px_rgba(0,0,0,0.48),-5px_-5px_12px_rgba(255,255,255,0.035)]"
                   >
                     Contact driver
                   </a>
@@ -1123,12 +1123,12 @@ export default function PassengerPortalPage() {
               {activeScheduledRide && (
                 <>
                   {!activeScheduledRide.pickup_location_confirmed_at ? (
-                    <div className="mt-4 rounded-[17px] bg-white p-4 shadow-[5px_5px_12px_rgba(0,0,0,0.08),-5px_-5px_12px_rgba(255,255,255,1)]">
-                      <p className="text-[11px] font-extrabold text-[#17191f]">
+                    <div className="mt-4 rounded-[17px] bg-white p-4 shadow-[5px_5px_12px_rgba(0,0,0,0.08),-5px_-5px_12px_rgba(255,255,255,1)] dark:bg-[#22252e] dark:shadow-[6px_6px_14px_rgba(0,0,0,0.48),-5px_-5px_12px_rgba(255,255,255,0.035)]">
+                      <p className="text-[11px] font-extrabold text-[#17191f] dark:text-[#f5f5f7]">
                         Confirm your pickup location
                       </p>
 
-                      <p className="mt-1 text-[9px] font-medium leading-relaxed text-[#85888f]">
+                      <p className="mt-1 text-[9px] font-medium leading-relaxed text-[#85888f] dark:text-[#aeb1bd]">
                         When you are at your pickup point, confirm your location
                         so your driver can navigate directly to you.
                       </p>
@@ -1144,12 +1144,12 @@ export default function PassengerPortalPage() {
                       </button>
                     </div>
                   ) : (
-                    <div className="mt-4 rounded-[17px] bg-white p-4 text-center shadow-[inset_3px_3px_7px_rgba(0,0,0,0.06),inset_-3px_-3px_7px_rgba(255,255,255,1)]">
-                      <p className="text-[11px] font-extrabold text-[#17191f]">
+                    <div className="mt-4 rounded-[17px] bg-white p-4 text-center shadow-[inset_3px_3px_7px_rgba(0,0,0,0.06),inset_-3px_-3px_7px_rgba(255,255,255,1)] dark:bg-[#22252e] dark:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.52),inset_-3px_-3px_7px_rgba(255,255,255,0.035)]">
+                      <p className="text-[11px] font-extrabold text-[#17191f] dark:text-[#f5f5f7]">
                         ✓ Pickup location confirmed
                       </p>
 
-                      <p className="mt-1 text-[9px] font-medium text-[#85888f]">
+                      <p className="mt-1 text-[9px] font-medium text-[#85888f] dark:text-[#aeb1bd]">
                         Your driver will use this location for navigation.
                       </p>
                     </div>
@@ -1220,29 +1220,29 @@ export default function PassengerPortalPage() {
                   </div>
 
                   {liveScheduled.length > 0 && (
-                    <span className="flex h-7 min-w-7 items-center justify-center rounded-full bg-[#17191f] px-2 text-[9px] font-black text-white">
+                    <span className="flex h-7 min-w-7 items-center justify-center rounded-full bg-[#17191f] px-2 text-[9px] font-black text-white dark:bg-[#292c35]">
                       {liveScheduled.length}
                     </span>
                   )}
                 </div>
 
                 {scheduledLoading ? (
-                  <div className="mt-4 rounded-[21px] bg-[#e7e9ee] px-4 py-5 text-center shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff]">
-                    <p className="text-[10px] font-bold text-[#8d9097]">
+                  <div className="mt-4 rounded-[21px] bg-[#e7e9ee] px-4 py-5 text-center shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff] dark:bg-[#17191e] dark:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.52),inset_-3px_-3px_7px_rgba(255,255,255,0.035)]">
+                    <p className="text-[10px] font-bold text-[#8d9097] dark:text-[#aeb1bd]">
                       Loading ride...
                     </p>
                   </div>
                 ) : liveScheduled.length === 0 ? (
-                  <div className="mt-4 rounded-[21px] bg-[#e7e9ee] px-4 py-5 shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff]">
+                  <div className="mt-4 rounded-[21px] bg-[#e7e9ee] px-4 py-5 shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff] dark:bg-[#17191e] dark:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.52),inset_-3px_-3px_7px_rgba(255,255,255,0.035)]">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[13px] bg-[#17191f] text-[#ff6846]">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[13px] bg-[#17191f] text-[#ff6846] dark:bg-[#292c35]">
                         <ClockIcon />
                       </div>
                       <div>
                         <p className="text-[11px] font-extrabold">
                           No active scheduled ride
                         </p>
-                        <p className="mt-0.5 text-[9px] font-medium text-[#92959b]">
+                        <p className="mt-0.5 text-[9px] font-medium text-[#92959b] dark:text-[#aeb1bd]">
                           Future bookings will appear here.
                         </p>
                       </div>
@@ -1298,15 +1298,15 @@ export default function PassengerPortalPage() {
                       return (
                         <div
                           key={ride.id}
-                          className="rounded-[23px] bg-[#e7e9ee] p-4 shadow-[6px_6px_14px_#c3c5ca,-6px_-6px_14px_#ffffff]"
+                          className="rounded-[23px] bg-[#e7e9ee] p-4 shadow-[6px_6px_14px_#c3c5ca,-6px_-6px_14px_#ffffff] dark:bg-[#17191e] dark:shadow-[6px_6px_14px_rgba(0,0,0,0.48),-5px_-5px_12px_rgba(255,255,255,0.035)]"
                         >
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex items-center gap-3">
-                              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-[#ff6846] text-white shadow-[3px_3px_7px_#c2c4c9,-3px_-3px_7px_#ffffff]">
+                              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-[#ff6846] text-white shadow-[3px_3px_7px_#c2c4c9,-3px_-3px_7px_#ffffff] dark:shadow-[6px_6px_14px_rgba(0,0,0,0.48),-5px_-5px_12px_rgba(255,255,255,0.035)]">
                                 <ClockIcon />
                               </div>
                               <div>
-                                <p className="text-[9px] font-extrabold uppercase tracking-[0.12em] text-[#96999f]">
+                                <p className="text-[9px] font-extrabold uppercase tracking-[0.12em] text-[#96999f] dark:text-[#aeb1bd]">
                                   Pickup time
                                 </p>
                                 <p className="mt-1 text-[14px] font-black">
@@ -1324,13 +1324,13 @@ export default function PassengerPortalPage() {
                             </span>
                           </div>
 
-                          <div className="mt-4 rounded-[17px] bg-[#e7e9ee] px-4 py-3.5 shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff]">
+                          <div className="mt-4 rounded-[17px] bg-[#e7e9ee] px-4 py-3.5 shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff] dark:bg-[#17191e] dark:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.52),inset_-3px_-3px_7px_rgba(255,255,255,0.035)]">
                             <RoutePoint
                               type="pickup"
                               label="Pickup"
                               value={ride.pickup_address}
                             />
-                            <div className="ml-[5px] h-4 border-l border-dashed border-[#b5b8be]" />
+                            <div className="ml-[5px] h-4 border-l border-dashed border-[#b5b8be] dark:border-[#525662]" />
                             <RoutePoint
                               type="destination"
                               label="Destination"
@@ -1340,7 +1340,7 @@ export default function PassengerPortalPage() {
 
                           <div className="mt-4 flex items-center justify-between gap-3">
                             <div>
-                              <p className="text-[8px] font-extrabold uppercase tracking-[0.12em] text-[#9a9da3]">
+                              <p className="text-[8px] font-extrabold uppercase tracking-[0.12em] text-[#9a9da3] dark:text-[#aeb1bd]">
                                 Fare
                               </p>
                               <p className="mt-0.5 text-[16px] font-black">
@@ -1359,7 +1359,7 @@ export default function PassengerPortalPage() {
                                     {Number(ride.discount_amount).toFixed(0)}
                                   </p>
 
-                                  <p className="text-[8px] font-semibold text-[#9a9da3]">
+                                  <p className="text-[8px] font-semibold text-[#9a9da3] dark:text-[#aeb1bd]">
                                     Original fare R
                                     {Number(ride.fare_amount || 0).toFixed(0)}
                                   </p>
@@ -1369,7 +1369,7 @@ export default function PassengerPortalPage() {
 
                             {(isScheduled || isWaiting) && (
                               <div className="max-w-[190px] text-right">
-                                <p className="text-[9px] font-bold text-[#85888f]">
+                                <p className="text-[9px] font-bold text-[#85888f] dark:text-[#aeb1bd]">
                                   {isWaiting
                                     ? "RouteX is finding your driver."
                                     : matchingText
@@ -1387,8 +1387,8 @@ export default function PassengerPortalPage() {
                           </div>
 
                           {(isAccepted || isInProgress) && ride.driver_name && (
-                            <div className="mt-4 flex items-center gap-3 rounded-[17px] bg-[#17191f] p-3 text-white">
-                              <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#2a2d34]">
+                            <div className="mt-4 flex items-center gap-3 rounded-[17px] bg-[#17191f] p-3 text-white dark:bg-[#292c35]">
+                              <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#2a2d34] dark:bg-[#30343f]">
                                 {ride.driver_profile_image ? (
                                   <img
                                     src={ride.driver_profile_image}
@@ -1435,12 +1435,12 @@ export default function PassengerPortalPage() {
                             </div>
                           )}
                           {isAccepted && !ride.pickup_location_confirmed_at && (
-                            <div className="mt-4 rounded-[17px] bg-[#e7e9ee] p-4 shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff]">
-                              <p className="text-[10px] font-extrabold text-[#17191f]">
+                            <div className="mt-4 rounded-[17px] bg-[#e7e9ee] p-4 shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff] dark:bg-[#17191e] dark:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.52),inset_-3px_-3px_7px_rgba(255,255,255,0.035)]">
+                              <p className="text-[10px] font-extrabold text-[#17191f] dark:text-[#f5f5f7]">
                                 Confirm your pickup location
                               </p>
 
-                              <p className="mt-1 text-[9px] font-medium leading-relaxed text-[#85888f]">
+                              <p className="mt-1 text-[9px] font-medium leading-relaxed text-[#85888f] dark:text-[#aeb1bd]">
                                 When you are at your pickup point, confirm your
                                 location so your driver can navigate directly to
                                 you.
@@ -1459,12 +1459,12 @@ export default function PassengerPortalPage() {
                           )}
 
                           {isAccepted && ride.pickup_location_confirmed_at && (
-                            <div className="mt-4 rounded-[17px] bg-[#e7e9ee] p-4 text-center shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff]">
-                              <p className="text-[10px] font-extrabold text-[#17191f]">
+                            <div className="mt-4 rounded-[17px] bg-[#e7e9ee] p-4 text-center shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff] dark:bg-[#17191e] dark:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.52),inset_-3px_-3px_7px_rgba(255,255,255,0.035)]">
+                              <p className="text-[10px] font-extrabold text-[#17191f] dark:text-[#f5f5f7]">
                                 Pickup location confirmed
                               </p>
 
-                              <p className="mt-1 text-[9px] font-medium text-[#85888f]">
+                              <p className="mt-1 text-[9px] font-medium text-[#85888f] dark:text-[#aeb1bd]">
                                 Your driver will use your confirmed location for
                                 navigation.
                               </p>
@@ -1475,7 +1475,7 @@ export default function PassengerPortalPage() {
                               type="button"
                               disabled={cancellingRideId === ride.id}
                               onClick={() => cancelScheduledRide(ride.id)}
-                              className="mt-4 w-full rounded-[14px] bg-[#e7e9ee] py-3 text-[10px] font-extrabold text-[#ff6846] shadow-[3px_3px_7px_#c4c6ca,-3px_-3px_7px_#ffffff] transition active:scale-[0.98] disabled:opacity-50"
+                              className="mt-4 w-full rounded-[14px] bg-[#e7e9ee] py-3 text-[10px] font-extrabold text-[#ff6846] shadow-[3px_3px_7px_#c4c6ca,-3px_-3px_7px_#ffffff] transition active:scale-[0.98] disabled:opacity-50 dark:bg-[#17191e] dark:shadow-[6px_6px_14px_rgba(0,0,0,0.48),-5px_-5px_12px_rgba(255,255,255,0.035)]"
                             >
                               {cancellingRideId === ride.id
                                 ? "Cancelling..."
@@ -1494,20 +1494,20 @@ export default function PassengerPortalPage() {
 
         {otherTrips.length > 0 && (
           <section className="mt-8">
-            <p className="text-[9px] font-extrabold uppercase tracking-[0.16em] text-[#8f9298]">
+            <p className="text-[9px] font-extrabold uppercase tracking-[0.16em] text-[#8f9298] dark:text-[#aeb1bd]">
               Other rides
             </p>
             <div className="mt-3 space-y-3">
               {otherTrips.map((trip) => (
                 <div
                   key={trip.id}
-                  className="rounded-[18px] bg-[#e7e9ee] px-4 py-4 shadow-[4px_4px_9px_#c4c6ca,-4px_-4px_9px_#ffffff]"
+                  className="rounded-[18px] bg-[#e7e9ee] px-4 py-4 shadow-[4px_4px_9px_#c4c6ca,-4px_-4px_9px_#ffffff] dark:bg-[#17191e] dark:shadow-[6px_6px_14px_rgba(0,0,0,0.48),-5px_-5px_12px_rgba(255,255,255,0.035)]"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-[9px] font-bold text-[#96999f]">
+                    <span className="text-[9px] font-bold text-[#96999f] dark:text-[#aeb1bd]">
                       BK-{String(trip.id).padStart(4, "0")}
                     </span>
-                    <span className="text-[9px] font-extrabold text-[#777a81]">
+                    <span className="text-[9px] font-extrabold text-[#777a81] dark:text-[#aeb1bd]">
                       {trip.trip_status}
                     </span>
                   </div>
@@ -1525,7 +1525,7 @@ export default function PassengerPortalPage() {
 
         <section className="mt-9">
           <div>
-            <p className="text-[9px] font-extrabold uppercase tracking-[0.16em] text-[#8f9298]">
+            <p className="text-[9px] font-extrabold uppercase tracking-[0.16em] text-[#8f9298] dark:text-[#aeb1bd]">
               Your rides
             </p>
             <h3 className="mt-1 text-[20px] font-black tracking-[-0.035em]">
@@ -1536,15 +1536,15 @@ export default function PassengerPortalPage() {
           <button
             type="button"
             onClick={() => setShowCompletedTrips((current) => !current)}
-            className="mt-4 flex w-full items-center justify-between rounded-[19px] bg-[#e7e9ee] px-4 py-4 text-left shadow-[5px_5px_11px_#c4c6ca,-5px_-5px_11px_#ffffff] transition active:scale-[0.985]"
+            className="mt-4 flex w-full items-center justify-between rounded-[19px] bg-[#e7e9ee] px-4 py-4 text-left shadow-[5px_5px_11px_#c4c6ca,-5px_-5px_11px_#ffffff] transition active:scale-[0.985] dark:bg-[#17191e] dark:shadow-[6px_6px_14px_rgba(0,0,0,0.48),-5px_-5px_12px_rgba(255,255,255,0.035)]"
           >
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-[13px] bg-[#e7e9ee] text-[#ff6846] shadow-[inset_3px_3px_6px_#c4c6ca,inset_-3px_-3px_6px_#ffffff]">
+              <div className="flex h-10 w-10 items-center justify-center rounded-[13px] bg-[#e7e9ee] text-[#ff6846] shadow-[inset_3px_3px_6px_#c4c6ca,inset_-3px_-3px_6px_#ffffff] dark:bg-[#17191e] dark:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.52),inset_-3px_-3px_7px_rgba(255,255,255,0.035)]">
                 <HistoryIcon />
               </div>
               <div>
                 <p className="text-[12px] font-extrabold">Completed trips</p>
-                <p className="mt-0.5 text-[9px] font-medium text-[#92959b]">
+                <p className="mt-0.5 text-[9px] font-medium text-[#92959b] dark:text-[#aeb1bd]">
                   View your previous RouteX rides
                 </p>
               </div>
@@ -1565,8 +1565,8 @@ export default function PassengerPortalPage() {
           {showCompletedTrips && (
             <div className="mt-4 space-y-3">
               {completedTrips.length === 0 ? (
-                <div className="rounded-[18px] bg-[#e7e9ee] px-4 py-5 text-center shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff]">
-                  <p className="text-[11px] font-bold text-[#85888f]">
+                <div className="rounded-[18px] bg-[#e7e9ee] px-4 py-5 text-center shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff] dark:bg-[#17191e] dark:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.52),inset_-3px_-3px_7px_rgba(255,255,255,0.035)]">
+                  <p className="text-[11px] font-bold text-[#85888f] dark:text-[#aeb1bd]">
                     No completed trips yet.
                   </p>
                 </div>
@@ -1574,17 +1574,17 @@ export default function PassengerPortalPage() {
                 completedTrips.map((trip) => (
                   <div
                     key={trip.id}
-                    className="rounded-[18px] bg-[#e7e9ee] px-4 py-4 shadow-[4px_4px_9px_#c4c6ca,-4px_-4px_9px_#ffffff]"
+                    className="rounded-[18px] bg-[#e7e9ee] px-4 py-4 shadow-[4px_4px_9px_#c4c6ca,-4px_-4px_9px_#ffffff] dark:bg-[#17191e] dark:shadow-[6px_6px_14px_rgba(0,0,0,0.48),-5px_-5px_12px_rgba(255,255,255,0.035)]"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-[9px] font-bold text-[#96999f]">
+                      <span className="text-[9px] font-bold text-[#96999f] dark:text-[#aeb1bd]">
                         {trip.travel_date
                           ? new Date(trip.travel_date).toLocaleDateString()
                           : `BK-${String(trip.id).padStart(4, "0")}`}
                       </span>
                       <div className="flex items-center gap-1.5">
                         <CheckSmallIcon />
-                        <span className="text-[8px] font-extrabold text-[#777a81]">
+                        <span className="text-[8px] font-extrabold text-[#777a81] dark:text-[#aeb1bd]">
                           Completed
                         </span>
                       </div>
@@ -1592,7 +1592,7 @@ export default function PassengerPortalPage() {
 
                     <div className="mt-3 flex items-center">
                       <div className="mr-3 flex w-3 shrink-0 flex-col items-center">
-                        <span className="h-2 w-2 rounded-full bg-[#17191f]" />
+                        <span className="h-2 w-2 rounded-full bg-[#17191f] dark:bg-[#292c35]" />
                         <span className="my-1 h-4 border-l border-dashed border-[#b9bbc0]" />
                         <span className="h-2 w-2 rounded-[2px] bg-[#ff6846]" />
                       </div>
@@ -1614,7 +1614,7 @@ export default function PassengerPortalPage() {
 
                     {(trip.driver_name || trip.vehicle_type) && (
                       <div className="mt-4 border-t border-[#d5d7dc] pt-3">
-                        <p className="text-[9px] font-extrabold text-[#777a81]">
+                        <p className="text-[9px] font-extrabold text-[#777a81] dark:text-[#aeb1bd]">
                           {trip.driver_name || "Driver"}
                           {trip.vehicle_type
                             ? ` • ${trip.vehicle_color || ""} ${trip.vehicle_type}`
@@ -1624,7 +1624,7 @@ export default function PassengerPortalPage() {
                     )}
 
                     {!trip.has_reviewed && !reviewedTrips[trip.id] && (
-                      <div className="mt-4 rounded-[15px] bg-[#e7e9ee] p-3 shadow-[inset_3px_3px_6px_#c7c9ce,inset_-3px_-3px_6px_#ffffff]">
+                      <div className="mt-4 rounded-[15px] bg-[#e7e9ee] p-3 shadow-[inset_3px_3px_6px_#c7c9ce,inset_-3px_-3px_6px_#ffffff] dark:bg-[#17191e] dark:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.52),inset_-3px_-3px_7px_rgba(255,255,255,0.035)]">
                         <p className="text-[9px] font-extrabold uppercase tracking-[0.12em] text-[#ff6846]">
                           Rate your driver
                         </p>
@@ -1659,7 +1659,7 @@ export default function PassengerPortalPage() {
                           }
                           placeholder="Tell us about your trip (optional)"
                           rows={2}
-                          className="mt-3 w-full resize-none rounded-[12px] bg-[#e7e9ee] px-3 py-2.5 text-[10px] outline-none shadow-[inset_2px_2px_5px_#c7c9ce,inset_-2px_-2px_5px_#ffffff]"
+                          className="mt-3 w-full resize-none rounded-[12px] bg-[#e7e9ee] px-3 py-2.5 text-[10px] outline-none shadow-[inset_2px_2px_5px_#c7c9ce,inset_-2px_-2px_5px_#ffffff] dark:bg-[#17191e] dark:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.52),inset_-3px_-3px_7px_rgba(255,255,255,0.035)]"
                         />
                         <button
                           type="button"
@@ -1689,7 +1689,7 @@ export default function PassengerPortalPage() {
               <p className="text-[11px] font-extrabold">
                 Need help with a ride?
               </p>
-              <p className="mt-1 text-[9px] font-medium text-[#92959b]">
+              <p className="mt-1 text-[9px] font-medium text-[#92959b] dark:text-[#aeb1bd]">
                 RouteX support is here to help.
               </p>
             </div>
@@ -1697,7 +1697,7 @@ export default function PassengerPortalPage() {
               href="https://wa.me/27799132513"
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-[12px] bg-[#e7e9ee] px-4 py-2.5 text-[9px] font-extrabold text-[#ff6846] shadow-[3px_3px_7px_#c4c6ca,-3px_-3px_7px_#ffffff]"
+              className="rounded-[12px] bg-[#e7e9ee] px-4 py-2.5 text-[9px] font-extrabold text-[#ff6846] shadow-[3px_3px_7px_#c4c6ca,-3px_-3px_7px_#ffffff] dark:bg-[#17191e] dark:shadow-[6px_6px_14px_rgba(0,0,0,0.48),-5px_-5px_12px_rgba(255,255,255,0.035)]"
             >
               Support
             </a>
@@ -1705,7 +1705,7 @@ export default function PassengerPortalPage() {
         </section>
 
         <footer className="mt-8 text-center">
-          <p className="text-[9px] font-semibold text-[#a0a3a9]">
+          <p className="text-[9px] font-semibold text-[#a0a3a9] dark:text-[#aeb1bd]">
             RouteX • Getting Upington Moving
           </p>
         </footer>
@@ -1738,7 +1738,7 @@ function RoutePoint({
       />
 
       <div className="min-w-0">
-        <p className="text-[8px] font-extrabold uppercase tracking-[0.12em] text-[#9a9da3]">
+        <p className="text-[8px] font-extrabold uppercase tracking-[0.12em] text-[#9a9da3] dark:text-[#aeb1bd]">
           {label}
         </p>
 
@@ -1850,7 +1850,7 @@ function ChevronIcon() {
       strokeWidth="2.4"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className="text-[#85888f]"
+      className="text-[#85888f] dark:text-[#aeb1bd]"
     >
       <path d="m6 9 6 6 6-6" />
     </svg>

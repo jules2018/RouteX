@@ -521,7 +521,7 @@ const response = await fetch(
 
   return (
     <AuthGuard>
-      <main className="min-h-[100dvh] bg-[#e7e9ee] text-[#17191f]">
+      <main className="min-h-[100dvh] bg-[#e7e9ee] dark:bg-[#1c1e24] text-[#17191f] dark:text-[#f5f6f8]">
         <div className="mx-auto min-h-[100dvh] w-full max-w-md px-5 pb-10">
           {/* HEADER */}
           <header className="flex items-center justify-between pt-6">
@@ -534,7 +534,7 @@ const response = await fetch(
           <section className="mt-6 flex items-center gap-4">
             <div className="relative h-[82px] w-[82px] shrink-0">
               <label
-                className={`relative flex h-[82px] w-[82px] cursor-pointer items-center justify-center rounded-[27px] bg-[#e7e9ee] shadow-[7px_7px_15px_#c4c6ca,-7px_-7px_15px_#ffffff] ${
+                className={`relative flex h-[82px] w-[82px] cursor-pointer items-center justify-center rounded-[27px] bg-[#e7e9ee] dark:bg-[#1c1e24] shadow-[7px_7px_15px_#c4c6ca,-7px_-7px_15px_#ffffff] dark:shadow-[7px_7px_16px_#101116,-7px_-7px_16px_#30333d] ${
                   uploadingPhoto ? "pointer-events-none opacity-70" : ""
                 }`}
                 title="Change driver photo"
@@ -555,7 +555,7 @@ const response = await fetch(
                   }}
                 />
 
-                <div className="relative flex h-[64px] w-[64px] items-center justify-center overflow-hidden rounded-[21px] bg-[#dfe1e6] text-[20px] font-black text-[#ff6846] shadow-[inset_3px_3px_7px_#c2c4c9,inset_-3px_-3px_7px_#ffffff]">
+                <div className="relative flex h-[64px] w-[64px] items-center justify-center overflow-hidden rounded-[21px] bg-[#dfe1e6] dark:bg-[#262932] text-[20px] font-black text-[#ff6846] shadow-[inset_3px_3px_7px_#c2c4c9,inset_-3px_-3px_7px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d]">
                   {driver?.profile_image ? (
                     <img
                       src={driver.profile_image}
@@ -578,7 +578,7 @@ const response = await fetch(
                 </span>
 
                 <span
-                  className={`absolute -bottom-1 -right-1 h-5 w-5 rounded-full border-[4px] border-[#e7e9ee] ${
+                  className={`absolute -bottom-1 -right-1 h-5 w-5 rounded-full border-[4px] border-[#e7e9ee] dark:border-[#1c1e24] ${
                     status === "available" ? "bg-[#35b86b]" : "bg-[#a2a5ab]"
                   }`}
                 />
@@ -599,19 +599,19 @@ const response = await fetch(
                     ? driverRating.average_rating.toFixed(1)
                     : "New"}
                 </span>
-                <span className="text-[9px] font-semibold text-[#92959b]">
-                  Â· RouteX Driver
+                <span className="text-[9px] font-semibold text-[#92959b] dark:text-[#a9acb6]">
+                  · RouteX Driver
                 </span>
               </div>
             </div>
           </section>
 
           {/* ONLINE CONTROL */}
-          <section className="mt-6 flex items-center justify-between rounded-[24px] bg-[#e7e9ee] p-4 shadow-[6px_6px_14px_#c4c6ca,-6px_-6px_14px_#ffffff]">
+          <section className="mt-6 flex items-center justify-between rounded-[24px] bg-[#e7e9ee] dark:bg-[#1c1e24] p-4 shadow-[6px_6px_14px_#c4c6ca,-6px_-6px_14px_#ffffff] dark:shadow-[7px_7px_16px_#101116,-7px_-7px_16px_#30333d]">
             <div className="flex items-center gap-3">
               <div
-                className={`flex h-11 w-11 items-center justify-center rounded-[15px] shadow-[inset_2px_2px_5px_#c5c7cc,inset_-2px_-2px_5px_#ffffff] ${
-                  status === "available" ? "text-[#35a967]" : "text-[#92959b]"
+                className={`flex h-11 w-11 items-center justify-center rounded-[15px] shadow-[inset_2px_2px_5px_#c5c7cc,inset_-2px_-2px_5px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d] ${
+                  status === "available" ? "text-[#35a967]" : "text-[#92959b] dark:text-[#a9acb6]"
                 }`}
               >
                 <PowerIcon />
@@ -620,7 +620,7 @@ const response = await fetch(
                 <p className="text-[12px] font-black">
                   {status === "available" ? "You're online" : "You're offline"}
                 </p>
-                <p className="mt-0.5 text-[9px] font-semibold text-[#92959b]">
+                <p className="mt-0.5 text-[9px] font-semibold text-[#92959b] dark:text-[#a9acb6]">
                   {status === "available"
                     ? "Ready to receive ride requests"
                     : "You won't receive new requests"}
@@ -632,7 +632,7 @@ const response = await fetch(
               type="button"
               onClick={toggleStatus}
               className={`relative h-8 w-[55px] rounded-full transition-all duration-300 shadow-[inset_2px_2px_5px_rgba(0,0,0,0.18),inset_-2px_-2px_5px_rgba(255,255,255,0.5)] ${
-                status === "available" ? "bg-[#ff6846]" : "bg-[#cfd1d6]"
+                status === "available" ? "bg-[#ff6846]" : "bg-[#cfd1d6] dark:bg-[#383b45]"
               }`}
             >
               <span
@@ -656,21 +656,21 @@ const response = await fetch(
               </div>
 
               {scheduledRides.length > 0 && (
-                <span className="flex h-7 min-w-7 items-center justify-center rounded-full bg-[#17191f] px-2 text-[8px] font-black text-white">
+                <span className="flex h-7 min-w-7 items-center justify-center rounded-full bg-[#17191f] dark:bg-[#30333d] px-2 text-[8px] font-black text-white">
                   {scheduledRides.length}
                 </span>
               )}
             </div>
 
             {loadingScheduled ? (
-              <div className="rounded-[20px] bg-[#e7e9ee] p-4 text-center shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff]">
-                <p className="text-[9px] font-bold text-[#92959b]">
+              <div className="rounded-[20px] bg-[#e7e9ee] dark:bg-[#1c1e24] p-4 text-center shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d]">
+                <p className="text-[9px] font-bold text-[#92959b] dark:text-[#a9acb6]">
                   Loading scheduled rides...
                 </p>
               </div>
             ) : scheduledRides.length === 0 ? (
-              <div className="rounded-[20px] bg-[#e7e9ee] p-4 text-center shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff]">
-                <p className="text-[9px] font-bold text-[#92959b]">
+              <div className="rounded-[20px] bg-[#e7e9ee] dark:bg-[#1c1e24] p-4 text-center shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d]">
+                <p className="text-[9px] font-bold text-[#92959b] dark:text-[#a9acb6]">
                   No upcoming scheduled rides.
                 </p>
               </div>
@@ -684,13 +684,13 @@ const response = await fetch(
                   return (
                     <div
                       key={ride.id}
-                      className="rounded-[23px] bg-[#e7e9ee] p-4 shadow-[6px_6px_14px_#c3c5ca,-6px_-6px_14px_#ffffff]"
+                      className="rounded-[23px] bg-[#e7e9ee] dark:bg-[#1c1e24] p-4 shadow-[6px_6px_14px_#c3c5ca,-6px_-6px_14px_#ffffff] dark:shadow-[7px_7px_16px_#101116,-7px_-7px_16px_#30333d]"
                     >
                       <PassengerInfo ride={ride} />
 
                       <div className="mt-4 grid grid-cols-[1fr_auto_auto] items-center gap-3">
                         <div>
-                          <p className="text-[8px] font-extrabold uppercase tracking-[0.11em] text-[#92959b]">
+                          <p className="text-[8px] font-extrabold uppercase tracking-[0.11em] text-[#92959b] dark:text-[#a9acb6]">
                             Pickup
                           </p>
                           <p className="mt-0.5 text-[19px] font-black tracking-[-0.04em]">
@@ -698,7 +698,7 @@ const response = await fetch(
                           </p>
                         </div>
 
-                        <div className="rounded-[14px] bg-[#17191f] px-3.5 py-2 text-center text-white">
+                        <div className="rounded-[14px] bg-[#17191f] dark:bg-[#30333d] px-3.5 py-2 text-center text-white">
                           <p className="text-[7px] font-bold uppercase tracking-[0.1em] text-white/45">
                             Time
                           </p>
@@ -711,7 +711,7 @@ const response = await fetch(
                           <p className="text-[10px] font-black">Ride Now</p>
 
                           <div className="text-right">
-                            <p className="text-[7px] font-extrabold uppercase tracking-[0.1em] text-[#92959b]">
+                            <p className="text-[7px] font-extrabold uppercase tracking-[0.1em] text-[#92959b] dark:text-[#a9acb6]">
                               Full fare
                             </p>
 
@@ -730,7 +730,7 @@ const response = await fetch(
                                   ).toFixed(0)}
                                 </p>
 
-                                <p className="mt-0.5 text-[8px] font-semibold text-[#92959b]">
+                                <p className="mt-0.5 text-[8px] font-semibold text-[#92959b] dark:text-[#a9acb6]">
                                   RouteX promo R
                                   {Number(ride.discount_amount).toFixed(0)}
                                 </p>
@@ -740,14 +740,14 @@ const response = await fetch(
                         </div>
                       </div>
 
-                      <div className="mt-3 rounded-[16px] bg-[#e7e9ee] px-3.5 py-3 shadow-[inset_2px_2px_5px_#c7c9ce,inset_-2px_-2px_5px_#ffffff]">
+                      <div className="mt-3 rounded-[16px] bg-[#e7e9ee] dark:bg-[#1c1e24] px-3.5 py-3 shadow-[inset_2px_2px_5px_#c7c9ce,inset_-2px_-2px_5px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d]">
                         <div className="flex items-center gap-2.5">
-                          <span className="h-[10px] w-[10px] shrink-0 rounded-full border-[3px] border-[#17191f]" />
+                          <span className="h-[10px] w-[10px] shrink-0 rounded-full border-[3px] border-[#17191f] dark:border-[#f0f1f5]" />
                           <p className="min-w-0 flex-1 truncate text-[10px] font-black">
                             {ride.pickup_address}
                           </p>
                         </div>
-                        <div className="ml-[4px] my-1 h-3 border-l border-dashed border-[#b6b9bf]" />
+                        <div className="ml-[4px] my-1 h-3 border-l border-dashed border-[#b6b9bf] dark:border-[#50545f]" />
                         <div className="flex items-center gap-2.5">
                           <span className="h-[10px] w-[10px] shrink-0 rounded-[3px] bg-[#ff6846]" />
                           <p className="min-w-0 flex-1 truncate text-[10px] font-black">
@@ -757,7 +757,7 @@ const response = await fetch(
                       </div>
 
                       <div className="mt-3 flex items-center gap-3">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] text-[#ff6846] shadow-[inset_2px_2px_5px_#c5c7cc,inset_-2px_-2px_5px_#ffffff]">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] text-[#ff6846] shadow-[inset_2px_2px_5px_#c5c7cc,inset_-2px_-2px_5px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d]">
                           <ClockIcon />
                         </div>
 
@@ -767,15 +767,15 @@ const response = await fetch(
                               ? "Driver matching is open"
                               : `Matching opens at ${formatRideTime(ride.matching_opens_at)}`}
                           </p>
-                          <p className="mt-0.5 text-[8px] font-semibold leading-3.5 text-[#8b8e95]">
+                          <p className="mt-0.5 text-[8px] font-semibold leading-3.5 text-[#8b8e95] dark:text-[#a9acb6]">
                             {matchingActive
                               ? "This scheduled ride is available to accept now."
                               : "Accept becomes available 30 min before pickup."}
                           </p>
                         </div>
 
-                        <div className="rounded-[10px] bg-[#e7e9ee] px-2.5 py-2 text-center shadow-[inset_2px_2px_4px_#c7c9ce,inset_-2px_-2px_4px_#ffffff]">
-                          <p className="text-[7px] font-bold uppercase tracking-[0.08em] text-[#9a9da3]">
+                        <div className="rounded-[10px] bg-[#e7e9ee] dark:bg-[#1c1e24] px-2.5 py-2 text-center shadow-[inset_2px_2px_4px_#c7c9ce,inset_-2px_-2px_4px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d]">
+                          <p className="text-[7px] font-bold uppercase tracking-[0.08em] text-[#9a9da3] dark:text-[#a9acb6]">
                             Booking
                           </p>
                           <p className="mt-0.5 text-[8px] font-black">
@@ -794,8 +794,8 @@ const response = await fetch(
                         onClick={() => acceptRide(ride.id)}
                         className={`mt-3 w-full rounded-[14px] py-2.5 text-[9px] font-black transition active:scale-[0.985] ${
                           matchingActive && status === "available"
-                            ? "bg-[#17191f] text-white shadow-[3px_3px_7px_#c4c6ca,-3px_-3px_7px_#ffffff]"
-                            : "cursor-not-allowed bg-[#d3d5da] text-[#8f9298] shadow-[inset_2px_2px_5px_#c2c4c9,inset_-2px_-2px_5px_#ffffff]"
+                            ? "bg-[#17191f] dark:bg-[#30333d] text-white shadow-[3px_3px_7px_#c4c6ca,-3px_-3px_7px_#ffffff] dark:shadow-[7px_7px_16px_#101116,-7px_-7px_16px_#30333d]"
+                            : "cursor-not-allowed bg-[#d3d5da] dark:bg-[#30333d] text-[#8f9298] dark:text-[#a9acb6] shadow-[inset_2px_2px_5px_#c2c4c9,inset_-2px_-2px_5px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d]"
                         }`}
                       >
                         {acceptingId === ride.id
@@ -830,11 +830,11 @@ const response = await fetch(
                   .map((ride) => (
                     <div
                       key={ride.id}
-                      className="rounded-[23px] bg-[#e7e9ee] p-4 shadow-[6px_6px_14px_#c3c5ca,-6px_-6px_14px_#ffffff]"
+                      className="rounded-[23px] bg-[#e7e9ee] dark:bg-[#1c1e24] p-4 shadow-[6px_6px_14px_#c3c5ca,-6px_-6px_14px_#ffffff] dark:shadow-[7px_7px_16px_#101116,-7px_-7px_16px_#30333d]"
                     >
                       <div className="flex items-center justify-between gap-3">
                         <div className="flex items-center gap-3">
-                          <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#e7e9ee] shadow-[inset_3px_3px_6px_#c5c7cc,inset_-3px_-3px_6px_#ffffff]">
+                          <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#e7e9ee] dark:bg-[#1c1e24] shadow-[inset_3px_3px_6px_#c5c7cc,inset_-3px_-3px_6px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d]">
                             {ride.passenger_profile_image ? (
                               <img
                                 src={ride.passenger_profile_image}
@@ -855,7 +855,7 @@ const response = await fetch(
                           </div>
 
                           <div>
-                            <p className="text-[8px] font-extrabold uppercase tracking-[0.12em] text-[#92959b]">
+                            <p className="text-[8px] font-extrabold uppercase tracking-[0.12em] text-[#92959b] dark:text-[#a9acb6]">
                               Passenger
                             </p>
 
@@ -865,14 +865,14 @@ const response = await fetch(
                                 "Passenger"}
                             </p>
                             {(ride.passenger_phone || ride.phone) && (
-                              <p className="mt-0.5 text-[9px] font-bold text-[#8b8e95]">
+                              <p className="mt-0.5 text-[9px] font-bold text-[#8b8e95] dark:text-[#a9acb6]">
                                 {ride.passenger_phone || ride.phone}
                               </p>
                             )}
                           </div>
                         </div>
 
-                        <span className="rounded-full bg-[#17191f] px-3 py-1.5 text-[8px] font-black text-white">
+                        <span className="rounded-full bg-[#17191f] dark:bg-[#30333d] px-3 py-1.5 text-[8px] font-black text-white">
                           Accepted
                         </span>
                       </div>
@@ -884,7 +884,7 @@ const response = await fetch(
 
                       <div className="mt-4 flex items-start justify-between">
                         <div>
-                          <p className="text-[7px] font-extrabold uppercase tracking-[0.1em] text-[#92959b]">
+                          <p className="text-[7px] font-extrabold uppercase tracking-[0.1em] text-[#92959b] dark:text-[#a9acb6]">
                             Full fare
                           </p>
 
@@ -903,7 +903,7 @@ const response = await fetch(
                                 ).toFixed(0)}
                               </p>
 
-                              <p className="mt-0.5 text-[8px] font-semibold text-[#92959b]">
+                              <p className="mt-0.5 text-[8px] font-semibold text-[#92959b] dark:text-[#a9acb6]">
                                 RouteX promo R
                                 {Number(ride.discount_amount).toFixed(0)}
                               </p>
@@ -927,7 +927,7 @@ const response = await fetch(
                               );
                             }
                           }}
-                          className="rounded-[14px] bg-[#17191f] py-3 text-[9px] font-black text-white transition active:scale-[0.985]"
+                          className="rounded-[14px] bg-[#17191f] dark:bg-[#30333d] py-3 text-[9px] font-black text-white transition active:scale-[0.985]"
                         >
                           Navigate to pickup
                         </button>
@@ -978,11 +978,11 @@ const response = await fetch(
                     return (
                       <div
                         key={ride.id}
-                        className="rounded-[23px] bg-[#e7e9ee] p-4 shadow-[6px_6px_14px_#c3c5ca,-6px_-6px_14px_#ffffff]"
+                        className="rounded-[23px] bg-[#e7e9ee] dark:bg-[#1c1e24] p-4 shadow-[6px_6px_14px_#c3c5ca,-6px_-6px_14px_#ffffff] dark:shadow-[7px_7px_16px_#101116,-7px_-7px_16px_#30333d]"
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex min-w-0 items-center gap-3">
-                            <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#e7e9ee] shadow-[inset_3px_3px_6px_#c5c7cc,inset_-3px_-3px_6px_#ffffff]">
+                            <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#e7e9ee] dark:bg-[#1c1e24] shadow-[inset_3px_3px_6px_#c5c7cc,inset_-3px_-3px_6px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d]">
                               {ride.passenger_profile_image ? (
                                 <img
                                   src={ride.passenger_profile_image}
@@ -1010,7 +1010,7 @@ const response = await fetch(
                             </div>
 
                             <div className="min-w-0">
-                              <p className="text-[8px] font-extrabold uppercase tracking-[0.12em] text-[#92959b]">
+                              <p className="text-[8px] font-extrabold uppercase tracking-[0.12em] text-[#92959b] dark:text-[#a9acb6]">
                                 Passenger
                               </p>
                               <p className="mt-1 truncate text-[15px] font-black">
@@ -1020,13 +1020,13 @@ const response = await fetch(
                               </p>
                               {ride.passenger_phone && (
                                 <div className="mt-1 flex items-center gap-2">
-                                  <p className="text-[9px] font-bold text-[#8b8e95]">
+                                  <p className="text-[9px] font-bold text-[#8b8e95] dark:text-[#a9acb6]">
                                     {ride.passenger_phone}
                                   </p>
 
                                   <a
                                     href={`tel:${ride.passenger_phone}`}
-                                    className="rounded-full bg-[#17191f] px-2.5 py-1 text-[8px] font-black text-white"
+                                    className="rounded-full bg-[#17191f] dark:bg-[#30333d] px-2.5 py-1 text-[8px] font-black text-white"
                                   >
                                     Call
                                   </a>
@@ -1035,17 +1035,17 @@ const response = await fetch(
                             </div>
                           </div>
 
-                          <span className="shrink-0 rounded-full bg-[#17191f] px-3 py-1.5 text-[8px] font-black text-white">
+                          <span className="shrink-0 rounded-full bg-[#17191f] dark:bg-[#30333d] px-3 py-1.5 text-[8px] font-black text-white">
                             Accepted
                           </span>
                         </div>
 
-                        <div className="mt-4 rounded-[16px] bg-[#e7e9ee] px-4 py-3 shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff]">
-                          <p className="text-[7px] font-extrabold uppercase tracking-[0.12em] text-[#92959b]">
+                        <div className="mt-4 rounded-[16px] bg-[#e7e9ee] dark:bg-[#1c1e24] px-4 py-3 shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d]">
+                          <p className="text-[7px] font-extrabold uppercase tracking-[0.12em] text-[#92959b] dark:text-[#a9acb6]">
                             Scheduled pickup
                           </p>
                           <p className="mt-1 text-[15px] font-black">
-                            {formatRideDate(ride.scheduled_pickup_at)} Â·{" "}
+                            {formatRideDate(ride.scheduled_pickup_at)} ·{" "}
                             {formatRideTime(ride.scheduled_pickup_at)}
                           </p>
                         </div>
@@ -1057,7 +1057,7 @@ const response = await fetch(
 
                         <div className="mt-4 flex items-center justify-between">
                           <div>
-                            <p className="text-[7px] font-extrabold uppercase tracking-[0.1em] text-[#92959b]">
+                            <p className="text-[7px] font-extrabold uppercase tracking-[0.1em] text-[#92959b] dark:text-[#a9acb6]">
                               Fare
                             </p>
                             <p className="mt-0.5 text-[17px] font-black">
@@ -1085,8 +1085,8 @@ const response = await fetch(
                             }}
                             className={`rounded-[14px] py-3 text-[9px] font-black transition ${
                               canNavigate
-                                ? "bg-[#17191f] text-white active:scale-[0.985]"
-                                : "cursor-not-allowed bg-[#d3d5da] text-[#8f9298] shadow-[inset_2px_2px_5px_#c2c4c9,inset_-2px_-2px_5px_#ffffff]"
+                                ? "bg-[#17191f] dark:bg-[#30333d] text-white active:scale-[0.985]"
+                                : "cursor-not-allowed bg-[#d3d5da] dark:bg-[#30333d] text-[#8f9298] dark:text-[#a9acb6] shadow-[inset_2px_2px_5px_#c2c4c9,inset_-2px_-2px_5px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d]"
                             }`}
                           >
                             {canNavigate
@@ -1103,7 +1103,7 @@ const response = await fetch(
                             className={`rounded-[14px] py-3 text-[9px] font-black transition ${
                               canStart && startingId !== ride.id
                                 ? "bg-[#ff6846] text-white active:scale-[0.985]"
-                                : "cursor-not-allowed bg-[#d3d5da] text-[#8f9298] shadow-[inset_2px_2px_5px_#c2c4c9,inset_-2px_-2px_5px_#ffffff]"
+                                : "cursor-not-allowed bg-[#d3d5da] dark:bg-[#30333d] text-[#8f9298] dark:text-[#a9acb6] shadow-[inset_2px_2px_5px_#c2c4c9,inset_-2px_-2px_5px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d]"
                             }`}
                           >
                             {startingId === ride.id
@@ -1114,7 +1114,7 @@ const response = await fetch(
                           </button>
                         </div>
 
-                        <p className="mt-3 text-center text-[8px] font-semibold text-[#92959b]">
+                        <p className="mt-3 text-center text-[8px] font-semibold text-[#92959b] dark:text-[#a9acb6]">
                           {!canNavigate
                             ? `Navigation unlocks 15 minutes before pickup at ${formatRideTime(
                                 new Date(navigateOpensMs).toISOString(),
@@ -1146,11 +1146,11 @@ const response = await fetch(
                 {inProgressTrips.map((ride) => (
                   <div
                     key={ride.id}
-                    className="rounded-[23px] bg-[#e7e9ee] p-4 shadow-[6px_6px_14px_#c3c5ca,-6px_-6px_14px_#ffffff]"
+                    className="rounded-[23px] bg-[#e7e9ee] dark:bg-[#1c1e24] p-4 shadow-[6px_6px_14px_#c3c5ca,-6px_-6px_14px_#ffffff] dark:shadow-[7px_7px_16px_#101116,-7px_-7px_16px_#30333d]"
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#e7e9ee] shadow-[inset_3px_3px_6px_#c5c7cc,inset_-3px_-3px_6px_#ffffff]">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#e7e9ee] dark:bg-[#1c1e24] shadow-[inset_3px_3px_6px_#c5c7cc,inset_-3px_-3px_6px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d]">
                           {ride.passenger_profile_image ? (
                             <img
                               src={ride.passenger_profile_image}
@@ -1171,7 +1171,7 @@ const response = await fetch(
                         </div>
 
                         <div>
-                          <p className="text-[8px] font-extrabold uppercase tracking-[0.12em] text-[#92959b]">
+                          <p className="text-[8px] font-extrabold uppercase tracking-[0.12em] text-[#92959b] dark:text-[#a9acb6]">
                             Passenger
                           </p>
 
@@ -1181,7 +1181,7 @@ const response = await fetch(
                               "Passenger"}
                           </p>
                           {(ride.passenger_phone || ride.phone) && (
-                            <p className="mt-0.5 text-[9px] font-bold text-[#8b8e95]">
+                            <p className="mt-0.5 text-[9px] font-bold text-[#8b8e95] dark:text-[#a9acb6]">
                               {ride.passenger_phone || ride.phone}
                             </p>
                           )}
@@ -1200,7 +1200,7 @@ const response = await fetch(
 
                     <div className="mt-4 flex items-start justify-between">
                       <div>
-                        <p className="text-[7px] font-extrabold uppercase tracking-[0.1em] text-[#92959b]">
+                        <p className="text-[7px] font-extrabold uppercase tracking-[0.1em] text-[#92959b] dark:text-[#a9acb6]">
                           Full fare
                         </p>
 
@@ -1217,7 +1217,7 @@ const response = await fetch(
                               ).toFixed(0)}
                             </p>
 
-                            <p className="mt-0.5 text-[8px] font-semibold text-[#92959b]">
+                            <p className="mt-0.5 text-[8px] font-semibold text-[#92959b] dark:text-[#a9acb6]">
                               RouteX promo R
                               {Number(ride.discount_amount).toFixed(0)}
                             </p>
@@ -1241,7 +1241,7 @@ const response = await fetch(
                             );
                           }
                         }}
-                        className="rounded-[14px] bg-[#17191f] py-3 text-[9px] font-black text-white"
+                        className="rounded-[14px] bg-[#17191f] dark:bg-[#30333d] py-3 text-[9px] font-black text-white"
                       >
                         Navigate to destination
                       </button>
@@ -1265,7 +1265,7 @@ const response = await fetch(
 
           {/* LIVE REQUEST AREA */}
           <section className="mt-7">
-            <p className="text-[9px] font-extrabold uppercase tracking-[0.15em] text-[#92959b]">
+            <p className="text-[9px] font-extrabold uppercase tracking-[0.15em] text-[#92959b] dark:text-[#a9acb6]">
               Live requests
             </p>
             <h3 className="mt-1 text-[19px] font-black tracking-[-0.035em]">
@@ -1274,7 +1274,7 @@ const response = await fetch(
 
             {liveRequests.filter((ride) => ride.ride_type !== "scheduled")
               .length === 0 ? (
-              <div className="mt-4 rounded-[24px] bg-[#e7e9ee] p-5 text-center shadow-[inset_4px_4px_9px_#c5c7cc,inset_-4px_-4px_9px_#ffffff]">
+              <div className="mt-4 rounded-[24px] bg-[#e7e9ee] dark:bg-[#1c1e24] p-5 text-center shadow-[inset_4px_4px_9px_#c5c7cc,inset_-4px_-4px_9px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d]">
                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-[17px] text-[#ff6846]">
                   <RadarIcon />
                 </div>
@@ -1283,7 +1283,7 @@ const response = await fetch(
                     ? "Looking for rides"
                     : "You're offline"}
                 </p>
-                <p className="mt-1 text-[8px] font-semibold text-[#96999f]">
+                <p className="mt-1 text-[8px] font-semibold text-[#96999f] dark:text-[#a9acb6]">
                   {status === "available"
                     ? "New Ride Now requests will appear here."
                     : "Go online when you're ready to receive live requests."}
@@ -1296,7 +1296,7 @@ const response = await fetch(
                   .map((ride) => (
                     <div
                       key={ride.id}
-                      className="rounded-[21px] bg-[#e7e9ee] p-4 shadow-[5px_5px_12px_#c4c6ca,-5px_-5px_12px_#ffffff]"
+                      className="rounded-[21px] bg-[#e7e9ee] dark:bg-[#1c1e24] p-4 shadow-[5px_5px_12px_#c4c6ca,-5px_-5px_12px_#ffffff] dark:shadow-[7px_7px_16px_#101116,-7px_-7px_16px_#30333d]"
                     >
                       <PassengerInfo ride={ride} />
 
@@ -1304,7 +1304,7 @@ const response = await fetch(
                         <p className="text-[10px] font-black">Ride Now</p>
 
                         <div className="text-right">
-                          <p className="text-[7px] font-extrabold uppercase tracking-[0.1em] text-[#92959b]">
+                          <p className="text-[7px] font-extrabold uppercase tracking-[0.1em] text-[#92959b] dark:text-[#a9acb6]">
                             Full fare
                           </p>
 
@@ -1323,7 +1323,7 @@ const response = await fetch(
                                 ).toFixed(0)}
                               </p>
 
-                              <p className="mt-0.5 text-[8px] font-semibold text-[#92959b]">
+                              <p className="mt-0.5 text-[8px] font-semibold text-[#92959b] dark:text-[#a9acb6]">
                                 RouteX promo R
                                 {Number(ride.discount_amount).toFixed(0)}
                               </p>
@@ -1341,7 +1341,7 @@ const response = await fetch(
                           status !== "available" || acceptingId === ride.id
                         }
                         onClick={() => acceptRide(ride.id)}
-                        className="mt-3 w-full rounded-[14px] bg-[#17191f] py-3 text-[9px] font-black text-white disabled:opacity-40"
+                        className="mt-3 w-full rounded-[14px] bg-[#17191f] dark:bg-[#30333d] py-3 text-[9px] font-black text-white disabled:opacity-40"
                       >
                         {acceptingId === ride.id
                           ? "Accepting..."
@@ -1358,20 +1358,20 @@ const response = await fetch(
             <button
               type="button"
               onClick={() => setShowRecentTrips((current) => !current)}
-              className="flex w-full items-center justify-between rounded-[20px] bg-[#e7e9ee] px-4 py-4 text-left shadow-[4px_4px_9px_#c4c6ca,-4px_-4px_9px_#ffffff] transition active:scale-[0.99]"
+              className="flex w-full items-center justify-between rounded-[20px] bg-[#e7e9ee] dark:bg-[#1c1e24] px-4 py-4 text-left shadow-[4px_4px_9px_#c4c6ca,-4px_-4px_9px_#ffffff] dark:shadow-[7px_7px_16px_#101116,-7px_-7px_16px_#30333d] transition active:scale-[0.99]"
               aria-expanded={showRecentTrips}
             >
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[13px] text-[#ff6846] shadow-[inset_2px_2px_5px_#c5c7cc,inset_-2px_-2px_5px_#ffffff]">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[13px] text-[#ff6846] shadow-[inset_2px_2px_5px_#c5c7cc,inset_-2px_-2px_5px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d]">
                   <HistoryIcon />
                 </div>
 
                 <div>
-                  <p className="text-[9px] font-extrabold uppercase tracking-[0.13em] text-[#92959b]">
+                  <p className="text-[9px] font-extrabold uppercase tracking-[0.13em] text-[#92959b] dark:text-[#a9acb6]">
                     Activity
                   </p>
                   <p className="mt-1 text-[12px] font-black">Recent trips</p>
-                  <p className="mt-0.5 text-[8px] font-semibold text-[#96999f]">
+                  <p className="mt-0.5 text-[8px] font-semibold text-[#96999f] dark:text-[#a9acb6]">
                     View your previous RouteX rides
                   </p>
                 </div>
@@ -1383,7 +1383,7 @@ const response = await fetch(
                 </span>
 
                 <span
-                  className={`text-[#92959b] transition-transform duration-200 ${
+                  className={`text-[#92959b] dark:text-[#a9acb6] transition-transform duration-200 ${
                     showRecentTrips ? "rotate-180" : ""
                   }`}
                 >
@@ -1395,8 +1395,8 @@ const response = await fetch(
             {showRecentTrips && (
               <div className="mt-4 space-y-3">
                 {completedTrips.length === 0 ? (
-                  <div className="rounded-[18px] bg-[#e7e9ee] px-4 py-5 text-center shadow-[inset_3px_3px_7px_#c5c7cc,inset_-3px_-3px_7px_#ffffff]">
-                    <p className="text-[9px] font-semibold text-[#96999f]">
+                  <div className="rounded-[18px] bg-[#e7e9ee] dark:bg-[#1c1e24] px-4 py-5 text-center shadow-[inset_3px_3px_7px_#c5c7cc,inset_-3px_-3px_7px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d]">
+                    <p className="text-[9px] font-semibold text-[#96999f] dark:text-[#a9acb6]">
                       No completed trips yet.
                     </p>
                   </div>
@@ -1413,20 +1413,20 @@ const response = await fetch(
           <section className="mt-9">
             <div className="flex items-end justify-between">
               <div>
-                <p className="text-[9px] font-extrabold uppercase tracking-[0.13em] text-[#92959b]">
+                <p className="text-[9px] font-extrabold uppercase tracking-[0.13em] text-[#92959b] dark:text-[#a9acb6]">
                   Feedback
                 </p>
                 <p className="mt-1 text-[12px] font-black">Passenger reviews</p>
               </div>
-              <span className="text-[9px] font-bold text-[#92959b]">
+              <span className="text-[9px] font-bold text-[#92959b] dark:text-[#a9acb6]">
                 {driverRating.review_count}{" "}
                 {driverRating.review_count === 1 ? "review" : "reviews"}
               </span>
             </div>
 
             {driverReviews.length === 0 ? (
-              <div className="mt-4 rounded-[18px] bg-[#e7e9ee] px-4 py-4 text-center shadow-[inset_3px_3px_7px_#c5c7cc,inset_-3px_-3px_7px_#ffffff]">
-                <p className="text-[9px] font-semibold text-[#96999f]">
+              <div className="mt-4 rounded-[18px] bg-[#e7e9ee] dark:bg-[#1c1e24] px-4 py-4 text-center shadow-[inset_3px_3px_7px_#c5c7cc,inset_-3px_-3px_7px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d]">
+                <p className="text-[9px] font-semibold text-[#96999f] dark:text-[#a9acb6]">
                   No passenger reviews yet.
                 </p>
               </div>
@@ -1435,18 +1435,18 @@ const response = await fetch(
                 {driverReviews.slice(0, 5).map((review: any) => (
                   <div
                     key={review.id}
-                    className="rounded-[18px] bg-[#e7e9ee] px-4 py-4 shadow-[3px_3px_8px_#c5c7cc,-3px_-3px_8px_#ffffff]"
+                    className="rounded-[18px] bg-[#e7e9ee] dark:bg-[#1c1e24] px-4 py-4 shadow-[3px_3px_8px_#c5c7cc,-3px_-3px_8px_#ffffff] dark:shadow-[7px_7px_16px_#101116,-7px_-7px_16px_#30333d]"
                   >
                     <div className="flex items-center justify-between">
                       <p className="text-[10px] font-black">
                         {review.passenger_name || "Passenger"}
                       </p>
                       <p className="text-[9px] font-black text-[#ff6846]">
-                        {Number(review.rating || 0).toFixed(1)} â˜…
+                        {Number(review.rating || 0).toFixed(1)} ★
                       </p>
                     </div>
                     {review.review_text && (
-                      <p className="mt-2 text-[9px] font-semibold leading-4 text-[#85888f]">
+                      <p className="mt-2 text-[9px] font-semibold leading-4 text-[#85888f] dark:text-[#b2b5bf]">
                         {review.review_text}
                       </p>
                     )}
@@ -1458,22 +1458,22 @@ const response = await fetch(
 
           {appPopup && (
             <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/35 px-5 pb-6 sm:items-center sm:pb-0">
-              <div className="w-full max-w-sm rounded-[26px] bg-[#e7e9ee] p-5 shadow-[10px_10px_28px_rgba(0,0,0,0.22),-6px_-6px_18px_rgba(255,255,255,0.75)]">
+              <div className="w-full max-w-sm rounded-[26px] bg-[#e7e9ee] dark:bg-[#1c1e24] p-5 shadow-[10px_10px_28px_rgba(0,0,0,0.22),-6px_-6px_18px_rgba(255,255,255,0.75)]">
                 <div className="flex items-start gap-3">
                   <div
                     className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] ${
                       appPopup.tone === "error"
                         ? "bg-[#ff6846] text-white"
-                        : "bg-[#17191f] text-white"
+                        : "bg-[#17191f] dark:bg-[#30333d] text-white"
                     }`}
                   >
                     <span className="text-[18px] font-black">!</span>
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[15px] font-black text-[#17191f]">
+                    <p className="text-[15px] font-black text-[#17191f] dark:text-[#f5f6f8]">
                       {appPopup.title}
                     </p>
-                    <p className="mt-1 text-[10px] font-semibold leading-5 text-[#7c7f86]">
+                    <p className="mt-1 text-[10px] font-semibold leading-5 text-[#7c7f86] dark:text-[#b2b5bf]">
                       {appPopup.message}
                     </p>
                   </div>
@@ -1482,7 +1482,7 @@ const response = await fetch(
                 <button
                   type="button"
                   onClick={() => setAppPopup(null)}
-                  className="mt-5 w-full rounded-[16px] bg-[#17191f] px-4 py-3.5 text-[11px] font-black text-white active:scale-[0.985]"
+                  className="mt-5 w-full rounded-[16px] bg-[#17191f] dark:bg-[#30333d] px-4 py-3.5 text-[11px] font-black text-white active:scale-[0.985]"
                 >
                   OK
                 </button>
@@ -1491,7 +1491,7 @@ const response = await fetch(
           )}
 
           <footer className="pt-10 text-center">
-            <p className="text-[9px] font-semibold text-[#a0a3a9]">
+            <p className="text-[9px] font-semibold text-[#a0a3a9] dark:text-[#a9acb6]">
               RouteX â€¢ Driver Portal
             </p>
           </footer>
@@ -1523,7 +1523,7 @@ function PassengerInfo({ ride }: { ride: any }) {
 
   return (
     <div className="flex min-w-0 items-center gap-3">
-      <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#e7e9ee] shadow-[inset_3px_3px_6px_#c5c7cc,inset_-3px_-3px_6px_#ffffff]">
+      <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#e7e9ee] dark:bg-[#1c1e24] shadow-[inset_3px_3px_6px_#c5c7cc,inset_-3px_-3px_6px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d]">
         {image ? (
           <img src={image} alt={name} className="h-full w-full object-cover" />
         ) : (
@@ -1534,12 +1534,12 @@ function PassengerInfo({ ride }: { ride: any }) {
       </div>
 
       <div className="min-w-0">
-        <p className="text-[8px] font-extrabold uppercase tracking-[0.12em] text-[#92959b]">
+        <p className="text-[8px] font-extrabold uppercase tracking-[0.12em] text-[#92959b] dark:text-[#a9acb6]">
           Passenger
         </p>
         <p className="mt-1 truncate text-[15px] font-black">{name}</p>
         {phone && (
-          <p className="mt-0.5 text-[9px] font-bold text-[#8b8e95]">{phone}</p>
+          <p className="mt-0.5 text-[9px] font-bold text-[#8b8e95] dark:text-[#a9acb6]">{phone}</p>
         )}
       </div>
     </div>
@@ -1554,9 +1554,9 @@ function RouteBox({
   destination: string;
 }) {
   return (
-    <div className="mt-5 rounded-[19px] bg-[#e7e9ee] px-4 py-4 shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff]">
+    <div className="mt-5 rounded-[19px] bg-[#e7e9ee] dark:bg-[#1c1e24] px-4 py-4 shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d]">
       <RouteRow type="pickup" label="Pickup" value={pickup} />
-      <div className="ml-[5px] h-5 border-l border-dashed border-[#b6b9bf]" />
+      <div className="ml-[5px] h-5 border-l border-dashed border-[#b6b9bf] dark:border-[#50545f]" />
       <RouteRow type="destination" label="Destination" value={destination} />
     </div>
   );
@@ -1575,11 +1575,11 @@ function RouteRow({
     <div className="flex items-start gap-3">
       <span
         className={`mt-1 h-[11px] w-[11px] shrink-0 rounded-full ${
-          type === "pickup" ? "border-[3px] border-[#17191f]" : "bg-[#ff6846]"
+          type === "pickup" ? "border-[3px] border-[#17191f] dark:border-[#f0f1f5]" : "bg-[#ff6846]"
         }`}
       />
       <div className="min-w-0">
-        <p className="text-[8px] font-extrabold uppercase tracking-[0.11em] text-[#9a9da3]">
+        <p className="text-[8px] font-extrabold uppercase tracking-[0.11em] text-[#9a9da3] dark:text-[#a9acb6]">
           {label}
         </p>
         <p className="mt-1 text-[10px] font-black leading-4">
@@ -1592,16 +1592,16 @@ function RouteRow({
 
 function HistoryRide({ trip }: { trip: any }) {
   return (
-    <div className="flex items-center rounded-[18px] bg-[#e7e9ee] px-4 py-3.5 shadow-[3px_3px_8px_#c5c7cc,-3px_-3px_8px_#ffffff]">
-      <div className="flex h-9 w-9 items-center justify-center rounded-[12px] text-[#ff6846] shadow-[inset_2px_2px_5px_#c5c7cc,inset_-2px_-2px_5px_#ffffff]">
+    <div className="flex items-center rounded-[18px] bg-[#e7e9ee] dark:bg-[#1c1e24] px-4 py-3.5 shadow-[3px_3px_8px_#c5c7cc,-3px_-3px_8px_#ffffff] dark:shadow-[7px_7px_16px_#101116,-7px_-7px_16px_#30333d]">
+      <div className="flex h-9 w-9 items-center justify-center rounded-[12px] text-[#ff6846] shadow-[inset_2px_2px_5px_#c5c7cc,inset_-2px_-2px_5px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d]">
         <RideIcon />
       </div>
       <div className="ml-3 min-w-0 flex-1">
         <p className="truncate text-[10px] font-black">
           {trip.dropoff_address || "Completed ride"}
         </p>
-        <p className="mt-0.5 text-[8px] font-semibold text-[#999ca2]">
-          Completed Â· BK-{trip.id.toString().padStart(4, "0")}
+        <p className="mt-0.5 text-[8px] font-semibold text-[#999ca2] dark:text-[#a9acb6]">
+          Completed · BK-{trip.id.toString().padStart(4, "0")}
         </p>
       </div>
       <p className="text-[11px] font-black">R{trip.fare_amount}</p>
