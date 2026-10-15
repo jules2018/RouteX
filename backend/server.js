@@ -1137,14 +1137,22 @@ function routeXDistanceKm(lat1, lng1, lat2, lng2) {
 }
 
 function routeXDistanceFare(distanceKm) {
-  // RouteX trial pricing: higher rate for short trips, tapered rate for longer trips.
-  // First 2 km: R50 minimum. From 2 km to 10 km: R8 per additional km.
-  // Beyond 10 km: R2 per additional km to keep longer trips affordable.
-  // Round up to the next R5. Pickup surcharge and out-of-town fee are separate.
+  // Local road-distance base fares; pickup surcharge and out-of-town fee are separate.
   if (!Number.isFinite(distanceKm) || distanceKm < 0) {
     throw new Error("Invalid route distance for fare calculation.");
   }
 
+  if (distanceKm <= 2) return 50;
+  if (distanceKm <= 3) return 55;
+  if (distanceKm <= 4) return 55;
+  if (distanceKm <= 5) return 60;
+  if (distanceKm <= 6) return 65;
+  if (distanceKm <= 7) return 75;
+  if (distanceKm <= 8) return 85;
+  if (distanceKm <= 9) return 95;
+  if (distanceKm <= 10) return 105;
+
+  // Preserve the original fare formula for journeys over 10 km.
   const minimumFare = 50;
   const shortTripRate = 8;
   const longTripRate = 2;
@@ -1156,7 +1164,6 @@ function routeXDistanceFare(distanceKm) {
     longRateDistance * longTripRate;
   return Math.ceil(rawFare / 5) * 5;
 }
-
 async function calculateRouteXFare({
   pickup_area,
   dropoff_area,
