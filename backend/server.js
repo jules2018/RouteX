@@ -1015,10 +1015,10 @@ function verifyRouteXFareQuote(token) {
 }
 
 function routeXPickupSurcharge(distanceKm) {
-  if (distanceKm <= 3) return 0;
-  if (distanceKm <= 5) return 10;
-  if (distanceKm <= 8) return 20;
-  return 30;
+  if (distanceKm <= 2) return 0;
+  if (distanceKm <= 5) return 5;
+  if (distanceKm <= 8) return 10;
+  return 20;
 }
 
 async function calculateRouteXPickupDistance(pickupLat, pickupLng) {
