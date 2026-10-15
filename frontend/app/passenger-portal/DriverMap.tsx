@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  MapContainer,
-  TileLayer,
-  Marker,
-  Popup,
-  useMap,
-} from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -96,26 +90,15 @@ export default function DriverMap({
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        <Marker
-          position={[pickupLat, pickupLng]}
-          icon={pickupIcon}
-        >
+        <Marker position={[pickupLat, pickupLng]} icon={pickupIcon}>
           <Popup>Your pickup location</Popup>
         </Marker>
 
-        <Marker
-          position={[driverLat, driverLng]}
-          icon={driverIcon}
-        >
-          <Popup>
-            {driverName || "Your RouteX driver"}
-          </Popup>
+        <Marker position={[driverLat, driverLng]} icon={driverIcon}>
+          <Popup>{driverName || "Your RouteX driver"}</Popup>
         </Marker>
 
-        <FollowDriver
-          latitude={driverLat}
-          longitude={driverLng}
-        />
+        <FollowDriver latitude={driverLat} longitude={driverLng} />
       </MapContainer>
     </div>
   );

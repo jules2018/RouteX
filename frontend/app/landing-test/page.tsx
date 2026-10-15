@@ -12,12 +12,10 @@ export default function TestLandingPage() {
       className={`${outfit.className} min-h-[100dvh] w-full bg-white text-[#111111]`}
     >
       <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col px-5">
-
         {/* ================================
             HEADER
         ================================= */}
         <header className="flex items-center justify-between py-5">
-
           <h1 className="text-[26px] font-extrabold tracking-[-0.06em]">
             <span className="text-[#111111]">Route</span>
             <span className="text-teal-600">X</span>
@@ -40,15 +38,12 @@ export default function TestLandingPage() {
           >
             Log in
           </a>
-
         </header>
-
 
         {/* ================================
             HERO
         ================================= */}
         <section className="pt-8">
-
           <h2
             className="
               text-[34px]
@@ -65,17 +60,15 @@ export default function TestLandingPage() {
           <p className="mt-3 text-[15px] font-medium text-[#6b6b6b]">
             Fast. Local. Reliable.
           </p>
-
         </section>
-
 
         {/* ================================
             BOOK A RIDE
         ================================= */}
-        
-<a
-  href="/passenger-login"
-  className="
+
+        <a
+          href="/passenger-login"
+          className="
     flex
     w-full
     items-center
@@ -89,19 +82,19 @@ export default function TestLandingPage() {
     hover:bg-[#eeeeee]
     active:scale-[0.98]
   "
->
-  <div>
-    <p className="text-[18px] font-extrabold tracking-tight">
-  Book a ride
-</p>
+        >
+          <div>
+            <p className="text-[18px] font-extrabold tracking-tight">
+              Book a ride
+            </p>
 
-<p className="mt-1 text-[13px] font-medium text-[#777777]">
-  Where are you going?
-</p>
-  </div>
+            <p className="mt-1 text-[13px] font-medium text-[#777777]">
+              Where are you going?
+            </p>
+          </div>
 
-  <div
-    className="
+          <div
+            className="
       flex
       h-10
       w-10
@@ -111,34 +104,32 @@ export default function TestLandingPage() {
       bg-[#111111]
       text-white
     "
-  >
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M5 12h14" />
-      <path d="m13 6 6 6-6 6" />
-    </svg>
-  </div>
-</a>
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M5 12h14" />
+              <path d="m13 6 6 6-6 6" />
+            </svg>
+          </div>
+        </a>
 
         {/* ================================
             PORTAL ACCESS
         ================================= */}
         <section className="mt-8">
-
           <p className="mb-4 text-[13px] font-bold text-[#777777]">
             Portal Access
           </p>
 
-         <div className="grid grid-cols-1 gap-3">
-
+          <div className="grid grid-cols-1 gap-3">
             {/* Driver */}
             <a
               href="/driver-login"
@@ -157,11 +148,8 @@ export default function TestLandingPage() {
             >
               Driver Login
             </a>
-
           </div>
-
         </section>
-
 
         {/* ================================
             BECOME A DRIVER
@@ -174,9 +162,7 @@ export default function TestLandingPage() {
             p-6
           "
         >
-
           <div className="text-center">
-
             {/* Black Driver Icon */}
             <div
               className="
@@ -239,31 +225,24 @@ export default function TestLandingPage() {
             >
               Apply Now
             </a>
-
           </div>
-
         </section>
-
 
         {/* ================================
             SUPPORT
         ================================= */}
         <footer className="mt-auto pt-8 pb-5">
-
           <div className="border-t border-[#e5e5e5] pt-5 text-center">
-
-            <p className="text-[12px] font-medium text-[#999999]">
-              Need Help?
-            </p>
+            <p className="text-[12px] font-medium text-[#999999]">Need Help?</p>
 
             <p className="mt-1 text-[13px] font-bold text-[#333333]">
               RouteX Support
             </p>
-<a
-  href="https://wa.me/27799132513"
-  target="_blank"
-  rel="noopener noreferrer"
-  className="
+            <a
+              href="https://wa.me/27799132513"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="
     mt-1
     block
     text-[12px]
@@ -272,14 +251,11 @@ export default function TestLandingPage() {
     transition
     hover:text-[#111111]
   "
->
-  WhatsApp: 079 913 2513
-</a>
-
+            >
+              WhatsApp: 079 913 2513
+            </a>
           </div>
-
         </footer>
-
       </div>
     </main>
   );

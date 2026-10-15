@@ -8,15 +8,13 @@ const outfit = Outfit({
 
 export default function DriverTermsPage() {
   return (
-    <main className={`${outfit.className} min-h-screen bg-white text-[#111111]`}>
+    <main
+      className={`${outfit.className} min-h-screen bg-white text-[#111111]`}
+    >
       <div className="mx-auto w-full max-w-md px-5 pb-12">
-
         {/* HEADER */}
         <header className="flex items-center justify-between py-5">
-          <a
-            href="/"
-            className="text-[26px] font-extrabold tracking-[-0.05em]"
-          >
+          <a href="/" className="text-[26px] font-extrabold tracking-[-0.05em]">
             Route<span className="text-[#ff6a00]">X</span>
           </a>
 
@@ -36,8 +34,7 @@ export default function DriverTermsPage() {
 
           <h1 className="mt-2 text-[30px] font-extrabold leading-tight tracking-[-0.04em]">
             Driver Terms
-            <br />
-            & Agreement
+            <br />& Agreement
           </h1>
 
           <p className="mt-3 text-[15px] leading-relaxed text-[#666666]">
@@ -64,7 +61,6 @@ export default function DriverTermsPage() {
 
         {/* DRIVER TERMS */}
         <div className="space-y-8 pt-8 text-[16px] leading-[1.7] text-[#555555]">
-
           <div>
             <p className="text-[12px] font-extrabold uppercase tracking-[0.12em] text-[#ff6a00]">
               Part A
@@ -166,9 +162,7 @@ export default function DriverTermsPage() {
             <ul className="list-disc space-y-2 pl-5">
               <li>Drive lawfully and responsibly.</li>
 
-              <li>
-                Treat passengers respectfully and professionally.
-              </li>
+              <li>Treat passengers respectfully and professionally.</li>
 
               <li>
                 Not threaten, harass, discriminate against or assault a
@@ -181,8 +175,8 @@ export default function DriverTermsPage() {
               </li>
 
               <li>
-                Not use a mobile device in an unlawful or dangerous manner
-                while driving.
+                Not use a mobile device in an unlawful or dangerous manner while
+                driving.
               </li>
 
               <li>
@@ -199,9 +193,9 @@ export default function DriverTermsPage() {
 
           <LegalSection title="7. Passenger information">
             <p>
-              Passenger names, telephone numbers, pickup locations,
-              destinations and other booking information may only be used for
-              legitimate RouteX ride, safety and support purposes.
+              Passenger names, telephone numbers, pickup locations, destinations
+              and other booking information may only be used for legitimate
+              RouteX ride, safety and support purposes.
             </p>
 
             <p>
@@ -213,9 +207,9 @@ export default function DriverTermsPage() {
 
           <LegalSection title="8. Fares and driver earnings">
             <p>
-              RouteX may display or communicate the fare applicable to a
-              booking and any platform fee, promotional adjustment or other
-              amount that applies.
+              RouteX may display or communicate the fare applicable to a booking
+              and any platform fee, promotional adjustment or other amount that
+              applies.
             </p>
 
             <p>
@@ -224,15 +218,15 @@ export default function DriverTermsPage() {
             </p>
 
             <p>
-              RouteX does not guarantee a particular level of earnings or
-              number of bookings.
+              RouteX does not guarantee a particular level of earnings or number
+              of bookings.
             </p>
           </LegalSection>
 
           <LegalSection title="9. Promotions">
             <p>
-              RouteX may offer passenger discounts or promotional campaigns
-              from time to time.
+              RouteX may offer passenger discounts or promotional campaigns from
+              time to time.
             </p>
 
             <p>
@@ -241,16 +235,14 @@ export default function DriverTermsPage() {
               applicable arrangement.
             </p>
 
-            <p>
-              Promotional rules may vary between campaigns.
-            </p>
+            <p>Promotional rules may vary between campaigns.</p>
           </LegalSection>
 
           <LegalSection title="10. Safety incidents">
             <p>
-              Drivers should promptly report serious accidents, passenger
-              safety incidents, threats, suspected fraud or other significant
-              incidents connected to a RouteX trip.
+              Drivers should promptly report serious accidents, passenger safety
+              incidents, threats, suspected fraud or other significant incidents
+              connected to a RouteX trip.
             </p>
 
             <p>
@@ -258,10 +250,7 @@ export default function DriverTermsPage() {
               law-enforcement authority first.
             </p>
 
-            <a
-              href="/safety"
-              className="inline-block font-bold text-[#ff6a00]"
-            >
+            <a href="/safety" className="inline-block font-bold text-[#ff6a00]">
               Read RouteX Safety Guidelines →
             </a>
           </LegalSection>
@@ -270,8 +259,8 @@ export default function DriverTermsPage() {
             <p>
               The driver is responsible for the vehicle used to provide
               services, including its maintenance, fuel, repairs, tyres,
-              licensing, cleanliness and roadworthiness unless RouteX
-              expressly agrees otherwise in writing.
+              licensing, cleanliness and roadworthiness unless RouteX expressly
+              agrees otherwise in writing.
             </p>
           </LegalSection>
 
@@ -290,10 +279,10 @@ export default function DriverTermsPage() {
 
           <LegalSection title="13. Suspension or removal">
             <p>
-              RouteX may temporarily restrict or suspend a driver's access
-              where reasonably necessary to investigate safety concerns,
-              suspected fraud, invalid documentation, serious passenger
-              complaints or potential breaches of these terms.
+              RouteX may temporarily restrict or suspend a driver's access where
+              reasonably necessary to investigate safety concerns, suspected
+              fraud, invalid documentation, serious passenger complaints or
+              potential breaches of these terms.
             </p>
 
             <p>
@@ -316,8 +305,7 @@ export default function DriverTermsPage() {
           <LegalSection title="14. Intended relationship">
             <p>
               RouteX and the driver intend their relationship to be that of
-              independent contracting parties rather than employer and
-              employee.
+              independent contracting parties rather than employer and employee.
             </p>
 
             <p>
@@ -357,9 +345,9 @@ export default function DriverTermsPage() {
 
           <LegalSection title="17. Taxes">
             <p>
-              Drivers are responsible for understanding and complying with
-              their own tax obligations arising from income earned through
-              their activities.
+              Drivers are responsible for understanding and complying with their
+              own tax obligations arising from income earned through their
+              activities.
             </p>
 
             <p>
@@ -371,27 +359,27 @@ export default function DriverTermsPage() {
           <LegalSection title="18. No employment benefits">
             <p>
               To the extent that the relationship is lawfully classified as an
-              independent-contractor relationship, the driver is not entitled
-              to employee benefits from RouteX merely because they use the
-              RouteX platform.
+              independent-contractor relationship, the driver is not entitled to
+              employee benefits from RouteX merely because they use the RouteX
+              platform.
             </p>
 
             <p>
-              This clause does not remove any right that a driver may have
-              under applicable South African law if the relationship is legally
+              This clause does not remove any right that a driver may have under
+              applicable South African law if the relationship is legally
               classified differently.
             </p>
           </LegalSection>
 
           <LegalSection title="19. Confidentiality">
             <p>
-              Drivers must protect confidential RouteX information and
-              passenger personal information obtained through the platform.
+              Drivers must protect confidential RouteX information and passenger
+              personal information obtained through the platform.
             </p>
 
             <p>
-              Confidential or personal information may not be disclosed or
-              used for unrelated purposes except where authorised or legally
+              Confidential or personal information may not be disclosed or used
+              for unrelated purposes except where authorised or legally
               required.
             </p>
           </LegalSection>
@@ -451,8 +439,8 @@ export default function DriverTermsPage() {
             <p>
               Selecting the acceptance checkbox during RouteX driver
               registration and submitting the application constitutes an
-              electronic indication that the driver agrees to these Driver
-              Terms & Conditions and this Independent Contractor Agreement.
+              electronic indication that the driver agrees to these Driver Terms
+              & Conditions and this Independent Contractor Agreement.
             </p>
 
             <p>
@@ -475,8 +463,8 @@ export default function DriverTermsPage() {
 
           <LegalSection title="26. Contact RouteX">
             <p>
-              Drivers can contact RouteX Support regarding these terms,
-              bookings or their RouteX account.
+              Drivers can contact RouteX Support regarding these terms, bookings
+              or their RouteX account.
             </p>
 
             <a
@@ -488,7 +476,6 @@ export default function DriverTermsPage() {
               WhatsApp RouteX Support
             </a>
           </LegalSection>
-
         </div>
 
         {/* LEGAL LINKS */}
@@ -517,7 +504,6 @@ export default function DriverTermsPage() {
             RouteX • Getting Upington Moving
           </p>
         </footer>
-
       </div>
     </main>
   );
@@ -536,9 +522,7 @@ function LegalSection({
         {title}
       </h2>
 
-      <div className="space-y-3">
-        {children}
-      </div>
+      <div className="space-y-3">{children}</div>
     </section>
   );
 }

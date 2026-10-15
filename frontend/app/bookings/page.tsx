@@ -235,41 +235,40 @@ export default function BookingTestPage() {
         if (!response.ok) {
           throw new Error(data?.error || "Fare calculation failed");
         }
-const numericFare = Number(data.fare);
-const numericDistance = Number(data.distance_km);
-const quoteToken = String(data.fare_quote_token || "");
+        const numericFare = Number(data.fare);
+        const numericDistance = Number(data.distance_km);
+        const quoteToken = String(data.fare_quote_token || "");
 
-if (!Number.isFinite(numericFare) || numericFare <= 0) {
-  throw new Error("Invalid fare returned");
-}
+        if (!Number.isFinite(numericFare) || numericFare <= 0) {
+          throw new Error("Invalid fare returned");
+        }
 
-if (
-  data.distance_km == null ||
-  !Number.isFinite(numericDistance) ||
-  numericDistance <= 0
-) {
-  throw new Error("Invalid road distance returned");
-}
+        if (
+          data.distance_km == null ||
+          !Number.isFinite(numericDistance) ||
+          numericDistance <= 0
+        ) {
+          throw new Error("Invalid road distance returned");
+        }
 
-if (!quoteToken) {
-  throw new Error("Fare quote could not be secured");
-}
+        if (!quoteToken) {
+          throw new Error("Fare quote could not be secured");
+        }
 
-if (cancelled) return;
+        if (cancelled) return;
 
-// Only display a fare after validation succeeds.
-setFare(String(numericFare));
-setFareError("");
-setDistanceKm(numericDistance);
-setOutOfTownFee(Number(data.out_of_town_fee || 0));
-setPickupSurcharge(Number(data.pickup_surcharge || 0));
-setPickupDistanceKm(
-  data.pickup_distance_km == null
-    ? null
-    : Number(data.pickup_distance_km)
-);
-setFareQuoteToken(quoteToken);
-        
+        // Only display a fare after validation succeeds.
+        setFare(String(numericFare));
+        setFareError("");
+        setDistanceKm(numericDistance);
+        setOutOfTownFee(Number(data.out_of_town_fee || 0));
+        setPickupSurcharge(Number(data.pickup_surcharge || 0));
+        setPickupDistanceKm(
+          data.pickup_distance_km == null
+            ? null
+            : Number(data.pickup_distance_km),
+        );
+        setFareQuoteToken(quoteToken);
       } catch (error) {
         // An online driver may have stale GPS; treat this as unavailable,
         // rather than showing a red fare calculation error.

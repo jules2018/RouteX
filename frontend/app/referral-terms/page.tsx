@@ -8,15 +8,13 @@ const outfit = Outfit({
 
 export default function ReferralTermsPage() {
   return (
-    <main className={`${outfit.className} min-h-screen bg-white text-[#111111]`}>
+    <main
+      className={`${outfit.className} min-h-screen bg-white text-[#111111]`}
+    >
       <div className="mx-auto w-full max-w-md px-5 pb-12">
-
         {/* HEADER */}
         <header className="flex items-center justify-between py-5">
-          <a
-            href="/"
-            className="text-[26px] font-extrabold tracking-[-0.05em]"
-          >
+          <a href="/" className="text-[26px] font-extrabold tracking-[-0.05em]">
             Route<span className="text-[#ff6a00]">X</span>
           </a>
 
@@ -47,7 +45,6 @@ export default function ReferralTermsPage() {
 
         {/* CONTENT */}
         <div className="space-y-8 pt-7 text-[16px] leading-[1.7] text-[#555555]">
-
           <LegalSection title="1. About the programs">
             <p>
               RouteX may operate referral, ambassador, promotional and
@@ -68,16 +65,16 @@ export default function ReferralTermsPage() {
             </p>
 
             <p>
-              RouteX may require participants to have a valid RouteX account
-              and provide accurate information before rewards are issued.
+              RouteX may require participants to have a valid RouteX account and
+              provide accurate information before rewards are issued.
             </p>
           </LegalSection>
 
           <LegalSection title="3. Referral codes">
             <p>
               RouteX may issue referral codes or links that allow eligible
-              participants to refer new passengers, drivers, businesses or
-              other participants.
+              participants to refer new passengers, drivers, businesses or other
+              participants.
             </p>
 
             <p>
@@ -94,9 +91,9 @@ export default function ReferralTermsPage() {
             </p>
 
             <p>
-              A campaign may require an action such as registration, approval,
-              a first completed trip or another stated milestone before a
-              reward becomes payable.
+              A campaign may require an action such as registration, approval, a
+              first completed trip or another stated milestone before a reward
+              becomes payable.
             </p>
 
             <p>
@@ -107,8 +104,8 @@ export default function ReferralTermsPage() {
 
           <LegalSection title="5. Rewards and bonuses">
             <p>
-              Reward amounts, allowances, bonuses and qualifying milestones
-              may differ between RouteX campaigns.
+              Reward amounts, allowances, bonuses and qualifying milestones may
+              differ between RouteX campaigns.
             </p>
 
             <p>
@@ -129,9 +126,9 @@ export default function ReferralTermsPage() {
             </p>
 
             <p>
-              Verification may include checking RouteX account records,
-              booking records, referral codes, driver approvals, completed
-              trips or other relevant information.
+              Verification may include checking RouteX account records, booking
+              records, referral codes, driver approvals, completed trips or
+              other relevant information.
             </p>
           </LegalSection>
 
@@ -152,8 +149,8 @@ export default function ReferralTermsPage() {
               </li>
 
               <li>
-                Manipulate bookings, trips or account activity solely to
-                trigger a reward.
+                Manipulate bookings, trips or account activity solely to trigger
+                a reward.
               </li>
 
               <li>
@@ -207,15 +204,15 @@ export default function ReferralTermsPage() {
 
           <LegalSection title="10. Independent participation">
             <p>
-              Participation in a RouteX ambassador or referral program does
-              not automatically create an employment relationship,
-              partnership, franchise or agency relationship.
+              Participation in a RouteX ambassador or referral program does not
+              automatically create an employment relationship, partnership,
+              franchise or agency relationship.
             </p>
 
             <p>
               The legal nature of any relationship will depend on the actual
-              circumstances and applicable South African law, regardless of
-              the label used by the parties.
+              circumstances and applicable South African law, regardless of the
+              label used by the parties.
             </p>
           </LegalSection>
 
@@ -246,16 +243,16 @@ export default function ReferralTermsPage() {
             </p>
 
             <p>
-              A reward may be refused where the qualifying requirements were
-              not met or the referral activity was fraudulent or materially
+              A reward may be refused where the qualifying requirements were not
+              met or the referral activity was fraudulent or materially
               misleading.
             </p>
           </LegalSection>
 
           <LegalSection title="13. Changes to a program">
             <p>
-              RouteX may change, pause or end a referral or ambassador
-              campaign, including future reward amounts and eligibility rules.
+              RouteX may change, pause or end a referral or ambassador campaign,
+              including future reward amounts and eligibility rules.
             </p>
 
             <p>
@@ -308,7 +305,6 @@ export default function ReferralTermsPage() {
               WhatsApp RouteX Support
             </a>
           </LegalSection>
-
         </div>
 
         {/* LEGAL LINKS */}
@@ -341,7 +337,6 @@ export default function ReferralTermsPage() {
             RouteX • Getting Upington Moving
           </p>
         </footer>
-
       </div>
     </main>
   );
@@ -360,9 +355,7 @@ function LegalSection({
         {title}
       </h2>
 
-      <div className="space-y-3">
-        {children}
-      </div>
+      <div className="space-y-3">{children}</div>
     </section>
   );
 }

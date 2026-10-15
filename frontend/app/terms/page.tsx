@@ -12,13 +12,9 @@ export default function PassengerTermsPage() {
       className={`${outfit.className} min-h-screen bg-white text-[#111111]`}
     >
       <div className="mx-auto w-full max-w-md px-5 pb-12">
-
         {/* HEADER */}
         <header className="flex items-center justify-between py-5">
-          <a
-            href="/"
-            className="text-[26px] font-extrabold tracking-[-0.05em]"
-          >
+          <a href="/" className="text-[26px] font-extrabold tracking-[-0.05em]">
             Route<span className="text-[#ff6a00]">X</span>
           </a>
 
@@ -45,8 +41,7 @@ export default function PassengerTermsPage() {
 
           <h1 className="mt-2 text-[30px] font-extrabold leading-tight tracking-[-0.04em]">
             Passenger Terms
-            <br />
-            & Conditions
+            <br />& Conditions
           </h1>
 
           <p className="mt-3 text-[14px] font-medium text-[#777777]">
@@ -56,7 +51,6 @@ export default function PassengerTermsPage() {
 
         {/* CONTENT */}
         <div className="space-y-8 pt-7 text-[16px] leading-[1.7] text-[#555555]">
-
           <LegalSection title="1. About RouteX">
             <p>
               RouteX is a technology-enabled local ride-booking platform
@@ -65,22 +59,21 @@ export default function PassengerTermsPage() {
             </p>
 
             <p>
-              Unless RouteX expressly states otherwise in writing, RouteX
-              does not itself operate the driver's vehicle or employ the
-              driver.
+              Unless RouteX expressly states otherwise in writing, RouteX does
+              not itself operate the driver's vehicle or employ the driver.
             </p>
 
             <p>
               By creating a passenger account, requesting a ride, or using
-              RouteX, you agree to these Passenger Terms & Conditions,
-              together with the RouteX Terms of Use and Privacy Policy.
+              RouteX, you agree to these Passenger Terms & Conditions, together
+              with the RouteX Terms of Use and Privacy Policy.
             </p>
           </LegalSection>
 
           <LegalSection title="2. Passenger accounts">
             <p>
-              You must provide accurate registration and contact information
-              and keep that information reasonably up to date.
+              You must provide accurate registration and contact information and
+              keep that information reasonably up to date.
             </p>
 
             <p>
@@ -103,8 +96,8 @@ export default function PassengerTermsPage() {
 
             <p>
               Pickup times and trip duration may be affected by traffic,
-              weather, road conditions, driver availability, vehicle issues,
-              and other circumstances outside RouteX's reasonable control.
+              weather, road conditions, driver availability, vehicle issues, and
+              other circumstances outside RouteX's reasonable control.
             </p>
           </LegalSection>
 
@@ -116,21 +109,20 @@ export default function PassengerTermsPage() {
 
             <p>
               A fare may change where the passenger changes the trip, adds
-              stops, causes material waiting time, or another disclosed
-              pricing condition applies.
+              stops, causes material waiting time, or another disclosed pricing
+              condition applies.
             </p>
 
             <p>
-              Promotional credits, referral rewards and discounts may be
-              subject to separate eligibility requirements, limits and expiry
-              dates.
+              Promotional credits, referral rewards and discounts may be subject
+              to separate eligibility requirements, limits and expiry dates.
             </p>
           </LegalSection>
 
           <LegalSection title="5. Cancellations and no-shows">
             <p>
-              Passengers should cancel a ride as soon as reasonably possible
-              if it is no longer required.
+              Passengers should cancel a ride as soon as reasonably possible if
+              it is no longer required.
             </p>
 
             <p>
@@ -173,28 +165,28 @@ export default function PassengerTermsPage() {
               </li>
 
               <li>
-                Not use RouteX for unlawful activities, prohibited goods,
-                fraud or criminal activity.
+                Not use RouteX for unlawful activities, prohibited goods, fraud
+                or criminal activity.
               </li>
             </ul>
           </LegalSection>
 
           <LegalSection title="7. Drivers">
             <p>
-              Drivers using RouteX are responsible for the lawful operation
-              of their vehicles, their driving conduct, and maintaining the
+              Drivers using RouteX are responsible for the lawful operation of
+              their vehicles, their driving conduct, and maintaining the
               licences, permits, roadworthiness, insurance and other legal
               requirements applicable to them.
             </p>
 
             <p>
-              RouteX may perform driver onboarding or verification steps, but
-              no verification process can eliminate all risk.
+              RouteX may perform driver onboarding or verification steps, but no
+              verification process can eliminate all risk.
             </p>
 
             <p>
-              Passengers should exercise ordinary personal-safety judgment
-              when using transportation services.
+              Passengers should exercise ordinary personal-safety judgment when
+              using transportation services.
             </p>
           </LegalSection>
 
@@ -210,10 +202,7 @@ export default function PassengerTermsPage() {
               platform.
             </p>
 
-            <a
-              href="/safety"
-              className="inline-block font-bold text-[#ff6a00]"
-            >
+            <a href="/safety" className="inline-block font-bold text-[#ff6a00]">
               Read RouteX Safety Guidelines →
             </a>
           </LegalSection>
@@ -235,8 +224,8 @@ export default function PassengerTermsPage() {
             <p>
               RouteX may restrict or suspend an account where reasonably
               necessary to protect passenger or driver safety, prevent fraud,
-              investigate serious misconduct, comply with law, or enforce
-              these terms.
+              investigate serious misconduct, comply with law, or enforce these
+              terms.
             </p>
 
             <p>
@@ -263,9 +252,9 @@ export default function PassengerTermsPage() {
 
           <LegalSection title="12. Privacy">
             <p>
-              RouteX processes passenger personal information in accordance
-              with its Privacy Policy and applicable South African data
-              protection requirements.
+              RouteX processes passenger personal information in accordance with
+              its Privacy Policy and applicable South African data protection
+              requirements.
             </p>
 
             <a
@@ -313,12 +302,10 @@ export default function PassengerTermsPage() {
               WhatsApp RouteX Support
             </a>
           </LegalSection>
-
         </div>
 
         {/* OTHER POLICIES */}
         <section className="mt-10 border-t border-[#eeeeee] pt-6">
-
           <p className="text-[12px] font-extrabold uppercase tracking-[0.1em] text-[#999999]">
             RouteX Legal
           </p>
@@ -340,7 +327,6 @@ export default function PassengerTermsPage() {
               Safety
             </a>
           </div>
-
         </section>
 
         <footer className="pt-10 text-center">
@@ -348,12 +334,10 @@ export default function PassengerTermsPage() {
             RouteX • Getting Upington Moving
           </p>
         </footer>
-
       </div>
     </main>
   );
 }
-
 
 /* =========================================
    LEGAL SECTION COMPONENT
@@ -372,9 +356,7 @@ function LegalSection({
         {title}
       </h2>
 
-      <div className="space-y-3">
-        {children}
-      </div>
+      <div className="space-y-3">{children}</div>
     </section>
   );
 }

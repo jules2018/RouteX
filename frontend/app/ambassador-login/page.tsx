@@ -10,19 +10,16 @@ export default function AmbassadorLoginPage() {
   const router = useRouter();
 
   const handleLogin = async () => {
-    const response = await fetch(
-      `${API_URL}/ambassador-login`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          phone,
-          password,
-        }),
-      }
-    );
+    const response = await fetch(`${API_URL}/ambassador-login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        phone,
+        password,
+      }),
+    });
 
     if (!response.ok) {
       alert("Invalid credentials");
@@ -31,36 +28,33 @@ export default function AmbassadorLoginPage() {
 
     const data = await response.json();
 
-    localStorage.setItem(
-      "ambassador",
-      JSON.stringify(data)
-    );
+    localStorage.setItem("ambassador", JSON.stringify(data));
 
     router.push("/ambassador-dashboard");
   };
 
   return (
     <main className="min-h-screen flex items-center justify-center p-6 bg-slate-100">
-    <div className="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md">
+      <div className="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md">
         <h1 className="text-2xl font-bold text-slate-800 mb-6">
           Ambassador Login
         </h1>
 
         <input
-  type="text"
-  placeholder="Phone Number"
-  value={phone}
-  onChange={(e) => setPhone(e.target.value)}
-  className="w-full border rounded-lg p-3 mb-4 text-slate-800 placeholder-slate-400"
-/>
+          type="text"
+          placeholder="Phone Number"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          className="w-full border rounded-lg p-3 mb-4 text-slate-800 placeholder-slate-400"
+        />
 
         <input
-  type="password"
-  placeholder="Password"
-  value={password}
-  onChange={(e) => setPassword(e.target.value)}
-  className="w-full border rounded-lg p-3 mb-4 text-slate-800 placeholder-slate-400"
-/>
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="w-full border rounded-lg p-3 mb-4 text-slate-800 placeholder-slate-400"
+        />
 
         <button
           onClick={handleLogin}

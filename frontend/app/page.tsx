@@ -6,42 +6,38 @@ export default function Home() {
   const [showIntro, setShowIntro] = useState(true);
   const [introReady, setIntroReady] = useState(false);
   const [introLeaving, setIntroLeaving] = useState(false);
-const [installPrompt, setInstallPrompt] = useState<any>(null);
+  const [installPrompt, setInstallPrompt] = useState<any>(null);
 
-useEffect(() => {
-  const handleBeforeInstallPrompt = (event: Event) => {
-    event.preventDefault();
-    setInstallPrompt(event);
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (event: Event) => {
+      event.preventDefault();
+      setInstallPrompt(event);
+    };
+
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+
+    return () => {
+      window.removeEventListener(
+        "beforeinstallprompt",
+        handleBeforeInstallPrompt,
+      );
+    };
+  }, []);
+
+  const installRouteX = async () => {
+    if (!installPrompt) {
+      alert(
+        "RouteX is already installed or your browser does not currently offer installation.",
+      );
+      return;
+    }
+
+    installPrompt.prompt();
+
+    await installPrompt.userChoice;
+
+    setInstallPrompt(null);
   };
-
-  window.addEventListener(
-    "beforeinstallprompt",
-    handleBeforeInstallPrompt
-  );
-
-  return () => {
-    window.removeEventListener(
-      "beforeinstallprompt",
-      handleBeforeInstallPrompt
-    );
-  };
-}, []);
-
-const installRouteX = async () => {
-  if (!installPrompt) {
-    alert(
-      "RouteX is already installed or your browser does not currently offer installation."
-    );
-    return;
-  }
-
-  installPrompt.prompt();
-
-  await installPrompt.userChoice;
-
-  setInstallPrompt(null);
-  
-};
 
   useEffect(() => {
     const startTimer = window.setTimeout(() => {
@@ -96,9 +92,7 @@ const installRouteX = async () => {
               <div className="flex h-[105px] w-[105px] items-center justify-center rounded-full bg-[#e7e9ee] shadow-[inset_7px_7px_14px_#c4c6cb,inset_-7px_-7px_14px_#ffffff]">
                 <span
                   className={`text-[60px] font-semibold leading-none tracking-[-0.1em] text-[#ff6846] transition-all delay-300 duration-700 ${
-                    introReady
-                      ? "scale-100 opacity-100"
-                      : "scale-50 opacity-0"
+                    introReady ? "scale-100 opacity-100" : "scale-50 opacity-0"
                   }`}
                 >
                   X
@@ -107,9 +101,7 @@ const installRouteX = async () => {
 
               <div
                 className={`absolute -bottom-2 h-4 w-4 rounded-full border-[3px] border-[#e7e9ee] bg-[#ff6846] shadow-[2px_2px_5px_#c4c6ca] transition-all delay-500 duration-500 ${
-                  introReady
-                    ? "scale-100 opacity-100"
-                    : "scale-0 opacity-0"
+                  introReady ? "scale-100 opacity-100" : "scale-0 opacity-0"
                 }`}
               />
             </div>
@@ -174,27 +166,22 @@ const installRouteX = async () => {
           ================================================== */}
 
           <nav className="relative z-20 flex items-center justify-between">
-            <a
-              href="/"
-              className="text-[24px] font-bold tracking-[-0.055em]"
-            >
+            <a href="/" className="text-[24px] font-bold tracking-[-0.055em]">
               Route<span className="text-[#ff6846]">X</span>
             </a>
 
             <div className="relative">
- <button
-  type="button"
-  onClick={installRouteX}
-  aria-label="Install RouteX"
-  className="flex h-10 items-center justify-center rounded-[14px] bg-[#e7e9ee] px-4 shadow-[5px_5px_11px_#c4c6ca,-5px_-5px_11px_#ffffff] transition-all duration-200 active:scale-95 active:shadow-[inset_3px_3px_7px_#c4c6ca,inset_-3px_-3px_7px_#ffffff]"
->
-  <span className="text-[11px] font-bold text-[#ff6846]">
-    Install
-  </span>
-</button>
-
-
-</div>
+              <button
+                type="button"
+                onClick={installRouteX}
+                aria-label="Install RouteX"
+                className="flex h-10 items-center justify-center rounded-[14px] bg-[#e7e9ee] px-4 shadow-[5px_5px_11px_#c4c6ca,-5px_-5px_11px_#ffffff] transition-all duration-200 active:scale-95 active:shadow-[inset_3px_3px_7px_#c4c6ca,inset_-3px_-3px_7px_#ffffff]"
+              >
+                <span className="text-[11px] font-bold text-[#ff6846]">
+                  Install
+                </span>
+              </button>
+            </div>
           </nav>
 
           {/* =================================================
@@ -214,9 +201,7 @@ const installRouteX = async () => {
                   Available in
                 </p>
 
-                <p className="mt-[1px] text-[12px] font-semibold">
-                  Upington
-                </p>
+                <p className="mt-[1px] text-[12px] font-semibold">Upington</p>
               </div>
             </div>
 
@@ -268,9 +253,7 @@ const installRouteX = async () => {
                 </span>
               </div>
 
-              <span className="text-[15px] text-[#ff6846]">
-                →
-              </span>
+              <span className="text-[15px] text-[#ff6846]">→</span>
             </a>
 
             {/* CREATE ACCOUNT */}
@@ -287,9 +270,7 @@ const installRouteX = async () => {
                 </span>
               </div>
 
-              <span className="text-[15px]">
-                →
-              </span>
+              <span className="text-[15px]">→</span>
             </a>
 
             {/* DRIVER DIVIDER */}
@@ -350,10 +331,10 @@ const installRouteX = async () => {
               {/* WHATSAPP */}
 
               <a
-  href="https://wa.me/27799132513"
-  target="_blank"
-  rel="noopener noreferrer"
-  aria-label="WhatsApp"
+                href="https://wa.me/27799132513"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="WhatsApp"
                 className="flex h-[42px] w-[42px] items-center justify-center rounded-[13px] bg-[#e7e9ee] shadow-[4px_4px_8px_#c4c6ca,-4px_-4px_8px_#ffffff] transition-all duration-200 hover:-translate-y-[2px] active:translate-y-0 active:scale-95 active:shadow-[inset_3px_3px_6px_#c4c6ca,inset_-3px_-3px_6px_#ffffff]"
               >
                 <svg
@@ -375,17 +356,11 @@ const installRouteX = async () => {
                 </p>
 
                 <div className="flex gap-3 text-[7px] font-semibold text-[#999ca4]">
-                  <a href="/safety">
-                    Safety
-                  </a>
+                  <a href="/safety">Safety</a>
 
-                  <a href="/privacy">
-                    Privacy
-                  </a>
+                  <a href="/privacy">Privacy</a>
 
-                  <a href="/terms">
-                    Terms
-                  </a>
+                  <a href="/terms">Terms</a>
                 </div>
               </div>
             </footer>

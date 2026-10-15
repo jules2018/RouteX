@@ -34,10 +34,7 @@ export default function PassengerRegisterPage() {
      UPDATE FORM
   ========================================== */
 
-  const updateField = (
-    field: keyof typeof form,
-    value: string
-  ) => {
+  const updateField = (field: keyof typeof form, value: string) => {
     setForm((current) => ({
       ...current,
       [field]: value,
@@ -48,10 +45,7 @@ export default function PassengerRegisterPage() {
      ROUTEX NOTICE
   ========================================== */
 
-  const showNotice = (
-    message: string,
-    type: NoticeType = "error"
-  ) => {
+  const showNotice = (message: string, type: NoticeType = "error") => {
     setNotice({
       message,
       type,
@@ -66,51 +60,47 @@ export default function PassengerRegisterPage() {
      REGISTER
   ========================================== */
 
- const register = async () => {
-  if (
-    !form.full_name.trim() ||
-    !form.phone.trim() ||
-    !form.email.trim() ||
-    !form.password ||
-    !form.confirmPassword
-  ) {
-    showNotice("Please complete all required fields.");
-    return;
-  }
+  const register = async () => {
+    if (
+      !form.full_name.trim() ||
+      !form.phone.trim() ||
+      !form.email.trim() ||
+      !form.password ||
+      !form.confirmPassword
+    ) {
+      showNotice("Please complete all required fields.");
+      return;
+    }
 
-  if (!/^\d+$/.test(form.phone)) {
-    showNotice("Phone number must contain numbers only.");
-    return;
-  }
+    if (!/^\d+$/.test(form.phone)) {
+      showNotice("Phone number must contain numbers only.");
+      return;
+    }
 
-  if (!form.email.includes("@")) {
-    showNotice("Please enter a valid email address.");
-    return;
-  }
+    if (!form.email.includes("@")) {
+      showNotice("Please enter a valid email address.");
+      return;
+    }
 
-  if (form.password.length < 6) {
-    showNotice("Password must be at least 6 characters.");
-    return;
-  }
+    if (form.password.length < 6) {
+      showNotice("Password must be at least 6 characters.");
+      return;
+    }
 
-  if (form.password !== form.confirmPassword) {
-    showNotice("Your passwords do not match.");
-    return;
-  }
+    if (form.password !== form.confirmPassword) {
+      showNotice("Your passwords do not match.");
+      return;
+    }
 
-  if (!acceptedTerms || !acceptedPrivacy) {
-    showNotice(
-      "Please accept the Terms and Privacy Policy."
-    );
-    return;
-  }
+    if (!acceptedTerms || !acceptedPrivacy) {
+      showNotice("Please accept the Terms and Privacy Policy.");
+      return;
+    }
 
-  setLoading(true);
+    setLoading(true);
 
-  try {
-    const response = await fetch(
-      `${API_URL}/passenger-register`,
-      {
+    try {
+      const response = await fetch(`${API_URL}/passenger-register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -124,53 +114,38 @@ export default function PassengerRegisterPage() {
           acceptedTerms,
           acceptedPrivacy,
         }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        showNotice(data.error || "Registration failed.");
+        return;
       }
-    );
 
-    const data = await response.json();
+      showNotice("Your RouteX account is ready.", "success");
 
-    if (!response.ok) {
-      showNotice(
-        data.error || "Registration failed."
-      );
-      return;
+      window.setTimeout(() => {
+        window.location.href = "/passenger-login";
+      }, 1000);
+    } catch (error) {
+      console.error("REGISTRATION ERROR:", error);
+
+      showNotice("Unable to create your RouteX account. Please try again.");
+    } finally {
+      setLoading(false);
     }
-
-    showNotice(
-      "Your RouteX account is ready.",
-      "success"
-    );
-
-    window.setTimeout(() => {
-      window.location.href = "/passenger-login";
-    }, 1000);
-
-  } catch (error) {
-    console.error("REGISTRATION ERROR:", error);
-
-    showNotice(
-      "Unable to create your RouteX account. Please try again."
-    );
-
-  } finally {
-    setLoading(false);
-  }
-};
+  };
   return (
     <main className="min-h-[100svh] bg-[#e7e9ee] text-[#17191f]">
-
       <section className="relative mx-auto flex min-h-[100svh] w-full max-w-[430px] flex-col overflow-hidden px-5 pb-5 pt-4">
-
         {/* BACKGROUND */}
 
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
-
           <div className="absolute -right-28 -top-28 h-[270px] w-[270px] rounded-full bg-[#ff6846]/10 blur-[90px]" />
 
           <div className="absolute -bottom-28 -left-28 h-[280px] w-[280px] rounded-full bg-white/70 blur-[90px]" />
-
         </div>
-
 
         {/* =========================================
             ROUTEX NOTICE
@@ -188,47 +163,28 @@ export default function PassengerRegisterPage() {
             -translate-x-1/2
             transition-all
             duration-300
-            ${
-              notice
-                ? "translate-y-0 opacity-100"
-                : "-translate-y-5 opacity-0"
-            }
+            ${notice ? "translate-y-0 opacity-100" : "-translate-y-5 opacity-0"}
           `}
         >
-
           {notice && (
-
             <div className="flex items-center gap-3 rounded-[18px] bg-[#e7e9ee] px-4 py-3.5 shadow-[7px_7px_16px_#c3c5ca,-7px_-7px_16px_#ffffff]">
-
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#e7e9ee] shadow-[inset_3px_3px_6px_#c5c7cc,inset_-3px_-3px_6px_#ffffff]">
-
                 <span
                   className={`h-[8px] w-[8px] rounded-full ${
-                    notice.type === "success"
-                      ? "bg-[#22c55e]"
-                      : "bg-[#ff6846]"
+                    notice.type === "success" ? "bg-[#22c55e]" : "bg-[#ff6846]"
                   }`}
                 />
-
               </div>
 
-
               <div className="min-w-0 flex-1">
-
                 <p className="text-[8px] font-bold uppercase tracking-[0.16em] text-[#9a9da5]">
-
-                  {notice.type === "success"
-                    ? "Success"
-                    : "RouteX"}
-
+                  {notice.type === "success" ? "Success" : "RouteX"}
                 </p>
 
                 <p className="mt-[2px] text-[11px] font-semibold text-[#17191f]">
                   {notice.message}
                 </p>
-
               </div>
-
 
               <span
                 className={`text-[17px] font-semibold ${
@@ -239,20 +195,15 @@ export default function PassengerRegisterPage() {
               >
                 {notice.type === "success" ? "✓" : "!"}
               </span>
-
             </div>
-
           )}
-
         </div>
-
 
         {/* =========================================
             HEADER
         ========================================== */}
 
         <header className="relative z-20 flex items-center justify-between">
-
           <button
             type="button"
             onClick={() => router.push("/")}
@@ -260,7 +211,6 @@ export default function PassengerRegisterPage() {
           >
             Route<span className="text-[#ff6846]">X</span>
           </button>
-
 
           <button
             type="button"
@@ -270,16 +220,13 @@ export default function PassengerRegisterPage() {
           >
             ←
           </button>
-
         </header>
-
 
         {/* =========================================
             INTRO
         ========================================== */}
 
         <div className="relative z-20 mt-7">
-
           <p className="text-[8px] font-bold uppercase tracking-[0.2em] text-[#ff6846]">
             Passenger
           </p>
@@ -291,21 +238,16 @@ export default function PassengerRegisterPage() {
           <p className="mt-2 text-[10px] font-medium text-[#7d8088]">
             Create your account and get moving.
           </p>
-
         </div>
-
 
         {/* =========================================
             REGISTER CARD
         ========================================== */}
 
         <div className="relative z-20 mt-6 rounded-[27px] bg-[#e7e9ee] p-5 shadow-[8px_8px_18px_#c3c5ca,-8px_-8px_18px_#ffffff]">
-
           {/* FULL NAME */}
 
-          <FieldLabel>
-            Full name
-          </FieldLabel>
+          <FieldLabel>Full name</FieldLabel>
 
           <NeoInput>
             <PersonIcon />
@@ -315,27 +257,17 @@ export default function PassengerRegisterPage() {
               autoComplete="name"
               placeholder="Your full name"
               value={form.full_name}
-              onChange={(e) =>
-                updateField(
-                  "full_name",
-                  e.target.value
-                )
-              }
+              onChange={(e) => updateField("full_name", e.target.value)}
               className={inputClass}
             />
           </NeoInput>
 
-
           {/* PHONE */}
 
           <div className="mt-4">
-
-            <FieldLabel>
-              Phone number
-            </FieldLabel>
+            <FieldLabel>Phone number</FieldLabel>
 
             <NeoInput>
-
               <PhoneIcon />
 
               <input
@@ -345,32 +277,21 @@ export default function PassengerRegisterPage() {
                 placeholder="0821234567"
                 value={form.phone}
                 onChange={(e) => {
-                  const digits =
-                    e.target.value.replace(/\D/g, "");
+                  const digits = e.target.value.replace(/\D/g, "");
 
-                  updateField(
-                    "phone",
-                    digits
-                  );
+                  updateField("phone", digits);
                 }}
                 className={inputClass}
               />
-
             </NeoInput>
-
           </div>
-
 
           {/* EMAIL */}
 
           <div className="mt-4">
-
-            <FieldLabel>
-              Email address
-            </FieldLabel>
+            <FieldLabel>Email address</FieldLabel>
 
             <NeoInput>
-
               <EmailIcon />
 
               <input
@@ -379,116 +300,64 @@ export default function PassengerRegisterPage() {
                 autoComplete="email"
                 placeholder="you@example.com"
                 value={form.email}
-                onChange={(e) =>
-                  updateField(
-                    "email",
-                    e.target.value
-                  )
-                }
+                onChange={(e) => updateField("email", e.target.value)}
                 className={inputClass}
               />
-
             </NeoInput>
-
           </div>
-
 
           {/* PASSWORD */}
 
           <div className="mt-4">
-
-            <FieldLabel>
-              Password
-            </FieldLabel>
+            <FieldLabel>Password</FieldLabel>
 
             <NeoInput>
-
               <LockIcon />
 
               <input
-                type={
-                  showPassword
-                    ? "text"
-                    : "password"
-                }
+                type={showPassword ? "text" : "password"}
                 autoComplete="new-password"
                 placeholder="Create a password"
                 value={form.password}
-                onChange={(e) =>
-                  updateField(
-                    "password",
-                    e.target.value
-                  )
-                }
+                onChange={(e) => updateField("password", e.target.value)}
                 className={inputClass}
               />
 
-
               <EyeButton
                 visible={showPassword}
-                onClick={() =>
-                  setShowPassword(
-                    (current) => !current
-                  )
-                }
+                onClick={() => setShowPassword((current) => !current)}
               />
-
             </NeoInput>
-
           </div>
-
 
           {/* CONFIRM PASSWORD */}
 
           <div className="mt-4">
-
-            <FieldLabel>
-              Confirm password
-            </FieldLabel>
+            <FieldLabel>Confirm password</FieldLabel>
 
             <NeoInput>
-
               <LockIcon />
 
               <input
-                type={
-                  showConfirmPassword
-                    ? "text"
-                    : "password"
-                }
+                type={showConfirmPassword ? "text" : "password"}
                 autoComplete="new-password"
                 placeholder="Repeat your password"
                 value={form.confirmPassword}
-                onChange={(e) =>
-                  updateField(
-                    "confirmPassword",
-                    e.target.value
-                  )
-                }
+                onChange={(e) => updateField("confirmPassword", e.target.value)}
                 className={inputClass}
               />
 
-
               <EyeButton
                 visible={showConfirmPassword}
-                onClick={() =>
-                  setShowConfirmPassword(
-                    (current) => !current
-                  )
-                }
+                onClick={() => setShowConfirmPassword((current) => !current)}
               />
-
             </NeoInput>
-
           </div>
-
 
           {/* REFERRAL */}
 
           <div className="mt-4">
-
             <div className="mb-2 flex items-center justify-between px-1">
-
               <span className="text-[8px] font-bold uppercase tracking-[0.15em] text-[#989ba3]">
                 Referral code
               </span>
@@ -496,81 +365,54 @@ export default function PassengerRegisterPage() {
               <span className="text-[7px] font-semibold text-[#a6a9af]">
                 Optional
               </span>
-
             </div>
 
-
             <NeoInput>
-
               <TicketIcon />
 
               <input
                 type="text"
                 placeholder="Referral code"
                 value={form.referral_code}
-                onChange={(e) =>
-                  updateField(
-                    "referral_code",
-                    e.target.value
-                  )
-                }
+                onChange={(e) => updateField("referral_code", e.target.value)}
                 className={inputClass}
               />
-
             </NeoInput>
-
           </div>
-
 
           {/* =========================================
               TERMS
           ========================================== */}
 
           <div className="mt-5 space-y-3">
-
             <CheckRow
               checked={acceptedTerms}
-              onClick={() =>
-                setAcceptedTerms(
-                  (current) => !current
-                )
-              }
+              onClick={() => setAcceptedTerms((current) => !current)}
             >
               I agree to the{" "}
               <a
                 href="/terms"
-                onClick={(e) =>
-                  e.stopPropagation()
-                }
+                onClick={(e) => e.stopPropagation()}
                 className="font-semibold text-[#ff6846]"
               >
                 Terms & Conditions
               </a>
             </CheckRow>
 
-
             <CheckRow
               checked={acceptedPrivacy}
-              onClick={() =>
-                setAcceptedPrivacy(
-                  (current) => !current
-                )
-              }
+              onClick={() => setAcceptedPrivacy((current) => !current)}
             >
               I agree to the{" "}
               <a
                 href="/privacy"
-                onClick={(e) =>
-                  e.stopPropagation()
-                }
+                onClick={(e) => e.stopPropagation()}
                 className="font-semibold text-[#ff6846]"
               >
                 Privacy Policy
               </a>
             </CheckRow>
-
           </div>
-
 
           {/* CREATE ACCOUNT */}
 
@@ -580,80 +422,51 @@ export default function PassengerRegisterPage() {
             disabled={loading}
             className="mt-5 flex h-[52px] w-full items-center justify-between rounded-[16px] bg-[#ff6846] px-5 text-white shadow-[5px_5px_11px_#c0c2c7,-4px_-4px_10px_#ffffff] transition-all active:scale-[0.985] active:shadow-[inset_4px_4px_8px_#d94e31,inset_-3px_-3px_7px_#ff8c72] disabled:cursor-not-allowed disabled:opacity-60"
           >
-
             <span className="text-[11px] font-semibold">
-              {loading
-                ? "Creating account..."
-                : "Create account"}
+              {loading ? "Creating account..." : "Create account"}
             </span>
 
-
-            {!loading && (
-              <span className="text-[16px]">
-                →
-              </span>
-            )}
-
+            {!loading && <span className="text-[16px]">→</span>}
           </button>
-
         </div>
-
 
         {/* =========================================
             LOGIN LINK
         ========================================== */}
 
         <div className="relative z-20 mt-5 text-center">
-
           <p className="text-[9px] font-medium text-[#8f9299]">
             Already have an account?
           </p>
 
           <button
             type="button"
-            onClick={() =>
-              router.push("/passenger-login")
-            }
+            onClick={() => router.push("/passenger-login")}
             className="mt-2 inline-flex h-[38px] items-center justify-center rounded-[12px] bg-[#e7e9ee] px-5 text-[9px] font-semibold text-[#ff6846] shadow-[4px_4px_8px_#c4c6ca,-4px_-4px_8px_#ffffff] transition-all active:scale-95 active:shadow-[inset_3px_3px_6px_#c4c6ca,inset_-3px_-3px_6px_#ffffff]"
           >
             Sign in
           </button>
-
         </div>
-
 
         {/* FOOTER */}
 
         <footer className="relative z-20 mt-6 border-t border-[#d1d3d8] pt-3">
-
           <div className="flex items-center justify-between">
-
             <p className="text-[7px] font-semibold text-[#a0a3aa]">
               RouteX · Upington
             </p>
 
             <div className="flex gap-3 text-[7px] font-semibold text-[#999ca4]">
+              <a href="/privacy">Privacy</a>
 
-              <a href="/privacy">
-                Privacy
-              </a>
-
-              <a href="/terms">
-                Terms
-              </a>
-
+              <a href="/terms">Terms</a>
             </div>
-
           </div>
-
         </footer>
-
       </section>
-
     </main>
   );
 }
-
 
 /* =====================================================
    SMALL COMPONENTS
@@ -671,12 +484,7 @@ const inputClass = `
   placeholder:text-[#9b9ea5]
 `;
 
-
-function FieldLabel({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+function FieldLabel({ children }: { children: React.ReactNode }) {
   return (
     <label className="mb-2 block pl-1 text-[8px] font-bold uppercase tracking-[0.15em] text-[#989ba3]">
       {children}
@@ -684,19 +492,13 @@ function FieldLabel({
   );
 }
 
-
-function NeoInput({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+function NeoInput({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex h-[50px] items-center rounded-[16px] bg-[#e7e9ee] px-4 shadow-[inset_4px_4px_8px_#c5c7cc,inset_-4px_-4px_8px_#ffffff]">
       {children}
     </div>
   );
 }
-
 
 function CheckRow({
   checked,
@@ -708,11 +510,7 @@ function CheckRow({
   children: React.ReactNode;
 }) {
   return (
-    <div
-      onClick={onClick}
-      className="flex cursor-pointer items-center gap-3"
-    >
-
+    <div onClick={onClick} className="flex cursor-pointer items-center gap-3">
       <div
         className={`
           flex h-[20px] w-[20px]
@@ -728,24 +526,13 @@ function CheckRow({
           }
         `}
       >
-
-        {checked && (
-          <span className="text-[11px] font-bold text-white">
-            ✓
-          </span>
-        )}
-
+        {checked && <span className="text-[11px] font-bold text-white">✓</span>}
       </div>
 
-
-      <p className="text-[8px] font-medium text-[#858890]">
-        {children}
-      </p>
-
+      <p className="text-[8px] font-medium text-[#858890]">{children}</p>
     </div>
   );
 }
-
 
 function EyeButton({
   visible,
@@ -758,20 +545,11 @@ function EyeButton({
     <button
       type="button"
       onClick={onClick}
-      aria-label={
-        visible
-          ? "Hide password"
-          : "Show password"
-      }
+      aria-label={visible ? "Hide password" : "Show password"}
       className="ml-2 flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[#e7e9ee] text-[#8f9299] shadow-[3px_3px_6px_#c5c7cc,-3px_-3px_6px_#ffffff] transition-all active:scale-95"
     >
-
       {visible ? (
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          className="h-[15px] w-[15px]"
-        >
+        <svg viewBox="0 0 24 24" fill="none" className="h-[15px] w-[15px]">
           <path
             d="M3 3l18 18"
             stroke="currentColor"
@@ -787,11 +565,7 @@ function EyeButton({
           />
         </svg>
       ) : (
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          className="h-[15px] w-[15px]"
-        >
+        <svg viewBox="0 0 24 24" fill="none" className="h-[15px] w-[15px]">
           <path
             d="M3 12s3-6 9-6 9 6 9 6-3 6-9 6-9-6-9-6Z"
             stroke="currentColor"
@@ -807,11 +581,9 @@ function EyeButton({
           />
         </svg>
       )}
-
     </button>
   );
 }
-
 
 /* =====================================================
    ICONS
@@ -824,13 +596,7 @@ function PersonIcon() {
       fill="none"
       className="mr-3 h-[16px] w-[16px] shrink-0"
     >
-      <circle
-        cx="12"
-        cy="8"
-        r="3.5"
-        stroke="#8f9299"
-        strokeWidth="1.7"
-      />
+      <circle cx="12" cy="8" r="3.5" stroke="#8f9299" strokeWidth="1.7" />
 
       <path
         d="M5.5 20c.5-4 3-6 6.5-6s6 2 6.5 6"
@@ -841,7 +607,6 @@ function PersonIcon() {
     </svg>
   );
 }
-
 
 function PhoneIcon() {
   return (
@@ -860,7 +625,6 @@ function PhoneIcon() {
   );
 }
 
-
 function EmailIcon() {
   return (
     <svg
@@ -868,21 +632,12 @@ function EmailIcon() {
       fill="none"
       className="mr-3 h-[16px] w-[16px] shrink-0"
     >
-      <path
-        d="M4 6.5h16v11H4v-11Z"
-        stroke="#8f9299"
-        strokeWidth="1.7"
-      />
+      <path d="M4 6.5h16v11H4v-11Z" stroke="#8f9299" strokeWidth="1.7" />
 
-      <path
-        d="m4.5 7 7.5 6 7.5-6"
-        stroke="#8f9299"
-        strokeWidth="1.7"
-      />
+      <path d="m4.5 7 7.5 6 7.5-6" stroke="#8f9299" strokeWidth="1.7" />
     </svg>
   );
 }
-
 
 function LockIcon() {
   return (
@@ -901,15 +656,10 @@ function LockIcon() {
         strokeWidth="1.7"
       />
 
-      <path
-        d="M8 10V7a4 4 0 0 1 8 0v3"
-        stroke="#8f9299"
-        strokeWidth="1.7"
-      />
+      <path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="#8f9299" strokeWidth="1.7" />
     </svg>
   );
 }
-
 
 function TicketIcon() {
   return (

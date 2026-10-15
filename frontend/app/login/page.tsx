@@ -13,29 +13,23 @@ export default function LoginPage() {
   const login = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const response = await fetch(
-      `${API_URL}/login`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email,
-          password,
-        }),
-      }
-    );
+    const response = await fetch(`${API_URL}/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email,
+        password,
+      }),
+    });
 
     const data = await response.json();
 
     if (response.ok) {
       localStorage.removeItem("passenger");
       localStorage.removeItem("driver");
-      localStorage.setItem(
-        "user",
-        JSON.stringify(data.user)
-      );
+      localStorage.setItem("user", JSON.stringify(data.user));
 
       router.push("/");
     } else {
@@ -47,14 +41,10 @@ export default function LoginPage() {
     <main className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
       <div className="w-full max-w-md">
         <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold text-slate-800">
-            RouteX
-          </h1>
+          <h1 className="text-3xl font-bold text-slate-800">RouteX</h1>
 
           <p className="text-sm text-slate-500 mt-2">
-            
-Connecting Drivers, Passengers and Fleet Operations
-
+            Connecting Drivers, Passengers and Fleet Operations
           </p>
         </div>
 
@@ -69,10 +59,7 @@ Connecting Drivers, Passengers and Fleet Operations
             </p>
           </div>
 
-          <form
-            onSubmit={login}
-            className="flex flex-col gap-4"
-          >
+          <form onSubmit={login} className="flex flex-col gap-4">
             <input
               type="email"
               placeholder="Email Address"
@@ -85,9 +72,7 @@ Connecting Drivers, Passengers and Fleet Operations
               type="password"
               placeholder="Password"
               value={password}
-              onChange={(e) =>
-                setPassword(e.target.value)
-              }
+              onChange={(e) => setPassword(e.target.value)}
               className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900 placeholder:text-slate-500 bg-white"
             />
 
@@ -102,5 +87,4 @@ Connecting Drivers, Passengers and Fleet Operations
       </div>
     </main>
   );
-
 }

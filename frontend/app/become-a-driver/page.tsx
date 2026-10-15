@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -6,16 +5,15 @@ import { API_URL } from "../lib/api";
 
 export default function BecomeADriverPage() {
   const [form, setForm] = useState({
-  full_name: "",
-  phone: "",
-  residential_address: "",
-  id_passport_number: "",
-  vehicle_type: "",
-  vehicle_color: "",
-  license_plate: "",
-  referral_code: "",
-});
-
+    full_name: "",
+    phone: "",
+    residential_address: "",
+    id_passport_number: "",
+    vehicle_type: "",
+    vehicle_color: "",
+    license_plate: "",
+    referral_code: "",
+  });
 
   const [vehiclePhoto, setVehiclePhoto] = useState<File | null>(null);
   const [profilePhoto, setProfilePhoto] = useState<File | null>(null);
@@ -24,123 +22,114 @@ export default function BecomeADriverPage() {
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
 
   const handlePhoneChange = (value: string) => {
-  const cleaned = value.replace(/\D/g, "");
+    const cleaned = value.replace(/\D/g, "");
 
-  setForm((prev) => ({
-    ...prev,
-    phone: cleaned,
-  }));
-};
+    setForm((prev) => ({
+      ...prev,
+      phone: cleaned,
+    }));
+  };
 
- const handleSubmit = async () => {
-  if (
-    !form.full_name ||
-    !form.phone ||
-    !form.vehicle_type ||
-    !form.vehicle_color ||
-    !form.license_plate
-  ) {
-    alert("Please complete all required fields.");
-    return;
-  }
-
-  if (!vehiclePhoto) {
-    alert("Please upload a photo of your vehicle.");
-    return;
-  }
-
-  try {
-    setSubmitting(true);
-
-    const formData = new FormData();
-
-    formData.append("full_name", form.full_name);
-    formData.append("phone", form.phone);
-    formData.append(
-  "residential_address",
-  form.residential_address
-);
-
-formData.append(
-  "id_passport_number",
-  form.id_passport_number
-);
-    formData.append("vehicle_type", form.vehicle_type);
-    formData.append("vehicle_color", form.vehicle_color);
-    formData.append("license_plate", form.license_plate);
-    formData.append("referral_code", form.referral_code);
-    formData.append("acceptedDriverTerms", String(acceptedDriverTerms));
-    formData.append("acceptedPrivacy", String(acceptedPrivacy));
-
-    formData.append("vehicle_photo", vehiclePhoto);
-
-    if (profilePhoto) {
-      formData.append("profile_photo", profilePhoto);
-    }
-
-    const response = await fetch(
-      `${API_URL}/driver-application`,
-      {
-        method: "POST",
-        body: formData,
-      }
-    );
-
-    if (!response.ok) {
-  const errorData = await response.json().catch(() => null);
-
-  console.error("DRIVER APPLICATION ERROR:", errorData);
-
-  alert(
-    errorData?.error ||
-    `Failed to submit application. Server returned ${response.status}`
-  );
-
-  return;
-}if (!response.ok) {
-      alert("Failed to submit application.");
+  const handleSubmit = async () => {
+    if (
+      !form.full_name ||
+      !form.phone ||
+      !form.vehicle_type ||
+      !form.vehicle_color ||
+      !form.license_plate
+    ) {
+      alert("Please complete all required fields.");
       return;
     }
 
-    alert(
-      "Application submitted successfully. RouteX will review your application."
-    );
+    if (!vehiclePhoto) {
+      alert("Please upload a photo of your vehicle.");
+      return;
+    }
 
-    setForm({
-      full_name: "",
-      phone: "",
-      vehicle_type: "",
-      vehicle_color: "",
-      license_plate: "",
-      referral_code: "",
-      residential_address: "",
-      id_passport_number: "",
-    });
+    try {
+      setSubmitting(true);
 
-    setVehiclePhoto(null);
-    setProfilePhoto(null);
-    setAcceptedDriverTerms(false);
-    setAcceptedPrivacy(false);
-  } catch (error) {
-    console.error("Driver application error:", error);
-    alert("Something went wrong. Please try again.");
-  } finally {
-    setSubmitting(false);
-  }
-};
+      const formData = new FormData();
+
+      formData.append("full_name", form.full_name);
+      formData.append("phone", form.phone);
+      formData.append("residential_address", form.residential_address);
+
+      formData.append("id_passport_number", form.id_passport_number);
+      formData.append("vehicle_type", form.vehicle_type);
+      formData.append("vehicle_color", form.vehicle_color);
+      formData.append("license_plate", form.license_plate);
+      formData.append("referral_code", form.referral_code);
+      formData.append("acceptedDriverTerms", String(acceptedDriverTerms));
+      formData.append("acceptedPrivacy", String(acceptedPrivacy));
+
+      formData.append("vehicle_photo", vehiclePhoto);
+
+      if (profilePhoto) {
+        formData.append("profile_photo", profilePhoto);
+      }
+
+      const response = await fetch(`${API_URL}/driver-application`, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+
+        console.error("DRIVER APPLICATION ERROR:", errorData);
+
+        alert(
+          errorData?.error ||
+            `Failed to submit application. Server returned ${response.status}`,
+        );
+
+        return;
+      }
+      if (!response.ok) {
+        alert("Failed to submit application.");
+        return;
+      }
+
+      alert(
+        "Application submitted successfully. RouteX will review your application.",
+      );
+
+      setForm({
+        full_name: "",
+        phone: "",
+        vehicle_type: "",
+        vehicle_color: "",
+        license_plate: "",
+        referral_code: "",
+        residential_address: "",
+        id_passport_number: "",
+      });
+
+      setVehiclePhoto(null);
+      setProfilePhoto(null);
+      setAcceptedDriverTerms(false);
+      setAcceptedPrivacy(false);
+    } catch (error) {
+      console.error("Driver application error:", error);
+      alert("Something went wrong. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
-  <main className="min-h-screen bg-white text-[#111111]">
-    <div className="mx-auto w-full max-w-md px-5 pb-10 pt-6">
+    <main className="min-h-screen bg-white text-[#111111]">
+      <div className="mx-auto w-full max-w-md px-5 pb-10 pt-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="text-[22px] font-extrabold tracking-tight">
+            Route<span className="text-[#ff6a00]">X</span>
+          </div>
 
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="text-[22px] font-extrabold tracking-tight">
-          Route<span className="text-[#ff6a00]">X</span>
-        </div>
-
-        <span
-          className="
+          <span
+            className="
             rounded-full
             bg-[#fff3eb]
             px-3
@@ -151,408 +140,250 @@ formData.append(
             tracking-[0.08em]
             text-[#ff6a00]
           "
-        >
-          Driver
-        </span>
-      </div>
-
-      {/* Intro */}
-      <section className="mt-10">
-        <div className="h-1 w-8 rounded-full bg-[#ff6a00]" />
-
-        <h1 className="mt-5 text-[28px] font-extrabold tracking-tight">
-          Drive with RouteX
-        </h1>
-
-        <p className="mt-2 text-[14px] leading-6 text-[#777777]">
-          Apply to become a RouteX driver and earn by helping people move around Upington.
-        </p>
-      </section>
-
-      {/* Form */}
-      <section className="mt-7 space-y-5">
-
-        {/* Full Name */}
-        <div>
-          <label className="text-[12px] font-bold text-[#333333]">
-            Full name
-          </label>
-
-          <input
-            type="text"
-            placeholder="Your full name"
-            value={form.full_name}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                full_name: e.target.value,
-              })
-            }
-            className="
-              mt-2
-              w-full
-              rounded-xl
-              border
-              border-[#dddddd]
-              bg-white
-              px-4
-              py-3.5
-              text-[15px]
-              outline-none
-              transition
-              placeholder:text-[#aaaaaa]
-              focus:border-[#ff6a00]
-            "
-          />
+          >
+            Driver
+          </span>
         </div>
 
-        {/* Phone */}
-        <div>
-          <label className="text-[12px] font-bold text-[#333333]">
-            Phone number
-          </label>
+        {/* Intro */}
+        <section className="mt-10">
+          <div className="h-1 w-8 rounded-full bg-[#ff6a00]" />
 
-          <input
-            type="tel"
-            placeholder="0821234567"
-            value={form.phone}
-            onChange={(e) => handlePhoneChange(e.target.value)}
-            inputMode="numeric"
-            autoComplete="tel"
-            className="
-              mt-2
-              w-full
-              rounded-xl
-              border
-              border-[#dddddd]
-              bg-white
-              px-4
-              py-3.5
-              text-[15px]
-              outline-none
-              transition
-              placeholder:text-[#aaaaaa]
-              focus:border-[#ff6a00]
-            "
-          />
+          <h1 className="mt-5 text-[28px] font-extrabold tracking-tight">
+            Drive with RouteX
+          </h1>
 
-          <p className="mt-1.5 text-[11px] text-[#999999]">
-            Enter your number without spaces.
+          <p className="mt-2 text-[14px] leading-6 text-[#777777]">
+            Apply to become a RouteX driver and earn by helping people move
+            around Upington.
           </p>
-        </div>
+        </section>
 
-
-<div>
-  <label className="block text-sm font-bold text-[#111111]">
-    Residential address
-  </label>
-
-  <input
-    type="text"
-    required
-    value={form.residential_address}
-    onChange={(e) =>
-      setForm({
-        ...form,
-        residential_address: e.target.value,
-      })
-    }
-    placeholder="Enter your residential address"
-    autoComplete="street-address"
-    className="
-      mt-2
-      w-full
-      rounded-xl
-      border
-      border-slate-200
-      bg-white
-      px-4
-      py-3
-      text-sm
-      text-[#111111]
-      outline-none
-      transition
-      focus:border-[#ff6a00]
-    "
-  />
-</div>
-
-<div>
-  <label className="block text-sm font-bold text-[#111111]">
-    SA ID or Passport number
-  </label>
-
-  <input
-    type="text"
-    required
-    value={form.id_passport_number}
-    onChange={(e) =>
-      setForm({
-        ...form,
-        id_passport_number: e.target.value,
-      })
-    }
-    placeholder="Enter your ID or passport number"
-    autoComplete="off"
-    className="
-      mt-2
-      w-full
-      rounded-xl
-      border
-      border-slate-200
-      bg-white
-      px-4
-      py-3
-      text-sm
-      text-[#111111]
-      outline-none
-      transition
-      focus:border-[#ff6a00]
-    "
-  />
-</div>
-        {/* Vehicle Type */}
-        <div>
-          <label className="text-[12px] font-bold text-[#333333]">
-            Vehicle
-          </label>
-
-          <input
-            type="text"
-            placeholder="e.g. Toyota Corolla"
-            value={form.vehicle_type}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                vehicle_type: e.target.value,
-              })
-            }
-            className="
-              mt-2
-              w-full
-              rounded-xl
-              border
-              border-[#dddddd]
-              bg-white
-              px-4
-              py-3.5
-              text-[15px]
-              outline-none
-              transition
-              placeholder:text-[#aaaaaa]
-              focus:border-[#ff6a00]
-            "
-          />
-        </div>
-
-        {/* Vehicle Colour */}
-        <div>
-          <label className="text-[12px] font-bold text-[#333333]">
-            Vehicle colour
-          </label>
-
-          <input
-            type="text"
-            placeholder="e.g. White"
-            value={form.vehicle_color}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                vehicle_color: e.target.value,
-              })
-            }
-            className="
-              mt-2
-              w-full
-              rounded-xl
-              border
-              border-[#dddddd]
-              bg-white
-              px-4
-              py-3.5
-              text-[15px]
-              outline-none
-              transition
-              placeholder:text-[#aaaaaa]
-              focus:border-[#ff6a00]
-            "
-          />
-        </div>
-
-        {/* License Plate */}
-        <div>
-          <label className="text-[12px] font-bold text-[#333333]">
-            Registration number
-          </label>
-
-          <input
-            type="text"
-            placeholder="e.g. CA 123-456"
-            value={form.license_plate}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                license_plate: e.target.value.toUpperCase(),
-              })
-            }
-            className="
-              mt-2
-              w-full
-              rounded-xl
-              border
-              border-[#dddddd]
-              bg-white
-              px-4
-              py-3.5
-              text-[15px]
-              uppercase
-              outline-none
-              transition
-              placeholder:normal-case
-              placeholder:text-[#aaaaaa]
-              focus:border-[#ff6a00]
-            "
-          />
-        </div>
-
-        {/* Vehicle Photo */}
-        <div>
-          <label className="text-[12px] font-bold text-[#333333]">
-            Vehicle photo
-          </label>
-
-          <label
-            className="
-              mt-2
-              flex
-              cursor-pointer
-              items-center
-              justify-between
-              rounded-xl
-              border
-              border-dashed
-              border-[#cccccc]
-              px-4
-              py-4
-              transition
-              hover:border-[#ff6a00]
-            "
-          >
-            <div>
-              <p className="text-[13px] font-bold">
-                Upload vehicle photo
-              </p>
-
-              <p className="mt-0.5 text-[11px] text-[#999999]">
-                Clear photo of the vehicle
-              </p>
-            </div>
-
-            <span className="text-lg font-bold text-[#ff6a00]">
-              +
-            </span>
+        {/* Form */}
+        <section className="mt-7 space-y-5">
+          {/* Full Name */}
+          <div>
+            <label className="text-[12px] font-bold text-[#333333]">
+              Full name
+            </label>
 
             <input
-              type="file"
-              accept="image/*"
+              type="text"
+              placeholder="Your full name"
+              value={form.full_name}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  full_name: e.target.value,
+                })
+              }
+              className="
+              mt-2
+              w-full
+              rounded-xl
+              border
+              border-[#dddddd]
+              bg-white
+              px-4
+              py-3.5
+              text-[15px]
+              outline-none
+              transition
+              placeholder:text-[#aaaaaa]
+              focus:border-[#ff6a00]
+            "
+            />
+          </div>
+
+          {/* Phone */}
+          <div>
+            <label className="text-[12px] font-bold text-[#333333]">
+              Phone number
+            </label>
+
+            <input
+              type="tel"
+              placeholder="0821234567"
+              value={form.phone}
+              onChange={(e) => handlePhoneChange(e.target.value)}
+              inputMode="numeric"
+              autoComplete="tel"
+              className="
+              mt-2
+              w-full
+              rounded-xl
+              border
+              border-[#dddddd]
+              bg-white
+              px-4
+              py-3.5
+              text-[15px]
+              outline-none
+              transition
+              placeholder:text-[#aaaaaa]
+              focus:border-[#ff6a00]
+            "
+            />
+
+            <p className="mt-1.5 text-[11px] text-[#999999]">
+              Enter your number without spaces.
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-bold text-[#111111]">
+              Residential address
+            </label>
+
+            <input
+              type="text"
               required
+              value={form.residential_address}
               onChange={(e) =>
-                setVehiclePhoto(e.target.files?.[0] || null)
+                setForm({
+                  ...form,
+                  residential_address: e.target.value,
+                })
               }
-              className="hidden"
+              placeholder="Enter your residential address"
+              autoComplete="street-address"
+              className="
+      mt-2
+      w-full
+      rounded-xl
+      border
+      border-slate-200
+      bg-white
+      px-4
+      py-3
+      text-sm
+      text-[#111111]
+      outline-none
+      transition
+      focus:border-[#ff6a00]
+    "
             />
-          </label>
-
-          {vehiclePhoto && (
-            <p className="mt-2 truncate text-[11px] text-[#777777]">
-              Selected: {vehiclePhoto.name}
-            </p>
-          )}
-        </div>
-
-        {/* Profile Photo */}
-        <div>
-          <div className="flex items-center justify-between">
-            <label className="text-[12px] font-bold text-[#333333]">
-              Profile photo
-            </label>
-
-            <span className="text-[10px] font-medium text-[#999999]">
-              Optional
-            </span>
           </div>
 
-          <label
-            className="
-              mt-2
-              flex
-              cursor-pointer
-              items-center
-              justify-between
-              rounded-xl
-              border
-              border-dashed
-              border-[#cccccc]
-              px-4
-              py-4
-              transition
-              hover:border-[#ff6a00]
-            "
-          >
-            <div>
-              <p className="text-[13px] font-bold">
-                Upload profile photo
-              </p>
-
-              <p className="mt-0.5 text-[11px] text-[#999999]">
-                Helps passengers recognise you
-              </p>
-            </div>
-
-            <span className="text-lg font-bold text-[#ff6a00]">
-              +
-            </span>
+          <div>
+            <label className="block text-sm font-bold text-[#111111]">
+              SA ID or Passport number
+            </label>
 
             <input
-              type="file"
-              accept="image/*"
+              type="text"
+              required
+              value={form.id_passport_number}
               onChange={(e) =>
-                setProfilePhoto(e.target.files?.[0] || null)
+                setForm({
+                  ...form,
+                  id_passport_number: e.target.value,
+                })
               }
-              className="hidden"
+              placeholder="Enter your ID or passport number"
+              autoComplete="off"
+              className="
+      mt-2
+      w-full
+      rounded-xl
+      border
+      border-slate-200
+      bg-white
+      px-4
+      py-3
+      text-sm
+      text-[#111111]
+      outline-none
+      transition
+      focus:border-[#ff6a00]
+    "
             />
-          </label>
-
-          {profilePhoto && (
-            <p className="mt-2 truncate text-[11px] text-[#777777]">
-              Selected: {profilePhoto.name}
-            </p>
-          )}
-        </div>
-
-        {/* Referral */}
-        <div>
-          <div className="flex items-center justify-between">
+          </div>
+          {/* Vehicle Type */}
+          <div>
             <label className="text-[12px] font-bold text-[#333333]">
-              Referral code
+              Vehicle
             </label>
 
-            <span className="text-[10px] font-medium text-[#999999]">
-              Optional
-            </span>
+            <input
+              type="text"
+              placeholder="e.g. Toyota Corolla"
+              value={form.vehicle_type}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  vehicle_type: e.target.value,
+                })
+              }
+              className="
+              mt-2
+              w-full
+              rounded-xl
+              border
+              border-[#dddddd]
+              bg-white
+              px-4
+              py-3.5
+              text-[15px]
+              outline-none
+              transition
+              placeholder:text-[#aaaaaa]
+              focus:border-[#ff6a00]
+            "
+            />
           </div>
 
-          <input
-            type="text"
-            placeholder="Enter referral code"
-            value={form.referral_code}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                referral_code: e.target.value,
-              })
-            }
-            className="
+          {/* Vehicle Colour */}
+          <div>
+            <label className="text-[12px] font-bold text-[#333333]">
+              Vehicle colour
+            </label>
+
+            <input
+              type="text"
+              placeholder="e.g. White"
+              value={form.vehicle_color}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  vehicle_color: e.target.value,
+                })
+              }
+              className="
+              mt-2
+              w-full
+              rounded-xl
+              border
+              border-[#dddddd]
+              bg-white
+              px-4
+              py-3.5
+              text-[15px]
+              outline-none
+              transition
+              placeholder:text-[#aaaaaa]
+              focus:border-[#ff6a00]
+            "
+            />
+          </div>
+
+          {/* License Plate */}
+          <div>
+            <label className="text-[12px] font-bold text-[#333333]">
+              Registration number
+            </label>
+
+            <input
+              type="text"
+              placeholder="e.g. CA 123-456"
+              value={form.license_plate}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  license_plate: e.target.value.toUpperCase(),
+                })
+              }
+              className="
               mt-2
               w-full
               rounded-xl
@@ -569,21 +400,165 @@ formData.append(
               placeholder:text-[#aaaaaa]
               focus:border-[#ff6a00]
             "
-          />
-        </div>
+            />
+          </div>
 
-{/* =================================
+          {/* Vehicle Photo */}
+          <div>
+            <label className="text-[12px] font-bold text-[#333333]">
+              Vehicle photo
+            </label>
+
+            <label
+              className="
+              mt-2
+              flex
+              cursor-pointer
+              items-center
+              justify-between
+              rounded-xl
+              border
+              border-dashed
+              border-[#cccccc]
+              px-4
+              py-4
+              transition
+              hover:border-[#ff6a00]
+            "
+            >
+              <div>
+                <p className="text-[13px] font-bold">Upload vehicle photo</p>
+
+                <p className="mt-0.5 text-[11px] text-[#999999]">
+                  Clear photo of the vehicle
+                </p>
+              </div>
+
+              <span className="text-lg font-bold text-[#ff6a00]">+</span>
+
+              <input
+                type="file"
+                accept="image/*"
+                required
+                onChange={(e) => setVehiclePhoto(e.target.files?.[0] || null)}
+                className="hidden"
+              />
+            </label>
+
+            {vehiclePhoto && (
+              <p className="mt-2 truncate text-[11px] text-[#777777]">
+                Selected: {vehiclePhoto.name}
+              </p>
+            )}
+          </div>
+
+          {/* Profile Photo */}
+          <div>
+            <div className="flex items-center justify-between">
+              <label className="text-[12px] font-bold text-[#333333]">
+                Profile photo
+              </label>
+
+              <span className="text-[10px] font-medium text-[#999999]">
+                Optional
+              </span>
+            </div>
+
+            <label
+              className="
+              mt-2
+              flex
+              cursor-pointer
+              items-center
+              justify-between
+              rounded-xl
+              border
+              border-dashed
+              border-[#cccccc]
+              px-4
+              py-4
+              transition
+              hover:border-[#ff6a00]
+            "
+            >
+              <div>
+                <p className="text-[13px] font-bold">Upload profile photo</p>
+
+                <p className="mt-0.5 text-[11px] text-[#999999]">
+                  Helps passengers recognise you
+                </p>
+              </div>
+
+              <span className="text-lg font-bold text-[#ff6a00]">+</span>
+
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setProfilePhoto(e.target.files?.[0] || null)}
+                className="hidden"
+              />
+            </label>
+
+            {profilePhoto && (
+              <p className="mt-2 truncate text-[11px] text-[#777777]">
+                Selected: {profilePhoto.name}
+              </p>
+            )}
+          </div>
+
+          {/* Referral */}
+          <div>
+            <div className="flex items-center justify-between">
+              <label className="text-[12px] font-bold text-[#333333]">
+                Referral code
+              </label>
+
+              <span className="text-[10px] font-medium text-[#999999]">
+                Optional
+              </span>
+            </div>
+
+            <input
+              type="text"
+              placeholder="Enter referral code"
+              value={form.referral_code}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  referral_code: e.target.value,
+                })
+              }
+              className="
+              mt-2
+              w-full
+              rounded-xl
+              border
+              border-[#dddddd]
+              bg-white
+              px-4
+              py-3.5
+              text-[15px]
+              uppercase
+              outline-none
+              transition
+              placeholder:normal-case
+              placeholder:text-[#aaaaaa]
+              focus:border-[#ff6a00]
+            "
+            />
+          </div>
+
+          {/* =================================
             LEGAL AGREEMENTS
         ================================= */}
-        <div className="mt-3 space-y-3">
-
-          {/* Driver Terms */}
-          <label className="flex cursor-pointer items-start gap-3">
-           <input
-              type="checkbox"
-              checked={acceptedDriverTerms}
-              onChange={(e) => setAcceptedDriverTerms(e.target.checked)}
-              className="
+          <div className="mt-3 space-y-3">
+            {/* Driver Terms */}
+            <label className="flex cursor-pointer items-start gap-3">
+              <input
+                type="checkbox"
+                checked={acceptedDriverTerms}
+                onChange={(e) => setAcceptedDriverTerms(e.target.checked)}
+                className="
                 mt-0.5
                 h-5
                 w-5
@@ -591,29 +566,29 @@ formData.append(
                 cursor-pointer
                 accent-[#ff6a00]
               "
-            />
+              />
 
-            <span className="text-[14px] font-medium leading-relaxed text-[#666666]">
-              I agree to the{" "}
-              <a
-                href="/driver-terms"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-bold text-[#111111] underline underline-offset-2"
-                onClick={(e) => e.stopPropagation()}
-              >
-                Driver Terms and Independent Contractor Agreement
-              </a>
-            </span>
-          </label>
+              <span className="text-[14px] font-medium leading-relaxed text-[#666666]">
+                I agree to the{" "}
+                <a
+                  href="/driver-terms"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-bold text-[#111111] underline underline-offset-2"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Driver Terms and Independent Contractor Agreement
+                </a>
+              </span>
+            </label>
 
-          {/* Privacy Policy */}
-          <label className="flex cursor-pointer items-start gap-3">
-           <input
-            type="checkbox"
-            checked={acceptedPrivacy}
-            onChange={(e) => setAcceptedPrivacy(e.target.checked)}
-            className="
+            {/* Privacy Policy */}
+            <label className="flex cursor-pointer items-start gap-3">
+              <input
+                type="checkbox"
+                checked={acceptedPrivacy}
+                onChange={(e) => setAcceptedPrivacy(e.target.checked)}
+                className="
               mt-0.5
               h-5
               w-5
@@ -621,32 +596,27 @@ formData.append(
               cursor-pointer
               accent-[#ff6a00]
             "
-          />
+              />
 
-            <span className="text-[14px] font-medium leading-relaxed text-[#666666]">
-              I agree to the{" "}
-              <a
-                href="/privacy"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-bold text-[#111111] underline underline-offset-2"
-                onClick={(e) => e.stopPropagation()}
-              >
-                Privacy Policy
-              </a>
-            </span>
-          </label>
-
-        </div>
-        {/* Submit */}
-        <button
-          onClick={handleSubmit}
-              disabled={
-        submitting ||
-        !acceptedDriverTerms ||
-        !acceptedPrivacy
-      }
-          className="
+              <span className="text-[14px] font-medium leading-relaxed text-[#666666]">
+                I agree to the{" "}
+                <a
+                  href="/privacy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-bold text-[#111111] underline underline-offset-2"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Privacy Policy
+                </a>
+              </span>
+            </label>
+          </div>
+          {/* Submit */}
+          <button
+            onClick={handleSubmit}
+            disabled={submitting || !acceptedDriverTerms || !acceptedPrivacy}
+            className="
             mt-2
             w-full
             rounded-xl
@@ -661,28 +631,21 @@ formData.append(
             disabled:cursor-not-allowed
             disabled:opacity-60
           "
-        >
-          {submitting
-            ? "Submitting application..."
-            : "Apply to drive →"}
-        </button>
-
-      </section>
-
-      {/* Driver Login */}
-      <div className="mt-7 text-center">
-        <p className="text-[13px] text-[#777777]">
-          Already approved?{" "}
-          <a
-            href="/driver-login"
-            className="font-bold text-[#ff6a00]"
           >
-            Driver sign in
-          </a>
-        </p>
-      </div>
+            {submitting ? "Submitting application..." : "Apply to drive →"}
+          </button>
+        </section>
 
-    </div>
-  </main>
-);
+        {/* Driver Login */}
+        <div className="mt-7 text-center">
+          <p className="text-[13px] text-[#777777]">
+            Already approved?{" "}
+            <a href="/driver-login" className="font-bold text-[#ff6a00]">
+              Driver sign in
+            </a>
+          </p>
+        </div>
+      </div>
+    </main>
+  );
 }

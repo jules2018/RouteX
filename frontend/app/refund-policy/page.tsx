@@ -8,15 +8,13 @@ const outfit = Outfit({
 
 export default function RefundPolicyPage() {
   return (
-    <main className={`${outfit.className} min-h-screen bg-white text-[#111111]`}>
+    <main
+      className={`${outfit.className} min-h-screen bg-white text-[#111111]`}
+    >
       <div className="mx-auto w-full max-w-md px-5 pb-12">
-
         {/* HEADER */}
         <header className="flex items-center justify-between py-5">
-          <a
-            href="/"
-            className="text-[26px] font-extrabold tracking-[-0.05em]"
-          >
+          <a href="/" className="text-[26px] font-extrabold tracking-[-0.05em]">
             Route<span className="text-[#ff6a00]">X</span>
           </a>
 
@@ -47,7 +45,6 @@ export default function RefundPolicyPage() {
 
         {/* CONTENT */}
         <div className="space-y-8 pt-7 text-[16px] leading-[1.7] text-[#555555]">
-
           <LegalSection title="1. About this policy">
             <p>
               This policy explains how RouteX handles ride cancellations,
@@ -57,8 +54,7 @@ export default function RefundPolicyPage() {
 
             <p>
               Nothing in this policy is intended to remove any right or remedy
-              that a passenger has under applicable South African consumer
-              law.
+              that a passenger has under applicable South African consumer law.
             </p>
           </LegalSection>
 
@@ -70,8 +66,8 @@ export default function RefundPolicyPage() {
 
             <p>
               Passengers should cancel as soon as reasonably possible so that
-              the driver is not unnecessarily travelling to the pickup
-              location or waiting for the passenger.
+              the driver is not unnecessarily travelling to the pickup location
+              or waiting for the passenger.
             </p>
           </LegalSection>
 
@@ -95,13 +91,13 @@ export default function RefundPolicyPage() {
           <LegalSection title="4. Driver cancellations">
             <p>
               If a driver cancels a booking before the trip begins, the
-              passenger will generally not be responsible for paying for a
-              trip that was not provided.
+              passenger will generally not be responsible for paying for a trip
+              that was not provided.
             </p>
 
             <p>
-              RouteX may attempt to connect the passenger with another
-              available driver, but another driver cannot be guaranteed.
+              RouteX may attempt to connect the passenger with another available
+              driver, but another driver cannot be guaranteed.
             </p>
           </LegalSection>
 
@@ -114,13 +110,9 @@ export default function RefundPolicyPage() {
             <ul className="list-disc space-y-2 pl-5">
               <li>A passenger was charged more than once for the same ride.</li>
 
-              <li>
-                Payment was collected for a ride that did not take place.
-              </li>
+              <li>Payment was collected for a ride that did not take place.</li>
 
-              <li>
-                A technical error resulted in an incorrect charge.
-              </li>
+              <li>A technical error resulted in an incorrect charge.</li>
 
               <li>
                 The fare charged materially differs from the applicable fare
@@ -136,8 +128,8 @@ export default function RefundPolicyPage() {
 
           <LegalSection title="6. Completed rides">
             <p>
-              A passenger is not automatically entitled to a full refund
-              simply because they were dissatisfied with a completed ride.
+              A passenger is not automatically entitled to a full refund simply
+              because they were dissatisfied with a completed ride.
             </p>
 
             <p>
@@ -163,14 +155,14 @@ export default function RefundPolicyPage() {
 
           <LegalSection title="8. Electronic payments">
             <p>
-              Where RouteX supports electronic payments, an approved refund
-              will normally be processed using an appropriate available
-              payment method.
+              Where RouteX supports electronic payments, an approved refund will
+              normally be processed using an appropriate available payment
+              method.
             </p>
 
             <p>
-              The time required for a refund to appear may depend on the
-              payment provider, bank or other financial institution involved.
+              The time required for a refund to appear may depend on the payment
+              provider, bank or other financial institution involved.
             </p>
           </LegalSection>
 
@@ -194,25 +186,25 @@ export default function RefundPolicyPage() {
 
           <LegalSection title="10. Incorrect trip information">
             <p>
-              Refunds may be reduced or refused where an additional amount
-              arose because the passenger materially changed the trip,
-              provided an incorrect pickup or destination, requested
-              additional stops, or caused additional waiting time, provided
-              the charge was lawful and properly applicable.
+              Refunds may be reduced or refused where an additional amount arose
+              because the passenger materially changed the trip, provided an
+              incorrect pickup or destination, requested additional stops, or
+              caused additional waiting time, provided the charge was lawful and
+              properly applicable.
             </p>
           </LegalSection>
 
           <LegalSection title="11. Fraud and abuse">
             <p>
               RouteX may refuse a refund or promotional adjustment where there
-              is reasonable evidence of fraud, manipulation, repeated misuse
-              of promotions or another attempt to obtain money or benefits
+              is reasonable evidence of fraud, manipulation, repeated misuse of
+              promotions or another attempt to obtain money or benefits
               dishonestly.
             </p>
 
             <p>
-              RouteX may investigate suspicious refund requests before making
-              a decision.
+              RouteX may investigate suspicious refund requests before making a
+              decision.
             </p>
           </LegalSection>
 
@@ -223,13 +215,13 @@ export default function RefundPolicyPage() {
             </p>
 
             <p>
-              Please provide your name, booking details, the amount involved
-              and a short explanation of the problem.
+              Please provide your name, booking details, the amount involved and
+              a short explanation of the problem.
             </p>
 
             <p>
-              RouteX may request additional information reasonably necessary
-              to investigate the matter.
+              RouteX may request additional information reasonably necessary to
+              investigate the matter.
             </p>
           </LegalSection>
 
@@ -247,8 +239,8 @@ export default function RefundPolicyPage() {
 
           <LegalSection title="14. Contact RouteX">
             <p>
-              For cancellations, fare disputes or refund queries, contact
-              RouteX Support.
+              For cancellations, fare disputes or refund queries, contact RouteX
+              Support.
             </p>
 
             <a
@@ -260,7 +252,6 @@ export default function RefundPolicyPage() {
               WhatsApp RouteX Support
             </a>
           </LegalSection>
-
         </div>
 
         {/* LEGAL LINKS */}
@@ -293,7 +284,6 @@ export default function RefundPolicyPage() {
             RouteX • Getting Upington Moving
           </p>
         </footer>
-
       </div>
     </main>
   );
@@ -312,9 +302,7 @@ function LegalSection({
         {title}
       </h2>
 
-      <div className="space-y-3">
-        {children}
-      </div>
+      <div className="space-y-3">{children}</div>
     </section>
   );
 }

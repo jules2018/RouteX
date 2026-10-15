@@ -10,10 +10,7 @@ type LocationPickerProps = {
   title: string;
   initialLat?: number;
   initialLng?: number;
-  onConfirm: (location: {
-    lat: number;
-    lng: number;
-  }) => void;
+  onConfirm: (location: { lat: number; lng: number }) => void;
   onClose: () => void;
 };
 
@@ -33,21 +30,21 @@ export default function LocationPicker({
   });
 
   useEffect(() => {
-  if (!mapContainer.current) return;
+    if (!mapContainer.current) return;
 
-  // Clean up any previous MapLibre instance during Next.js Fast Refresh
-  if (mapRef.current) {
-    mapRef.current.remove();
-    mapRef.current = null;
-  }
+    // Clean up any previous MapLibre instance during Next.js Fast Refresh
+    if (mapRef.current) {
+      mapRef.current.remove();
+      mapRef.current = null;
+    }
 
-  // Clear any old MapLibre DOM left behind during development refresh
-  mapContainer.current.innerHTML = "";
+    // Clear any old MapLibre DOM left behind during development refresh
+    mapContainer.current.innerHTML = "";
 
-  const map = new maplibregl.Map({
+    const map = new maplibregl.Map({
       container: mapContainer.current,
 
-     style: "https://tiles.openfreemap.org/styles/liberty",
+      style: "https://tiles.openfreemap.org/styles/liberty",
       center: [initialLng, initialLat],
       zoom: 15,
     });
@@ -55,18 +52,18 @@ export default function LocationPicker({
     mapRef.current = map;
     console.log("MAP CREATED:", map);
 
-map.on("load", () => {
-  console.log("MAP LOAD EVENT FIRED");
-  map.resize();
-});
+    map.on("load", () => {
+      console.log("MAP LOAD EVENT FIRED");
+      map.resize();
+    });
 
-map.on("style.load", () => {
-  console.log("STYLE LOAD EVENT FIRED");
-});
+    map.on("style.load", () => {
+      console.log("STYLE LOAD EVENT FIRED");
+    });
 
-map.on("error", (event) => {
-  console.error("MAPLIBRE ERROR:", event.error);
-});
+    map.on("error", (event) => {
+      console.error("MAPLIBRE ERROR:", event.error);
+    });
 
     map.on("move", () => {
       const center = map.getCenter();
@@ -88,7 +85,7 @@ map.on("error", (event) => {
   };
 
   return (
-<div className="fixed inset-0 z-[9999] overflow-hidden bg-white">
+    <div className="fixed inset-0 z-[9999] overflow-hidden bg-white">
       {/* Header */}
       <div className="absolute left-0 right-0 top-0 z-20 flex items-center justify-between border-b border-black/10 bg-white px-5 py-4">
         <button
@@ -99,22 +96,20 @@ map.on("error", (event) => {
           Cancel
         </button>
 
-        <p className="text-[15px] font-black text-black">
-          {title}
-        </p>
+        <p className="text-[15px] font-black text-black">{title}</p>
 
         <div className="w-[45px]" />
       </div>
 
-{/* Map */}
-<div
-  ref={mapContainer}
-  className="absolute left-0 right-0 top-[65px] bottom-[185px] z-0 bg-[#e8e8e8]"
-  style={{
-    width: "100%",
-    height: "calc(100% - 250px)",
-  }}
-/>
+      {/* Map */}
+      <div
+        ref={mapContainer}
+        className="absolute left-0 right-0 top-[65px] bottom-[185px] z-0 bg-[#e8e8e8]"
+        style={{
+          width: "100%",
+          height: "calc(100% - 250px)",
+        }}
+      />
 
       {/* Fixed centre pin */}
       <div className="pointer-events-none absolute left-1/2 top-1/2 z-20 -translate-x-1/2 -translate-y-full">

@@ -38,40 +38,29 @@ function DriverSetPasswordContent() {
     try {
       setLoading(true);
 
-      const response = await fetch(
-        `${API_URL}/driver-set-password`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            token,
-            password,
-          }),
-        }
-      );
+      const response = await fetch(`${API_URL}/driver-set-password`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          token,
+          password,
+        }),
+      });
 
       const data = await response.json();
 
       if (!response.ok) {
-        setError(
-          data.error ||
-            "Unable to create your password."
-        );
+        setError(data.error || "Unable to create your password.");
         return;
       }
 
       setSuccess(true);
     } catch (error) {
-      console.error(
-        "DRIVER PASSWORD SETUP ERROR:",
-        error
-      );
+      console.error("DRIVER PASSWORD SETUP ERROR:", error);
 
-      setError(
-        "Unable to connect to RouteX. Please try again."
-      );
+      setError("Unable to connect to RouteX. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -90,8 +79,8 @@ function DriverSetPasswordContent() {
           </h1>
 
           <p className="mt-3 text-sm leading-6 text-[#666666]">
-            Your RouteX driver account is ready.
-            You can now sign in to your Driver Portal.
+            Your RouteX driver account is ready. You can now sign in to your
+            Driver Portal.
           </p>
 
           <button
@@ -118,25 +107,18 @@ function DriverSetPasswordContent() {
         </h1>
 
         <p className="mt-3 text-sm leading-6 text-[#666666]">
-          Your driver application has been approved.
-          Create a password to access your Driver Portal.
+          Your driver application has been approved. Create a password to access
+          your Driver Portal.
         </p>
 
-        <form
-          onSubmit={handleSubmit}
-          className="mt-8 space-y-4"
-        >
+        <form onSubmit={handleSubmit} className="mt-8 space-y-4">
           <div>
-            <label className="text-sm font-semibold text-black">
-              Password
-            </label>
+            <label className="text-sm font-semibold text-black">Password</label>
 
             <input
               type="password"
               value={password}
-              onChange={(e) =>
-                setPassword(e.target.value)
-              }
+              onChange={(e) => setPassword(e.target.value)}
               placeholder="Minimum 8 characters"
               autoComplete="new-password"
               className="mt-2 w-full rounded-xl border border-[#dddddd] px-4 py-4 text-black outline-none focus:border-[#ff6a00]"
@@ -151,29 +133,21 @@ function DriverSetPasswordContent() {
             <input
               type="password"
               value={confirmPassword}
-              onChange={(e) =>
-                setConfirmPassword(e.target.value)
-              }
+              onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Enter password again"
               autoComplete="new-password"
               className="mt-2 w-full rounded-xl border border-[#dddddd] px-4 py-4 text-black outline-none focus:border-[#ff6a00]"
             />
           </div>
 
-          {error && (
-            <p className="text-sm font-medium text-red-600">
-              {error}
-            </p>
-          )}
+          {error && <p className="text-sm font-medium text-red-600">{error}</p>}
 
           <button
             type="submit"
             disabled={loading}
             className="w-full rounded-xl bg-[#ff6a00] px-5 py-4 text-sm font-bold text-white disabled:opacity-50"
           >
-            {loading
-              ? "Creating password..."
-              : "Create Password"}
+            {loading ? "Creating password..." : "Create Password"}
           </button>
         </form>
 
@@ -189,9 +163,7 @@ export default function DriverSetPasswordPage() {
     <Suspense
       fallback={
         <main className="min-h-screen bg-white flex items-center justify-center">
-          <p className="text-sm text-[#666666]">
-            Loading RouteX...
-          </p>
+          <p className="text-sm text-[#666666]">Loading RouteX...</p>
         </main>
       }
     >

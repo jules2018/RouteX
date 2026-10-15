@@ -4,10 +4,7 @@ import { useEffect, useRef } from "react";
 import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 
-
-maplibregl.setWorkerUrl(
-  "/maplibre/maplibre-gl-worker.mjs"
-);
+maplibregl.setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
 
 type PickupLocation = {
   lat: number;
@@ -39,63 +36,48 @@ export default function LiveMap({
   onPickupChange,
   onRouteInfo,
 }: LiveMapProps) {
-  const mapContainer =
-    useRef<HTMLDivElement | null>(null);
+  const mapContainer = useRef<HTMLDivElement | null>(null);
 
-  const mapRef =
-    useRef<maplibregl.Map | null>(null);
+  const mapRef = useRef<maplibregl.Map | null>(null);
 
-  const driverMarkerRef =
-    useRef<maplibregl.Marker | null>(null);
+  const driverMarkerRef = useRef<maplibregl.Marker | null>(null);
 
-  const pickupMarkerRef =
-    useRef<maplibregl.Marker | null>(null);
+  const pickupMarkerRef = useRef<maplibregl.Marker | null>(null);
 
-  const driverElementRef =
-    useRef<HTMLDivElement | null>(null);
+  const driverElementRef = useRef<HTMLDivElement | null>(null);
 
   const previousPositionRef = useRef({
     lat,
     lng,
   });
 
-  const animationRef =
-    useRef<number | null>(null);
+  const animationRef = useRef<number | null>(null);
 
-  const currentHeadingRef =
-    useRef(0);
+  const currentHeadingRef = useRef(0);
 
-  const onPickupChangeRef =
-    useRef(onPickupChange);
+  const onPickupChangeRef = useRef(onPickupChange);
 
-    const onRouteInfoRef =
-  useRef(onRouteInfo);
+  const onRouteInfoRef = useRef(onRouteInfo);
 
-  const routeRequestRef =
-    useRef<AbortController | null>(null);
+  const routeRequestRef = useRef<AbortController | null>(null);
 
-  const lastRouteRequestRef =
-    useRef(0);
+  const lastRouteRequestRef = useRef(0);
 
-  const hasFittedRouteRef =
-    useRef(false);
+  const hasFittedRouteRef = useRef(false);
 
   useEffect(() => {
-    onPickupChangeRef.current =
-      onPickupChange;
+    onPickupChangeRef.current = onPickupChange;
   }, [onPickupChange]);
 
   useEffect(() => {
-  onRouteInfoRef.current =
-    onRouteInfo;
-}, [onRouteInfo]);
+    onRouteInfoRef.current = onRouteInfo;
+  }, [onRouteInfo]);
   // ============================================================
   // DRIVER CAR
   // ============================================================
 
   function createDriverCar() {
-    const marker =
-      document.createElement("div");
+    const marker = document.createElement("div");
 
     marker.style.width = "36px";
     marker.style.height = "54px";
@@ -350,10 +332,9 @@ export default function LiveMap({
       </div>
     `;
 
-    driverElementRef.current =
-      marker.querySelector(
-        "[data-driver-car]"
-      ) as HTMLDivElement | null;
+    driverElementRef.current = marker.querySelector(
+      "[data-driver-car]",
+    ) as HTMLDivElement | null;
 
     return marker;
   }
@@ -363,8 +344,7 @@ export default function LiveMap({
   // ============================================================
 
   function createPickupMarker() {
-    const marker =
-      document.createElement("div");
+    const marker = document.createElement("div");
 
     marker.style.width = "32px";
     marker.style.height = "32px";
@@ -403,17 +383,13 @@ export default function LiveMap({
   // UPDATE ROUTE SOURCE
   // ============================================================
 
-  function setRoute(
-    coordinates: [number, number][]
-  ) {
+  function setRoute(coordinates: [number, number][]) {
     const map = mapRef.current;
 
     if (!map) return;
 
-    const source =
-      map.getSource(
-        ROUTE_SOURCE_ID
-      ) as maplibregl.GeoJSONSource | undefined;
+    const source = map.getSource(ROUTE_SOURCE_ID) as
+      maplibregl.GeoJSONSource | undefined;
 
     if (!source) return;
 
@@ -435,24 +411,17 @@ export default function LiveMap({
     driverLng: number,
     driverLat: number,
     pickupLng: number,
-    pickupLat: number
+    pickupLat: number,
   ) {
     const map = mapRef.current;
 
     if (!map) return;
 
-    const bounds =
-      new maplibregl.LngLatBounds();
+    const bounds = new maplibregl.LngLatBounds();
 
-    bounds.extend([
-      driverLng,
-      driverLat,
-    ]);
+    bounds.extend([driverLng, driverLat]);
 
-    bounds.extend([
-      pickupLng,
-      pickupLat,
-    ]);
+    bounds.extend([pickupLng, pickupLat]);
 
     map.fitBounds(bounds, {
       padding: {
@@ -476,16 +445,12 @@ export default function LiveMap({
     driverLng: number,
     pickupLat: number,
     pickupLng: number,
-    fitMap = false
+    fitMap = false,
   ) {
     const now = Date.now();
 
     // Don't hammer OSRM on every tiny GPS update.
-    if (
-      !fitMap &&
-      now - lastRouteRequestRef.current <
-        4000
-    ) {
+    if (!fitMap && now - lastRouteRequestRef.current < 4000) {
       return;
     }
 
@@ -493,11 +458,9 @@ export default function LiveMap({
 
     routeRequestRef.current?.abort();
 
-    const controller =
-      new AbortController();
+    const controller = new AbortController();
 
-    routeRequestRef.current =
-      controller;
+    routeRequestRef.current = controller;
 
     try {
       const url =
@@ -511,66 +474,45 @@ export default function LiveMap({
       });
 
       if (!response.ok) {
-        throw new Error(
-          `OSRM ${response.status}`
-        );
+        throw new Error(`OSRM ${response.status}`);
       }
 
-        const data = await response.json();
+      const data = await response.json();
 
-        const route = data?.routes?.[0];
+      const route = data?.routes?.[0];
 
-        const coordinates =
-  route?.geometry?.coordinates as
-    | [number, number][]
-    | undefined;
+      const coordinates = route?.geometry?.coordinates as
+        [number, number][] | undefined;
 
-      if (
-        !coordinates ||
-        coordinates.length < 2
-      ) {
-        console.warn(
-          "No road route returned."
-        );
+      if (!coordinates || coordinates.length < 2) {
+        console.warn("No road route returned.");
 
         return;
       }
 
-     setRoute(coordinates);
+      setRoute(coordinates);
 
-// Send the real OSRM road distance
-// and estimated driving time to the passenger page.
-if (
-  typeof route?.distance === "number" &&
-  typeof route?.duration === "number"
-) {
-  onRouteInfoRef.current?.({
-    distanceMeters: route.distance,
-    durationSeconds: route.duration,
-  });
-}
+      // Send the real OSRM road distance
+      // and estimated driving time to the passenger page.
+      if (
+        typeof route?.distance === "number" &&
+        typeof route?.duration === "number"
+      ) {
+        onRouteInfoRef.current?.({
+          distanceMeters: route.distance,
+          durationSeconds: route.duration,
+        });
+      }
 
-if (fitMap) {
-  fitDriverAndPickup(
-    driverLng,
-    driverLat,
-    pickupLng,
-    pickupLat
-  );
-}
-
+      if (fitMap) {
+        fitDriverAndPickup(driverLng, driverLat, pickupLng, pickupLat);
+      }
     } catch (error) {
-      if (
-        error instanceof DOMException &&
-        error.name === "AbortError"
-      ) {
+      if (error instanceof DOMException && error.name === "AbortError") {
         return;
       }
 
-      console.error(
-        "ROUTE ERROR:",
-        error
-      );
+      console.error("ROUTE ERROR:", error);
     }
   }
 
@@ -579,100 +521,88 @@ if (fitMap) {
   // ============================================================
 
   useEffect(() => {
-    if (
-      !mapContainer.current ||
-      mapRef.current
-    ) {
+    if (!mapContainer.current || mapRef.current) {
       return;
     }
 
-    const map =
-      new maplibregl.Map({
-        container:
-          mapContainer.current,
+    const map = new maplibregl.Map({
+      container: mapContainer.current,
 
-        style: {
-          version: 8,
+      style: {
+        version: 8,
 
-          sources: {
-            osm: {
-              type: "raster",
+        sources: {
+          osm: {
+            type: "raster",
 
-              tiles: [
-                "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-              ],
+            tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
 
-              tileSize: 256,
+            tileSize: 256,
 
-              attribution:
-                "© OpenStreetMap contributors",
+            attribution: "© OpenStreetMap contributors",
+          },
+
+          [ROUTE_SOURCE_ID]: {
+            type: "geojson",
+            data: emptyRoute(),
+          },
+        },
+
+        layers: [
+          {
+            id: "osm",
+            type: "raster",
+            source: "osm",
+          },
+
+          // White border makes the route visible
+          // over roads and map labels.
+          {
+            id: ROUTE_OUTLINE_LAYER_ID,
+
+            type: "line",
+
+            source: ROUTE_SOURCE_ID,
+
+            layout: {
+              "line-cap": "round",
+              "line-join": "round",
             },
 
-            [ROUTE_SOURCE_ID]: {
-              type: "geojson",
-              data: emptyRoute(),
+            paint: {
+              "line-color": "#ffffff",
+
+              "line-width": 9,
+
+              "line-opacity": 0.92,
             },
           },
 
-          layers: [
-            {
-              id: "osm",
-              type: "raster",
-              source: "osm",
+          {
+            id: ROUTE_LAYER_ID,
+
+            type: "line",
+
+            source: ROUTE_SOURCE_ID,
+
+            layout: {
+              "line-cap": "round",
+              "line-join": "round",
             },
 
-            // White border makes the route visible
-            // over roads and map labels.
-            {
-              id:
-                ROUTE_OUTLINE_LAYER_ID,
-
-              type: "line",
-
-              source:
-                ROUTE_SOURCE_ID,
-
-              layout: {
-                "line-cap": "round",
-                "line-join": "round",
-              },
-
-              paint: {
-                "line-color":
-                  "#ffffff",
-
-                "line-width": 9,
-
-                "line-opacity": 0.92,
-              },
+            paint: {
+              "line-color": "#ff6547",
+              "line-width": 6,
+              "line-opacity": 1,
             },
+          },
+        ],
+      },
 
-            {
-  id: ROUTE_LAYER_ID,
+      center: [lng, lat],
 
-  type: "line",
-
-  source:
-    ROUTE_SOURCE_ID,
-
-  layout: {
-    "line-cap": "round",
-    "line-join": "round",
-  },
-
-  paint: {
-    "line-color": "#ff6547",
-    "line-width": 6,
-    "line-opacity": 1,
-  },
-},
-          ],
-        },
-
-        center: [lng, lat],
-
-        zoom: 16,
-      });
+      zoom: 16,
+    });
 
     mapRef.current = map;
 
@@ -680,64 +610,44 @@ if (fitMap) {
       new maplibregl.NavigationControl({
         showCompass: false,
       }),
-      "top-right"
+      "top-right",
     );
 
     map.on("load", () => {
-      if (
-        !driverMarkerRef.current
-      ) {
-        driverMarkerRef.current =
-          new maplibregl.Marker({
-            element:
-              createDriverCar(),
+      if (!driverMarkerRef.current) {
+        driverMarkerRef.current = new maplibregl.Marker({
+          element: createDriverCar(),
 
-            anchor: "center",
-          })
-            .setLngLat([
-              lng,
-              lat,
-            ])
-            .addTo(map);
+          anchor: "center",
+        })
+          .setLngLat([lng, lat])
+          .addTo(map);
       }
     });
 
-    map.on(
-      "click",
-      (event) => {
-        onPickupChangeRef.current({
-          lat:
-            event.lngLat.lat,
+    map.on("click", (event) => {
+      onPickupChangeRef.current({
+        lat: event.lngLat.lat,
 
-          lng:
-            event.lngLat.lng,
-        });
-      }
-    );
+        lng: event.lngLat.lng,
+      });
+    });
 
     return () => {
       routeRequestRef.current?.abort();
 
-      if (
-        animationRef.current !==
-        null
-      ) {
-        cancelAnimationFrame(
-          animationRef.current
-        );
+      if (animationRef.current !== null) {
+        cancelAnimationFrame(animationRef.current);
       }
 
       driverMarkerRef.current?.remove();
       pickupMarkerRef.current?.remove();
 
-      driverMarkerRef.current =
-        null;
+      driverMarkerRef.current = null;
 
-      pickupMarkerRef.current =
-        null;
+      pickupMarkerRef.current = null;
 
-      driverElementRef.current =
-        null;
+      driverElementRef.current = null;
 
       map.remove();
 
@@ -754,21 +664,14 @@ if (fitMap) {
 
     if (!map) return;
 
-    if (
-      !driverMarkerRef.current
-    ) {
-      driverMarkerRef.current =
-        new maplibregl.Marker({
-          element:
-            createDriverCar(),
+    if (!driverMarkerRef.current) {
+      driverMarkerRef.current = new maplibregl.Marker({
+        element: createDriverCar(),
 
-          anchor: "center",
-        })
-          .setLngLat([
-            lng,
-            lat,
-          ])
-          .addTo(map);
+        anchor: "center",
+      })
+        .setLngLat([lng, lat])
+        .addTo(map);
 
       previousPositionRef.current = {
         lat,
@@ -778,97 +681,53 @@ if (fitMap) {
       return;
     }
 
-    const start =
-      previousPositionRef.current;
+    const start = previousPositionRef.current;
 
     const destination = {
       lat,
       lng,
     };
 
-    if (
-      animationRef.current !==
-      null
-    ) {
-      cancelAnimationFrame(
-        animationRef.current
-      );
+    if (animationRef.current !== null) {
+      cancelAnimationFrame(animationRef.current);
     }
 
-    const startedAt =
-      performance.now();
+    const startedAt = performance.now();
 
     const duration = 1200;
 
     function animate(now: number) {
-      const elapsed =
-        now - startedAt;
+      const elapsed = now - startedAt;
 
-      const rawProgress =
-        Math.min(
-          elapsed / duration,
-          1
-        );
+      const rawProgress = Math.min(elapsed / duration, 1);
 
       const progress =
         rawProgress < 0.5
-          ? 2 *
-            rawProgress *
-            rawProgress
-          : 1 -
-            Math.pow(
-              -2 * rawProgress + 2,
-              2
-            ) /
-              2;
+          ? 2 * rawProgress * rawProgress
+          : 1 - Math.pow(-2 * rawProgress + 2, 2) / 2;
 
-      const animatedLat =
-        start.lat +
-        (destination.lat -
-          start.lat) *
-          progress;
+      const animatedLat = start.lat + (destination.lat - start.lat) * progress;
 
-      const animatedLng =
-        start.lng +
-        (destination.lng -
-          start.lng) *
-          progress;
+      const animatedLng = start.lng + (destination.lng - start.lng) * progress;
 
-      driverMarkerRef.current?.setLngLat([
-        animatedLng,
-        animatedLat,
-      ]);
+      driverMarkerRef.current?.setLngLat([animatedLng, animatedLat]);
 
       if (rawProgress < 1) {
-        animationRef.current =
-          requestAnimationFrame(
-            animate
-          );
+        animationRef.current = requestAnimationFrame(animate);
       } else {
-        previousPositionRef.current =
-          destination;
+        previousPositionRef.current = destination;
 
-        animationRef.current =
-          null;
+        animationRef.current = null;
       }
     }
 
-    animationRef.current =
-      requestAnimationFrame(
-        animate
-      );
+    animationRef.current = requestAnimationFrame(animate);
 
     return () => {
-      if (
-        animationRef.current !==
-        null
-      ) {
-        cancelAnimationFrame(
-          animationRef.current
-        );
+      if (animationRef.current !== null) {
+        cancelAnimationFrame(animationRef.current);
 
-        animationRef.current =
-          null;
+        animationRef.current = null;
       }
     };
   }, [lat, lng]);
@@ -886,20 +745,15 @@ if (fitMap) {
       return;
     }
 
-    const car =
-      driverElementRef.current;
+    const car = driverElementRef.current;
 
     if (!car) return;
 
-    const newHeading =
-      ((heading % 360) + 360) %
-      360;
+    const newHeading = ((heading % 360) + 360) % 360;
 
-    const oldHeading =
-      currentHeadingRef.current;
+    const oldHeading = currentHeadingRef.current;
 
-    let difference =
-      newHeading - oldHeading;
+    let difference = newHeading - oldHeading;
 
     if (difference > 180) {
       difference -= 360;
@@ -909,14 +763,11 @@ if (fitMap) {
       difference += 360;
     }
 
-    const finalHeading =
-      oldHeading + difference;
+    const finalHeading = oldHeading + difference;
 
-    currentHeadingRef.current =
-      finalHeading;
+    currentHeadingRef.current = finalHeading;
 
-    car.style.transform =
-      `rotate(${finalHeading}deg)`;
+    car.style.transform = `rotate(${finalHeading}deg)`;
   }, [heading]);
 
   // ============================================================
@@ -931,73 +782,44 @@ if (fitMap) {
     if (!pickup) {
       pickupMarkerRef.current?.remove();
 
-      pickupMarkerRef.current =
-        null;
+      pickupMarkerRef.current = null;
 
-      const source =
-        map.getSource(
-          ROUTE_SOURCE_ID
-        ) as
-          | maplibregl.GeoJSONSource
-          | undefined;
+      const source = map.getSource(ROUTE_SOURCE_ID) as
+        maplibregl.GeoJSONSource | undefined;
 
-      source?.setData(
-        emptyRoute()
-      );
+      source?.setData(emptyRoute());
 
-      hasFittedRouteRef.current =
-        false;
+      hasFittedRouteRef.current = false;
 
       return;
     }
 
-    if (
-      !pickupMarkerRef.current
-    ) {
-      pickupMarkerRef.current =
-        new maplibregl.Marker({
-          element:
-            createPickupMarker(),
+    if (!pickupMarkerRef.current) {
+      pickupMarkerRef.current = new maplibregl.Marker({
+        element: createPickupMarker(),
 
-          anchor: "center",
-        })
-          .setLngLat([
-            pickup.lng,
-            pickup.lat,
-          ])
-          .addTo(map);
+        anchor: "center",
+      })
+        .setLngLat([pickup.lng, pickup.lat])
+        .addTo(map);
     } else {
-      pickupMarkerRef.current.setLngLat([
-        pickup.lng,
-        pickup.lat,
-      ]);
+      pickupMarkerRef.current.setLngLat([pickup.lng, pickup.lat]);
     }
 
     const runRoute = () => {
-      const shouldFit =
-        !hasFittedRouteRef.current;
+      const shouldFit = !hasFittedRouteRef.current;
 
-      updateRoadRoute(
-        lat,
-        lng,
-        pickup.lat,
-        pickup.lng,
-        shouldFit
-      );
+      updateRoadRoute(lat, lng, pickup.lat, pickup.lng, shouldFit);
 
       if (shouldFit) {
-        hasFittedRouteRef.current =
-          true;
+        hasFittedRouteRef.current = true;
       }
     };
 
     if (map.loaded()) {
       runRoute();
     } else {
-      map.once(
-        "load",
-        runRoute
-      );
+      map.once("load", runRoute);
     }
   }, [pickup]);
 
@@ -1013,38 +835,19 @@ if (fitMap) {
     }
 
     const runRoute = () => {
-      updateRoadRoute(
-        lat,
-        lng,
-        pickup.lat,
-        pickup.lng,
-        false
-      );
+      updateRoadRoute(lat, lng, pickup.lat, pickup.lng, false);
     };
 
     if (map.loaded()) {
       runRoute();
     } else {
-      map.once(
-        "load",
-        runRoute
-      );
+      map.once("load", runRoute);
     }
-  }, [
-    lat,
-    lng,
-    pickup?.lat,
-    pickup?.lng,
-  ]);
+  }, [lat, lng, pickup?.lat, pickup?.lng]);
 
   // ============================================================
   // MAP
   // ============================================================
 
-  return (
-    <div
-      ref={mapContainer}
-      className="h-full w-full"
-    />
-  );
+  return <div ref={mapContainer} className="h-full w-full" />;
 }

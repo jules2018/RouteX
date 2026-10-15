@@ -12,60 +12,47 @@ export default function TripDetailsPage() {
   const [passengers, setPassengers] = useState<any[]>([]);
 
   useEffect(() => {
-  if (!id) return;
+    if (!id) return;
 
-  fetch(
-    `${API_URL}/trips/${id}/driver-manifest`
-  )
-    .then((res) => res.json())
-    .then((data) => {
-      setTrip(data);
-    });
+    fetch(`${API_URL}/trips/${id}/driver-manifest`)
+      .then((res) => res.json())
+      .then((data) => {
+        setTrip(data);
+      });
 
-  fetch(
-    `${API_URL}/trips/${id}/passengers`
-  )
-    .then((res) => res.json())
-    .then((data) => {
-      setPassengers(data);
-    });
-
-}, [id]);
+    fetch(`${API_URL}/trips/${id}/passengers`)
+      .then((res) => res.json())
+      .then((data) => {
+        setPassengers(data);
+      });
+  }, [id]);
 
   if (!trip || !trip.trip) {
-  return <div className="p-8">Loading...</div>;
-}
-if (!trip || !trip.trip) {
-  return <div className="p-8">Loading...</div>;
-}
+    return <div className="p-8">Loading...</div>;
+  }
+  if (!trip || !trip.trip) {
+    return <div className="p-8">Loading...</div>;
+  }
 
-const departTrip = async () => {
-  await fetch(
-    `${API_URL}/trips/${id}/depart`,
-    {
+  const departTrip = async () => {
+    await fetch(`${API_URL}/trips/${id}/depart`, {
       method: "POST",
-    }
-  );
+    });
 
-  location.reload();
-};
+    location.reload();
+  };
 
-const completeTrip = async () => {
-  await fetch(
-    `${API_URL}/trips/${id}/complete`,
-    {
+  const completeTrip = async () => {
+    await fetch(`${API_URL}/trips/${id}/complete`, {
       method: "POST",
-    }
-  );
+    });
 
-  location.reload();
-};
+    location.reload();
+  };
 
   return (
     <main className="p-8">
-      <h1 className="text-4xl font-bold mb-6">
-        Trip {trip.trip.id}
-      </h1>
+      <h1 className="text-4xl font-bold mb-6">Trip {trip.trip.id}</h1>
 
       <div className="mb-6">
         <p>
@@ -84,28 +71,26 @@ const completeTrip = async () => {
           <strong>Capacity:</strong> {trip.trip.capacity}
         </p>
         <p>
-        <strong>Status:</strong> {trip.trip.status}
+          <strong>Status:</strong> {trip.trip.status}
         </p>
         <div className="flex gap-4 mt-4 mb-6">
-  <button
-    onClick={departTrip}
-    className="bg-blue-600 text-white px-4 py-2 rounded"
-  >
-    Depart Trip
-  </button>
+          <button
+            onClick={departTrip}
+            className="bg-blue-600 text-white px-4 py-2 rounded"
+          >
+            Depart Trip
+          </button>
 
-  <button
-    onClick={completeTrip}
-    className="bg-green-600 text-white px-4 py-2 rounded"
-  >
-    Complete Trip
-  </button>
-</div>
+          <button
+            onClick={completeTrip}
+            className="bg-green-600 text-white px-4 py-2 rounded"
+          >
+            Complete Trip
+          </button>
+        </div>
       </div>
 
-      <h2 className="text-2xl font-bold mb-2">
-        Pickup Stops
-      </h2>
+      <h2 className="text-2xl font-bold mb-2">Pickup Stops</h2>
 
       <ul className="mb-6">
         {trip.pickup_stops.map((stop: any) => (
@@ -115,9 +100,7 @@ const completeTrip = async () => {
         ))}
       </ul>
 
-      <h2 className="text-2xl font-bold mb-2">
-        Dropoff Stops
-      </h2>
+      <h2 className="text-2xl font-bold mb-2">Dropoff Stops</h2>
 
       <ul>
         {trip.dropoff_stops.map((stop: any) => (
@@ -126,39 +109,29 @@ const completeTrip = async () => {
           </li>
         ))}
       </ul>
-      <h2 className="text-2xl font-bold mt-8 mb-2">
-  Passengers
-</h2>
+      <h2 className="text-2xl font-bold mt-8 mb-2">Passengers</h2>
 
-<table className="border-collapse border border-gray-300 w-full">
-  <thead>
-    <tr>
-      <th className="border p-2">Name</th>
-      <th className="border p-2">Phone</th>
-      <th className="border p-2">Pickup</th>
-      <th className="border p-2">Dropoff</th>
-    </tr>
-  </thead>
+      <table className="border-collapse border border-gray-300 w-full">
+        <thead>
+          <tr>
+            <th className="border p-2">Name</th>
+            <th className="border p-2">Phone</th>
+            <th className="border p-2">Pickup</th>
+            <th className="border p-2">Dropoff</th>
+          </tr>
+        </thead>
 
-  <tbody>
-    {passengers.map((passenger) => (
-      <tr key={passenger.id}>
-        <td className="border p-2">
-          {passenger.full_name}
-        </td>
-        <td className="border p-2">
-          {passenger.phone}
-        </td>
-        <td className="border p-2">
-          {passenger.pickup_town}
-        </td>
-        <td className="border p-2">
-          {passenger.dropoff_town}
-        </td>
-      </tr>
-    ))}
-  </tbody>
-</table>
+        <tbody>
+          {passengers.map((passenger) => (
+            <tr key={passenger.id}>
+              <td className="border p-2">{passenger.full_name}</td>
+              <td className="border p-2">{passenger.phone}</td>
+              <td className="border p-2">{passenger.pickup_town}</td>
+              <td className="border p-2">{passenger.dropoff_town}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </main>
   );
 }

@@ -18,27 +18,23 @@ const pool = require("./db");
 const fs = require("fs");
 const path = require("path");
 
-const streetsFile = path.join(
-  __dirname,
-  "data",
-  "upington-streets.json"
-);
+const streetsFile = path.join(__dirname, "data", "upington-streets.json");
 
-const streets = JSON.parse(
-  fs.readFileSync(streetsFile, "utf8")
-);
+const streets = JSON.parse(fs.readFileSync(streetsFile, "utf8"));
 
 function normalizeStreetName(name) {
-  return String(name || "")
-    // Remove road-width information:
-    // "Beryl Street 13.00M" -> "Beryl Street"
-    // "Kameeldoring Avenue 16,00M" -> "Kameeldoring Avenue"
-    .replace(/\s+\d+[.,]\d+\s*M?\s*$/i, "")
+  return (
+    String(name || "")
+      // Remove road-width information:
+      // "Beryl Street 13.00M" -> "Beryl Street"
+      // "Kameeldoring Avenue 16,00M" -> "Kameeldoring Avenue"
+      .replace(/\s+\d+[.,]\d+\s*M?\s*$/i, "")
 
-    // Clean repeated spaces
-    .replace(/\s+/g, " ")
+      // Clean repeated spaces
+      .replace(/\s+/g, " ")
 
-    .trim();
+      .trim()
+  );
 }
 
 const STREET_NAME_FIXES = {
@@ -46,16 +42,13 @@ const STREET_NAME_FIXES = {
   "rossouw avenye": "Rossouw Avenue",
   "seinheuwel satreet": "Seinheuwel Street",
   "honeysuckel str": "Honeysuckle Street",
-  "honeysuckelstraat": "Honeysuckle Street",
+  honeysuckelstraat: "Honeysuckle Street",
 };
 
 function cleanStreetName(name) {
   const normalized = normalizeStreetName(name);
 
-  return (
-    STREET_NAME_FIXES[normalized.toLowerCase()] ||
-    normalized
-  );
+  return STREET_NAME_FIXES[normalized.toLowerCase()] || normalized;
 }
 
 function isUsableStreet(name) {
@@ -79,10 +72,10 @@ async function importStreets() {
   console.log("========================================");
   console.log("RouteX Upington Street Import");
   console.log(
-  DRY_RUN
-    ? "MODE: DRY RUN - database will NOT be changed"
-    : "MODE: LIVE IMPORT"
-);
+    DRY_RUN
+      ? "MODE: DRY RUN - database will NOT be changed"
+      : "MODE: LIVE IMPORT",
+  );
   console.log("========================================");
   console.log("");
 
@@ -104,20 +97,17 @@ async function importStreets() {
       continue;
     }
 
-  const areaName = String(
-  item.area_name || "Upington"
-).trim();
+    const areaName = String(item.area_name || "Upington").trim();
 
-const key =
-  `${areaName.toLowerCase()}::${address.toLowerCase()}`;
+    const key = `${areaName.toLowerCase()}::${address.toLowerCase()}`;
 
-   if (!grouped.has(key)) {
-  grouped.set(key, {
-    address,
-    area_name: areaName,
-    coordinates: [],
-  });
-}
+    if (!grouped.has(key)) {
+      grouped.set(key, {
+        address,
+        area_name: areaName,
+        coordinates: [],
+      });
+    }
     if (
       Number.isFinite(Number(item.lat)) &&
       Number.isFinite(Number(item.lng))
@@ -146,20 +136,16 @@ const key =
     // Use the average of all mapped segments as the
     // representative point for street-level searching.
     const lat =
-      street.coordinates.reduce(
-        (sum, point) => sum + point.lat,
-        0
-      ) / street.coordinates.length;
+      street.coordinates.reduce((sum, point) => sum + point.lat, 0) /
+      street.coordinates.length;
 
     const lng =
-      street.coordinates.reduce(
-        (sum, point) => sum + point.lng,
-        0
-      ) / street.coordinates.length;
+      street.coordinates.reduce((sum, point) => sum + point.lng, 0) /
+      street.coordinates.length;
 
     try {
-const found = await pool.query(
-  `
+      const found = await pool.query(
+        `
   SELECT
     id,
     address,
@@ -185,28 +171,25 @@ const found = await pool.query(
     )
   LIMIT 1
   `,
-  [
-    street.address,
-    street.area_name,
-  ]
-);
+        [street.address, street.area_name],
+      );
 
       if (found.rows.length > 0) {
         existing++;
         console.log(`EXISTS: ${street.address}`);
         continue;
       }
-if (DRY_RUN) {
-  added++;
+      if (DRY_RUN) {
+        added++;
 
-  console.log(
-    `WOULD ADD: ${street.address} | ${street.area_name} | ${lat.toFixed(
-      6
-    )}, ${lng.toFixed(6)}`
-  );
+        console.log(
+          `WOULD ADD: ${street.address} | ${street.area_name} | ${lat.toFixed(
+            6,
+          )}, ${lng.toFixed(6)}`,
+        );
 
-  continue;
-}
+        continue;
+      }
       await pool.query(
         `
         INSERT INTO public.addresses (
@@ -219,30 +202,25 @@ if (DRY_RUN) {
         )
         VALUES ($1, $2, $3, $4, $5, $6)
         `,
-      [
-  street.address,
-  `${street.address}, ${street.area_name}, Northern Cape, South Africa`,
-  street.area_name,
-  lat,
-  lng,
-  "street",
-]
+        [
+          street.address,
+          `${street.address}, ${street.area_name}, Northern Cape, South Africa`,
+          street.area_name,
+          lat,
+          lng,
+          "street",
+        ],
       );
 
       added++;
 
       console.log(
-        `ADDED: ${street.address} (${lat.toFixed(
-          6
-        )}, ${lng.toFixed(6)})`
+        `ADDED: ${street.address} (${lat.toFixed(6)}, ${lng.toFixed(6)})`,
       );
     } catch (error) {
       skipped++;
 
-      console.error(
-        `FAILED: ${street.address}`,
-        error.message
-      );
+      console.error(`FAILED: ${street.address}`, error.message);
     }
   }
 

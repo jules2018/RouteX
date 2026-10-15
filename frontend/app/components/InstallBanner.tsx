@@ -18,8 +18,7 @@ export default function InstallBanner() {
     }
 
     // Detect iPhone / iPad
-    const ios =
-      /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const ios = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
     setIsIOS(ios);
 
@@ -31,10 +30,7 @@ export default function InstallBanner() {
       setShowBanner(true);
     };
 
-    window.addEventListener(
-      "beforeinstallprompt",
-      handler
-    );
+    window.addEventListener("beforeinstallprompt", handler);
 
     // iOS doesn't fire beforeinstallprompt
     if (ios) {
@@ -42,10 +38,7 @@ export default function InstallBanner() {
     }
 
     return () => {
-      window.removeEventListener(
-        "beforeinstallprompt",
-        handler
-      );
+      window.removeEventListener("beforeinstallprompt", handler);
     };
   }, []);
 
@@ -54,8 +47,7 @@ export default function InstallBanner() {
     if (deferredPrompt) {
       deferredPrompt.prompt();
 
-      const { outcome } =
-        await deferredPrompt.userChoice;
+      const { outcome } = await deferredPrompt.userChoice;
 
       if (outcome === "accepted") {
         setShowBanner(false);
@@ -70,10 +62,10 @@ export default function InstallBanner() {
     if (isIOS) {
       alert(
         "To install RouteX:\n\n" +
-        "1. Open RouteX in Safari\n" +
-        "2. Tap the Share button\n" +
-        "3. Select 'Add to Home Screen'\n" +
-        "4. Tap 'Add'"
+          "1. Open RouteX in Safari\n" +
+          "2. Tap the Share button\n" +
+          "3. Select 'Add to Home Screen'\n" +
+          "4. Tap 'Add'",
       );
     }
   };
@@ -81,16 +73,11 @@ export default function InstallBanner() {
   const dismiss = () => {
     setShowBanner(false);
 
-    sessionStorage.setItem(
-      "routex-install-dismissed",
-      "true"
-    );
+    sessionStorage.setItem("routex-install-dismissed", "true");
   };
 
   useEffect(() => {
-    const dismissed = sessionStorage.getItem(
-      "routex-install-dismissed"
-    );
+    const dismissed = sessionStorage.getItem("routex-install-dismissed");
 
     if (dismissed) {
       setShowBanner(false);
@@ -104,29 +91,21 @@ export default function InstallBanner() {
   return (
     <div className="w-full bg-slate-900 text-white">
       <div className="max-w-2xl mx-auto px-4 py-3">
-
         <div className="flex items-center gap-3">
-
           {/* RouteX icon */}
           <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-teal-600 flex items-center justify-center">
-            <span className="text-white font-bold text-lg">
-              X
-            </span>
+            <span className="text-white font-bold text-lg">X</span>
           </div>
 
           {/* Text */}
           <div className="flex-1 min-w-0">
-
-            <p className="font-semibold text-sm">
-              Get RouteX on your phone
-            </p>
+            <p className="font-semibold text-sm">Get RouteX on your phone</p>
 
             <p className="text-xs text-slate-400 mt-0.5">
               {isIOS
                 ? "Add RouteX to your Home Screen"
                 : "Install RouteX for quick access"}
             </p>
-
           </div>
 
           {/* Install */}
@@ -145,9 +124,7 @@ export default function InstallBanner() {
           >
             ×
           </button>
-
         </div>
-
       </div>
     </div>
   );

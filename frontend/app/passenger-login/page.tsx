@@ -23,34 +23,26 @@ export default function PassengerLoginPage() {
   // EXISTING PASSENGER SESSION
   // =========================================
 
-useEffect(() => {
-  const resetSuccess =
-    new URLSearchParams(window.location.search).get("reset") === "success";
+  useEffect(() => {
+    const resetSuccess =
+      new URLSearchParams(window.location.search).get("reset") === "success";
 
-  if (resetSuccess) {
-    showNotice(
-      "Your password was changed successfully.",
-      "success"
-    );
-  }
+    if (resetSuccess) {
+      showNotice("Your password was changed successfully.", "success");
+    }
 
-  const passenger = JSON.parse(
-    localStorage.getItem("passenger") || "null"
-  );
+    const passenger = JSON.parse(localStorage.getItem("passenger") || "null");
 
-  if (passenger) {
-    router.push("/passenger-portal");
-  }
-}, [router]);
+    if (passenger) {
+      router.push("/passenger-portal");
+    }
+  }, [router]);
 
   // =========================================
   // ROUTEX NOTICE
   // =========================================
 
-  const showNotice = (
-    message: string,
-    type: NoticeType = "error"
-  ) => {
+  const showNotice = (message: string, type: NoticeType = "error") => {
     setNotice({
       message,
       type,
@@ -74,26 +66,21 @@ useEffect(() => {
     setLoading(true);
 
     try {
-      const response = await fetch(
-        `${API_URL}/passenger-login`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email: email.trim(),
-            password,
-          }),
-        }
-      );
+      const response = await fetch(`${API_URL}/passenger-login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: email.trim(),
+          password,
+        }),
+      });
 
       const data = await response.json();
 
       if (!response.ok) {
-        showNotice(
-          data.error || "Unable to sign in."
-        );
+        showNotice(data.error || "Unable to sign in.");
         return;
       }
 
@@ -102,27 +89,17 @@ useEffect(() => {
       localStorage.removeItem("user");
       localStorage.removeItem("passenger");
 
-      localStorage.setItem(
-        "passenger",
-        JSON.stringify(data)
-      );
+      localStorage.setItem("passenger", JSON.stringify(data));
 
-      showNotice(
-        "Login successful.",
-        "success"
-      );
+      showNotice("Login successful.", "success");
 
       window.setTimeout(() => {
         window.location.href = "/passenger-portal";
       }, 500);
-
     } catch (error) {
       console.error("LOGIN ERROR:", error);
 
-      showNotice(
-        "Unable to connect to RouteX."
-      );
-
+      showNotice("Unable to connect to RouteX.");
     } finally {
       setLoading(false);
     }
@@ -130,9 +107,7 @@ useEffect(() => {
 
   return (
     <main className="min-h-[100svh] bg-[#e7e9ee] text-[#17191f]">
-
       <section className="relative mx-auto flex min-h-[100svh] w-full max-w-[430px] flex-col overflow-hidden px-5 pb-5 pt-4">
-
         {/* BACKGROUND */}
 
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -157,11 +132,7 @@ useEffect(() => {
             -translate-x-1/2
             transition-all
             duration-300
-            ${
-              notice
-                ? "translate-y-0 opacity-100"
-                : "-translate-y-5 opacity-0"
-            }
+            ${notice ? "translate-y-0 opacity-100" : "-translate-y-5 opacity-0"}
           `}
         >
           {notice && (
@@ -208,9 +179,7 @@ useEffect(() => {
 
               <div className="min-w-0 flex-1">
                 <p className="text-[8px] font-bold uppercase tracking-[0.16em] text-[#9a9da5]">
-                  {notice.type === "success"
-                    ? "Success"
-                    : "RouteX"}
+                  {notice.type === "success" ? "Success" : "RouteX"}
                 </p>
 
                 <p className="mt-[2px] text-[11px] font-semibold text-[#17191f]">
@@ -229,9 +198,7 @@ useEffect(() => {
                   }
                 `}
               >
-                {notice.type === "success"
-                  ? "✓"
-                  : "!"}
+                {notice.type === "success" ? "✓" : "!"}
               </span>
             </div>
           )}
@@ -242,7 +209,6 @@ useEffect(() => {
         ========================================= */}
 
         <header className="relative z-20 flex items-center justify-between">
-
           <button
             type="button"
             onClick={() => router.push("/")}
@@ -270,7 +236,6 @@ useEffect(() => {
           >
             ←
           </button>
-
         </header>
 
         {/* =========================================
@@ -278,7 +243,6 @@ useEffect(() => {
         ========================================= */}
 
         <div className="relative z-20 flex flex-1 flex-col justify-center">
-
           {/* ROUTEX MARK */}
 
           <div className="mb-6 flex justify-center">
@@ -335,7 +299,6 @@ useEffect(() => {
               shadow-[8px_8px_18px_#c3c5ca,-8px_-8px_18px_#ffffff]
             "
           >
-
             {/* EMAIL */}
 
             <div>
@@ -381,9 +344,7 @@ useEffect(() => {
                   autoComplete="email"
                   placeholder="you@example.com"
                   value={email}
-                  onChange={(e) =>
-                    setEmail(e.target.value)
-                  }
+                  onChange={(e) => setEmail(e.target.value)}
                   className="
                     h-full
                     min-w-0
@@ -397,14 +358,14 @@ useEffect(() => {
                   "
                 />
                 <div className="mt-3 text-right">
-                <button
-                  type="button"
-                  onClick={() => router.push("/forgot-password")}
-                  className="text-[11px] font-bold text-[#ff6846]"
-                >
-                  Forgot password?
-                </button>
-              </div>
+                  <button
+                    type="button"
+                    onClick={() => router.push("/forgot-password")}
+                    className="text-[11px] font-bold text-[#ff6846]"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -454,9 +415,7 @@ useEffect(() => {
                   autoComplete="current-password"
                   placeholder="Enter your password"
                   value={password}
-                  onChange={(e) =>
-                    setPassword(e.target.value)
-                  }
+                  onChange={(e) => setPassword(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       login();
@@ -479,16 +438,8 @@ useEffect(() => {
 
                 <button
                   type="button"
-                  onClick={() =>
-                    setShowPassword(
-                      (current) => !current
-                    )
-                  }
-                  aria-label={
-                    showPassword
-                      ? "Hide password"
-                      : "Show password"
-                  }
+                  onClick={() => setShowPassword((current) => !current)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                   className="
                     ml-2
                     flex h-8 w-8
@@ -583,18 +534,11 @@ useEffect(() => {
               "
             >
               <span className="text-[11px] font-semibold">
-                {loading
-                  ? "Signing in..."
-                  : "Sign in"}
+                {loading ? "Signing in..." : "Sign in"}
               </span>
 
-              {!loading && (
-                <span className="text-[16px]">
-                  →
-                </span>
-              )}
+              {!loading && <span className="text-[16px]">→</span>}
             </button>
-
           </div>
 
           {/* CREATE ACCOUNT */}
@@ -606,9 +550,7 @@ useEffect(() => {
 
             <button
               type="button"
-              onClick={() =>
-                router.push("/passenger-register")
-              }
+              onClick={() => router.push("/passenger-register")}
               className="
                 mt-2
                 inline-flex
@@ -630,7 +572,6 @@ useEffect(() => {
               Create an account
             </button>
           </div>
-
         </div>
 
         {/* FOOTER */}
@@ -642,17 +583,12 @@ useEffect(() => {
             </p>
 
             <div className="flex gap-3 text-[7px] font-semibold text-[#999ca4]">
-              <a href="/privacy">
-                Privacy
-              </a>
+              <a href="/privacy">Privacy</a>
 
-              <a href="/terms">
-                Terms
-              </a>
+              <a href="/terms">Terms</a>
             </div>
           </div>
         </footer>
-
       </section>
     </main>
   );

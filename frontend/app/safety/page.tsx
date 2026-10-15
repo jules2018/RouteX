@@ -8,15 +8,13 @@ const outfit = Outfit({
 
 export default function SafetyPage() {
   return (
-    <main className={`${outfit.className} min-h-screen bg-white text-[#111111]`}>
+    <main
+      className={`${outfit.className} min-h-screen bg-white text-[#111111]`}
+    >
       <div className="mx-auto w-full max-w-md px-5 pb-12">
-
         {/* HEADER */}
         <header className="flex items-center justify-between py-5">
-          <a
-            href="/"
-            className="text-[26px] font-extrabold tracking-[-0.05em]"
-          >
+          <a href="/" className="text-[26px] font-extrabold tracking-[-0.05em]">
             Route<span className="text-[#ff6a00]">X</span>
           </a>
 
@@ -62,7 +60,6 @@ export default function SafetyPage() {
 
         {/* CONTENT */}
         <div className="space-y-8 pt-8 text-[16px] leading-[1.7] text-[#555555]">
-
           <LegalSection title="1. Before your trip">
             <p>
               Passengers should check the available driver and vehicle
@@ -71,8 +68,8 @@ export default function SafetyPage() {
 
             <p>
               If the driver, vehicle or booking information does not reasonably
-              match the information provided through RouteX, do not proceed
-              with the trip until the situation has been clarified.
+              match the information provided through RouteX, do not proceed with
+              the trip until the situation has been clarified.
             </p>
           </LegalSection>
 
@@ -83,17 +80,13 @@ export default function SafetyPage() {
               <li>Use the correct pickup and destination information.</li>
 
               <li>
-                Confirm that they are entering the vehicle associated with
-                their booking.
+                Confirm that they are entering the vehicle associated with their
+                booking.
               </li>
 
-              <li>
-                Wear a seat belt where available and legally required.
-              </li>
+              <li>Wear a seat belt where available and legally required.</li>
 
-              <li>
-                Avoid distracting the driver while the vehicle is moving.
-              </li>
+              <li>Avoid distracting the driver while the vehicle is moving.</li>
 
               <li>
                 Never ask a driver to speed, drive dangerously or break road
@@ -119,21 +112,19 @@ export default function SafetyPage() {
               </li>
 
               <li>
-                Never drive while impaired by alcohol, drugs, extreme fatigue
-                or another unsafe condition.
+                Never drive while impaired by alcohol, drugs, extreme fatigue or
+                another unsafe condition.
               </li>
 
-              <li>
-                Follow applicable traffic laws and speed limits.
-              </li>
+              <li>Follow applicable traffic laws and speed limits.</li>
 
               <li>
                 Avoid unlawful or dangerous mobile-phone use while driving.
               </li>
 
               <li>
-                Confirm the passenger and trip information before beginning
-                the ride.
+                Confirm the passenger and trip information before beginning the
+                ride.
               </li>
             </ul>
           </LegalSection>
@@ -141,8 +132,8 @@ export default function SafetyPage() {
           <LegalSection title="4. Respect and personal safety">
             <p>
               RouteX does not tolerate violence, threats, harassment,
-              intimidation, sexual misconduct or unlawful discrimination
-              between platform users.
+              intimidation, sexual misconduct or unlawful discrimination between
+              platform users.
             </p>
 
             <p>
@@ -155,8 +146,8 @@ export default function SafetyPage() {
           <LegalSection title="5. Alcohol and drugs">
             <p>
               Drivers must not operate a vehicle while impaired by alcohol,
-              illegal drugs, medication or another substance that makes
-              driving unsafe or unlawful.
+              illegal drugs, medication or another substance that makes driving
+              unsafe or unlawful.
             </p>
 
             <p>
@@ -167,8 +158,8 @@ export default function SafetyPage() {
 
           <LegalSection title="6. Vehicle condition">
             <p>
-              Drivers are responsible for ensuring that vehicles used for
-              RouteX trips comply with applicable legal and roadworthiness
+              Drivers are responsible for ensuring that vehicles used for RouteX
+              trips comply with applicable legal and roadworthiness
               requirements.
             </p>
 
@@ -198,8 +189,7 @@ export default function SafetyPage() {
 
             <p>
               Where possible, move to a safe public location and contact the
-              appropriate emergency service if immediate assistance is
-              required.
+              appropriate emergency service if immediate assistance is required.
             </p>
           </LegalSection>
 
@@ -234,16 +224,16 @@ export default function SafetyPage() {
             </p>
 
             <p>
-              RouteX may restrict an account while a serious safety complaint
-              is being investigated.
+              RouteX may restrict an account while a serious safety complaint is
+              being investigated.
             </p>
           </LegalSection>
 
           <LegalSection title="11. Personal information">
             <p>
-              Passenger and driver contact information obtained through a
-              RouteX booking should only be used for legitimate booking,
-              safety and support purposes.
+              Passenger and driver contact information obtained through a RouteX
+              booking should only be used for legitimate booking, safety and
+              support purposes.
             </p>
 
             <p>
@@ -266,8 +256,8 @@ export default function SafetyPage() {
             </p>
 
             <p>
-              RouteX may assist the passenger and driver in communicating
-              about the item but cannot guarantee that lost property will be
+              RouteX may assist the passenger and driver in communicating about
+              the item but cannot guarantee that lost property will be
               recovered.
             </p>
           </LegalSection>
@@ -302,11 +292,10 @@ export default function SafetyPage() {
             </a>
 
             <p className="text-[13px] text-[#888888]">
-              RouteX Support is not a replacement for police, ambulance, fire
-              or other emergency services.
+              RouteX Support is not a replacement for police, ambulance, fire or
+              other emergency services.
             </p>
           </LegalSection>
-
         </div>
 
         {/* LEGAL LINKS */}
@@ -343,7 +332,6 @@ export default function SafetyPage() {
             RouteX • Getting Upington Moving
           </p>
         </footer>
-
       </div>
     </main>
   );
@@ -362,9 +350,7 @@ function LegalSection({
         {title}
       </h2>
 
-      <div className="space-y-3">
-        {children}
-      </div>
+      <div className="space-y-3">{children}</div>
     </section>
   );
 }

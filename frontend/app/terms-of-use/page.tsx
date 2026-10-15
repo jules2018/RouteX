@@ -12,13 +12,9 @@ export default function TermsOfUsePage() {
       className={`${outfit.className} min-h-screen bg-white text-[#111111]`}
     >
       <div className="mx-auto w-full max-w-md px-5 pb-12">
-
         {/* HEADER */}
         <header className="flex items-center justify-between py-5">
-          <a
-            href="/"
-            className="text-[26px] font-extrabold tracking-[-0.05em]"
-          >
+          <a href="/" className="text-[26px] font-extrabold tracking-[-0.05em]">
             Route<span className="text-[#ff6a00]">X</span>
           </a>
 
@@ -54,7 +50,6 @@ export default function TermsOfUsePage() {
 
         {/* CONTENT */}
         <div className="space-y-8 pt-7 text-[16px] leading-[1.7] text-[#555555]">
-
           <LegalSection title="1. Acceptance of these terms">
             <p>
               These Terms of Use apply when you access or use the RouteX
@@ -63,41 +58,41 @@ export default function TermsOfUsePage() {
             </p>
 
             <p>
-              By accessing or using RouteX, you agree to these Terms of Use
-              and any additional terms that apply to the particular RouteX
-              service you use.
+              By accessing or using RouteX, you agree to these Terms of Use and
+              any additional terms that apply to the particular RouteX service
+              you use.
             </p>
 
             <p>
-              Passengers are also subject to the Passenger Terms &
-              Conditions. Drivers are subject to the Driver Terms and
-              Independent Contractor Agreement.
+              Passengers are also subject to the Passenger Terms & Conditions.
+              Drivers are subject to the Driver Terms and Independent Contractor
+              Agreement.
             </p>
           </LegalSection>
 
           <LegalSection title="2. About RouteX">
             <p>
-              RouteX provides technology that helps connect passengers
-              seeking transportation with participating independent drivers.
+              RouteX provides technology that helps connect passengers seeking
+              transportation with participating independent drivers.
             </p>
 
             <p>
-              Unless expressly stated otherwise, RouteX does not itself
-              operate the driver's vehicle and does not guarantee that a
-              driver will be available for every booking request.
+              Unless expressly stated otherwise, RouteX does not itself operate
+              the driver's vehicle and does not guarantee that a driver will be
+              available for every booking request.
             </p>
           </LegalSection>
 
           <LegalSection title="3. Eligibility">
             <p>
-              You may only use RouteX where you are legally permitted to do
-              so and must provide accurate information when creating an
-              account or using the platform.
+              You may only use RouteX where you are legally permitted to do so
+              and must provide accurate information when creating an account or
+              using the platform.
             </p>
 
             <p>
-              You may not impersonate another person, create fraudulent
-              accounts or use another person's account without permission.
+              You may not impersonate another person, create fraudulent accounts
+              or use another person's account without permission.
             </p>
           </LegalSection>
 
@@ -108,8 +103,8 @@ export default function TermsOfUsePage() {
             </p>
 
             <p>
-              You should notify RouteX promptly if you believe your account
-              has been accessed or used without authorisation.
+              You should notify RouteX promptly if you believe your account has
+              been accessed or used without authorisation.
             </p>
           </LegalSection>
 
@@ -123,18 +118,15 @@ export default function TermsOfUsePage() {
                 Harass, threaten, discriminate against or harm another person.
               </li>
 
+              <li>Provide false, misleading or fraudulent information.</li>
+
               <li>
-                Provide false, misleading or fraudulent information.
+                Interfere with the security or operation of the RouteX platform.
               </li>
 
               <li>
-                Interfere with the security or operation of the RouteX
-                platform.
-              </li>
-
-              <li>
-                Attempt to gain unauthorised access to RouteX systems,
-                accounts or data.
+                Attempt to gain unauthorised access to RouteX systems, accounts
+                or data.
               </li>
 
               <li>
@@ -169,9 +161,9 @@ export default function TermsOfUsePage() {
 
           <LegalSection title="7. Prices, promotions and rewards">
             <p>
-              Prices, fares, discounts, referral rewards and promotional
-              offers may be subject to conditions displayed or communicated
-              through RouteX.
+              Prices, fares, discounts, referral rewards and promotional offers
+              may be subject to conditions displayed or communicated through
+              RouteX.
             </p>
 
             <p>
@@ -187,9 +179,9 @@ export default function TermsOfUsePage() {
 
           <LegalSection title="8. Third-party services">
             <p>
-              RouteX may depend on third-party technology or services,
-              including hosting, messaging, communications, payment,
-              navigation or other infrastructure.
+              RouteX may depend on third-party technology or services, including
+              hosting, messaging, communications, payment, navigation or other
+              infrastructure.
             </p>
 
             <p>
@@ -214,8 +206,8 @@ export default function TermsOfUsePage() {
 
           <LegalSection title="10. Electronic communications">
             <p>
-              By using RouteX, you acknowledge that certain communications
-              and agreements may take place electronically.
+              By using RouteX, you acknowledge that certain communications and
+              agreements may take place electronically.
             </p>
 
             <p>
@@ -233,23 +225,23 @@ export default function TermsOfUsePage() {
             </p>
 
             <p>
-              RouteX may perform maintenance, update features, correct
-              technical problems or temporarily restrict access where
-              reasonably necessary.
+              RouteX may perform maintenance, update features, correct technical
+              problems or temporarily restrict access where reasonably
+              necessary.
             </p>
           </LegalSection>
 
           <LegalSection title="12. Suspension or termination">
             <p>
-              RouteX may restrict or suspend access where reasonably
-              necessary because of suspected fraud, serious misconduct,
-              safety concerns, unlawful use, security threats or material
-              breaches of applicable RouteX terms.
+              RouteX may restrict or suspend access where reasonably necessary
+              because of suspected fraud, serious misconduct, safety concerns,
+              unlawful use, security threats or material breaches of applicable
+              RouteX terms.
             </p>
 
             <p>
-              Where appropriate, RouteX may investigate the circumstances
-              before taking permanent action.
+              Where appropriate, RouteX may investigate the circumstances before
+              taking permanent action.
             </p>
           </LegalSection>
 
@@ -263,8 +255,8 @@ export default function TermsOfUsePage() {
 
           <LegalSection title="14. Limitation of liability">
             <p>
-              To the extent permitted by law, RouteX is not responsible for
-              loss resulting solely from circumstances outside its reasonable
+              To the extent permitted by law, RouteX is not responsible for loss
+              resulting solely from circumstances outside its reasonable
               control, third-party service failures, inaccurate information
               supplied by users, or unlawful or negligent conduct of an
               independent platform participant.
@@ -298,9 +290,9 @@ export default function TermsOfUsePage() {
             </p>
 
             <p>
-              The current version will show its effective date. Where a
-              material change requires additional notice or consent, RouteX
-              will take reasonable steps to provide it.
+              The current version will show its effective date. Where a material
+              change requires additional notice or consent, RouteX will take
+              reasonable steps to provide it.
             </p>
           </LegalSection>
 
@@ -312,15 +304,15 @@ export default function TermsOfUsePage() {
 
             <p>
               Nothing in these terms prevents a person from approaching a
-              competent regulator, tribunal or court where legally entitled
-              to do so.
+              competent regulator, tribunal or court where legally entitled to
+              do so.
             </p>
           </LegalSection>
 
           <LegalSection title="18. Contact RouteX">
             <p>
-              For questions or concerns regarding the RouteX platform,
-              contact RouteX Support.
+              For questions or concerns regarding the RouteX platform, contact
+              RouteX Support.
             </p>
 
             <a
@@ -342,7 +334,6 @@ export default function TermsOfUsePage() {
               WhatsApp RouteX Support
             </a>
           </LegalSection>
-
         </div>
 
         {/* LEGAL LINKS */}
@@ -375,12 +366,10 @@ export default function TermsOfUsePage() {
             RouteX • Getting Upington Moving
           </p>
         </footer>
-
       </div>
     </main>
   );
 }
-
 
 /* =========================================
    LEGAL SECTION COMPONENT
@@ -399,9 +388,7 @@ function LegalSection({
         {title}
       </h2>
 
-      <div className="space-y-3">
-        {children}
-      </div>
+      <div className="space-y-3">{children}</div>
     </section>
   );
 }

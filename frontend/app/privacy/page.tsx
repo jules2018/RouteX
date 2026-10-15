@@ -12,13 +12,9 @@ export default function PrivacyPage() {
       className={`${outfit.className} min-h-screen bg-white text-[#111111]`}
     >
       <div className="mx-auto w-full max-w-md px-5 pb-12">
-
         {/* HEADER */}
         <header className="flex items-center justify-between py-5">
-          <a
-            href="/"
-            className="text-[26px] font-extrabold tracking-[-0.05em]"
-          >
+          <a href="/" className="text-[26px] font-extrabold tracking-[-0.05em]">
             Route<span className="text-[#ff6a00]">X</span>
           </a>
 
@@ -58,26 +54,25 @@ export default function PrivacyPage() {
 
         {/* CONTENT */}
         <div className="space-y-8 pt-7 text-[16px] leading-[1.7] text-[#555555]">
-
           <LegalSection title="1. About this Privacy Policy">
             <p>
-              RouteX respects your privacy and is committed to handling
-              personal information responsibly and in accordance with the
-              Protection of Personal Information Act 4 of 2013 (POPIA).
+              RouteX respects your privacy and is committed to handling personal
+              information responsibly and in accordance with the Protection of
+              Personal Information Act 4 of 2013 (POPIA).
             </p>
 
             <p>
-              This Privacy Policy explains what personal information RouteX
-              may collect, why it is collected, how it may be used or shared,
-              and the rights available to you.
+              This Privacy Policy explains what personal information RouteX may
+              collect, why it is collected, how it may be used or shared, and
+              the rights available to you.
             </p>
           </LegalSection>
 
           <LegalSection title="2. Who is responsible for your information">
             <p>
               For purposes of POPIA, RouteX acts as the responsible party for
-              personal information processed through the RouteX platform,
-              unless another arrangement applies in a particular situation.
+              personal information processed through the RouteX platform, unless
+              another arrangement applies in a particular situation.
             </p>
 
             <p>
@@ -103,21 +98,17 @@ export default function PrivacyPage() {
               </li>
 
               <li>
-                Driver information including identity details, contact
-                details, vehicle information and driver documents.
+                Driver information including identity details, contact details,
+                vehicle information and driver documents.
               </li>
 
               <li>
                 Profile photographs and other information you choose to upload.
               </li>
 
-              <li>
-                Referral, ambassador and promotional information.
-              </li>
+              <li>Referral, ambassador and promotional information.</li>
 
-              <li>
-                Communications sent to RouteX support.
-              </li>
+              <li>Communications sent to RouteX support.</li>
 
               <li>
                 Technical information such as browser, device, IP address,
@@ -136,13 +127,10 @@ export default function PrivacyPage() {
                 Connect passengers with available drivers and manage bookings.
               </li>
 
-              <li>
-                Communicate trip, support and service information.
-              </li>
+              <li>Communicate trip, support and service information.</li>
 
               <li>
-                Calculate fares, promotions, driver amounts or referral
-                rewards.
+                Calculate fares, promotions, driver amounts or referral rewards.
               </li>
 
               <li>
@@ -150,17 +138,11 @@ export default function PrivacyPage() {
                 safety.
               </li>
 
-              <li>
-                Detect and prevent fraud, abuse and security incidents.
-              </li>
+              <li>Detect and prevent fraud, abuse and security incidents.</li>
 
-              <li>
-                Comply with legal obligations or protect legal rights.
-              </li>
+              <li>Comply with legal obligations or protect legal rights.</li>
 
-              <li>
-                Improve and operate the RouteX platform.
-              </li>
+              <li>Improve and operate the RouteX platform.</li>
             </ul>
           </LegalSection>
 
@@ -188,18 +170,14 @@ export default function PrivacyPage() {
             <p>This may include sharing information with:</p>
 
             <ul className="list-disc space-y-2 pl-5">
-              <li>
-                A passenger or driver involved in a RouteX booking.
-              </li>
+              <li>A passenger or driver involved in a RouteX booking.</li>
 
               <li>
                 Technology, hosting, storage, communication or other service
                 providers used by RouteX.
               </li>
 
-              <li>
-                Payment service providers where payment systems are used.
-              </li>
+              <li>Payment service providers where payment systems are used.</li>
 
               <li>
                 Insurers, professional advisers or service providers where
@@ -207,14 +185,12 @@ export default function PrivacyPage() {
               </li>
 
               <li>
-                Law-enforcement bodies, regulators or courts where disclosure
-                is legally required or permitted.
+                Law-enforcement bodies, regulators or courts where disclosure is
+                legally required or permitted.
               </li>
             </ul>
 
-            <p>
-              RouteX does not sell personal information as a product.
-            </p>
+            <p>RouteX does not sell personal information as a product.</p>
           </LegalSection>
 
           <LegalSection title="7. Passenger and driver information">
@@ -225,14 +201,14 @@ export default function PrivacyPage() {
 
             <p>
               For example, a driver may receive information needed to identify
-              the passenger and complete the trip, while a passenger may
-              receive the driver's name, vehicle details, contact information
-              and booking information where necessary.
+              the passenger and complete the trip, while a passenger may receive
+              the driver's name, vehicle details, contact information and
+              booking information where necessary.
             </p>
 
             <p>
-              Users may only use this information for legitimate RouteX
-              booking, safety or support purposes.
+              Users may only use this information for legitimate RouteX booking,
+              safety or support purposes.
             </p>
           </LegalSection>
 
@@ -244,9 +220,9 @@ export default function PrivacyPage() {
             </p>
 
             <p>
-              Uploaded information should only be used for the purpose for
-              which it was submitted and for related operational, verification
-              or safety purposes.
+              Uploaded information should only be used for the purpose for which
+              it was submitted and for related operational, verification or
+              safety purposes.
             </p>
           </LegalSection>
 
@@ -257,9 +233,9 @@ export default function PrivacyPage() {
             </p>
 
             <p>
-              Where personal information is transferred across borders,
-              RouteX will take reasonable steps to ensure that the transfer
-              complies with applicable POPIA requirements.
+              Where personal information is transferred across borders, RouteX
+              will take reasonable steps to ensure that the transfer complies
+              with applicable POPIA requirements.
             </p>
           </LegalSection>
 
@@ -267,21 +243,21 @@ export default function PrivacyPage() {
             <p>
               RouteX will keep personal information only for as long as
               reasonably necessary for the purpose for which it was collected,
-              to operate the service, resolve disputes, prevent fraud, or
-              comply with legal and record-keeping obligations.
+              to operate the service, resolve disputes, prevent fraud, or comply
+              with legal and record-keeping obligations.
             </p>
 
             <p>
-              Information that no longer needs to be retained should be
-              securely deleted, destroyed or de-identified where appropriate.
+              Information that no longer needs to be retained should be securely
+              deleted, destroyed or de-identified where appropriate.
             </p>
           </LegalSection>
 
           <LegalSection title="11. Security">
             <p>
-              RouteX will take reasonable technical and organisational steps
-              to protect personal information against loss, misuse,
-              unauthorised access, alteration or disclosure.
+              RouteX will take reasonable technical and organisational steps to
+              protect personal information against loss, misuse, unauthorised
+              access, alteration or disclosure.
             </p>
 
             <p>
@@ -296,39 +272,27 @@ export default function PrivacyPage() {
           </LegalSection>
 
           <LegalSection title="12. Your privacy rights">
-            <p>
-              Subject to applicable law, you may have the right to:
-            </p>
+            <p>Subject to applicable law, you may have the right to:</p>
 
             <ul className="list-disc space-y-2 pl-5">
-              <li>
-                Ask whether RouteX holds personal information about you.
-              </li>
+              <li>Ask whether RouteX holds personal information about you.</li>
+
+              <li>Request access to personal information held about you.</li>
+
+              <li>Request correction of inaccurate or outdated information.</li>
 
               <li>
-                Request access to personal information held about you.
-              </li>
-
-              <li>
-                Request correction of inaccurate or outdated information.
-              </li>
-
-              <li>
-                Request deletion where the information should no longer
-                lawfully be retained.
+                Request deletion where the information should no longer lawfully
+                be retained.
               </li>
 
               <li>
                 Object to certain types of processing where permitted by law.
               </li>
 
-              <li>
-                Withdraw consent where processing depends on consent.
-              </li>
+              <li>Withdraw consent where processing depends on consent.</li>
 
-              <li>
-                Object to unsolicited electronic direct marketing.
-              </li>
+              <li>Object to unsolicited electronic direct marketing.</li>
 
               <li>
                 Lodge a complaint with the Information Regulator of South
@@ -349,9 +313,8 @@ export default function PrivacyPage() {
             </p>
 
             <p>
-              Service messages relating to bookings, safety, account security
-              or important operational matters may still be sent where
-              necessary.
+              Service messages relating to bookings, safety, account security or
+              important operational matters may still be sent where necessary.
             </p>
           </LegalSection>
 
@@ -382,8 +345,8 @@ export default function PrivacyPage() {
 
           <LegalSection title="16. Contact RouteX">
             <p>
-              If you have a privacy question, access request, correction
-              request or complaint, contact RouteX Support.
+              If you have a privacy question, access request, correction request
+              or complaint, contact RouteX Support.
             </p>
 
             <a
@@ -405,7 +368,6 @@ export default function PrivacyPage() {
               WhatsApp RouteX Support
             </a>
           </LegalSection>
-
         </div>
 
         {/* LEGAL LINKS */}
@@ -438,12 +400,10 @@ export default function PrivacyPage() {
             RouteX • Getting Upington Moving
           </p>
         </footer>
-
       </div>
     </main>
   );
 }
-
 
 /* =========================================
    LEGAL SECTION COMPONENT
@@ -462,9 +422,7 @@ function LegalSection({
         {title}
       </h2>
 
-      <div className="space-y-3">
-        {children}
-      </div>
+      <div className="space-y-3">{children}</div>
     </section>
   );
 }

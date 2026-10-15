@@ -1,7 +1,4 @@
-export const openNavigation = (
-  latitude: number,
-  longitude: number
-) => {
+export const openNavigation = (latitude: number, longitude: number) => {
   if (!latitude || !longitude) {
     alert("Navigation coordinates unavailable");
     return;

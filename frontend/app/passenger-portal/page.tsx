@@ -5,18 +5,12 @@ import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { API_URL } from "../lib/api";
 
-
-const DriverMap = dynamic(
-  () => import("./DriverMap"),
-  {
-    ssr: false,
-  }
-);
+const DriverMap = dynamic(() => import("./DriverMap"), {
+  ssr: false,
+});
 /* =========================================================
    API CONFIGURATION
 ========================================================= */
-
-
 
 /* =========================================================
    IMAGE URL HELPER
@@ -43,9 +37,7 @@ function getProfileImageUrl(image: string | null | undefined) {
   //
   // or:
   // uploads/profile.jpg
- return `${API_URL}${
-  image.startsWith("/") ? "" : "/"
-}${image}`;
+  return `${API_URL}${image.startsWith("/") ? "" : "/"}${image}`;
 }
 
 /* =========================================================
@@ -60,26 +52,27 @@ export default function PassengerPortalPage() {
   const [photo, setPhoto] = useState<File | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [photoVersion, setPhotoVersion] = useState(0);
- 
-  
-  const [reviewRatings, setReviewRatings] = useState<Record<number, number>>({});
+
+  const [reviewRatings, setReviewRatings] = useState<Record<number, number>>(
+    {},
+  );
   const [reviewTexts, setReviewTexts] = useState<Record<number, string>>({});
   const [submittingReview, setSubmittingReview] = useState<number | null>(null);
-  const [reviewedTrips, setReviewedTrips] = useState<Record<number, boolean>>({});
+  const [reviewedTrips, setReviewedTrips] = useState<Record<number, boolean>>(
+    {},
+  );
 
   const [driverLocation, setDriverLocation] = useState<any>(null);
   const [showCompletedTrips, setShowCompletedTrips] = useState(false);
   const [showLiveTrip, setShowLiveTrip] = useState(false);
-  
 
   const router = useRouter();
- 
 
   type ScheduledRide = {
     id: number;
     pickup_address: string;
     dropoff_address: string;
-   fare_amount: number | string;
+    fare_amount: number | string;
     passenger_amount?: number | string | null;
     discount_amount?: number | string | null;
     promo_code?: string | null;
@@ -108,7 +101,7 @@ export default function PassengerPortalPage() {
     try {
       const response = await fetch(
         `${API_URL}/passenger-scheduled-bookings/${passengerId}`,
-        { cache: "no-store" }
+        { cache: "no-store" },
       );
       const data = await response.json();
       if (!response.ok) {
@@ -128,14 +121,14 @@ export default function PassengerPortalPage() {
       setCancellingRideId(rideId);
       const response = await fetch(
         `${API_URL}/scheduled-bookings/${rideId}/cancel`,
-        { method: "PATCH" }
+        { method: "PATCH" },
       );
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data?.error || "Could not cancel this ride.");
       }
       setScheduledRides((current) =>
-        current.filter((ride) => ride.id !== rideId)
+        current.filter((ride) => ride.id !== rideId),
       );
     } catch (error: any) {
       console.error("CANCEL SCHEDULED RIDE ERROR:", error);
@@ -145,110 +138,103 @@ export default function PassengerPortalPage() {
     }
   };
 
-
-
   const confirmScheduledPickupLocation = async (rideId: number) => {
-  if (!navigator.geolocation) {
-    window.alert("Location services are not supported on this device.");
-    return;
-  }
+    if (!navigator.geolocation) {
+      window.alert("Location services are not supported on this device.");
+      return;
+    }
 
-  navigator.geolocation.getCurrentPosition(
-    async (position) => {
-      try {
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
 
-        const response = await fetch(
-          `${API_URL}/bookings/${rideId}/confirm-pickup-location`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
+          const response = await fetch(
+            `${API_URL}/bookings/${rideId}/confirm-pickup-location`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                lat,
+                lng,
+              }),
             },
-            body: JSON.stringify({
-              lat,
-              lng,
-            }),
+          );
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(
+              data?.error || "Could not confirm your pickup location.",
+            );
           }
-        );
 
-        const data = await response.json();
+          console.log("SCHEDULED PICKUP GPS CONFIRMED:", data);
 
-        if (!response.ok) {
-          throw new Error(
-            data?.error || "Could not confirm your pickup location."
+          window.alert(
+            "Pickup location confirmed. Your driver will use this location for navigation.",
+          );
+
+          if (passenger?.id) {
+            await loadScheduledRides(passenger.id);
+          }
+        } catch (error: any) {
+          console.error("SCHEDULED PICKUP LOCATION ERROR:", error);
+
+          window.alert(
+            error?.message || "Could not confirm your pickup location.",
           );
         }
+      },
 
-        console.log("SCHEDULED PICKUP GPS CONFIRMED:", data);
+      (error) => {
+        console.error("GPS ERROR:", error);
 
-        window.alert(
-          "Pickup location confirmed. Your driver will use this location for navigation."
-        );
-
-        if (passenger?.id) {
-          await loadScheduledRides(passenger.id);
+        if (error.code === error.PERMISSION_DENIED) {
+          window.alert(
+            "Location permission was denied. Please allow location access and try again.",
+          );
+        } else if (error.code === error.POSITION_UNAVAILABLE) {
+          window.alert(
+            "Your current location could not be determined. Please try again.",
+          );
+        } else if (error.code === error.TIMEOUT) {
+          window.alert(
+            "Getting your location took too long. Please try again.",
+          );
+        } else {
+          window.alert("Could not get your current location.");
         }
-      } catch (error: any) {
-        console.error(
-          "SCHEDULED PICKUP LOCATION ERROR:",
-          error
-        );
+      },
 
-        window.alert(
-          error?.message || "Could not confirm your pickup location."
-        );
-      }
-    },
-
-    (error) => {
-      console.error("GPS ERROR:", error);
-
-      if (error.code === error.PERMISSION_DENIED) {
-        window.alert(
-          "Location permission was denied. Please allow location access and try again."
-        );
-      } else if (error.code === error.POSITION_UNAVAILABLE) {
-        window.alert(
-          "Your current location could not be determined. Please try again."
-        );
-      } else if (error.code === error.TIMEOUT) {
-        window.alert(
-          "Getting your location took too long. Please try again."
-        );
-      } else {
-        window.alert(
-          "Could not get your current location."
-        );
-      }
-    },
-
-    {
-      enableHighAccuracy: true,
-      timeout: 15000,
-      maximumAge: 0,
-    }
-  );
-};
+      {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 0,
+      },
+    );
+  };
   const [showBookingSuccess, setShowBookingSuccess] = useState(false);
-const [bookingWasScheduled, setBookingWasScheduled] = useState(false);
+  const [bookingWasScheduled, setBookingWasScheduled] = useState(false);
 
-useEffect(() => {
-  const bookingResult = new URLSearchParams(window.location.search).get(
-    "booking"
-  );
+  useEffect(() => {
+    const bookingResult = new URLSearchParams(window.location.search).get(
+      "booking",
+    );
 
-  if (bookingResult === "scheduled" || bookingResult === "requested") {
-    setBookingWasScheduled(bookingResult === "scheduled");
-    setShowBookingSuccess(true);
-  }
-}, []);
+    if (bookingResult === "scheduled" || bookingResult === "requested") {
+      setBookingWasScheduled(bookingResult === "scheduled");
+      setShowBookingSuccess(true);
+    }
+  }, []);
 
-const closeBookingSuccess = () => {
-  setShowBookingSuccess(false);
-  router.replace("/passenger-portal");
-};
+  const closeBookingSuccess = () => {
+    setShowBookingSuccess(false);
+    router.replace("/passenger-portal");
+  };
   /* =======================================================
      LOCAL PHOTO PREVIEW
   ======================================================= */
@@ -276,225 +262,187 @@ const closeBookingSuccess = () => {
   /* =======================================================
      LOAD PASSENGER TRIPS
   ======================================================= */
-const loadDriverLocation = async (
-  passengerId: number,
-  bookingId: number
-) => {
-  try {
-    const response = await fetch(
-      `${API_URL}/passenger-bookings/${passengerId}/${bookingId}/driver-location`
-    );
+  const loadDriverLocation = async (passengerId: number, bookingId: number) => {
+    try {
+      const response = await fetch(
+        `${API_URL}/passenger-bookings/${passengerId}/${bookingId}/driver-location`,
+      );
 
-    if (!response.ok) {
+      if (!response.ok) {
+        setDriverLocation(null);
+        return;
+      }
+
+      const data = await response.json();
+
+      console.log("DRIVER LOCATION:", data);
+
+      setDriverLocation(data);
+    } catch (error) {
+      console.error("Error loading driver location:", error);
+
       setDriverLocation(null);
-      return;
     }
-
-    const data = await response.json();
-
-    console.log("DRIVER LOCATION:", data);
-
-    setDriverLocation(data);
-
-  } catch (error) {
-    console.error(
-      "Error loading driver location:",
-      error
-    );
-
-    setDriverLocation(null);
-  }
-};
-
+  };
 
   const loadTrips = async (passengerId: number) => {
-  try {
-    const response = await fetch(
-      `${API_URL}/passenger-bookings/${passengerId}`,
-      {
-        cache: "no-store",
+    try {
+      const response = await fetch(
+        `${API_URL}/passenger-bookings/${passengerId}`,
+        {
+          cache: "no-store",
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to load trips: ${response.status}`);
       }
-    );
 
-    if (!response.ok) {
-      throw new Error(
-        `Failed to load trips: ${response.status}`
-      );
+      const data = await response.json();
+      const rides = Array.isArray(data) ? data : [];
+
+      console.log("PASSENGER TRIPS REFRESH:", rides);
+
+      setTrips(rides);
+
+      // Find the passenger's current active ride.
+      const activeTrip = rides.find((trip: any) => {
+        const status = String(trip.trip_status ?? trip.booking_status ?? "")
+          .trim()
+          .toLowerCase()
+          .replace(/-/g, "_")
+          .replace(/\s+/g, "_");
+
+        return (
+          trip.assigned_driver_id &&
+          (status === "accepted" || status === "in_progress")
+        );
+      });
+
+      if (activeTrip) {
+        console.log(
+          "PASSENGER ACTIVE TRIP:",
+          activeTrip.id,
+          activeTrip.trip_status,
+          activeTrip.booking_status,
+        );
+
+        loadDriverLocation(Number(passengerId), Number(activeTrip.id));
+      } else {
+        setDriverLocation(null);
+      }
+
+      // Find a ride that is still waiting for a driver.
+      const waitingTrip = rides.find((trip: any) => {
+        const status = String(trip.trip_status ?? trip.booking_status ?? "")
+          .trim()
+          .toLowerCase();
+
+        return status === "waiting" && trip.pickup_lat && trip.pickup_lng;
+      });
+
+      if (waitingTrip) {
+        loadAvailableDrivers(
+          Number(waitingTrip.pickup_lat),
+          Number(waitingTrip.pickup_lng),
+        );
+      } else {
+        setAvailableDrivers([]);
+      }
+    } catch (error) {
+      console.error("Error loading trips:", error);
     }
-
-    const data = await response.json();
-    const rides = Array.isArray(data) ? data : [];
-
-    console.log("PASSENGER TRIPS REFRESH:", rides);
-
-    setTrips(rides);
-
-    // Find the passenger's current active ride.
-    const activeTrip = rides.find((trip: any) => {
-      const status = String(
-        trip.trip_status ??
-          trip.booking_status ??
-          ""
-      )
-        .trim()
-        .toLowerCase()
-        .replace(/-/g, "_")
-        .replace(/\s+/g, "_");
-
-      return (
-        trip.assigned_driver_id &&
-        (
-          status === "accepted" ||
-          status === "in_progress"
-        )
-      );
-    });
-
-    if (activeTrip) {
-      console.log(
-        "PASSENGER ACTIVE TRIP:",
-        activeTrip.id,
-        activeTrip.trip_status,
-        activeTrip.booking_status
-      );
-
-      loadDriverLocation(
-        Number(passengerId),
-        Number(activeTrip.id)
-      );
-    } else {
-      setDriverLocation(null);
-    }
-
-    // Find a ride that is still waiting for a driver.
-    const waitingTrip = rides.find((trip: any) => {
-      const status = String(
-        trip.trip_status ??
-          trip.booking_status ??
-          ""
-      )
-        .trim()
-        .toLowerCase();
-
-      return (
-        status === "waiting" &&
-        trip.pickup_lat &&
-        trip.pickup_lng
-      );
-    });
-
-    if (waitingTrip) {
-      loadAvailableDrivers(
-        Number(waitingTrip.pickup_lat),
-        Number(waitingTrip.pickup_lng)
-      );
-    } else {
-      setAvailableDrivers([]);
-    }
-  } catch (error) {
-    console.error("Error loading trips:", error);
-  }
-};
+  };
 
   const cancelBooking = async (bookingId: number) => {
-  const confirmed = window.confirm(
-    "Are you sure you want to cancel this booking?"
-  );
-
-  if (!confirmed) return;
-
-  try {
-    const response = await fetch(
-      `${API_URL}/bookings/${bookingId}/cancel`,
-      {
-        method: "PATCH",
-      }
+    const confirmed = window.confirm(
+      "Are you sure you want to cancel this booking?",
     );
 
-    const data = await response.json();
+    if (!confirmed) return;
 
-    if (!response.ok) {
-      alert(data.error || "Could not cancel booking.");
+    try {
+      const response = await fetch(`${API_URL}/bookings/${bookingId}/cancel`, {
+        method: "PATCH",
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.error || "Could not cancel booking.");
+        return;
+      }
+
+      setTrips((currentTrips) =>
+        currentTrips.map((trip) =>
+          trip.id === bookingId
+            ? {
+                ...trip,
+                trip_status: "Cancelled",
+                booking_status: "Cancelled",
+              }
+            : trip,
+        ),
+      );
+    } catch (error) {
+      console.error("CANCEL BOOKING ERROR:", error);
+      alert("Could not cancel booking.");
+    }
+  };
+
+  const submitDriverReview = async (trip: any) => {
+    const rating = reviewRatings[trip.id];
+
+    if (!rating) {
+      alert("Please select a star rating.");
       return;
     }
 
-    setTrips((currentTrips) =>
-      currentTrips.map((trip) =>
-        trip.id === bookingId
-          ? {
-              ...trip,
-              trip_status: "Cancelled",
-              booking_status: "Cancelled",
-            }
-          : trip
-      )
-    );
-  } catch (error) {
-    console.error("CANCEL BOOKING ERROR:", error);
-    alert("Could not cancel booking.");
-  }
-};
+    try {
+      setSubmittingReview(trip.id);
 
-const submitDriverReview = async (trip: any) => {
-  const rating = reviewRatings[trip.id];
+      const response = await fetch(`${API_URL}/driver-reviews`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          booking_id: trip.id,
+          passenger_id: passenger.id,
+          rating,
+          review_text: reviewTexts[trip.id] || "",
+        }),
+      });
 
-  if (!rating) {
-    alert("Please select a star rating.");
-    return;
-  }
+      const data = await response.json();
 
-  try {
-    setSubmittingReview(trip.id);
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to submit review.");
+      }
 
-    const response = await fetch(`${API_URL}/driver-reviews`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        booking_id: trip.id,
-        passenger_id: passenger.id,
-        rating,
-        review_text: reviewTexts[trip.id] || "",
-      }),
-    });
+      setReviewedTrips((prev) => ({
+        ...prev,
+        [trip.id]: true,
+      }));
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(
-        data.error || "Failed to submit review."
-      );
+      alert("Thank you for rating your driver.");
+    } catch (error: any) {
+      console.error("REVIEW ERROR:", error);
+      alert(error.message || "Unable to submit review.");
+    } finally {
+      setSubmittingReview(null);
     }
-
-    setReviewedTrips((prev) => ({
-      ...prev,
-      [trip.id]: true,
-    }));
-
-    alert("Thank you for rating your driver.");
-
-  } catch (error: any) {
-    console.error("REVIEW ERROR:", error);
-    alert(error.message || "Unable to submit review.");
-  } finally {
-    setSubmittingReview(null);
-  }
-};
+  };
   /* =======================================================
      LOAD ONLINE DRIVERS
   ======================================================= */
 
   const loadOnlineDrivers = async () => {
     try {
-      const response = await fetch(
-        `${API_URL}/online-drivers`
-      );
+      const response = await fetch(`${API_URL}/online-drivers`);
 
       if (!response.ok) {
-        throw new Error(
-          `Failed to load drivers: ${response.status}`
-        );
+        throw new Error(`Failed to load drivers: ${response.status}`);
       }
 
       const data = await response.json();
@@ -503,53 +451,38 @@ const submitDriverReview = async (trip: any) => {
 
       console.log("ONLINE DRIVERS:", data);
     } catch (error) {
-      console.error(
-        "Error loading online drivers:",
-        error
-      );
+      console.error("Error loading online drivers:", error);
     }
   };
 
-  const loadAvailableDrivers = async (
-  pickupLat: number,
-  pickupLng: number
-) => {
-  try {
-    const response = await fetch(
-      `${API_URL}/available-drivers?pickup_lat=${pickupLat}&pickup_lng=${pickupLng}`
-    );
-
-    if (!response.ok) {
-      throw new Error(
-        `Failed to load available drivers: ${response.status}`
+  const loadAvailableDrivers = async (pickupLat: number, pickupLng: number) => {
+    try {
+      const response = await fetch(
+        `${API_URL}/available-drivers?pickup_lat=${pickupLat}&pickup_lng=${pickupLng}`,
       );
+
+      if (!response.ok) {
+        throw new Error(`Failed to load available drivers: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      setAvailableDrivers(Array.isArray(data) ? data : []);
+
+      console.log("AVAILABLE DRIVERS:", data);
+    } catch (error) {
+      console.error("Error loading available drivers:", error);
+
+      setAvailableDrivers([]);
     }
-
-    const data = await response.json();
-
-    setAvailableDrivers(
-      Array.isArray(data) ? data : []
-    );
-
-    console.log("AVAILABLE DRIVERS:", data);
-
-  } catch (error) {
-    console.error(
-      "Error loading available drivers:",
-      error
-    );
-
-    setAvailableDrivers([]);
-  }
-};
+  };
 
   /* =======================================================
      LOAD PASSENGER
   ======================================================= */
 
   useEffect(() => {
-    const storedPassenger =
-      localStorage.getItem("passenger");
+    const storedPassenger = localStorage.getItem("passenger");
 
     if (!storedPassenger) {
       console.log("No passenger found in localStorage.");
@@ -557,13 +490,9 @@ const submitDriverReview = async (trip: any) => {
     }
 
     try {
-      const passengerData =
-        JSON.parse(storedPassenger);
+      const passengerData = JSON.parse(storedPassenger);
 
-      console.log(
-        "PASSENGER FROM LOCAL STORAGE:",
-        passengerData
-      );
+      console.log("PASSENGER FROM LOCAL STORAGE:", passengerData);
 
       setPassenger(passengerData);
 
@@ -581,10 +510,7 @@ const submitDriverReview = async (trip: any) => {
         clearInterval(interval);
       };
     } catch (error) {
-      console.error(
-        "Could not parse passenger data:",
-        error
-      );
+      console.error("Could not parse passenger data:", error);
     }
   }, []);
 
@@ -605,20 +531,15 @@ const submitDriverReview = async (trip: any) => {
     formData.append("passengerId", String(passenger.id));
 
     try {
-     const response = await fetch(
-  `${API_URL}/passenger/upload-photo`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
+      const response = await fetch(`${API_URL}/passenger/upload-photo`, {
+        method: "POST",
+        body: formData,
+      });
 
       if (!response.ok) {
         const errorText = await response.text();
         console.error("UPLOAD SERVER ERROR:", errorText);
-        throw new Error(
-          `Upload failed (${response.status}): ${errorText}`
-        );
+        throw new Error(`Upload failed (${response.status}): ${errorText}`);
       }
 
       const data = await response.json();
@@ -634,49 +555,42 @@ const submitDriverReview = async (trip: any) => {
       const savedImage = data.passenger?.profile_image;
 
       if (!savedImage) {
-        throw new Error(
-          "The server did not return the saved photo URL."
-        );
+        throw new Error("The server did not return the saved photo URL.");
       }
 
       const finalImageUrl = getProfileImageUrl(savedImage);
 
-if (!finalImageUrl) {
-  throw new Error("The saved photo URL is invalid.");
-}
+      if (!finalImageUrl) {
+        throw new Error("The saved photo URL is invalid.");
+      }
 
-const updatedPassenger = {
-  ...passenger,
-  profile_image: finalImageUrl,
-};
+      const updatedPassenger = {
+        ...passenger,
+        profile_image: finalImageUrl,
+      };
 
-setPassenger(updatedPassenger);
+      setPassenger(updatedPassenger);
 
-localStorage.setItem(
-  "passenger",
-  JSON.stringify(updatedPassenger)
-);
+      localStorage.setItem("passenger", JSON.stringify(updatedPassenger));
 
-// Force the displayed image to reload
-setPhotoVersion(Date.now());
+      // Force the displayed image to reload
+      setPhotoVersion(Date.now());
 
-setPhoto(null);
+      setPhoto(null);
 
-console.log("PHOTO UPLOAD COMPLETE:", finalImageUrl);
-
-} catch (error) {
-  console.error("PHOTO UPLOAD ERROR:", error);
-} finally {
-  setUploadingPhoto(false);
-}
-};
+      console.log("PHOTO UPLOAD COMPLETE:", finalImageUrl);
+    } catch (error) {
+      console.error("PHOTO UPLOAD ERROR:", error);
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
 
   /* =======================================================
      PROFILE IMAGE URL
   ======================================================= */
 
-const profileImageUrl =
-  getProfileImageUrl(passenger?.profile_image);
+  const profileImageUrl = getProfileImageUrl(passenger?.profile_image);
 
   const normalizedStatus = (trip: any) =>
     String(trip?.trip_status || trip?.booking_status || "")
@@ -685,45 +599,44 @@ const profileImageUrl =
 
   const activeTrip =
     trips.find((trip) =>
-      ["accepted", "in progress"].includes(normalizedStatus(trip))
+      ["accepted", "in progress"].includes(normalizedStatus(trip)),
     ) || null;
 
   const waitingTrips = trips.filter(
-    (trip) => normalizedStatus(trip) === "waiting"
+    (trip) => normalizedStatus(trip) === "waiting",
   );
 
   const completedTrips = trips.filter(
-    (trip) => normalizedStatus(trip) === "completed"
+    (trip) => normalizedStatus(trip) === "completed",
   );
-const upcomingScheduledRides = scheduledRides.filter((ride) => {
-  const status = String(
-    ride.trip_status || ride.booking_status || ""
-  )
-    .trim()
-    .toLowerCase();
+  const upcomingScheduledRides = scheduledRides.filter((ride) => {
+    const status = String(ride.trip_status || ride.booking_status || "")
+      .trim()
+      .toLowerCase();
 
-  return [
-    "scheduled",
-    "waiting",
-  ].includes(status);
-});
-const activeScheduledRide = scheduledRides.find((ride) => {
-  const status = String(
-    ride.trip_status || ride.booking_status || ""
-  )
-    .trim()
-    .toLowerCase();
+    return ["scheduled", "waiting"].includes(status);
+  });
+  const activeScheduledRide = scheduledRides.find((ride) => {
+    const status = String(ride.trip_status || ride.booking_status || "")
+      .trim()
+      .toLowerCase();
 
-  return (
-    ride.id === activeTrip?.id &&
-    ["accepted", "in progress"].includes(status)
-  );
-});
+    return (
+      ride.id === activeTrip?.id && ["accepted", "in progress"].includes(status)
+    );
+  });
   const otherTrips = trips.filter((trip) => {
     const status = normalizedStatus(trip);
     return (
       status &&
-      !["scheduled", "waiting", "accepted", "in progress", "completed", "cancelled"].includes(status)
+      ![
+        "scheduled",
+        "waiting",
+        "accepted",
+        "in progress",
+        "completed",
+        "cancelled",
+      ].includes(status)
     );
   });
 
@@ -740,13 +653,24 @@ const activeScheduledRide = scheduledRides.find((ride) => {
           <div className="w-full max-w-[350px] rounded-[28px] bg-[#e7e9ee] p-6 text-[#17191f] shadow-[10px_10px_30px_rgba(0,0,0,0.25),-6px_-6px_18px_rgba(255,255,255,0.8)]">
             <div className="flex justify-center">
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#ff6846] text-white">
-                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
+                <svg
+                  width="30"
+                  height="30"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
                   <path d="m5 12 4 4L19 6" />
                 </svg>
               </div>
             </div>
             <div className="mt-5 text-center">
-              <p className="text-[9px] font-black uppercase tracking-[0.16em] text-[#ff6846]">RouteX</p>
+              <p className="text-[9px] font-black uppercase tracking-[0.16em] text-[#ff6846]">
+                RouteX
+              </p>
               <h2 className="mt-2 text-[24px] font-black tracking-[-0.045em]">
                 {bookingWasScheduled ? "Ride scheduled" : "Ride requested"}
               </h2>
@@ -782,14 +706,15 @@ const activeScheduledRide = scheduledRides.find((ride) => {
         </div>
       )}
       <div className="mx-auto w-full max-w-md px-5 pb-10">
-
         <header className="flex items-center justify-between pt-6">
           <h1 className="text-[27px] font-black tracking-[-0.06em]">
             Route<span className="text-[#ff6846]">X</span>
           </h1>
 
           <div className="flex items-center gap-2 rounded-full bg-[#e7e9ee] px-3 py-2 shadow-[3px_3px_7px_#c5c7cc,-3px_-3px_7px_#ffffff]">
-            <span className={`relative inline-flex h-2 w-2 rounded-full ${onlineDrivers > 0 ? "bg-[#ff6846]" : "bg-[#aeb1b7]"}`} />
+            <span
+              className={`relative inline-flex h-2 w-2 rounded-full ${onlineDrivers > 0 ? "bg-[#ff6846]" : "bg-[#aeb1b7]"}`}
+            />
             <span className="text-[10px] font-extrabold text-[#777a81]">
               {onlineDrivers} online
             </span>
@@ -816,7 +741,11 @@ const activeScheduledRide = scheduledRides.find((ride) => {
                 <div className="flex h-[72px] w-[72px] items-center justify-center rounded-full bg-[#e7e9ee] p-[5px] shadow-[inset_5px_5px_10px_#c2c4c9,inset_-5px_-5px_10px_#ffffff]">
                   <div className="relative h-full w-full overflow-hidden rounded-full bg-[#dfe1e6] shadow-[2px_2px_5px_rgba(80,82,88,0.16)]">
                     {photo ? (
-                      <img src={photoPreviewUrl} alt="Selected profile" className="h-full w-full object-cover" />
+                      <img
+                        src={photoPreviewUrl}
+                        alt="Selected profile"
+                        className="h-full w-full object-cover"
+                      />
                     ) : profileImageUrl ? (
                       <img
                         key={`${passenger?.profile_image}-${photoVersion}`}
@@ -868,7 +797,9 @@ const activeScheduledRide = scheduledRides.find((ride) => {
                 <LocationIcon />
               </div>
               <div className="min-w-0">
-                <p className="text-[16px] font-black tracking-[-0.02em]">Book a ride</p>
+                <p className="text-[16px] font-black tracking-[-0.02em]">
+                  Book a ride
+                </p>
                 <p className="mt-0.5 text-[11px] font-medium text-[#85888f]">
                   Enter your pickup and destination
                 </p>
@@ -879,64 +810,62 @@ const activeScheduledRide = scheduledRides.find((ride) => {
             </div>
           </a>
 
-        {onlineDrivers > 0 ? (
-  <div className="mt-3 flex items-center gap-2 px-1">
-    <span className="h-2 w-2 rounded-full bg-[#ff6846]" />
+          {onlineDrivers > 0 ? (
+            <div className="mt-3 flex items-center gap-2 px-1">
+              <span className="h-2 w-2 rounded-full bg-[#ff6846]" />
 
-    <span className="text-[10px] font-bold text-[#85888f]">
-      {onlineDrivers} driver{onlineDrivers === 1 ? "" : "s"} available now
-    </span>
-  </div>
-) : (
-  <div className="mt-4 rounded-[18px] bg-[#e7e9ee] p-4 shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff]">
-    <div className="flex items-start gap-3">
+              <span className="text-[10px] font-bold text-[#85888f]">
+                {onlineDrivers} driver{onlineDrivers === 1 ? "" : "s"} available
+                now
+              </span>
+            </div>
+          ) : (
+            <div className="mt-4 rounded-[18px] bg-[#e7e9ee] p-4 shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff]">
+              <div className="flex items-start gap-3">
+                <div className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-[#aeb1b7]" />
 
-      <div className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-[#aeb1b7]" />
+                <div>
+                  <p className="text-[14px] font-black tracking-[-0.02em] text-[#17191f]">
+                    No drivers available right now
+                  </p>
 
- <div>
-  <p className="text-[14px] font-black tracking-[-0.02em] text-[#17191f]">
-    No drivers available right now
-  </p>
+                  <p className="mt-1.5 text-[10px] font-semibold leading-4 text-[#85888f]">
+                    There are no drivers available to accept your ride at the
+                    moment.
+                  </p>
 
-  <p className="mt-1.5 text-[10px] font-semibold leading-4 text-[#85888f]">
-    There are no drivers available to accept your ride at the moment.
-  </p>
+                  <p className="mt-1 text-[10px] font-semibold leading-4 text-[#85888f]">
+                    Try again shortly or schedule your ride for later.
+                  </p>
 
-  <p className="mt-1 text-[10px] font-semibold leading-4 text-[#85888f]">
-    Try again shortly or schedule your ride for later.
-  </p>
+                  <div className="mt-4 rounded-[14px] bg-[#e7e9ee] px-3.5 py-3 shadow-[inset_2px_2px_5px_rgba(0,0,0,0.06),inset_-2px_-2px_5px_rgba(255,255,255,0.9)]">
+                    <p className="text-[10px] font-black text-[#ff6846]">
+                      Know someone who could drive with RouteX?
+                    </p>
 
-  <div className="mt-4 rounded-[14px] bg-[#e7e9ee] px-3.5 py-3 shadow-[inset_2px_2px_5px_rgba(0,0,0,0.06),inset_-2px_-2px_5px_rgba(255,255,255,0.9)]">
-    <p className="text-[10px] font-black text-[#ff6846]">
-      Know someone who could drive with RouteX?
-    </p>
+                    <p className="mt-1 text-[9px] font-semibold leading-4 text-[#85888f]">
+                      RouteX is growing and we're looking for more drivers in
+                      your area.
+                    </p>
 
-    <p className="mt-1 text-[9px] font-semibold leading-4 text-[#85888f]">
-      RouteX is growing and we're looking for more drivers in your area.
-    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const message = encodeURIComponent(
+                          "Hi! I found RouteX, a local ride-booking service in Upington. They are currently looking for more drivers to join the platform. If you're interested in becoming a RouteX driver, you can find out more here: https://routex-frontend.onrender.com/",
+                        );
 
-   <button
-  type="button"
-  onClick={() => {
-    const message = encodeURIComponent(
-      "Hi! I found RouteX, a local ride-booking service in Upington. They are currently looking for more drivers to join the platform. If you're interested in becoming a RouteX driver, you can find out more here: https://routex-frontend.onrender.com/"
-    );
-
-    window.open(
-      `https://wa.me/?text=${message}`,
-      "_blank"
-    );
-  }}
-  className="mt-3 inline-flex items-center rounded-full bg-white px-4 py-2 text-[9px] font-black text-[#17191f] shadow-[3px_3px_7px_rgba(0,0,0,0.08),-3px_-3px_7px_rgba(255,255,255,0.9)] transition active:scale-95"
->
-  Refer a driver →
-</button>
-  </div>
-</div>
-
-    </div>
-  </div>
-)}
+                        window.open(`https://wa.me/?text=${message}`, "_blank");
+                      }}
+                      className="mt-3 inline-flex items-center rounded-full bg-white px-4 py-2 text-[9px] font-black text-[#17191f] shadow-[3px_3px_7px_rgba(0,0,0,0.08),-3px_-3px_7px_rgba(255,255,255,0.9)] transition active:scale-95"
+                    >
+                      Refer a driver →
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </section>
 
         {waitingTrips.length > 0 && (
@@ -949,7 +878,10 @@ const activeScheduledRide = scheduledRides.find((ride) => {
             </h3>
 
             {waitingTrips.map((trip) => (
-              <div key={trip.id} className="mt-4 rounded-[23px] bg-[#e7e9ee] p-4 shadow-[6px_6px_14px_#c3c5ca,-6px_-6px_14px_#ffffff]">
+              <div
+                key={trip.id}
+                className="mt-4 rounded-[23px] bg-[#e7e9ee] p-4 shadow-[6px_6px_14px_#c3c5ca,-6px_-6px_14px_#ffffff]"
+              >
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-extrabold text-[#777a81]">
                     BK-{String(trip.id).padStart(4, "0")}
@@ -960,59 +892,72 @@ const activeScheduledRide = scheduledRides.find((ride) => {
                 </div>
 
                 <div className="mt-4 rounded-[17px] bg-[#e7e9ee] px-4 py-3.5 shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff]">
-                  <RoutePoint type="pickup" label="Pickup" value={trip.pickup_address || "Pickup"} />
+                  <RoutePoint
+                    type="pickup"
+                    label="Pickup"
+                    value={trip.pickup_address || "Pickup"}
+                  />
                   <div className="ml-[5px] h-4 border-l border-dashed border-[#b5b8be]" />
-                  <RoutePoint type="destination" label="Destination" value={trip.dropoff_address || "Destination"} />
+                  <RoutePoint
+                    type="destination"
+                    label="Destination"
+                    value={trip.dropoff_address || "Destination"}
+                  />
                 </div>
 
                 <div className="mt-4 rounded-[15px] bg-white px-4 py-3 shadow-[inset_2px_2px_5px_rgba(0,0,0,0.05),inset_-2px_-2px_5px_#ffffff]">
-  <div className="flex items-center justify-between">
-    <div className="flex items-center gap-2">
-      <span className="h-2 w-2 rounded-full bg-green-500" />
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-green-500" />
 
-      <span className="text-[10px] font-extrabold text-black/60">
-        Drivers online
-      </span>
-    </div>
+                      <span className="text-[10px] font-extrabold text-black/60">
+                        Drivers online
+                      </span>
+                    </div>
 
-    <span className="text-[13px] font-black text-black">
-      {onlineDrivers}
-    </span>
-  </div>
+                    <span className="text-[13px] font-black text-black">
+                      {onlineDrivers}
+                    </span>
+                  </div>
 
-  <p className="mt-1.5 text-[9px] font-medium text-black/40">
-    {availableDrivers.length > 0
-      ? `${availableDrivers.length} nearby driver${
-          availableDrivers.length === 1 ? "" : "s"
-        } available for your request`
-      : onlineDrivers > 0
-        ? "Your request is still being sent to available drivers"
-        : "No drivers are currently online"}
-  </p>
-</div>
-<div className="mt-4 flex items-end justify-between">
-  <div>
-    <p className="text-[8px] font-extrabold uppercase tracking-[0.12em] text-[#9a9da3]">
-      Your fare
-    </p>
+                  <p className="mt-1.5 text-[9px] font-medium text-black/40">
+                    {availableDrivers.length > 0
+                      ? `${availableDrivers.length} nearby driver${
+                          availableDrivers.length === 1 ? "" : "s"
+                        } available for your request`
+                      : onlineDrivers > 0
+                        ? "Your request is still being sent to available drivers"
+                        : "No drivers are currently online"}
+                  </p>
+                </div>
+                <div className="mt-4 flex items-end justify-between">
+                  <div>
+                    <p className="text-[8px] font-extrabold uppercase tracking-[0.12em] text-[#9a9da3]">
+                      Your fare
+                    </p>
 
-    <p className="mt-0.5 text-[18px] font-black">
-      R{Number(trip.passenger_amount ?? trip.fare_amount ?? 0).toFixed(0)}
-    </p>
-  </div>
+                    <p className="mt-0.5 text-[18px] font-black">
+                      R
+                      {Number(
+                        trip.passenger_amount ?? trip.fare_amount ?? 0,
+                      ).toFixed(0)}
+                    </p>
+                  </div>
 
-  {Number(trip.discount_amount || 0) > 0 && (
-    <div className="text-right">
-      <p className="text-[9px] font-bold text-[#ff6846]">
-        {trip.promo_code || "Promo"}: -R{Number(trip.discount_amount).toFixed(0)}
-      </p>
+                  {Number(trip.discount_amount || 0) > 0 && (
+                    <div className="text-right">
+                      <p className="text-[9px] font-bold text-[#ff6846]">
+                        {trip.promo_code || "Promo"}: -R
+                        {Number(trip.discount_amount).toFixed(0)}
+                      </p>
 
-      <p className="mt-0.5 text-[8px] font-semibold text-[#9a9da3]">
-        Original fare R{Number(trip.fare_amount || 0).toFixed(0)}
-      </p>
-    </div>
-  )}
-</div>
+                      <p className="mt-0.5 text-[8px] font-semibold text-[#9a9da3]">
+                        Original fare R
+                        {Number(trip.fare_amount || 0).toFixed(0)}
+                      </p>
+                    </div>
+                  )}
+                </div>
                 <button
                   type="button"
                   onClick={() => cancelBooking(trip.id)}
@@ -1053,20 +998,28 @@ const activeScheduledRide = scheduledRides.find((ride) => {
                   </div>
                   {activeTrip.driver_profile_image && (
                     <img
-                      src={activeTrip.driver_profile_image.startsWith("http")
-                        ? activeTrip.driver_profile_image
-                        : `${API_URL}/uploads/${activeTrip.driver_profile_image}`}
+                      src={
+                        activeTrip.driver_profile_image.startsWith("http")
+                          ? activeTrip.driver_profile_image
+                          : `${API_URL}/uploads/${activeTrip.driver_profile_image}`
+                      }
                       alt=""
                       className="absolute inset-[4px] h-[40px] w-[40px] rounded-full object-cover"
-                      onError={(e) => { e.currentTarget.style.display = "none"; }}
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none";
+                      }}
                     />
                   )}
                 </div>
 
                 <div className="min-w-0 flex-1">
-                  <p className="text-[14px] font-black">{activeTrip.driver_name || "Your driver"}</p>
+                  <p className="text-[14px] font-black">
+                    {activeTrip.driver_name || "Your driver"}
+                  </p>
                   <p className="mt-0.5 truncate text-[11px] font-semibold text-[#777a81]">
-                    {[activeTrip.vehicle_color, activeTrip.vehicle_type].filter(Boolean).join(" ") || "Vehicle assigned"}
+                    {[activeTrip.vehicle_color, activeTrip.vehicle_type]
+                      .filter(Boolean)
+                      .join(" ") || "Vehicle assigned"}
                   </p>
                   <p className="mt-0.5 text-[9px] font-bold text-[#a0a3a9]">
                     {activeTrip.license_plate || ""}
@@ -1089,55 +1042,65 @@ const activeScheduledRide = scheduledRides.find((ride) => {
               </div>
 
               <div className="mt-4 rounded-[17px] bg-[#e7e9ee] px-4 py-3.5 shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff]">
-                <RoutePoint type="pickup" label="Pickup" value={activeTrip.pickup_address || "Pickup"} />
+                <RoutePoint
+                  type="pickup"
+                  label="Pickup"
+                  value={activeTrip.pickup_address || "Pickup"}
+                />
                 <div className="ml-[5px] h-4 border-l border-dashed border-[#b5b8be]" />
-                <RoutePoint type="destination" label="Destination" value={activeTrip.dropoff_address || "Destination"} />
+                <RoutePoint
+                  type="destination"
+                  label="Destination"
+                  value={activeTrip.dropoff_address || "Destination"}
+                />
               </div>
-<div className="mt-4 flex items-end justify-between">
-  <div>
-    <p className="text-[8px] font-extrabold uppercase tracking-[0.12em] text-[#9a9da3]">
-      Your fare
-    </p>
+              <div className="mt-4 flex items-end justify-between">
+                <div>
+                  <p className="text-[8px] font-extrabold uppercase tracking-[0.12em] text-[#9a9da3]">
+                    Your fare
+                  </p>
 
-    <p className="mt-0.5 text-[18px] font-black">
-      R{Number(
-        activeTrip.passenger_amount ??
-        activeTrip.fare_amount ??
-        0
-      ).toFixed(0)}
-    </p>
-  </div>
+                  <p className="mt-0.5 text-[18px] font-black">
+                    R
+                    {Number(
+                      activeTrip.passenger_amount ??
+                        activeTrip.fare_amount ??
+                        0,
+                    ).toFixed(0)}
+                  </p>
+                </div>
 
-  {Number(activeTrip.discount_amount || 0) > 0 && (
-    <div className="text-right">
-      <p className="text-[9px] font-bold text-[#ff6846]">
-        {activeTrip.promo_code || "Promo"}: -R
-        {Number(activeTrip.discount_amount).toFixed(0)}
-      </p>
+                {Number(activeTrip.discount_amount || 0) > 0 && (
+                  <div className="text-right">
+                    <p className="text-[9px] font-bold text-[#ff6846]">
+                      {activeTrip.promo_code || "Promo"}: -R
+                      {Number(activeTrip.discount_amount).toFixed(0)}
+                    </p>
 
-      <p className="mt-0.5 text-[8px] font-semibold text-[#9a9da3]">
-        Original fare R{Number(activeTrip.fare_amount || 0).toFixed(0)}
-      </p>
-    </div>
-  )}
-</div>
-              <div className={`mt-4 grid ${activeTrip.driver_phone ? "grid-cols-2" : "grid-cols-1"} gap-3`}>
+                    <p className="mt-0.5 text-[8px] font-semibold text-[#9a9da3]">
+                      Original fare R
+                      {Number(activeTrip.fare_amount || 0).toFixed(0)}
+                    </p>
+                  </div>
+                )}
+              </div>
+              <div
+                className={`mt-4 grid ${activeTrip.driver_phone ? "grid-cols-2" : "grid-cols-1"} gap-3`}
+              >
                 {driverLocation &&
                   driverLocation.driver_lat &&
                   driverLocation.driver_lng &&
                   driverLocation.pickup_lat &&
                   driverLocation.pickup_lng && (
-                 <button
-  type="button"
-  onClick={() =>
-    router.push(
-      `/passenger?booking=${activeTrip.id}`
-    )
-  }
-  className="rounded-[14px] bg-[#17191f] py-3 text-[10px] font-extrabold text-white transition active:scale-[0.98]"
->
-  Track driver
-</button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        router.push(`/passenger?booking=${activeTrip.id}`)
+                      }
+                      className="rounded-[14px] bg-[#17191f] py-3 text-[10px] font-extrabold text-white transition active:scale-[0.98]"
+                    >
+                      Track driver
+                    </button>
                   )}
 
                 {activeTrip.driver_phone && (
@@ -1145,8 +1108,8 @@ const activeScheduledRide = scheduledRides.find((ride) => {
                     href={`https://wa.me/27${String(activeTrip.driver_phone)
                       .replace(/\D/g, "")
                       .replace(/^0/, "")}?text=${encodeURIComponent(
-                        `Hi, this is your RouteX passenger for booking BK-${String(activeTrip.id).padStart(4, "0")}.`
-                      )}`}
+                      `Hi, this is your RouteX passenger for booking BK-${String(activeTrip.id).padStart(4, "0")}.`,
+                    )}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center justify-center rounded-[14px] bg-[#e7e9ee] py-3 text-[10px] font-extrabold text-[#ff6846] shadow-[3px_3px_7px_#c4c6ca,-3px_-3px_7px_#ffffff]"
@@ -1156,43 +1119,43 @@ const activeScheduledRide = scheduledRides.find((ride) => {
                 )}
               </div>
 
-{/* SCHEDULED RIDE PICKUP CONFIRMATION */}
-{activeScheduledRide && (
-  <>
-    {!activeScheduledRide.pickup_location_confirmed_at ? (
-      <div className="mt-4 rounded-[17px] bg-white p-4 shadow-[5px_5px_12px_rgba(0,0,0,0.08),-5px_-5px_12px_rgba(255,255,255,1)]">
-        <p className="text-[11px] font-extrabold text-[#17191f]">
-          Confirm your pickup location
-        </p>
+              {/* SCHEDULED RIDE PICKUP CONFIRMATION */}
+              {activeScheduledRide && (
+                <>
+                  {!activeScheduledRide.pickup_location_confirmed_at ? (
+                    <div className="mt-4 rounded-[17px] bg-white p-4 shadow-[5px_5px_12px_rgba(0,0,0,0.08),-5px_-5px_12px_rgba(255,255,255,1)]">
+                      <p className="text-[11px] font-extrabold text-[#17191f]">
+                        Confirm your pickup location
+                      </p>
 
-        <p className="mt-1 text-[9px] font-medium leading-relaxed text-[#85888f]">
-          When you are at your pickup point, confirm your location so your
-          driver can navigate directly to you.
-        </p>
+                      <p className="mt-1 text-[9px] font-medium leading-relaxed text-[#85888f]">
+                        When you are at your pickup point, confirm your location
+                        so your driver can navigate directly to you.
+                      </p>
 
-        <button
-          type="button"
-          onClick={() =>
-            confirmScheduledPickupLocation(activeScheduledRide.id)
-          }
-          className="mt-3 w-full rounded-[14px] bg-[#ff6846] py-3 text-[10px] font-extrabold text-white transition active:scale-[0.98]"
-        >
-          Confirm pickup location
-        </button>
-      </div>
-    ) : (
-      <div className="mt-4 rounded-[17px] bg-white p-4 text-center shadow-[inset_3px_3px_7px_rgba(0,0,0,0.06),inset_-3px_-3px_7px_rgba(255,255,255,1)]">
-        <p className="text-[11px] font-extrabold text-[#17191f]">
-          ✓ Pickup location confirmed
-        </p>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          confirmScheduledPickupLocation(activeScheduledRide.id)
+                        }
+                        className="mt-3 w-full rounded-[14px] bg-[#ff6846] py-3 text-[10px] font-extrabold text-white transition active:scale-[0.98]"
+                      >
+                        Confirm pickup location
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="mt-4 rounded-[17px] bg-white p-4 text-center shadow-[inset_3px_3px_7px_rgba(0,0,0,0.06),inset_-3px_-3px_7px_rgba(255,255,255,1)]">
+                      <p className="text-[11px] font-extrabold text-[#17191f]">
+                        ✓ Pickup location confirmed
+                      </p>
 
-        <p className="mt-1 text-[9px] font-medium text-[#85888f]">
-          Your driver will use this location for navigation.
-        </p>
-      </div>
-    )}
-  </>
-)}
+                      <p className="mt-1 text-[9px] font-medium text-[#85888f]">
+                        Your driver will use this location for navigation.
+                      </p>
+                    </div>
+                  )}
+                </>
+              )}
               {showLiveTrip &&
                 driverLocation &&
                 driverLocation.driver_lat &&
@@ -1218,7 +1181,7 @@ const activeScheduledRide = scheduledRides.find((ride) => {
         ===================================================== */}
         <section className="mt-8">
           {(() => {
-         const liveScheduled = upcomingScheduledRides;
+            const liveScheduled = upcomingScheduledRides;
 
             return (
               <>
@@ -1227,8 +1190,10 @@ const activeScheduledRide = scheduledRides.find((ride) => {
                     <p className="text-[9px] font-extrabold uppercase tracking-[0.16em] text-[#ff6846]">
                       {liveScheduled.some((ride) =>
                         ["accepted", "in progress"].includes(
-                          String(ride.trip_status || ride.booking_status || "").trim().toLowerCase()
-                        )
+                          String(ride.trip_status || ride.booking_status || "")
+                            .trim()
+                            .toLowerCase(),
+                        ),
                       )
                         ? "Active"
                         : "Upcoming"}
@@ -1238,17 +1203,19 @@ const activeScheduledRide = scheduledRides.find((ride) => {
                         (ride) =>
                           String(ride.trip_status || ride.booking_status || "")
                             .trim()
-                            .toLowerCase() === "in progress"
+                            .toLowerCase() === "in progress",
                       )
                         ? "Trip in progress"
                         : liveScheduled.some(
-                            (ride) =>
-                              String(ride.trip_status || ride.booking_status || "")
-                                .trim()
-                                .toLowerCase() === "accepted"
-                          )
-                        ? "Driver assigned"
-                        : "Scheduled rides"}
+                              (ride) =>
+                                String(
+                                  ride.trip_status || ride.booking_status || "",
+                                )
+                                  .trim()
+                                  .toLowerCase() === "accepted",
+                            )
+                          ? "Driver assigned"
+                          : "Scheduled rides"}
                     </h3>
                   </div>
 
@@ -1261,7 +1228,9 @@ const activeScheduledRide = scheduledRides.find((ride) => {
 
                 {scheduledLoading ? (
                   <div className="mt-4 rounded-[21px] bg-[#e7e9ee] px-4 py-5 text-center shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff]">
-                    <p className="text-[10px] font-bold text-[#8d9097]">Loading ride...</p>
+                    <p className="text-[10px] font-bold text-[#8d9097]">
+                      Loading ride...
+                    </p>
                   </div>
                 ) : liveScheduled.length === 0 ? (
                   <div className="mt-4 rounded-[21px] bg-[#e7e9ee] px-4 py-5 shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff]">
@@ -1270,7 +1239,9 @@ const activeScheduledRide = scheduledRides.find((ride) => {
                         <ClockIcon />
                       </div>
                       <div>
-                        <p className="text-[11px] font-extrabold">No active scheduled ride</p>
+                        <p className="text-[11px] font-extrabold">
+                          No active scheduled ride
+                        </p>
                         <p className="mt-0.5 text-[9px] font-medium text-[#92959b]">
                           Future bookings will appear here.
                         </p>
@@ -1281,7 +1252,7 @@ const activeScheduledRide = scheduledRides.find((ride) => {
                   <div className="mt-4 space-y-4">
                     {liveScheduled.map((ride) => {
                       const state = String(
-                        ride.trip_status || ride.booking_status || "Scheduled"
+                        ride.trip_status || ride.booking_status || "Scheduled",
                       )
                         .trim()
                         .toLowerCase();
@@ -1319,10 +1290,10 @@ const activeScheduledRide = scheduledRides.find((ride) => {
                       const statusLabel = isInProgress
                         ? "In Progress"
                         : isAccepted
-                        ? "Driver assigned"
-                        : isWaiting
-                        ? "Finding driver"
-                        : "Scheduled";
+                          ? "Driver assigned"
+                          : isWaiting
+                            ? "Finding driver"
+                            : "Scheduled";
 
                       return (
                         <div
@@ -1354,7 +1325,11 @@ const activeScheduledRide = scheduledRides.find((ride) => {
                           </div>
 
                           <div className="mt-4 rounded-[17px] bg-[#e7e9ee] px-4 py-3.5 shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff]">
-                            <RoutePoint type="pickup" label="Pickup" value={ride.pickup_address} />
+                            <RoutePoint
+                              type="pickup"
+                              label="Pickup"
+                              value={ride.pickup_address}
+                            />
                             <div className="ml-[5px] h-4 border-l border-dashed border-[#b5b8be]" />
                             <RoutePoint
                               type="destination"
@@ -1368,21 +1343,28 @@ const activeScheduledRide = scheduledRides.find((ride) => {
                               <p className="text-[8px] font-extrabold uppercase tracking-[0.12em] text-[#9a9da3]">
                                 Fare
                               </p>
-                             <p className="mt-0.5 text-[16px] font-black">
-  R{Number(ride.passenger_amount ?? ride.fare_amount ?? 0).toFixed(0)}
-</p>
+                              <p className="mt-0.5 text-[16px] font-black">
+                                R
+                                {Number(
+                                  ride.passenger_amount ??
+                                    ride.fare_amount ??
+                                    0,
+                                ).toFixed(0)}
+                              </p>
 
-{Number(ride.discount_amount || 0) > 0 && (
-  <div className="mt-1">
-    <p className="text-[9px] font-bold text-[#ff6846]">
-      {ride.promo_code || "Promo"}: -R{Number(ride.discount_amount).toFixed(0)}
-    </p>
+                              {Number(ride.discount_amount || 0) > 0 && (
+                                <div className="mt-1">
+                                  <p className="text-[9px] font-bold text-[#ff6846]">
+                                    {ride.promo_code || "Promo"}: -R
+                                    {Number(ride.discount_amount).toFixed(0)}
+                                  </p>
 
-    <p className="text-[8px] font-semibold text-[#9a9da3]">
-      Original fare R{Number(ride.fare_amount || 0).toFixed(0)}
-    </p>
-  </div>
-)}
+                                  <p className="text-[8px] font-semibold text-[#9a9da3]">
+                                    Original fare R
+                                    {Number(ride.fare_amount || 0).toFixed(0)}
+                                  </p>
+                                </div>
+                              )}
                             </div>
 
                             {(isScheduled || isWaiting) && (
@@ -1391,8 +1373,8 @@ const activeScheduledRide = scheduledRides.find((ride) => {
                                   {isWaiting
                                     ? "RouteX is finding your driver."
                                     : matchingText
-                                    ? `Driver matching opens at ${matchingText}`
-                                    : "Driver matching opens closer to pickup time."}
+                                      ? `Driver matching opens at ${matchingText}`
+                                      : "Driver matching opens closer to pickup time."}
                                 </p>
                               </div>
                             )}
@@ -1421,63 +1403,73 @@ const activeScheduledRide = scheduledRides.find((ride) => {
                               </div>
 
                               <div className="min-w-0 flex-1">
-  <p className="text-[8px] font-bold uppercase tracking-[0.12em] text-[#ff6846]">
-    {isInProgress ? "Your driver" : "Driver assigned"}
-  </p>
+                                <p className="text-[8px] font-bold uppercase tracking-[0.12em] text-[#ff6846]">
+                                  {isInProgress
+                                    ? "Your driver"
+                                    : "Driver assigned"}
+                                </p>
 
-  <p className="mt-0.5 truncate text-[12px] font-black">
-    {ride.driver_name}
-  </p>
+                                <p className="mt-0.5 truncate text-[12px] font-black">
+                                  {ride.driver_name}
+                                </p>
 
-  <p className="mt-0.5 truncate text-[9px] font-semibold text-white/65">
-    {[ride.vehicle_color, ride.vehicle_type, ride.license_plate]
-      .filter(Boolean)
-      .join(" · ")}
-  </p>
+                                <p className="mt-0.5 truncate text-[9px] font-semibold text-white/65">
+                                  {[
+                                    ride.vehicle_color,
+                                    ride.vehicle_type,
+                                    ride.license_plate,
+                                  ]
+                                    .filter(Boolean)
+                                    .join(" · ")}
+                                </p>
 
-  {ride.driver_phone && (
-    <a
-      href={`tel:${ride.driver_phone}`}
-      className="mt-2 inline-flex rounded-[10px] bg-[#ff6846] px-3 py-2 text-[9px] font-extrabold text-white"
-    >
-      Call driver
-    </a>
-  )}
-</div>
+                                {ride.driver_phone && (
+                                  <a
+                                    href={`tel:${ride.driver_phone}`}
+                                    className="mt-2 inline-flex rounded-[10px] bg-[#ff6846] px-3 py-2 text-[9px] font-extrabold text-white"
+                                  >
+                                    Call driver
+                                  </a>
+                                )}
+                              </div>
                             </div>
                           )}
-{isAccepted && !ride.pickup_location_confirmed_at && (
-  <div className="mt-4 rounded-[17px] bg-[#e7e9ee] p-4 shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff]">
-    <p className="text-[10px] font-extrabold text-[#17191f]">
-      Confirm your pickup location
-    </p>
+                          {isAccepted && !ride.pickup_location_confirmed_at && (
+                            <div className="mt-4 rounded-[17px] bg-[#e7e9ee] p-4 shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff]">
+                              <p className="text-[10px] font-extrabold text-[#17191f]">
+                                Confirm your pickup location
+                              </p>
 
-    <p className="mt-1 text-[9px] font-medium leading-relaxed text-[#85888f]">
-      When you are at your pickup point, confirm your location so your
-      driver can navigate directly to you.
-    </p>
+                              <p className="mt-1 text-[9px] font-medium leading-relaxed text-[#85888f]">
+                                When you are at your pickup point, confirm your
+                                location so your driver can navigate directly to
+                                you.
+                              </p>
 
-    <button
-      type="button"
-      onClick={() => confirmScheduledPickupLocation(ride.id)}
-      className="mt-3 w-full rounded-[14px] bg-[#ff6846] py-3 text-[10px] font-extrabold text-white transition active:scale-[0.98]"
-    >
-      Confirm pickup location
-    </button>
-  </div>
-)}
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  confirmScheduledPickupLocation(ride.id)
+                                }
+                                className="mt-3 w-full rounded-[14px] bg-[#ff6846] py-3 text-[10px] font-extrabold text-white transition active:scale-[0.98]"
+                              >
+                                Confirm pickup location
+                              </button>
+                            </div>
+                          )}
 
-{isAccepted && ride.pickup_location_confirmed_at && (
-  <div className="mt-4 rounded-[17px] bg-[#e7e9ee] p-4 text-center shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff]">
-    <p className="text-[10px] font-extrabold text-[#17191f]">
-      Pickup location confirmed
-    </p>
+                          {isAccepted && ride.pickup_location_confirmed_at && (
+                            <div className="mt-4 rounded-[17px] bg-[#e7e9ee] p-4 text-center shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff]">
+                              <p className="text-[10px] font-extrabold text-[#17191f]">
+                                Pickup location confirmed
+                              </p>
 
-    <p className="mt-1 text-[9px] font-medium text-[#85888f]">
-      Your driver will use your confirmed location for navigation.
-    </p>
-  </div>
-)}
+                              <p className="mt-1 text-[9px] font-medium text-[#85888f]">
+                                Your driver will use your confirmed location for
+                                navigation.
+                              </p>
+                            </div>
+                          )}
                           {(isScheduled || isWaiting) && (
                             <button
                               type="button"
@@ -1500,7 +1492,6 @@ const activeScheduledRide = scheduledRides.find((ride) => {
           })()}
         </section>
 
-
         {otherTrips.length > 0 && (
           <section className="mt-8">
             <p className="text-[9px] font-extrabold uppercase tracking-[0.16em] text-[#8f9298]">
@@ -1508,15 +1499,24 @@ const activeScheduledRide = scheduledRides.find((ride) => {
             </p>
             <div className="mt-3 space-y-3">
               {otherTrips.map((trip) => (
-                <div key={trip.id} className="rounded-[18px] bg-[#e7e9ee] px-4 py-4 shadow-[4px_4px_9px_#c4c6ca,-4px_-4px_9px_#ffffff]">
+                <div
+                  key={trip.id}
+                  className="rounded-[18px] bg-[#e7e9ee] px-4 py-4 shadow-[4px_4px_9px_#c4c6ca,-4px_-4px_9px_#ffffff]"
+                >
                   <div className="flex items-center justify-between">
                     <span className="text-[9px] font-bold text-[#96999f]">
                       BK-{String(trip.id).padStart(4, "0")}
                     </span>
-                    <span className="text-[9px] font-extrabold text-[#777a81]">{trip.trip_status}</span>
+                    <span className="text-[9px] font-extrabold text-[#777a81]">
+                      {trip.trip_status}
+                    </span>
                   </div>
-                  <p className="mt-3 truncate text-[10px] font-bold">{trip.pickup_address}</p>
-                  <p className="mt-2 truncate text-[10px] font-bold">{trip.dropoff_address}</p>
+                  <p className="mt-3 truncate text-[10px] font-bold">
+                    {trip.pickup_address}
+                  </p>
+                  <p className="mt-2 truncate text-[10px] font-bold">
+                    {trip.dropoff_address}
+                  </p>
                 </div>
               ))}
             </div>
@@ -1554,7 +1554,9 @@ const activeScheduledRide = scheduledRides.find((ride) => {
               <div className="flex h-6 min-w-6 items-center justify-center rounded-full bg-[#ff6846] px-2 text-[9px] font-black text-white">
                 {completedTrips.length}
               </div>
-              <div className={`transition-transform duration-200 ${showCompletedTrips ? "rotate-180" : ""}`}>
+              <div
+                className={`transition-transform duration-200 ${showCompletedTrips ? "rotate-180" : ""}`}
+              >
                 <ChevronIcon />
               </div>
             </div>
@@ -1564,18 +1566,27 @@ const activeScheduledRide = scheduledRides.find((ride) => {
             <div className="mt-4 space-y-3">
               {completedTrips.length === 0 ? (
                 <div className="rounded-[18px] bg-[#e7e9ee] px-4 py-5 text-center shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff]">
-                  <p className="text-[11px] font-bold text-[#85888f]">No completed trips yet.</p>
+                  <p className="text-[11px] font-bold text-[#85888f]">
+                    No completed trips yet.
+                  </p>
                 </div>
               ) : (
                 completedTrips.map((trip) => (
-                  <div key={trip.id} className="rounded-[18px] bg-[#e7e9ee] px-4 py-4 shadow-[4px_4px_9px_#c4c6ca,-4px_-4px_9px_#ffffff]">
+                  <div
+                    key={trip.id}
+                    className="rounded-[18px] bg-[#e7e9ee] px-4 py-4 shadow-[4px_4px_9px_#c4c6ca,-4px_-4px_9px_#ffffff]"
+                  >
                     <div className="flex items-center justify-between">
                       <span className="text-[9px] font-bold text-[#96999f]">
-                        {trip.travel_date ? new Date(trip.travel_date).toLocaleDateString() : `BK-${String(trip.id).padStart(4, "0")}`}
+                        {trip.travel_date
+                          ? new Date(trip.travel_date).toLocaleDateString()
+                          : `BK-${String(trip.id).padStart(4, "0")}`}
                       </span>
                       <div className="flex items-center gap-1.5">
                         <CheckSmallIcon />
-                        <span className="text-[8px] font-extrabold text-[#777a81]">Completed</span>
+                        <span className="text-[8px] font-extrabold text-[#777a81]">
+                          Completed
+                        </span>
                       </div>
                     </div>
 
@@ -1586,11 +1597,18 @@ const activeScheduledRide = scheduledRides.find((ride) => {
                         <span className="h-2 w-2 rounded-[2px] bg-[#ff6846]" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-[10px] font-bold">{trip.pickup_address}</p>
-                        <p className="mt-2 truncate text-[10px] font-bold">{trip.dropoff_address}</p>
+                        <p className="truncate text-[10px] font-bold">
+                          {trip.pickup_address}
+                        </p>
+                        <p className="mt-2 truncate text-[10px] font-bold">
+                          {trip.dropoff_address}
+                        </p>
                       </div>
                       <p className="ml-3 text-[11px] font-black">
-                        R{Number(trip.passenger_amount ?? trip.fare_amount ?? 0).toFixed(2)}
+                        R
+                        {Number(
+                          trip.passenger_amount ?? trip.fare_amount ?? 0,
+                        ).toFixed(2)}
                       </p>
                     </div>
 
@@ -1598,7 +1616,9 @@ const activeScheduledRide = scheduledRides.find((ride) => {
                       <div className="mt-4 border-t border-[#d5d7dc] pt-3">
                         <p className="text-[9px] font-extrabold text-[#777a81]">
                           {trip.driver_name || "Driver"}
-                          {trip.vehicle_type ? ` • ${trip.vehicle_color || ""} ${trip.vehicle_type}` : ""}
+                          {trip.vehicle_type
+                            ? ` • ${trip.vehicle_color || ""} ${trip.vehicle_type}`
+                            : ""}
                         </p>
                       </div>
                     )}
@@ -1614,7 +1634,10 @@ const activeScheduledRide = scheduledRides.find((ride) => {
                               key={star}
                               type="button"
                               onClick={() =>
-                                setReviewRatings((prev) => ({ ...prev, [trip.id]: star }))
+                                setReviewRatings((prev) => ({
+                                  ...prev,
+                                  [trip.id]: star,
+                                }))
                               }
                               className={`text-[25px] leading-none ${
                                 (reviewRatings[trip.id] || 0) >= star
@@ -1629,7 +1652,10 @@ const activeScheduledRide = scheduledRides.find((ride) => {
                         <textarea
                           value={reviewTexts[trip.id] || ""}
                           onChange={(e) =>
-                            setReviewTexts((prev) => ({ ...prev, [trip.id]: e.target.value }))
+                            setReviewTexts((prev) => ({
+                              ...prev,
+                              [trip.id]: e.target.value,
+                            }))
                           }
                           placeholder="Tell us about your trip (optional)"
                           rows={2}
@@ -1637,11 +1663,16 @@ const activeScheduledRide = scheduledRides.find((ride) => {
                         />
                         <button
                           type="button"
-                          disabled={submittingReview === trip.id || !reviewRatings[trip.id]}
+                          disabled={
+                            submittingReview === trip.id ||
+                            !reviewRatings[trip.id]
+                          }
                           onClick={() => submitDriverReview(trip)}
                           className="mt-3 w-full rounded-[12px] bg-[#ff6846] py-2.5 text-[9px] font-extrabold text-white disabled:opacity-40"
                         >
-                          {submittingReview === trip.id ? "Submitting..." : "Submit review"}
+                          {submittingReview === trip.id
+                            ? "Submitting..."
+                            : "Submit review"}
                         </button>
                       </div>
                     )}
@@ -1655,7 +1686,9 @@ const activeScheduledRide = scheduledRides.find((ride) => {
         <section className="mt-9 border-t border-[#d2d4d9] pt-5">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="text-[11px] font-extrabold">Need help with a ride?</p>
+              <p className="text-[11px] font-extrabold">
+                Need help with a ride?
+              </p>
               <p className="mt-1 text-[9px] font-medium text-[#92959b]">
                 RouteX support is here to help.
               </p>
@@ -1681,7 +1714,6 @@ const activeScheduledRide = scheduledRides.find((ride) => {
   );
 }
 
-
 /* =========================================================
    ROUTE POINT
 ========================================================= */
@@ -1697,7 +1729,6 @@ function RoutePoint({
 }) {
   return (
     <div className="flex items-center gap-3">
-
       <span
         className={`h-[11px] w-[11px] shrink-0 ${
           type === "pickup"
@@ -1711,15 +1742,11 @@ function RoutePoint({
           {label}
         </p>
 
-        <p className="mt-0.5 truncate text-[11px] font-extrabold">
-          {value}
-        </p>
+        <p className="mt-0.5 truncate text-[11px] font-extrabold">{value}</p>
       </div>
-
     </div>
   );
 }
-
 
 function LocationIcon() {
   return (
