@@ -2586,6 +2586,36 @@ async function searchGeoapifyAddress(searchText) {
   }
 }
 
+async function searchGeoapifyPlaces(searchText) {
+  try {
+    const apiKey = process.env.GEOAPIFY_API_KEY;
+
+    if (!apiKey) return [];
+
+    const url =
+      "https://api.geoapify.com/v1/geocode/search" +
+      `?text=${encodeURIComponent(searchText + ", Upington, South Africa")}` +
+      "&format=json" +
+      "&filter=countrycode:za" +
+      "&limit=10" +
+      `&apiKey=${encodeURIComponent(apiKey)}`;
+
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      console.log("GEOAPIFY PLACES ERROR:", response.status);
+      return [];
+    }
+
+    const data = await response.json();
+
+    return Array.isArray(data.results) ? data.results : [];
+  } catch (error) {
+    console.error("GEOAPIFY PLACES SEARCH FAILED:", error.message);
+    return [];
+  }
+}
+
 app.get("/addresses/search", async (req, res) => {
   try {
     const query = String(req.query.q || "").trim();
@@ -2722,119 +2752,98 @@ app.get("/addresses/search", async (req, res) => {
     };
 
     const geoResultMatchesStreet = (item, searchQuery) => {
-      const normalizeRoadType = (value) => {
-        const text = String(value || "").toLowerCase();
+  const roadTypes = {
+    street: "street",
+    st: "street",
+    straat: "street",
+    road: "road",
+    rd: "road",
+    weg: "road",
+    avenue: "avenue",
+    ave: "avenue",
+    laan: "avenue",
+    crescent: "crescent",
+    singel: "crescent",
+    drive: "drive",
+    dr: "drive",
+    rylaan: "drive",
+    lane: "lane",
+    ln: "lane",
+  };
 
-        if (/\b(street|st|straat)\b\.?/i.test(text)) {
-          return "street";
-        }
+  const roadTypePattern =
+    /\b(street|straat|st|road|rd|weg|avenue|ave|laan|crescent|singel|drive|dr|rylaan|lane|ln)\b\.?/gi;
 
-        if (/\b(road|rd|weg)\b\.?/i.test(text)) {
-          return "road";
-        }
+  const normalize = (value) =>
+    String(value || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/^\s*\d+[a-z]?\s+/, "")
+      .replace(/[.,]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
 
-        if (/\b(avenue|ave|laan)\b\.?/i.test(text)) {
-          return "avenue";
-        }
+  const getRoadType = (value) => {
+    const words = normalize(value).split(" ");
 
-        if (/\b(crescent|singel)\b/i.test(text)) {
-          return "crescent";
-        }
+    for (const word of words) {
+      const type = roadTypes[word];
+      if (type) return type;
+    }
 
-        if (/\b(drive|dr|rylaan)\b\.?/i.test(text)) {
-          return "drive";
-        }
+    return null;
+  };
 
-        if (/\b(lane|ln)\b\.?/i.test(text)) {
-          return "lane";
-        }
+  const getStreetName = (value) =>
+    normalize(value)
+      .replace(roadTypePattern, " ")
+      .replace(/\s+/g, " ")
+      .trim();
 
-        return null;
-      };
+  const queryName = getStreetName(searchQuery);
 
-      const removeRoadType = (value) =>
-        String(value || "")
-          // Remove house number at beginning
-          .replace(/^\s*\d+[A-Za-z]?\s+/, "")
+  const candidates = [
+    item.street,
+    item.address_line1,
+  ].filter(Boolean);
 
-          // Remove road terminology
-          .replace(
-            /\b(avenue|ave|laan|street|st|straat|road|rd|weg|crescent|singel|drive|dr|rylaan|lane|ln)\b\.?/gi,
-            "",
-          )
+  if (queryName.length < 3) {
+    return false;
+  }
 
-          .replace(/\s+/g, " ")
-          .trim()
-          .toLowerCase();
+  return candidates.some((candidate) => {
+    const resultName = getStreetName(candidate);
 
-      const queryText = String(searchQuery || "").trim();
+    if (resultName.length < 3) {
+      return false;
+    }
 
-      /*
-       * Prefer address_line1 because Geoapify sometimes returns:
-       *
-       * address_line1: "23 Street"
-       * street: "Street"
-       *
-       * Using item.street in that situation would leave us with
-       * an empty street name after normalization.
-       */
-      const resultText = item.address_line1 || item.street || "";
+    const nameMatches =
+      resultName === queryName ||
+      resultName.startsWith(queryName + " ") ||
+      queryName.startsWith(resultName + " ");
 
-      const queryStreetName = removeRoadType(queryText);
-      const resultStreetName = removeRoadType(resultText);
+    if (!nameMatches) {
+      return false;
+    }
 
-      // Query must contain a meaningful street name.
-      if (queryStreetName.length < 3) {
-        return false;
-      }
+    const requestedType = getRoadType(searchQuery);
+    const returnedType = getRoadType(candidate);
 
-      // Geoapify must also return a meaningful street name.
-      // This prevents results such as "23 Street" -> "" from matching.
-      if (resultStreetName.length < 3) {
-        return false;
-      }
+    if (
+      requestedType &&
+      returnedType &&
+      requestedType !== returnedType &&
+      !(["street", "road"].includes(requestedType) &&
+        ["street", "road"].includes(returnedType))
+    ) {
+      return false;
+    }
 
-      /*
-       * Require the actual street names to correspond.
-       *
-       * Examples:
-       *
-       * Khata Street -> 23 Street             ❌
-       * Khata Street -> Khata Street          ✓
-       * 82 Honeysuckle Street -> Honeysuckle Street ✓
-       */
-      const streetNameMatches =
-        resultStreetName === queryStreetName ||
-        resultStreetName.startsWith(queryStreetName + " ") ||
-        queryStreetName.startsWith(resultStreetName + " ");
-
-      if (!streetNameMatches) {
-        return false;
-      }
-
-      const requestedRoadType = normalizeRoadType(queryText);
-
-      const returnedRoadType = normalizeRoadType(resultText);
-
-      /*
-       * If both specify a road type, they must agree.
-       *
-       * Street = Straat
-       * Road = Weg
-       * Avenue = Laan
-       * Crescent = Singel
-       * Drive = Rylaan
-       */
-      if (
-        requestedRoadType &&
-        returnedRoadType &&
-        requestedRoadType !== returnedRoadType
-      ) {
-        return false;
-      }
-
-      return true;
-    };
+    return true;
+  });
+};
     // =====================================================
     // 1. SEARCH ROUTEX LOCAL DATABASE FIRST
     // =====================================================
@@ -2997,7 +3006,9 @@ app.get("/addresses/search", async (req, res) => {
       if (
         requestedRoadType &&
         resultRoadType &&
-        requestedRoadType !== resultRoadType
+        requestedRoadType !== resultRoadType &&
+        !(["street", "road"].includes(requestedRoadType) &&
+          ["street", "road"].includes(resultRoadType))
       ) {
         return false;
       }
@@ -3020,6 +3031,55 @@ app.get("/addresses/search", async (req, res) => {
           source: "local",
         })),
       );
+    }
+
+    // =====================================================
+    // NAMED PLACES: schools, shops, offices, clinics, buildings
+    // =====================================================
+    // Forward geocoding may resolve named POIs, but is not a complete
+    // business directory. Require a matching name and an Upington location.
+    const roadWords = /\b(street|st|straat|road|rd|weg|avenue|ave|laan|crescent|singel|drive|dr|rylaan|lane|ln)\b/i;
+    const hasHouseNumber = /^\s*\d+[a-z]?\s+/i.test(query);
+    const normalizePlaceName = (value) =>
+      String(value || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, " ")
+        .trim();
+
+    if (!roadWords.test(query) && !hasHouseNumber && query.length >= 4) {
+      const placeCandidates = await searchGeoapifyPlaces(query);
+      const wanted = normalizePlaceName(query);
+      const namedPlaces = placeCandidates.filter((item) => {
+        const lat = Number(item.lat);
+        const lng = Number(item.lon);
+        const name = normalizePlaceName(item.name || "");
+        const type = String(item.result_type || "").toLowerCase();
+        const isNamedPlace = name.length >= 4 &&
+          (name === wanted || name.startsWith(wanted + " ") ||
+           name.includes(" " + wanted + " ") || name.endsWith(" " + wanted));
+        return Number.isFinite(lat) && Number.isFinite(lng) &&
+          isUpingtonGeoResult(item) && isNamedPlace &&
+          !["city", "county", "state", "country", "street", "postcode"].includes(type);
+      });
+
+      if (namedPlaces.length > 0) {
+        return res.json(namedPlaces.slice(0, 6).map((item) => {
+          const locationText = [item.suburb, item.district, item.formatted]
+            .filter(Boolean).join(" ").toLowerCase();
+          const area = knownAreas.find((name) => locationText.includes(name.toLowerCase()));
+          return {
+            address: item.name,
+            full_address: item.formatted || item.name,
+            area_name: area || item.suburb || "Upington",
+            place_type: item.result_type || "place",
+            lat: Number(item.lat),
+            lng: Number(item.lon),
+            source: "geoapify-place",
+          };
+        }));
+      }
     }
 
     // =====================================================
@@ -3105,27 +3165,56 @@ app.get("/addresses/search", async (req, res) => {
     // Do NOT accept a city-only result.
     // -----------------------------------------------------
 
-    let usefulGeoResults = geoResults.filter((item) => {
-      const lat = Number(item.lat);
-      const lng = Number(item.lon);
+   let usefulGeoResults = geoResults.filter((item) => {
+  const lat = Number(item.lat);
+  const lng = Number(item.lon);
 
-      return (
-        Number.isFinite(lat) &&
-        Number.isFinite(lng) &&
-        isUpingtonGeoResult(item) &&
-        geoResultMatchesStreet(item, queryWithoutHouseNumber) &&
-        !["city", "county", "state", "country"].includes(
-          String(item.result_type || "").toLowerCase(),
-        )
-      );
-    });
+  const normalized = (value) =>
+    String(value || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .trim();
+
+  const searchName = normalized(queryWithoutHouseNumber);
+
+  const placeNames = [
+    item.name,
+    item.address_line1,
+  ]
+    .filter(Boolean)
+    .map(normalized);
+
+  const landmarkMatches =
+    searchName.length >= 4 &&
+    !/\b(street|st|straat|road|rd|weg|avenue|ave|laan|crescent|singel|drive|dr|rylaan|lane|ln)\b/i.test(queryWithoutHouseNumber) &&
+    placeNames.some(
+      (name) =>
+        name === searchName ||
+        name.startsWith(searchName + " ") ||
+        name.includes(" " + searchName)
+    );
+
+  return (
+    Number.isFinite(lat) &&
+    Number.isFinite(lng) &&
+    isUpingtonGeoResult(item) &&
+    !["city", "county", "state", "country"].includes(
+      String(item.result_type || "").toLowerCase()
+    ) &&
+    (
+      geoResultMatchesStreet(item, queryWithoutHouseNumber) ||
+      landmarkMatches
+    )
+  );
+});
 
     // -----------------------------------------------------
     // If exact search failed, try our RouteX normalization.
     //
     // Example:
     // 06 Hantam Singel
-    //        ↓
+    //        Γåô
     // Hantam Crescent
     // -----------------------------------------------------
 
@@ -3169,7 +3258,31 @@ app.get("/addresses/search", async (req, res) => {
             Number.isFinite(lat) &&
             Number.isFinite(lng) &&
             isUpingtonGeoResult(item) &&
-            geoResultMatchesStreet(item, fallbackQuery) &&
+           (
+  geoResultMatchesStreet(item, fallbackQuery) ||
+  (
+    fallbackQuery.trim().length >= 4 &&
+    [item.name, item.address_line1]
+      .filter(Boolean)
+      .some((value) => {
+        const normalize = (text) =>
+          String(text)
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toLowerCase()
+            .trim();
+
+        const name = normalize(value);
+        const search = normalize(fallbackQuery);
+
+        return (
+          name === search ||
+          name.startsWith(search + " ") ||
+          name.includes(" " + search)
+        );
+      })
+  )
+) &&
             !["city", "county", "state", "country"].includes(
               String(item.result_type || "").toLowerCase(),
             )
@@ -5887,7 +6000,7 @@ app.get("/admin/bookings", async (req, res) => {
   }
 });
 
-// ROUTEX ADMIN DRIVER DIRECTORY — add before app.get("/admin/stats", ...)
+// ROUTEX ADMIN DRIVER DIRECTORY ΓÇö add before app.get("/admin/stats", ...)
 // Set ADMIN_DASHBOARD_KEY as a strong, private Render environment variable.
 app.get("/admin/driver-directory", async (req, res) => {
   const expected = process.env.ADMIN_DASHBOARD_KEY;
