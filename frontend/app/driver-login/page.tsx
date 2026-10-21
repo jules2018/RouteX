@@ -317,6 +317,16 @@ localStorage.setItem("driver", JSON.stringify(driverData));
             </div>
           </div>
 
+          {/* PASSWORD RECOVERY */}
+          <div className="mt-4 text-right">
+            <a
+              href="/driver-forgot-password"
+              className="text-[11px] font-bold text-[#ff6846] underline-offset-4 hover:underline"
+            >
+              Forgot password?
+            </a>
+          </div>
+
           {/* SIGN IN */}
           <button
             type="submit"

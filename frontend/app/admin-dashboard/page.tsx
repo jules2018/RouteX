@@ -271,6 +271,9 @@ export default function AdminDashboardPage() {
   const [bookingFilter, setBookingFilter] = useState("all");
 
   const [driverError, setDriverError] = useState("");
+  const [resettingDriverId, setResettingDriverId] = useState<number | null>(null);
+  const [resetDriverName, setResetDriverName] = useState("");
+  const [resetLink, setResetLink] = useState("");
 
   const [adminKey, setAdminKey] = useState("");
 
@@ -307,6 +310,49 @@ export default function AdminDashboardPage() {
     else sessionStorage.removeItem("routex_admin_key");
 
     setAdminKey(trimmed);
+  };
+
+  const resetDriverPassword = async (driver: Driver) => {
+    if (!adminKey) {
+      window.alert("Enter your administrator access key first.");
+      return;
+    }
+    if (!window.confirm(`Generate a new password reset link for ${driver.full_name}? Any previous reset link will stop working.`)) return;
+
+    setResettingDriverId(driver.id);
+    setResetLink("");
+    setResetDriverName("");
+    try {
+      const response = await fetch(`${API_URL}/admin/drivers/${driver.id}/reset-password`, {
+        method: "POST",
+        headers: { "X-RouteX-Admin-Key": adminKey },
+        cache: "no-store",
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error || (response.status === 404
+          ? "Reset endpoint not installed on the backend yet."
+          : `Password reset failed (${response.status}).`));
+      }
+      if (typeof data.reset_link !== "string" || !data.reset_link) {
+        throw new Error("The backend did not return a reset link.");
+      }
+      setResetDriverName(driver.full_name);
+      setResetLink(data.reset_link);
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : "Could not generate reset link.");
+    } finally {
+      setResettingDriverId(null);
+    }
+  };
+
+  const copyResetLink = async () => {
+    try {
+      await navigator.clipboard.writeText(resetLink);
+      window.alert("Reset link copied. Send it privately to the verified driver.");
+    } catch {
+      window.alert("Unable to copy the reset link.");
+    }
   };
 
   const loadDrivers = useCallback(async () => {
@@ -648,6 +694,16 @@ export default function AdminDashboardPage() {
                     {driver.is_online ? driver.status || "Online" : "Offline"}
                   </span>
                 </div>
+                <div className="mt-4 flex justify-end">
+                  <button
+                    type="button"
+                    disabled={resettingDriverId !== null}
+                    onClick={() => void resetDriverPassword(driver)}
+                    className="rounded-xl border border-[#ff754d]/40 bg-[#ff754d]/10 px-4 py-2.5 text-xs font-bold text-[#ff9b7c] hover:bg-[#ff754d]/20 disabled:opacity-50"
+                  >
+                    {resettingDriverId === driver.id ? "Generating link..." : "Reset password"}
+                  </button>
+                </div>
                 <p className="mt-3 text-[11px] text-white/40">
                   Last activity:{" "}
                   {driver.last_online_at
@@ -936,6 +992,28 @@ export default function AdminDashboardPage() {
             >
               {loadError}
             </div>
+          )}
+
+          {resetLink && (
+            <section className="mb-7 rounded-[22px] border border-[#ff754d]/30 bg-[#1e2127] p-5 sm:p-6">
+              <div className="flex items-center gap-2 text-[#ff754d]">
+                <ShieldCheck size={18} />
+                <p className="text-xs font-black uppercase tracking-widest">Driver password reset</p>
+              </div>
+              <h3 className="mt-3 text-xl font-black">{resetDriverName}</h3>
+              <p className="mt-2 text-sm text-white/65">
+                This link expires after 15 minutes. Send it only to the verified driver via their registered contact number. Anyone with this link can set a new password.
+              </p>
+              <p className="mt-4 break-all rounded-xl bg-[#111319] p-3 text-xs text-white/80">{resetLink}</p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <button type="button" onClick={() => void copyResetLink()} className="inline-flex items-center gap-2 rounded-xl bg-[#ff754d] px-4 py-2.5 text-xs font-black text-black">
+                  <Copy size={15} /> Copy reset link
+                </button>
+                <button type="button" onClick={() => { setResetLink(""); setResetDriverName(""); }} className="rounded-xl border border-white/20 px-4 py-2.5 text-xs font-bold">
+                  Close
+                </button>
+              </div>
+            </section>
           )}
 
           {setupLink && (

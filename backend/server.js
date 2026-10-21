@@ -6023,7 +6023,69 @@ app.get("/admin/driver-directory", async (req, res) => {
     return res.status(500).json({ error: "Unable to load driver directory" });
   }
 });
+// ADMIN: Generate a password reset link for an existing driver
+app.post("/admin/drivers/:id/reset-password", async (req, res) => {
+  const expected = process.env.ADMIN_DASHBOARD_KEY;
+  const provided = req.get("X-RouteX-Admin-Key") || "";
 
+  if (!expected || !provided) {
+    return res.status(403).json({ error: "Admin access required" });
+  }
+
+  const a = Buffer.from(expected);
+  const b = Buffer.from(provided);
+
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+    return res.status(403).json({ error: "Admin access denied" });
+  }
+
+  const driverId = Number(req.params.id);
+
+  if (!Number.isSafeInteger(driverId) || driverId <= 0) {
+    return res.status(400).json({ error: "Invalid driver ID" });
+  }
+
+  try {
+    const resetToken = crypto.randomBytes(32).toString("hex");
+
+    const result = await pool.query(
+      `
+      UPDATE drivers
+      SET
+        password_setup_token = $1,
+        password_setup_expires = NOW() + INTERVAL '15 minutes'
+      WHERE id = $2
+      RETURNING id, full_name
+      `,
+      [resetToken, driverId],
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Driver not found" });
+    }
+
+    const driver = result.rows[0];
+
+    const resetLink =
+      `https://routex-frontend.onrender.com/driver-set-password?token=${resetToken}`;
+
+    res.set("Cache-Control", "no-store");
+
+    return res.json({
+      message: "Password reset link generated",
+      driver_id: driver.id,
+      driver_name: driver.full_name,
+      reset_link: resetLink,
+      expires_in_minutes: 15,
+    });
+  } catch (error) {
+    console.error("ADMIN DRIVER PASSWORD RESET ERROR:", error);
+
+    return res.status(500).json({
+      error: "Unable to generate password reset link",
+    });
+  }
+});
 app.get("/admin/stats", async (req, res) => {
   try {
     const passengers = await pool.query(
