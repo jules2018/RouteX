@@ -443,9 +443,8 @@ export default function BookingTestPage() {
 
             area_name: data.area_name,
 
-            lat: Number(data.lat ?? lat),
-
-            lng: Number(data.lng ?? lng),
+           lat: lat,
+            lng: lng,
 
             place_type: "gps",
 
