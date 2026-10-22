@@ -1209,7 +1209,24 @@ function calculateRouteXNightFare(baseFare, pickupDate) {
     journey_fare: totalFare,
   };
 }
+// Minimum journey fare for trips starting or ending in Louisvale.
+// Applies to both Ride Now and scheduled bookings.
+function applyLouisvaleMinimumFare(fare, pickupArea, dropoffArea) {
+  const isLouisvale = (area) =>
+   /^(louisvale|louisevale|lousivale)(\s+weg)?(\s*-\s*upington)?$/i.test(
+      String(area || "").trim()
+    );
 
+  if (!isLouisvale(pickupArea) && !isLouisvale(dropoffArea)) {
+    return fare;
+  }
+
+  return {
+    ...fare,
+    louisvale_minimum_applied: Number(fare.fare) < 100,
+    fare: Math.max(Number(fare.fare), 100),
+  };
+}
 async function calculateRouteXFare({
   pickup_area,
   dropoff_area,
@@ -1281,7 +1298,7 @@ async function calculateRouteXFare({
                 ? Math.ceil((8 * (distanceKm - 20)) / 5) * 5
                 : 0;
             const baseFare = standardBaseFare + longOutOfTownAllowance;
-            return {
+            return applyLouisvaleMinimumFare({
               pricing_method: "distance",
               distance_km: Number(distanceKm.toFixed(2)),
               base_fare: baseFare,
@@ -1291,7 +1308,7 @@ async function calculateRouteXFare({
               ),
               discount: 0,
               fare: baseFare + outOfTownFee,
-            };
+          }, pickup_area, dropoff_area);
           }
         }
       }
@@ -1350,7 +1367,7 @@ async function calculateRouteXFare({
   }
 
   // Keep the area-matrix fallback shape consistent with distance pricing.
-  return {
+return applyLouisvaleMinimumFare({
     pricing_method: "area",
     distance_km: null,
     pickup_category: pickupCategory,
@@ -1360,7 +1377,7 @@ async function calculateRouteXFare({
     pickup_distance_from_upington: null,
     discount: 0,
     fare: baseFare,
-  };
+ }, pickup_area, dropoff_area);
 }
 
 app.post("/bookings", async (req, res) => {
