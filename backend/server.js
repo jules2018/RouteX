@@ -1164,6 +1164,52 @@ function routeXDistanceFare(distanceKm) {
     longRateDistance * longTripRate;
   return Math.ceil(rawFare / 5) * 5;
 }
+// RouteX night fare pricing (South African time)
+function calculateRouteXNightFare(baseFare, pickupDate) {
+  const date = new Date(pickupDate);
+
+  if (!Number.isFinite(date.getTime())) {
+    throw new Error("Invalid pickup date for fare calculation.");
+  }
+
+  const hour = Number(
+    new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Africa/Johannesburg",
+      hour: "2-digit",
+      hourCycle: "h23",
+    }).format(date)
+  );
+
+  let percentage = 0;
+  let minimumSurcharge = 0;
+  let minimumFare = 0;
+
+  if (hour >= 22 || hour < 5) {
+    percentage = 0.40;
+    minimumFare = 100;
+  } else if (hour >= 20 && hour < 22) {
+    percentage = 0.25;
+    minimumSurcharge = 15;
+  }
+
+  const surcharge =
+    percentage === 0
+      ? 0
+      : Math.max(
+          minimumSurcharge,
+          Math.ceil((baseFare * percentage) / 5) * 5
+        );
+
+  const totalFare = Math.max(baseFare + surcharge, minimumFare);
+
+  return {
+    night_surcharge: totalFare - baseFare,
+    night_percentage: percentage * 100,
+    night_minimum_fare: minimumFare,
+    journey_fare: totalFare,
+  };
+}
+
 async function calculateRouteXFare({
   pickup_area,
   dropoff_area,
@@ -1519,8 +1565,18 @@ app.post("/bookings", async (req, res) => {
       Number.isFinite(Number(b)) &&
       Math.abs(Number(a) - Number(b)) < 0.000001;
 
-    const quoteMatchesRoute =
+      // Verify that the pickup time matches the signed fare quote.
+      const quoteMatchesPickupTime =
+        isScheduledRide
+    ? scheduledPickupAt instanceof Date &&
+      !Number.isNaN(scheduledPickupAt.getTime()) &&
+      quotePayload?.scheduled_pickup_at ===
+        scheduledPickupAt.toISOString()
+    : quotePayload?.scheduled_pickup_at == null;
+
+      const quoteMatchesRoute =
       quotePayload &&
+      quoteMatchesPickupTime &&
       sameCoordinate(quotePayload.pickup_lat, pickupLat) &&
       sameCoordinate(quotePayload.pickup_lng, pickupLng) &&
       sameCoordinate(quotePayload.dropoff_lat, destinationLat) &&
@@ -6358,7 +6414,40 @@ app.get("/calculate-fare", async (req, res) => {
     if (rideType !== "now" && rideType !== "scheduled") {
       return res.status(400).json({ error: "Invalid ride type." });
     }
+// Determine pickup time for RouteX night pricing.
+let farePickupAt = new Date();
 
+if (rideType === "scheduled") {
+  const travelDate = String(req.query.travel_date || "");
+  const pickupTime = String(req.query.pickup_time || "");
+
+  if (
+    !/^\d{4}-\d{2}-\d{2}$/.test(travelDate) ||
+    !/^([01]\d|2[0-3]):[0-5]\d$/.test(pickupTime)
+  ) {
+    return res.status(400).json({
+      error: "A valid scheduled pickup date and time are required.",
+    });
+  }
+
+  farePickupAt = new Date(
+    `${travelDate}T${pickupTime}:00+02:00`
+  );
+
+  if (
+    Number.isNaN(farePickupAt.getTime()) ||
+    farePickupAt <= new Date()
+  ) {
+    return res.status(400).json({
+      error: "Scheduled pickup time must be in the future.",
+    });
+  }
+}
+
+const nightPricing = calculateRouteXNightFare(
+  Number(routeFare.fare),
+  farePickupAt
+);
     // Scheduled fares do not depend on a driver being online today.
     // Ride Now retains the existing live-driver pickup surcharge.
     const pickupEstimate =
@@ -6375,25 +6464,42 @@ app.get("/calculate-fare", async (req, res) => {
     const pickupSurcharge = isLongOutOfTownRide
       ? 0
       : (pickupEstimate?.surcharge ?? 0);
-    const fare = {
-      ...routeFare,
-      pickup_surcharge: pickupSurcharge,
-      pickup_distance_km: pickupEstimate?.distance_km ?? null,
-      pickup_driver_id: pickupEstimate?.driver_id ?? null,
-      fare: Number(routeFare.fare) + pickupSurcharge,
-    };
+ const fare = {
+  ...routeFare,
 
-    const quotePayload = {
-      pickup_area: String(req.query.pickup_area || ""),
-      dropoff_area: String(req.query.dropoff_area || ""),
-      pickup_lat: pickupLat,
-      pickup_lng: pickupLng,
-      dropoff_lat: dropoffLat,
-      dropoff_lng: dropoffLng,
-      fare,
-      ride_type: rideType,
-      expires_at: Date.now() + ROUTEX_FARE_QUOTE_TTL_MS,
-    };
+  // Night pricing
+  night_surcharge: nightPricing.night_surcharge,
+  night_percentage: nightPricing.night_percentage,
+  night_minimum_fare: nightPricing.night_minimum_fare,
+  journey_fare: nightPricing.journey_fare,
+
+  // Driver pickup fee — Ride Now only
+  pickup_surcharge: pickupSurcharge,
+  pickup_distance_km: pickupEstimate?.distance_km ?? null,
+  pickup_driver_id: pickupEstimate?.driver_id ?? null,
+
+  // Final passenger fare
+  fare: nightPricing.journey_fare + pickupSurcharge,
+};
+
+   const quotePayload = {
+  pickup_area: String(req.query.pickup_area || ""),
+  dropoff_area: String(req.query.dropoff_area || ""),
+  pickup_lat: pickupLat,
+  pickup_lng: pickupLng,
+  dropoff_lat: dropoffLat,
+  dropoff_lng: dropoffLng,
+  fare,
+  ride_type: rideType,
+
+  // Lock scheduled pickup time into the signed quote.
+  scheduled_pickup_at:
+    rideType === "scheduled"
+      ? farePickupAt.toISOString()
+      : null,
+
+  expires_at: Date.now() + ROUTEX_FARE_QUOTE_TTL_MS,
+};
     const fare_quote_token = signRouteXFareQuote(quotePayload);
     console.log("RouteX fare quote:", {
       ...fare,

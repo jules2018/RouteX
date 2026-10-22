@@ -225,7 +225,11 @@ export default function BookingTestPage() {
 
           dropoff_lng: String(selectedDestination.lng),
         });
-
+// Send scheduled pickup date and time for accurate fare pricing.
+if (rideType === "scheduled") {
+  params.set("travel_date", travelDate);
+  params.set("pickup_time", pickupTime);
+}
         const response = await fetch(
           `${API_URL}/calculate-fare?${params.toString()}`,
         );
@@ -316,6 +320,8 @@ export default function BookingTestPage() {
     selectedPickup,
     selectedDestination,
     rideType,
+    travelDate,
+    pickupTime,
     availabilityStatus,
     fareRetryKey,
   ]);
@@ -1800,13 +1806,17 @@ export default function BookingTestPage() {
                         : "Request RouteX"}
                   </p>
 
-                  <p className="mt-0.5 text-[8px] font-semibold text-[#6c7280] dark:text-white/45">
-                    {rideType === "scheduled"
-                      ? `${formattedTravelDate} at ${pickupTime}`
+                <p className="mt-0.5 text-[10px] font-semibold text-[#6c7280] dark:text-white/65">
+                  {calculatingFare
+                    ? "Calculating fare..."
+                    : rideType === "scheduled"
+                      ? fare
+                        ? `${formattedTravelDate} at ${pickupTime} · Total R${fare}`
+                        : `${formattedTravelDate} at ${pickupTime} · Fare unavailable`
                       : fare
                         ? `Estimated fare R${fare}`
                         : "Choose your route first"}
-                  </p>
+                </p>
                 </div>
 
                 <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#ff6846] text-xl">
