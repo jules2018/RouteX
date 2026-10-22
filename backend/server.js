@@ -211,12 +211,17 @@ const upload = multer({
   },
 });
 
+const allowedOrigins = [
+  "https://routex-frontend.onrender.com",
+];
+
+if (process.env.NODE_ENV !== "production") {
+  allowedOrigins.push("http://localhost:3000");
+}
+
 app.use(
   cors({
-    origin: [
-      "https://routex-frontend.onrender.com",
-      "http://localhost:3000",
-    ],
+    origin: allowedOrigins,
     credentials: true,
   })
 );
@@ -5152,7 +5157,11 @@ app.post("/driver-set-password", async (req, res) => {
   try {
     const { token, password } = req.body;
 
-    if (!token || !password) {
+    if (
+      typeof token !== "string" ||
+      !token.trim() ||
+      typeof password !== "string"
+    ) {
       return res.status(400).json({
         error: "Token and password are required",
       });
@@ -5164,46 +5173,35 @@ app.post("/driver-set-password", async (req, res) => {
       });
     }
 
-    const driverResult = await pool.query(
-      `
-      SELECT id
-      FROM drivers
-      WHERE password_setup_token = $1
-        AND password_setup_expires > NOW()
-      LIMIT 1
-      `,
-      [token],
-    );
-
-    if (driverResult.rows.length === 0) {
-      return res.status(400).json({
-        error: "This password setup link is invalid or has expired",
-      });
-    }
-
-    const driverId = driverResult.rows[0].id;
-
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    await pool.query(
+    const result = await pool.query(
       `
       UPDATE drivers
       SET
         password = $1,
         password_setup_token = NULL,
         password_setup_expires = NULL
-      WHERE id = $2
+      WHERE password_setup_token = $2
+        AND password_setup_expires > NOW()
+      RETURNING id
       `,
-      [hashedPassword, driverId],
+      [hashedPassword, token],
     );
 
-    res.json({
+    if (result.rows.length === 0) {
+      return res.status(400).json({
+        error: "This password setup link is invalid or has expired",
+      });
+    }
+
+    return res.json({
       message: "Password created successfully",
     });
   } catch (error) {
     console.error("DRIVER SET PASSWORD ERROR:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       error: "Unable to create password",
     });
   }

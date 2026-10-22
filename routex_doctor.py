@@ -373,21 +373,42 @@ localhost_matches = find_in_project(
     r"https?://localhost(?::\d+)?"
 )
 
-if localhost_matches:
+backend_cors_text = read_text(BACKEND / "server.js")
 
-    details = []
+development_cors_protected = bool(
+    re.search(
+        r'if\s*\(\s*process\.env\.NODE_ENV\s*!==\s*["\']production["\']\s*\)'
+        r'\s*\{\s*allowedOrigins\.push\(\s*["\']http://localhost:3000["\']\s*\)',
+        backend_cors_text,
+    )
+    and re.search(
+        r'cors\s*\(\s*\{\s*origin:\s*allowedOrigins\b',
+        backend_cors_text,
+    )
+)
 
-    for path, line_number, line in localhost_matches[:10]:
-        details.append(
-            f"{relative(path)}:{line_number} -> {line}"
-        )
+unsafe_localhost_matches = []
+
+for path, line_number, line in localhost_matches:
+    is_protected_cors_entry = (
+        development_cors_protected
+        and path.resolve() == (BACKEND / "server.js").resolve()
+        and 'allowedOrigins.push("http://localhost:3000")' in line
+    )
+
+    if not is_protected_cors_entry:
+        unsafe_localhost_matches.append((path, line_number, line))
+
+if unsafe_localhost_matches:
+    details = [
+        f"{relative(path)}:{line_number} -> {line}"
+        for path, line_number, line in unsafe_localhost_matches[:10]
+    ]
 
     warn_check(
         "Localhost URLs",
-        "Hardcoded localhost reference(s) found:\n"
-        + "\n".join(details)
+        "Review localhost reference(s):\n" + "\n".join(details),
     )
-
 else:
     pass_check("Localhost URLs")
 
@@ -949,16 +970,18 @@ else:
     )
 
 if (
-    "scheduledRides" in passenger_portal_text
-    and "rideNowTrips" in passenger_portal_text
+    "const [trips, setTrips]" in passenger_portal_text
+    and "const [scheduledRides, setScheduledRides]" in passenger_portal_text
+    and "const loadTrips" in passenger_portal_text
+    and "const loadScheduledRides" in passenger_portal_text
     and "scheduled_pickup_at" in passenger_portal_text
 ):
     pass_check("Passenger Ride Now / Scheduled separation")
 else:
     warn_check(
         "Passenger Ride Now / Scheduled separation",
-        "Could not verify separate Ride Now and scheduled collections in "
-        "passenger-portal/page.tsx."
+        "Could not verify separate Ride Now and scheduled ride "
+        "collections and loading functions in passenger-portal/page.tsx."
     )
 
 # ============================================================
@@ -1671,11 +1694,32 @@ check_october(
     'password_setup_expires = NULL' in server_text,
     "Password setup should check expiry and clear tokens after password change.",
     server_file, 'password_setup_expires > NOW()')
+# Verify that driver password reset tokens are consumed atomically.
+driver_password_reset_section = server_text.split(
+    'app.post("/driver-set-password"', 1
+)[-1].split('app.post("/driver-login"', 1)[0]
+
 check_october(
     "Driver reset atomic token consumption",
-    bool(re.search(r'UPDATE\s+drivers[\s\S]{0,1100}password_setup_token\s*=\s*NULL[\s\S]{0,600}WHERE[\s\S]{0,250}password_setup_token\s*=', server_text, re.I)),
-    "Current SELECT-then-UPDATE reset flow may allow simultaneous reuse. Review atomic conditional update with a single-use token.",
-    server_file, 'password_setup_token = NULL')
+    (
+        'app.post("/driver-set-password"' in server_text
+        and bool(re.search(
+            r"UPDATE\s+drivers[\s\S]*?"
+            r"SET[\s\S]*?"
+            r"password_setup_token\s*=\s*NULL[\s\S]*?"
+            r"WHERE\s+password_setup_token\s*=\s*\$2"
+            r"[\s\S]*?password_setup_expires\s*>\s*NOW\(\)"
+            r"[\s\S]*?RETURNING\s+id",
+            driver_password_reset_section,
+            re.I,
+        ))
+        and "result.rows.length === 0" in driver_password_reset_section
+    ),
+    "Driver password reset must validate and consume the token "
+    "in one conditional UPDATE statement.",
+    server_file,
+    "driver-set-password",
+)
 check_october(
     "Driver login forgot password navigation",
     'forgot' in login_text.lower() and
@@ -1690,9 +1734,18 @@ check_october(
     server_file, 'geoapify')
 check_october(
     "Address search local database support",
-    'FROM addresses' in server_text or 'from addresses' in server_text.lower(),
-    "Check local address database search before external fallback.",
-    server_file, 'addresses')
+    (
+        'app.get("/addresses/search"' in server_text
+        and "localResult.rows.filter" in server_text
+        and "localWithCoordinates.length > 0" in server_text
+        and 'source: "local"' in server_text
+        and "searchGeoapifyAddress" in server_text
+    ),
+    "Address search must support local database matches "
+    "with coordinates before using Geoapify fallback.",
+    server_file,
+    "localWithCoordinates",
+)
 check_october(
     "OSRM road distance",
     'osrm' in server_text.lower(),
