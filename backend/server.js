@@ -5046,6 +5046,29 @@ d.license_plate
     res.json([]);
   }
 });
+// Driver-only earnings summary. Gross completed fares include RouteX-funded promos.
+app.get("/drivers/me/earnings", authenticateDriver, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT TO_CHAR(completed_at AT TIME ZONE 'Africa/Johannesburg', 'YYYY-MM') AS month,
+             COUNT(*)::integer AS trips,
+             COALESCE(SUM(fare_amount), 0)::numeric AS gross_fares,
+             COALESCE(SUM(passenger_amount), 0)::numeric AS passenger_portion,
+             COALESCE(SUM(discount_amount), 0)::numeric AS promo_portion
+      FROM trip_bookings
+      WHERE assigned_driver_id = $1
+        AND trip_status = 'Completed'
+        AND completed_at IS NOT NULL
+      GROUP BY 1
+      ORDER BY month DESC
+    `, [req.authenticatedDriverId]);
+    return res.json({ months: result.rows });
+  } catch (error) {
+    console.error("DRIVER EARNINGS ERROR:", error);
+    return res.status(500).json({ error: "Could not load earnings" });
+  }
+});
+
 app.get("/completed-trips", async (req, res) => {
   try {
     const result = await pool.query(`

@@ -18,6 +18,13 @@ export default function DriverPortalPage() {
   const [acceptedTrips, setAcceptedTrips] = useState<any[]>([]);
   const [inProgressTrips, setInProgressTrips] = useState<any[]>([]);
   const [completedTrips, setCompletedTrips] = useState<any[]>([]);
+  const [earningsMonths, setEarningsMonths] = useState<Array<{
+    month: string; trips: number; gross_fares: string;
+    passenger_portion: string; promo_portion: string;
+  }>>([]);
+  const [earningsLoading, setEarningsLoading] = useState(true);
+  const [earningsError, setEarningsError] = useState(false);
+  const [showEarningsHistory, setShowEarningsHistory] = useState(false);
   const [completingId, setCompletingId] = useState<number | null>(null);
   const [showRecentTrips, setShowRecentTrips] = useState(false);
   const [loadingScheduled, setLoadingScheduled] = useState(true);
@@ -123,6 +130,26 @@ const response = await fetch(`${API_URL}/driver/upload-photo`, {
     }
   };
 
+  const loadDriverEarnings = async () => {
+    try {
+      const token = sessionStorage.getItem("driverToken");
+      if (!token) throw new Error("Driver login required");
+      const response = await fetch(`${API_URL}/drivers/me/earnings`, {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: "no-store",
+      });
+      if (!response.ok) throw new Error("Earnings unavailable");
+      const data = await response.json();
+      setEarningsMonths(Array.isArray(data.months) ? data.months : []);
+      setEarningsError(false);
+    } catch (error) {
+      console.error("DRIVER EARNINGS LOAD ERROR:", error);
+      setEarningsError(true);
+    } finally {
+      setEarningsLoading(false);
+    }
+  };
+
   const loadDriverRides = async (driverId: number) => {
     try {
       const [
@@ -210,6 +237,7 @@ const response = await fetch(`${API_URL}/driver/upload-photo`, {
       setDriver(parsedDriver);
 
       loadDriverRides(Number(parsedDriver.id));
+      void loadDriverEarnings();
       loadDriverRating(Number(parsedDriver.id));
       loadDriverReviews(Number(parsedDriver.id));
 
@@ -494,6 +522,7 @@ const response = await fetch(
       }
 
       await loadDriverRides(driver.id);
+      await loadDriverEarnings();
     } catch (error: any) {
       console.error("COMPLETE RIDE ERROR:", error);
       showAppPopup(
@@ -1351,6 +1380,42 @@ const response = await fetch(
                   ))}
               </div>
             )}
+          </section>
+
+          {/* MONTHLY EARNINGS */}
+          <section className="mt-9 rounded-[24px] bg-[#e7e9ee] dark:bg-[#1c1e24] p-5 shadow-[6px_6px_14px_#c4c6ca,-6px_-6px_14px_#ffffff] dark:shadow-[7px_7px_16px_#101116,-7px_-7px_16px_#30333d]">
+            <p className="text-[9px] font-extrabold uppercase tracking-[0.14em] text-[#ff6846]">My earnings</p>
+            <h3 className="mt-1 text-[17px] font-black">Monthly RouteX earnings</h3>
+            {earningsLoading ? (
+              <p className="mt-4 text-[11px]">Loading earnings...</p>
+            ) : earningsError ? (
+              <button type="button" onClick={() => void loadDriverEarnings()} className="mt-4 text-[11px] font-bold text-[#ff6846]">Unable to load earnings. Tap to retry.</button>
+            ) : (() => {
+              const thisMonth = new Intl.DateTimeFormat("sv-SE", { timeZone: "Africa/Johannesburg", year: "numeric", month: "2-digit" }).format(new Date()).slice(0, 7);
+              const current = earningsMonths.find((item) => item.month === thisMonth);
+              const money = (value: string | number) => `R${Number(value || 0).toLocaleString("en-ZA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+              return (
+                <>
+                  <p className="mt-4 text-[9px] font-bold text-[#92959b] dark:text-[#a9acb6]">This month · {thisMonth}</p>
+                  <p className="mt-1 text-[30px] font-black text-[#ff6846]">{money(current?.gross_fares || 0)}</p>
+                  <p className="mt-1 text-[10px] font-semibold">{current?.trips || 0} completed trips</p>
+                  <p className="mt-2 text-[9px] leading-4 text-[#92959b] dark:text-[#a9acb6]">Gross trip fares, including RouteX-funded promotions. This is not a confirmation of payment received.</p>
+                  <button type="button" onClick={() => setShowEarningsHistory((value) => !value)} aria-expanded={showEarningsHistory} className="mt-4 w-full rounded-[14px] bg-[#17191f] dark:bg-[#30333d] px-4 py-3 text-[11px] font-bold text-white">
+                    {showEarningsHistory ? "Hide monthly history" : "View monthly history"}
+                  </button>
+                  {showEarningsHistory && (
+                    <div className="mt-3 space-y-2">
+                      {earningsMonths.length === 0 ? <p className="text-[10px]">No completed trips recorded yet.</p> : earningsMonths.map((item) => (
+                        <div key={item.month} className="flex items-center justify-between rounded-[12px] border border-black/10 dark:border-white/10 p-3">
+                          <div><p className="text-[11px] font-bold">{item.month}</p><p className="text-[9px] text-[#92959b] dark:text-[#a9acb6]">{item.trips} trips</p></div>
+                          <p className="text-[12px] font-black">{money(item.gross_fares)}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </section>
 
           {/* RECENT TRIPS */}
