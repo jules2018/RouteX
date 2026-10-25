@@ -681,6 +681,14 @@ const response = await fetch(
             </button>
           </section>
 
+          {/* MONTHLY SHARED TRANSPORT — independent of Ride Now */}
+          <section className="mt-6 rounded-[24px] bg-[#e7e9ee] p-4 shadow-[6px_6px_14px_#c4c6ca,-6px_-6px_14px_#ffffff] dark:bg-[#1c1e24] dark:shadow-[7px_7px_16px_#101116,-7px_-7px_16px_#30333d]">
+            <p className="text-[9px] font-extrabold uppercase tracking-[0.13em] text-[#ff6846]">Extra earning opportunity</p>
+            <h3 className="mt-1 text-[17px] font-black">Monthly shared transport</h3>
+            <p className="mt-1 text-[10px] leading-5 text-[#777b83] dark:text-[#b1b5c0]">Offer regular morning and return trips. Set your route, monthly fare and passenger seats. Participation is optional.</p>
+            <a href="/driver-portal/monthly-transport" className="mt-3 flex w-full items-center justify-center rounded-[14px] bg-[#ff6846] px-4 py-3 text-[11px] font-black text-white">Manage monthly routes →</a>
+          </section>
+
           {/* SCHEDULED RIDES */}
           <section className="mt-7">
             <div className="mb-3 flex items-center justify-between">
