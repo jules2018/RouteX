@@ -6961,12 +6961,31 @@ const monthlyCoordinateValid = (value, max) => value == null || (typeof value ==
 
 app.get("/monthly-transport/my-routes", authenticateDriver, async (req, res) => {
   try {
-    const result = await pool.query(`
-      SELECT r.*, a.occupied_seats, a.available_seats
-      FROM public.monthly_routes r
-      JOIN public.monthly_route_availability a ON a.route_id = r.id
-      WHERE r.driver_id = $1 ORDER BY r.created_at DESC
-    `, [req.authenticatedDriverId]);
+   const result = await pool.query(`
+  SELECT
+    r.*,
+    a.occupied_seats,
+    a.available_seats,
+    COALESCE((
+      SELECT json_agg(
+        json_build_object(
+          'id', s.id,
+          'stop_label', s.stop_label,
+          'latitude', s.latitude,
+          'longitude', s.longitude,
+          'stop_order', s.stop_order,
+          'driver_approved', s.driver_approved
+        )
+        ORDER BY s.stop_order, s.id
+      )
+      FROM public.monthly_route_stops s
+      WHERE s.route_id = r.id
+    ), '[]'::json) AS stops
+  FROM public.monthly_routes r
+  JOIN public.monthly_route_availability a ON a.route_id = r.id
+  WHERE r.driver_id = $1
+  ORDER BY r.created_at DESC
+`, [req.authenticatedDriverId]);
     res.json(result.rows);
   } catch (error) {
     console.error("MONTHLY MY ROUTES ERROR:", error);

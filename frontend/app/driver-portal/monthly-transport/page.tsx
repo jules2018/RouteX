@@ -8,9 +8,26 @@ import { API_URL } from "../../lib/api";
 type AddressSuggestion = { full_address?: string; address?: string; name?: string; lat: number | string; lng: number | string };
 
 type Route = {
-  id: number; route_name: string; origin_label: string; destination_label: string;
-  morning_departure: string; afternoon_return: string; operating_days: number[];
-  seat_capacity: number; available_seats: number; monthly_fare: string; status: string;
+  id: number;
+  route_name: string;
+  origin_label: string;
+  destination_label: string;
+  morning_departure: string;
+  afternoon_return: string;
+  operating_days: number[];
+  seat_capacity: number;
+  available_seats: number;
+  monthly_fare: string;
+  status: string;
+
+  stops: {
+    id: number;
+    stop_label: string;
+    latitude: number | string;
+    longitude: number | string;
+    stop_order: number;
+    driver_approved: boolean;
+  }[];
 };
 const weekdays = [{id:1,name:"Mon"},{id:2,name:"Tue"},{id:3,name:"Wed"},{id:4,name:"Thu"},{id:5,name:"Fri"},{id:6,name:"Sat"},{id:7,name:"Sun"}];
 const inputStyle = "w-full rounded-xl border border-[#c8cbd1] bg-white px-3 py-3 text-sm text-[#17191f] outline-none focus:border-[#ff6846] dark:border-[#474a55] dark:bg-[#292c35] dark:text-white";
@@ -150,6 +167,7 @@ export default function MonthlyTransportDriverPage() {
       // The driver confirms this selected location is suitable before approval.
       await api(`/monthly-transport/my-routes/${stopRouteId}/stops/${stop.id}/approve`, { method: "PATCH" });
       setMessage("Pickup point saved and approved. You can now activate the route.");
+      await refresh();
       setStopRouteId(null); setStopName(""); setStopQuery(""); setStopSuggestions([]); setStopLat(""); setStopLng(""); setStopOrder("0");
     } catch (e) { setError(e instanceof Error ? e.message : "Could not add pickup point."); }
     finally { setBusy(false); }
@@ -180,6 +198,48 @@ export default function MonthlyTransportDriverPage() {
           <p className="text-sm">{route.origin_label} → {route.destination_label}</p>
           <p className="text-xs text-[#6e727a] dark:text-[#b3b6bf]">{String(route.morning_departure).slice(0,5)} out · {String(route.afternoon_return).slice(0,5)} return · {route.operating_days.map(n=>weekdays.find(d=>d.id===n)?.name).join(", ")}</p>
           <p className="text-sm font-bold">R{Number(route.monthly_fare).toFixed(2)}/month · {route.available_seats} of {route.seat_capacity} seats available</p>
+          <div className="mt-3 rounded-xl border border-[#c8cbd1] p-3 dark:border-[#474a55]">
+  <h4 className="mb-2 text-sm font-bold">
+    Pickup points ({route.stops?.length ?? 0})
+  </h4>
+
+  {!route.stops?.length ? (
+    <p className="text-xs text-[#70747d] dark:text-[#b3b6bf]">
+      No pickup points added yet.
+    </p>
+  ) : (
+    <div className="space-y-2">
+      {route.stops.map((stop) => (
+        <div
+          key={stop.id}
+          className="rounded-xl bg-white p-3 text-xs dark:bg-[#292c35]"
+        >
+          <div className="flex items-start justify-between gap-2">
+            <p className="font-bold">{stop.stop_label}</p>
+            <span
+              className={
+                stop.driver_approved
+                  ? "text-green-600 dark:text-green-400"
+                  : "text-orange-600 dark:text-orange-400"
+              }
+            >
+              {stop.driver_approved ? "Approved" : "Pending"}
+            </span>
+          </div>
+
+          <a
+            href={`https://www.google.com/maps/search/?api=1&query=${stop.latitude},${stop.longitude}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-2 inline-block font-bold text-[#ff6846] underline"
+          >
+            View on map
+          </a>
+        </div>
+      ))}
+    </div>
+  )}
+</div>
           <div className="flex flex-wrap gap-2">{["draft","paused"].includes(route.status) && <button disabled={busy} type="button" onClick={()=>{setStopRouteId(route.id);setStopOrder("0");}} className="rounded-xl bg-[#d5d7dc] px-3 py-2 text-xs font-bold dark:bg-[#353842]">Add pickup point</button>}
           {route.status!=="active" && route.status!=="closed" && <button disabled={busy} type="button" onClick={()=>void updateStatus(route,"active")} className="rounded-xl bg-[#ff6846] px-3 py-2 text-xs font-bold text-white">Activate</button>}
           {route.status==="active" && <button disabled={busy} type="button" onClick={()=>void updateStatus(route,"paused")} className="rounded-xl bg-[#d5d7dc] px-3 py-2 text-xs font-bold dark:bg-[#353842]">Pause</button>}
