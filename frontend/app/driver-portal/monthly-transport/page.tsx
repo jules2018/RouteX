@@ -113,6 +113,26 @@ export default function MonthlyTransportDriverPage() {
     <div className="mx-auto max-w-lg space-y-5">
       <div className="flex items-center justify-between gap-3"><div><p className="text-xs font-black uppercase tracking-widest text-[#ff6846]">RouteX Driver</p><h1 className="text-2xl font-black">Monthly Transport</h1></div><button type="button" onClick={() => router.push("/driver-portal")} className="rounded-xl border border-[#bfc2c9] px-3 py-2 text-xs font-bold dark:border-[#4b4e58]">Back to portal</button></div>
       <p className="text-xs leading-5 text-[#70747d] dark:text-[#b3b6bf]">Offer regular shared transport with a morning trip and afternoon return. Your normal Ride Now availability is not affected.</p>
+      <div className="rounded-2xl border border-[#ff6846]/40 bg-[#ff6846]/10 p-4">
+  <div className="flex items-center gap-2">
+    <span className="text-lg">ℹ️</span>
+    <h3 className="text-sm font-bold text-[#ff6846]">
+      Monthly Transport — Prototype
+    </h3>
+  </div>
+
+  <p className="mt-2 text-xs leading-5">
+    We're currently developing and testing RouteX Monthly
+    Shared Transport. This feature will allow drivers to
+    offer regular transport for work, school and other
+    destinations.
+  </p>
+
+  <p className="mt-2 text-xs font-semibold leading-5">
+    This feature is not yet available for real passenger
+    bookings. We'll notify drivers when it officially launches.
+  </p>
+</div>
       {error && <div role="alert" className="rounded-xl border border-red-400 p-3 text-sm text-red-600 dark:text-red-300">{error}</div>}
       {message && <div role="status" className="rounded-xl border border-green-500 p-3 text-sm text-green-700 dark:text-green-300">{message}</div>}
       <section className={cardStyle}><h2 className="mb-3 text-lg font-black">Create a monthly route</h2>
