@@ -31,7 +31,11 @@ type Route = {
 };
 const weekdays = [{id:1,name:"Mon"},{id:2,name:"Tue"},{id:3,name:"Wed"},{id:4,name:"Thu"},{id:5,name:"Fri"},{id:6,name:"Sat"},{id:7,name:"Sun"}];
 const inputStyle = "w-full rounded-xl border border-[#c8cbd1] bg-white px-3 py-3 text-sm text-[#17191f] outline-none focus:border-[#ff6846] dark:border-[#474a55] dark:bg-[#292c35] dark:text-white";
-const cardStyle = "rounded-2xl bg-[#e7e9ee] p-4 shadow-[5px_5px_12px_#c4c6ca,-5px_-5px_12px_#ffffff] dark:bg-[#1c1e24] dark:shadow-[5px_5px_12px_#101116,-5px_-5px_12px_#30333d]";
+const cardStyle =
+  "rounded-[22px] border border-white/70 bg-white/85 p-5 " +
+  "shadow-[0_8px_24px_rgba(20,25,40,0.06),0_2px_6px_rgba(20,25,40,0.03)] " +
+  "dark:border-white/10 dark:bg-[#242730] " +
+  "dark:shadow-[0_8px_24px_rgba(0,0,0,0.18)]";
 
 export default function MonthlyTransportDriverPage() {
   const router = useRouter();
@@ -175,12 +179,12 @@ export default function MonthlyTransportDriverPage() {
 
   return <AuthGuard><main className="min-h-screen bg-[#e7e9ee] px-4 py-6 text-[#17191f] dark:bg-[#1c1e24] dark:text-white">
     <div className="mx-auto max-w-lg space-y-5">
-      <div className="flex items-center justify-between gap-3"><div><p className="text-xs font-black uppercase tracking-widest text-[#ff6846]">RouteX Driver</p><h1 className="text-2xl font-black">Monthly Transport</h1></div><button type="button" onClick={() => router.push("/driver-portal")} className="rounded-xl border border-[#bfc2c9] px-3 py-2 text-xs font-bold dark:border-[#4b4e58]">Back to portal</button></div>
+      <div className="flex items-center justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-widest text-[#ff6846]">RouteX Driver</p><h1 className="text-2xl font-semibold">Monthly Transport</h1></div><button type="button" onClick={() => router.push("/driver-portal")} className="rounded-xl border border-[#bfc2c9] px-3 py-2 text-xs font-bold dark:border-[#4b4e58]">Back to portal</button></div>
       <p className="text-xs leading-5 text-[#70747d] dark:text-[#b3b6bf]">Offer regular shared transport with a morning trip and afternoon return. Your normal Ride Now availability is not affected.</p>
       {error && <div role="alert" className="rounded-xl border border-red-400 p-3 text-sm text-red-600 dark:text-red-300">{error}</div>}
       {message && <div role="status" className="rounded-xl border border-green-500 p-3 text-sm text-green-700 dark:text-green-300">{message}</div>}
       <div className="rounded-2xl border border-[#ff6846]/40 bg-[#ff6846]/10 p-4 text-xs leading-5"><p className="font-bold text-[#ff6846]">Monthly Transport — Prototype</p><p className="mt-2">This feature is being developed and tested. Routes are for testing only; real passenger bookings and payments are not yet available. Drivers will be informed when the service launches.</p></div>
-      <section className={cardStyle}><h2 className="mb-3 text-lg font-black">Create a monthly route</h2>
+      <section className={cardStyle}><h2 className="mb-3 text-lg font-semibold">Create a monthly route</h2>
         <form onSubmit={createRoute} className="space-y-3">
           <label className="block text-xs font-bold">Route name<input required minLength={2} maxLength={180} className={`${inputStyle} mt-1`} value={routeName} onChange={e=>setRouteName(e.target.value)} placeholder="e.g. Rosedale to CBD" /></label>
           <label className="block text-xs font-bold">Starting area<input required minLength={2} className={`${inputStyle} mt-1`} value={origin} onChange={e=>setOrigin(e.target.value)} placeholder="e.g. Rosedale" /></label>
@@ -189,16 +193,16 @@ export default function MonthlyTransportDriverPage() {
           <div><p className="mb-2 text-xs font-bold">Operating days</p><div className="flex flex-wrap gap-2">{weekdays.map(day=><label key={day.id} className={`cursor-pointer rounded-lg px-2 py-2 text-xs font-bold ${days.includes(day.id)?"bg-[#ff6846] text-white":"bg-[#d7d9df] dark:bg-[#343741]"}`}><input type="checkbox" className="sr-only" checked={days.includes(day.id)} onChange={e=>setDays(prev=>e.target.checked?[...prev,day.id]:prev.filter(id=>id!==day.id))}/>{day.name}</label>)}</div></div>
           <div className="grid grid-cols-2 gap-3"><label className="text-xs font-bold">Passenger seats<input type="number" required min={1} max={30} step={1} className={`${inputStyle} mt-1`} value={seats} onChange={e=>setSeats(e.target.value)}/></label><label className="text-xs font-bold">Monthly fare (R)<input type="number" required min="1" step="0.01" className={`${inputStyle} mt-1`} value={fare} onChange={e=>setFare(e.target.value)} placeholder="e.g. 850"/></label></div>
           <p className="text-[11px] text-[#70747d] dark:text-[#b3b6bf]">The driver sets the monthly fare. Payment and passenger bookings are not enabled in this phase.</p>
-          <button type="submit" disabled={busy} className="w-full rounded-xl bg-[#ff6846] py-3 text-sm font-black text-white disabled:opacity-50">{busy?"Saving...":"Create draft route"}</button>
+          <button type="submit" disabled={busy} className="w-full rounded-xl bg-[#ff6846] py-3 text-sm font-semibold text-white disabled:opacity-50">{busy?"Saving...":"Create draft route"}</button>
         </form>
       </section>
-      <section className="space-y-3"><h2 className="text-lg font-black">My monthly routes</h2>
+      <section className="space-y-3"><h2 className="text-lg font-semibold">My monthly routes</h2>
         {loading ? <p className="text-sm">Loading routes...</p> : routes.length===0 ? <div className={cardStyle}><p className="text-sm">No monthly routes created yet.</p></div> : routes.map(route=><article key={route.id} className={`${cardStyle} space-y-2`}>
-          <div className="flex items-start justify-between gap-2"><h3 className="text-base font-black">{route.route_name}</h3><span className="rounded-full bg-[#d4d6dc] px-2 py-1 text-[10px] font-bold capitalize dark:bg-[#353842]">{route.status}</span></div>
+          <div className="flex items-start justify-between gap-2"><h3 className="text-base font-semibold">{route.route_name}</h3><span className="rounded-full border border-[#e5e7eb] bg-[#f3f4f6] px-3 py-1 text-[11px] font-medium capitalize text-[#687080] dark:border-white/10 dark:bg-[#353842] dark:text-[#c7cbd4]">{route.status}</span></div>
           <p className="text-sm">{route.origin_label} → {route.destination_label}</p>
           <p className="text-xs text-[#6e727a] dark:text-[#b3b6bf]">{String(route.morning_departure).slice(0,5)} out · {String(route.afternoon_return).slice(0,5)} return · {route.operating_days.map(n=>weekdays.find(d=>d.id===n)?.name).join(", ")}</p>
           <p className="text-sm font-bold">R{Number(route.monthly_fare).toFixed(2)}/month · {route.available_seats} of {route.seat_capacity} seats available</p>
-          <div className="mt-3 rounded-xl border border-[#c8cbd1] p-3 dark:border-[#474a55]">
+          <div className="mt-4 rounded-2xl border border-[#edf0f4] bg-[#f7f8fb] p-4 dark:border-white/10 dark:bg-[#1c1e24]">
   <h4 className="mb-2 text-sm font-bold">
     Pickup points ({route.stops?.length ?? 0})
   </h4>
@@ -212,10 +216,12 @@ export default function MonthlyTransportDriverPage() {
       {route.stops.map((stop) => (
         <div
           key={stop.id}
-          className="rounded-xl bg-white p-3 text-xs dark:bg-[#292c35]"
+         className="rounded-xl border border-[#edf0f4] bg-white p-3.5 text-sm shadow-sm dark:border-white/10 dark:bg-[#292c35]"
         >
           <div className="flex items-start justify-between gap-2">
-            <p className="font-bold">{stop.stop_label}</p>
+           <p className="font-normal leading-relaxed text-[#454b57] dark:text-[#e0e2e8]">
+  {stop.stop_label}
+</p>
             <span
               className={
                 stop.driver_approved
@@ -240,11 +246,11 @@ export default function MonthlyTransportDriverPage() {
     </div>
   )}
 </div>
-          <div className="flex flex-wrap gap-2">{["draft","paused"].includes(route.status) && <button disabled={busy} type="button" onClick={()=>{setStopRouteId(route.id);setStopOrder("0");}} className="rounded-xl bg-[#d5d7dc] px-3 py-2 text-xs font-bold dark:bg-[#353842]">Add pickup point</button>}
-          {route.status!=="active" && route.status!=="closed" && <button disabled={busy} type="button" onClick={()=>void updateStatus(route,"active")} className="rounded-xl bg-[#ff6846] px-3 py-2 text-xs font-bold text-white">Activate</button>}
+          <div className="flex flex-wrap gap-2">{["draft","paused"].includes(route.status) && <button disabled={busy} type="button" onClick={()=>{setStopRouteId(route.id);setStopOrder("0");}} className="rounded-xl border border-[#e5e7eb] bg-[#f3f4f6] px-4 py-2.5 text-xs font-medium text-[#454b57] transition-colors hover:bg-[#e9ebef] dark:border-white/10 dark:bg-[#353842] dark:text-white">Add pickup point</button>}
+          {route.status!=="active" && route.status!=="closed" && <button disabled={busy} type="button" onClick={()=>void updateStatus(route,"active")} className="rounded-xl bg-[#ff6846] px-4 py-2.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-[#f25735]">Activate</button>}
           {route.status==="active" && <button disabled={busy} type="button" onClick={()=>void updateStatus(route,"paused")} className="rounded-xl bg-[#d5d7dc] px-3 py-2 text-xs font-bold dark:bg-[#353842]">Pause</button>}
           {route.status!=="closed" && <button disabled={busy} type="button" onClick={()=>void updateStatus(route,"closed")} className="rounded-xl border border-[#aeb1ba] px-3 py-2 text-xs font-bold dark:border-[#51545d]">Close</button>}</div>
-          {stopRouteId===route.id && <form onSubmit={addStop} className="mt-3 space-y-3 rounded-xl border border-[#c3c5cb] p-3 dark:border-[#464954]"><h4 className="text-sm font-black">Add a safe pickup point</h4><p className="text-xs">Use a legal, safe stopping location. Enter its GPS coordinates from a map and verify them before approving.</p>
+          {stopRouteId===route.id && <form onSubmit={addStop} className="mt-3 space-y-3 rounded-xl border border-[#c3c5cb] p-3 dark:border-[#464954]"><h4 className="text-sm font-semibold">Add a safe pickup point</h4><p className="text-xs">Use a legal, safe stopping location. Enter its GPS coordinates from a map and verify them before approving.</p>
             <label className="block text-xs font-bold">Search pickup address or landmark
               <input required minLength={2} autoComplete="off" className={`${inputStyle} mt-1`} value={stopQuery} onChange={e=>{
                 setStopQuery(e.target.value); setStopName(""); setStopLat(""); setStopLng("");
@@ -263,7 +269,7 @@ export default function MonthlyTransportDriverPage() {
             </div> : <p className="text-xs text-[#70747d] dark:text-[#b3b6bf]">Select an address from the suggestions before saving.</p>}
             <label className="block text-xs font-bold">Stop order<input required type="number" min={0} step={1} className={`${inputStyle} mt-1`} value={stopOrder} onChange={e=>setStopOrder(e.target.value)}/></label>
             <label className="flex items-start gap-2 text-xs"><input type="checkbox" required/>I confirm this pickup point is a safe and permitted stopping location.</label>
-            <div className="flex gap-2"><button type="submit" disabled={busy || !stopLat || !stopLng} className="flex-1 rounded-xl bg-[#ff6846] py-3 text-xs font-black text-white disabled:opacity-50">Save & approve point</button><button type="button" onClick={()=>setStopRouteId(null)} className="rounded-xl px-3 text-xs font-bold">Cancel</button></div>
+            <div className="flex gap-2"><button type="submit" disabled={busy || !stopLat || !stopLng} className="flex-1 rounded-xl bg-[#ff6846] py-3 text-xs font-semibold text-white disabled:opacity-50">Save & approve point</button><button type="button" onClick={()=>setStopRouteId(null)} className="rounded-xl px-3 text-xs font-bold">Cancel</button></div>
           </form>}
         </article>)}
       </section>
