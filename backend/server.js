@@ -5050,7 +5050,10 @@ d.license_plate
 app.get("/drivers/me/earnings", authenticateDriver, async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT TO_CHAR(completed_at AT TIME ZONE 'Africa/Johannesburg', 'YYYY-MM') AS month,
+      SELECT COALESCE(
+               TO_CHAR(completed_at AT TIME ZONE 'Africa/Johannesburg', 'YYYY-MM'),
+               TO_CHAR(created_at, 'YYYY-MM')
+             ) AS month,
              COUNT(*)::integer AS trips,
              COALESCE(SUM(fare_amount), 0)::numeric AS gross_fares,
              COALESCE(SUM(passenger_amount), 0)::numeric AS passenger_portion,
@@ -5058,7 +5061,7 @@ app.get("/drivers/me/earnings", authenticateDriver, async (req, res) => {
       FROM trip_bookings
       WHERE assigned_driver_id = $1
         AND trip_status = 'Completed'
-        AND completed_at IS NOT NULL
+        AND (completed_at IS NOT NULL OR created_at IS NOT NULL)
       GROUP BY 1
       ORDER BY month DESC
     `, [req.authenticatedDriverId]);
