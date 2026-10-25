@@ -1853,6 +1853,44 @@ app.post("/bookings", async (req, res) => {
       bookingClient.release();
     }
 
+    // RouteX address learning: save only after booking creation succeeds.
+    // These records are private and are NOT added to public.addresses.
+    // Failure must never prevent a valid booking from succeeding.
+    try {
+      const saveLocation = async (role, label, lat, lng) => {
+        const latitude = Number(lat);
+        const longitude = Number(lng);
+        const safeLabel = String(label || "").trim().slice(0, 500);
+        if (
+          !safeLabel || /^(current location|gps pickup|gps destination)$/i.test(safeLabel) ||
+          !Number.isFinite(latitude) || !Number.isFinite(longitude) ||
+          latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180
+        ) return;
+
+        // Deduplicate within approximately 40 metres for the same passenger.
+        // Keep the first saved label/coordinates as the stable reference.
+        await pool.query(`
+          INSERT INTO public.passenger_saved_locations
+            (passenger_id, booking_id, label, full_address, latitude, longitude,
+             location_role, source, is_public)
+          SELECT $1, $2, $3, $3, $4, $5, $6, 'confirmed_booking', FALSE
+          WHERE NOT EXISTS (
+            SELECT 1 FROM public.passenger_saved_locations
+            WHERE passenger_id = $1
+              AND (6371000 * 2 * ASIN(LEAST(1, SQRT(
+                POWER(SIN(RADIANS(latitude - $4) / 2), 2) +
+                COS(RADIANS($4)) * COS(RADIANS(latitude)) *
+                POWER(SIN(RADIANS(longitude - $5) / 2), 2)
+              )))) < 40
+          )
+        `, [passenger_id, newBooking.id, safeLabel, latitude, longitude, role]);
+      };
+      await saveLocation('pickup', pickup_address, pickupLat, pickupLng);
+      await saveLocation('destination', dropoff_address, destinationLat, destinationLng);
+    } catch (locationSaveError) {
+      console.error('PRIVATE ADDRESS LEARNING SKIPPED:', locationSaveError.message);
+    }
+
     if (!isScheduledRide) {
       try {
         console.log("LOOKING FOR NEARBY DRIVERS FOR WHATSAPP");
@@ -5750,6 +5788,41 @@ app.get("/ambassador/:code/referrals", async (req, res) => {
   }
 });
 
+// Private learned-address search: the signed token, not a supplied passenger ID,
+// determines whose saved locations may be returned.
+app.get("/passenger/saved-locations", async (req, res) => {
+  const secret = process.env.PASSENGER_JWT_SECRET;
+  const match = /^Bearer (.+)$/i.exec(String(req.headers.authorization || ""));
+  if (!secret || !match) return res.status(401).json({ error: "Passenger sign-in required" });
+  let identity;
+  try {
+    identity = jwt.verify(match[1], secret, { algorithms: ["HS256"] });
+    if (identity.role !== "passenger" || !Number.isSafeInteger(Number(identity.passengerId))) {
+      return res.status(403).json({ error: "Passenger access required" });
+    }
+  } catch (_) {
+    return res.status(401).json({ error: "Passenger session expired. Please sign in again." });
+  }
+  const q = String(req.query.q || "").trim().slice(0, 120);
+  if (q.length < 3) return res.json([]);
+  try {
+    const result = await pool.query(`
+      SELECT label AS address, COALESCE(full_address, label) AS full_address,
+             area_name, latitude AS lat, longitude AS lng,
+             'saved' AS place_type, 'private' AS source
+      FROM public.passenger_saved_locations
+      WHERE passenger_id = $1
+        AND (label ILIKE $2 OR full_address ILIKE $2 OR area_name ILIKE $2)
+      ORDER BY created_at DESC
+      LIMIT 12
+    `, [Number(identity.passengerId), '%' + q.replace(/[\%_]/g, '\\$&') + '%']);
+    return res.json(result.rows);
+  } catch (error) {
+    console.error("SAVED LOCATION SEARCH ERROR:", error);
+    return res.status(500).json({ error: "Saved address search unavailable" });
+  }
+});
+
 app.post("/passenger-login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -5828,7 +5901,19 @@ app.post("/passenger-login", async (req, res) => {
       });
     }
 
-    res.json(passengerResult.rows[0]);
+    // Issue a signed passenger session for private address access.
+    const passengerSecret = process.env.PASSENGER_JWT_SECRET;
+    if (!passengerSecret) {
+      console.error("PASSENGER_JWT_SECRET is not configured");
+      return res.status(503).json({ error: "Passenger login temporarily unavailable" });
+    }
+    const passenger = passengerResult.rows[0];
+    const passengerToken = jwt.sign(
+      { passengerId: passenger.id, role: "passenger" },
+      passengerSecret,
+      { expiresIn: "7d", algorithm: "HS256" }
+    );
+    res.json({ ...passenger, token: passengerToken });
   } catch (error) {
     console.error("PASSENGER LOGIN ERROR:", error);
 

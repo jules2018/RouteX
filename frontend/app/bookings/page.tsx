@@ -352,9 +352,24 @@ if (rideType === "scheduled") {
 
       const data = await response.json();
 
-      setPickupResults(
-        Array.isArray(data) ? data : data.results || data.items || [],
-      );
+      const publicResults: AddressResult[] = Array.isArray(data) ? data : data.results || data.items || [];
+      let privateResults: AddressResult[] = [];
+      const token = passenger?.token;
+      if (token) {
+        try {
+          const savedResponse = await fetch(
+            `${API_URL}/passenger/saved-locations?q=${encodeURIComponent(cleanQuery)}`,
+            { headers: { Authorization: `Bearer ${token}` } },
+          );
+          if (savedResponse.ok) {
+            const saved = await savedResponse.json();
+            if (Array.isArray(saved)) privateResults = saved;
+          }
+        } catch (error) {
+          console.warn("Private pickup address search unavailable:", error);
+        }
+      }
+      setPickupResults([...privateResults, ...publicResults]);
 
       setPickupSearchFinished(true);
     } catch (error) {
@@ -394,9 +409,24 @@ if (rideType === "scheduled") {
 
       const data = await response.json();
 
-      setDestinationResults(
-        Array.isArray(data) ? data : data.results || data.items || [],
-      );
+      const publicResults: AddressResult[] = Array.isArray(data) ? data : data.results || data.items || [];
+      let privateResults: AddressResult[] = [];
+      const token = passenger?.token;
+      if (token) {
+        try {
+          const savedResponse = await fetch(
+            `${API_URL}/passenger/saved-locations?q=${encodeURIComponent(cleanQuery)}`,
+            { headers: { Authorization: `Bearer ${token}` } },
+          );
+          if (savedResponse.ok) {
+            const saved = await savedResponse.json();
+            if (Array.isArray(saved)) privateResults = saved;
+          }
+        } catch (error) {
+          console.warn("Private destination address search unavailable:", error);
+        }
+      }
+      setDestinationResults([...privateResults, ...publicResults]);
 
       setDestinationSearchFinished(true);
     } catch (error) {
