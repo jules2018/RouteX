@@ -6949,6 +6949,163 @@ setInterval(async () => {
   }
 }, 60 * 1000);
 
+
+// ============================================================
+// MONTHLY SHARED TRANSPORT - driver route management (phase 2)
+// Independent of Ride Now and Scheduled Rides.
+// ============================================================
+const monthlyDaysValid = (days) => Array.isArray(days) && days.length > 0 && days.length <= 7 && days.every((d) => Number.isInteger(d) && d >= 1 && d <= 7) && new Set(days).size === days.length;
+const monthlyTimeValid = (time) => typeof time === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(time);
+const monthlyLabelValid = (value) => typeof value === "string" && value.trim().length >= 2 && value.trim().length <= 180;
+const monthlyCoordinateValid = (value, max) => value == null || (typeof value === "number" && Number.isFinite(value) && Math.abs(value) <= max);
+
+app.get("/monthly-transport/my-routes", authenticateDriver, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT r.*, a.occupied_seats, a.available_seats
+      FROM public.monthly_routes r
+      JOIN public.monthly_route_availability a ON a.route_id = r.id
+      WHERE r.driver_id = $1 ORDER BY r.created_at DESC
+    `, [req.authenticatedDriverId]);
+    res.json(result.rows);
+  } catch (error) {
+    console.error("MONTHLY MY ROUTES ERROR:", error);
+    res.status(500).json({ error: "Unable to load monthly routes." });
+  }
+});
+
+app.post("/monthly-transport/my-routes", authenticateDriver, async (req, res) => {
+  try {
+    const {
+      route_name, origin_label, destination_label,
+      origin_lat = null, origin_lng = null,
+      destination_lat = null, destination_lng = null,
+      morning_departure, afternoon_return,
+      operating_days = [1,2,3,4,5], seat_capacity, monthly_fare
+    } = req.body || {};
+    const seats = Number(seat_capacity);
+    const fare = Number(monthly_fare);
+    if (![route_name, origin_label, destination_label].every(monthlyLabelValid) ||
+        !monthlyTimeValid(morning_departure) || !monthlyTimeValid(afternoon_return) ||
+        !monthlyDaysValid(operating_days) ||
+        !Number.isInteger(seats) || seats < 1 || seats > 30 ||
+        !Number.isFinite(fare) || fare <= 0 || fare > 100000 ||
+        !monthlyCoordinateValid(origin_lat, 90) || !monthlyCoordinateValid(origin_lng, 180) ||
+        !monthlyCoordinateValid(destination_lat, 90) || !monthlyCoordinateValid(destination_lng, 180)) {
+      return res.status(400).json({ error: "Please provide valid route, schedule, seat and fare details." });
+    }
+    const result = await pool.query(`
+      INSERT INTO public.monthly_routes
+        (driver_id, route_name, origin_label, destination_label, origin_lat, origin_lng,
+         destination_lat, destination_lng, morning_departure, afternoon_return,
+         operating_days, seat_capacity, monthly_fare, status)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,'draft') RETURNING *
+    `, [req.authenticatedDriverId, route_name.trim(), origin_label.trim(), destination_label.trim(),
+        origin_lat, origin_lng, destination_lat, destination_lng,
+        morning_departure, afternoon_return, operating_days, seats, fare]);
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    console.error("MONTHLY CREATE ROUTE ERROR:", error);
+    res.status(500).json({ error: "Unable to create monthly route." });
+  }
+});
+
+app.patch("/monthly-transport/my-routes/:id/status", authenticateDriver, async (req, res) => {
+  try {
+    const { status } = req.body || {};
+    if (!['draft', 'active', 'paused', 'closed'].includes(status) || !/^\d+$/.test(req.params.id)) {
+      return res.status(400).json({ error: "Invalid route or status." });
+    }
+    // A route may only be activated after its pickup points have been approved.
+    if (status === 'active') {
+      const stops = await pool.query(`
+        SELECT COUNT(*)::int AS total FROM public.monthly_route_stops
+        WHERE route_id=$1 AND driver_approved=true
+      `, [req.params.id]);
+      if (stops.rows[0].total < 1) {
+        return res.status(409).json({ error: "Add and approve a safe pickup point before activating this route." });
+      }
+    }
+    const result = await pool.query(`
+      UPDATE public.monthly_routes SET status=$1, updated_at=now()
+      WHERE id=$2 AND driver_id=$3 RETURNING *
+    `, [status, req.params.id, req.authenticatedDriverId]);
+    if (!result.rowCount) return res.status(404).json({ error: "Route not found." });
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error("MONTHLY STATUS ERROR:", error);
+    res.status(500).json({ error: "Unable to update monthly route." });
+  }
+});
+
+app.post("/monthly-transport/my-routes/:id/stops", authenticateDriver, async (req, res) => {
+  try {
+    const { stop_label, latitude, longitude, stop_order, pickup_allowed = true, dropoff_allowed = true } = req.body || {};
+    if (!/^\d+$/.test(req.params.id) || !monthlyLabelValid(stop_label) ||
+        !monthlyCoordinateValid(latitude, 90) || latitude == null ||
+        !monthlyCoordinateValid(longitude, 180) || longitude == null ||
+        !Number.isInteger(stop_order) || stop_order < 0 || stop_order > 100 ||
+        typeof pickup_allowed !== 'boolean' || typeof dropoff_allowed !== 'boolean') {
+      return res.status(400).json({ error: "Invalid pickup point details." });
+    }
+    const result = await pool.query(`
+      INSERT INTO public.monthly_route_stops
+        (route_id, stop_label, latitude, longitude, stop_order, pickup_allowed, dropoff_allowed, driver_approved)
+      SELECT r.id, $3, $4, $5, $6, $7, $8, false
+      FROM public.monthly_routes r WHERE r.id=$1 AND r.driver_id=$2 AND r.status IN ('draft','paused')
+      RETURNING *
+    `, [req.params.id, req.authenticatedDriverId, stop_label.trim(), latitude, longitude, stop_order, pickup_allowed, dropoff_allowed]);
+    if (!result.rowCount) return res.status(404).json({ error: "Draft or paused route not found." });
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    if (error.code === '23505') return res.status(409).json({ error: "A stop with this order already exists." });
+    console.error("MONTHLY STOP ERROR:", error);
+    res.status(500).json({ error: "Unable to save pickup point." });
+  }
+});
+
+app.patch("/monthly-transport/my-routes/:routeId/stops/:stopId/approve", authenticateDriver, async (req, res) => {
+  try {
+    if (!/^\d+$/.test(req.params.routeId) || !/^\d+$/.test(req.params.stopId)) return res.status(400).json({ error: "Invalid pickup point." });
+    const result = await pool.query(`
+      UPDATE public.monthly_route_stops s SET driver_approved=true
+      FROM public.monthly_routes r
+      WHERE s.id=$1 AND s.route_id=r.id AND r.id=$2 AND r.driver_id=$3
+      RETURNING s.*
+    `, [req.params.stopId, req.params.routeId, req.authenticatedDriverId]);
+    if (!result.rowCount) return res.status(404).json({ error: "Pickup point not found." });
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error("MONTHLY APPROVE STOP ERROR:", error);
+    res.status(500).json({ error: "Unable to approve pickup point." });
+  }
+});
+
+app.get("/monthly-transport/routes", async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT r.id, r.route_name, r.origin_label, r.destination_label,
+             r.origin_lat, r.origin_lng, r.destination_lat, r.destination_lng,
+             r.morning_departure, r.afternoon_return, r.operating_days,
+             r.monthly_fare, a.available_seats, a.seat_capacity,
+             COALESCE((SELECT json_agg(json_build_object(
+               'id', s.id, 'label', s.stop_label, 'latitude', s.latitude,
+               'longitude', s.longitude, 'pickup_allowed', s.pickup_allowed,
+               'dropoff_allowed', s.dropoff_allowed) ORDER BY s.stop_order)
+               FROM public.monthly_route_stops s
+               WHERE s.route_id=r.id AND s.driver_approved=true), '[]'::json) AS stops
+      FROM public.monthly_routes r
+      JOIN public.monthly_route_availability a ON a.route_id=r.id
+      WHERE r.status='active'
+      ORDER BY r.created_at DESC LIMIT 100
+    `);
+    res.json(result.rows);
+  } catch (error) {
+    console.error("MONTHLY PUBLIC ROUTES ERROR:", error);
+    res.status(500).json({ error: "Unable to load monthly transport routes." });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
