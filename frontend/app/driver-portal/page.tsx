@@ -27,6 +27,7 @@ export default function DriverPortalPage() {
   const [showEarningsHistory, setShowEarningsHistory] = useState(false);
   const [completingId, setCompletingId] = useState<number | null>(null);
   const [showRecentTrips, setShowRecentTrips] = useState(false);
+  const [driverSidebar, setDriverSidebar] = useState<"earnings" | "trips" | null>(null);
   const [loadingScheduled, setLoadingScheduled] = useState(true);
   const [acceptingId, setAcceptingId] = useState<number | null>(null);
   const [startingId, setStartingId] = useState<number | null>(null);
@@ -557,6 +558,14 @@ const response = await fetch(
             <h1 className="text-[25px] font-black tracking-[-0.06em]">
               Route<span className="text-[#ff6846]">X</span>
             </h1>
+            <button
+              type="button"
+              onClick={() => setDriverSidebar("earnings")}
+              aria-label="Open earnings and completed bookings sidebar"
+              className="flex h-11 w-11 items-center justify-center rounded-[15px] bg-[#e7e9ee] dark:bg-[#1c1e24] shadow-[4px_4px_9px_#c4c6ca,-4px_-4px_9px_#ffffff] dark:shadow-[5px_5px_12px_#101116,-5px_-5px_12px_#30333d]"
+            >
+              <span className="text-[22px] leading-none" aria-hidden="true">☰</span>
+            </button>
           </header>
 
           {/* DRIVER */}
@@ -1382,98 +1391,6 @@ const response = await fetch(
             )}
           </section>
 
-          {/* MONTHLY EARNINGS */}
-          <section className="mt-9 rounded-[24px] bg-[#e7e9ee] dark:bg-[#1c1e24] p-5 shadow-[6px_6px_14px_#c4c6ca,-6px_-6px_14px_#ffffff] dark:shadow-[7px_7px_16px_#101116,-7px_-7px_16px_#30333d]">
-            <p className="text-[9px] font-extrabold uppercase tracking-[0.14em] text-[#ff6846]">My earnings</p>
-            <h3 className="mt-1 text-[17px] font-black">Monthly RouteX earnings</h3>
-            {earningsLoading ? (
-              <p className="mt-4 text-[11px]">Loading earnings...</p>
-            ) : earningsError ? (
-              <button type="button" onClick={() => void loadDriverEarnings()} className="mt-4 text-[11px] font-bold text-[#ff6846]">Unable to load earnings. Tap to retry.</button>
-            ) : (() => {
-              const thisMonth = new Intl.DateTimeFormat("sv-SE", { timeZone: "Africa/Johannesburg", year: "numeric", month: "2-digit" }).format(new Date()).slice(0, 7);
-              const current = earningsMonths.find((item) => item.month === thisMonth);
-              const money = (value: string | number) => `R${Number(value || 0).toLocaleString("en-ZA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-              return (
-                <>
-                  <p className="mt-4 text-[9px] font-bold text-[#92959b] dark:text-[#a9acb6]">This month · {thisMonth}</p>
-                  <p className="mt-1 text-[30px] font-black text-[#ff6846]">{money(current?.gross_fares || 0)}</p>
-                  <p className="mt-1 text-[10px] font-semibold">{current?.trips || 0} completed trips</p>
-                  <p className="mt-2 text-[9px] leading-4 text-[#92959b] dark:text-[#a9acb6]">Gross trip fares, including RouteX-funded promotions. This is not a confirmation of payment received.</p>
-                  <button type="button" onClick={() => setShowEarningsHistory((value) => !value)} aria-expanded={showEarningsHistory} className="mt-4 w-full rounded-[14px] bg-[#17191f] dark:bg-[#30333d] px-4 py-3 text-[11px] font-bold text-white">
-                    {showEarningsHistory ? "Hide monthly history" : "View monthly history"}
-                  </button>
-                  {showEarningsHistory && (
-                    <div className="mt-3 space-y-2">
-                      {earningsMonths.length === 0 ? <p className="text-[10px]">No completed trips recorded yet.</p> : earningsMonths.map((item) => (
-                        <div key={item.month} className="flex items-center justify-between rounded-[12px] border border-black/10 dark:border-white/10 p-3">
-                          <div><p className="text-[11px] font-bold">{item.month}</p><p className="text-[9px] text-[#92959b] dark:text-[#a9acb6]">{item.trips} trips</p></div>
-                          <p className="text-[12px] font-black">{money(item.gross_fares)}</p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </>
-              );
-            })()}
-          </section>
-
-          {/* RECENT TRIPS */}
-          <section className="mt-9">
-            <button
-              type="button"
-              onClick={() => setShowRecentTrips((current) => !current)}
-              className="flex w-full items-center justify-between rounded-[20px] bg-[#e7e9ee] dark:bg-[#1c1e24] px-4 py-4 text-left shadow-[4px_4px_9px_#c4c6ca,-4px_-4px_9px_#ffffff] dark:shadow-[7px_7px_16px_#101116,-7px_-7px_16px_#30333d] transition active:scale-[0.99]"
-              aria-expanded={showRecentTrips}
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[13px] text-[#ff6846] shadow-[inset_2px_2px_5px_#c5c7cc,inset_-2px_-2px_5px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d]">
-                  <HistoryIcon />
-                </div>
-
-                <div>
-                  <p className="text-[9px] font-extrabold uppercase tracking-[0.13em] text-[#92959b] dark:text-[#a9acb6]">
-                    Activity
-                  </p>
-                  <p className="mt-1 text-[12px] font-black">Recent trips</p>
-                  <p className="mt-0.5 text-[8px] font-semibold text-[#96999f] dark:text-[#a9acb6]">
-                    View your previous RouteX rides
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <span className="flex h-8 min-w-8 items-center justify-center rounded-full bg-[#ff6846] px-2 text-[10px] font-black text-white">
-                  {completedTrips.length}
-                </span>
-
-                <span
-                  className={`text-[#92959b] dark:text-[#a9acb6] transition-transform duration-200 ${
-                    showRecentTrips ? "rotate-180" : ""
-                  }`}
-                >
-                  <ChevronDownIcon />
-                </span>
-              </div>
-            </button>
-
-            {showRecentTrips && (
-              <div className="mt-4 space-y-3">
-                {completedTrips.length === 0 ? (
-                  <div className="rounded-[18px] bg-[#e7e9ee] dark:bg-[#1c1e24] px-4 py-5 text-center shadow-[inset_3px_3px_7px_#c5c7cc,inset_-3px_-3px_7px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d]">
-                    <p className="text-[9px] font-semibold text-[#96999f] dark:text-[#a9acb6]">
-                      No completed trips yet.
-                    </p>
-                  </div>
-                ) : (
-                  completedTrips.map((trip) => (
-                    <HistoryRide key={`recent-${trip.id}`} trip={trip} />
-                  ))
-                )}
-              </div>
-            )}
-          </section>
-
           {/* REVIEWS */}
           <section className="mt-9">
             <div className="flex items-end justify-between">
@@ -1552,6 +1469,118 @@ const response = await fetch(
                   OK
                 </button>
               </div>
+            </div>
+          )}
+
+          {driverSidebar !== null && (
+            <div className="fixed inset-0 z-[90]">
+              <button type="button" aria-label="Close sidebar" onClick={() => setDriverSidebar(null)} className="absolute inset-0 w-full bg-black/45" />
+              <aside role="dialog" aria-modal="true" aria-label="Driver earnings and completed bookings" className="absolute right-0 top-0 h-full w-[min(92vw,420px)] overflow-y-auto bg-[#e7e9ee] dark:bg-[#1c1e24] px-5 pb-10 pt-6 shadow-[-10px_0_30px_rgba(0,0,0,0.25)] animate-[slideIn_220ms_ease-out]">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-[19px] font-black">Driver activity</h2>
+                  <button type="button" onClick={() => setDriverSidebar(null)} aria-label="Close sidebar" className="rounded-[12px] bg-[#17191f] px-3 py-2 text-[12px] font-bold text-white">✕</button>
+                </div>
+                <div className="mt-5 grid grid-cols-2 gap-2">
+                  <button type="button" onClick={() => setDriverSidebar("earnings")} aria-pressed={driverSidebar === "earnings"} className={`rounded-[13px] px-3 py-3 text-[11px] font-bold ${driverSidebar === "earnings" ? "bg-[#ff6846] text-white" : "bg-[#d7d9df] text-[#17191f] dark:bg-[#30333d] dark:text-white"}`}>Trip earnings</button>
+                  <button type="button" onClick={() => {setDriverSidebar("trips"); setShowRecentTrips(true);}} aria-pressed={driverSidebar === "trips"} className={`rounded-[13px] px-3 py-3 text-[11px] font-bold ${driverSidebar === "trips" ? "bg-[#ff6846] text-white" : "bg-[#d7d9df] text-[#17191f] dark:bg-[#30333d] dark:text-white"}`}>Completed bookings</button>
+                </div>
+          {driverSidebar === "earnings" && (<>
+          {/* MONTHLY EARNINGS */}
+          <section className="mt-9 rounded-[24px] bg-[#e7e9ee] dark:bg-[#1c1e24] p-5 shadow-[6px_6px_14px_#c4c6ca,-6px_-6px_14px_#ffffff] dark:shadow-[7px_7px_16px_#101116,-7px_-7px_16px_#30333d]">
+            <p className="text-[9px] font-extrabold uppercase tracking-[0.14em] text-[#ff6846]">My earnings</p>
+            <h3 className="mt-1 text-[17px] font-black">Monthly RouteX earnings</h3>
+            {earningsLoading ? (
+              <p className="mt-4 text-[11px]">Loading earnings...</p>
+            ) : earningsError ? (
+              <button type="button" onClick={() => void loadDriverEarnings()} className="mt-4 text-[11px] font-bold text-[#ff6846]">Unable to load earnings. Tap to retry.</button>
+            ) : (() => {
+              const thisMonth = new Intl.DateTimeFormat("sv-SE", { timeZone: "Africa/Johannesburg", year: "numeric", month: "2-digit" }).format(new Date()).slice(0, 7);
+              const current = earningsMonths.find((item) => item.month === thisMonth);
+              const money = (value: string | number) => `R${Number(value || 0).toLocaleString("en-ZA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+              return (
+                <>
+                  <p className="mt-4 text-[9px] font-bold text-[#92959b] dark:text-[#a9acb6]">This month · {thisMonth}</p>
+                  <p className="mt-1 text-[30px] font-black text-[#ff6846]">{money(current?.gross_fares || 0)}</p>
+                  <p className="mt-1 text-[10px] font-semibold">{current?.trips || 0} completed trips</p>
+                  <p className="mt-2 text-[9px] leading-4 text-[#92959b] dark:text-[#a9acb6]">Gross trip fares, including RouteX-funded promotions. This is not a confirmation of payment received.</p>
+                  <button type="button" onClick={() => setShowEarningsHistory((value) => !value)} aria-expanded={showEarningsHistory} className="mt-4 w-full rounded-[14px] bg-[#17191f] dark:bg-[#30333d] px-4 py-3 text-[11px] font-bold text-white">
+                    {showEarningsHistory ? "Hide monthly history" : "View monthly history"}
+                  </button>
+                  {showEarningsHistory && (
+                    <div className="mt-3 space-y-2">
+                      {earningsMonths.length === 0 ? <p className="text-[10px]">No completed trips recorded yet.</p> : earningsMonths.map((item) => (
+                        <div key={item.month} className="flex items-center justify-between rounded-[12px] border border-black/10 dark:border-white/10 p-3">
+                          <div><p className="text-[11px] font-bold">{item.month}</p><p className="text-[9px] text-[#92959b] dark:text-[#a9acb6]">{item.trips} trips</p></div>
+                          <p className="text-[12px] font-black">{money(item.gross_fares)}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              );
+            })()}
+          </section>
+
+          </>)}
+          {driverSidebar === "trips" && (<>
+          {/* RECENT TRIPS */}
+          <section className="mt-9">
+            <button
+              type="button"
+              onClick={() => setShowRecentTrips((current) => !current)}
+              className="flex w-full items-center justify-between rounded-[20px] bg-[#e7e9ee] dark:bg-[#1c1e24] px-4 py-4 text-left shadow-[4px_4px_9px_#c4c6ca,-4px_-4px_9px_#ffffff] dark:shadow-[7px_7px_16px_#101116,-7px_-7px_16px_#30333d] transition active:scale-[0.99]"
+              aria-expanded={showRecentTrips}
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[13px] text-[#ff6846] shadow-[inset_2px_2px_5px_#c5c7cc,inset_-2px_-2px_5px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d]">
+                  <HistoryIcon />
+                </div>
+
+                <div>
+                  <p className="text-[9px] font-extrabold uppercase tracking-[0.13em] text-[#92959b] dark:text-[#a9acb6]">
+                    Activity
+                  </p>
+                  <p className="mt-1 text-[12px] font-black">Recent trips</p>
+                  <p className="mt-0.5 text-[8px] font-semibold text-[#96999f] dark:text-[#a9acb6]">
+                    View your previous RouteX rides
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <span className="flex h-8 min-w-8 items-center justify-center rounded-full bg-[#ff6846] px-2 text-[10px] font-black text-white">
+                  {completedTrips.length}
+                </span>
+
+                <span
+                  className={`text-[#92959b] dark:text-[#a9acb6] transition-transform duration-200 ${
+                    showRecentTrips ? "rotate-180" : ""
+                  }`}
+                >
+                  <ChevronDownIcon />
+                </span>
+              </div>
+            </button>
+
+            {showRecentTrips && (
+              <div className="mt-4 space-y-3">
+                {completedTrips.length === 0 ? (
+                  <div className="rounded-[18px] bg-[#e7e9ee] dark:bg-[#1c1e24] px-4 py-5 text-center shadow-[inset_3px_3px_7px_#c5c7cc,inset_-3px_-3px_7px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d]">
+                    <p className="text-[9px] font-semibold text-[#96999f] dark:text-[#a9acb6]">
+                      No completed trips yet.
+                    </p>
+                  </div>
+                ) : (
+                  completedTrips.map((trip) => (
+                    <HistoryRide key={`recent-${trip.id}`} trip={trip} />
+                  ))
+                )}
+              </div>
+            )}
+          </section>
+
+          </>)}
+              </aside>
             </div>
           )}
 
