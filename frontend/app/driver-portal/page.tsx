@@ -1573,7 +1573,7 @@ const response = await fetch(
           {driverSidebar !== null && (
             <div className="fixed inset-0 z-[90]">
               <button type="button" aria-label="Close sidebar" onClick={() => setDriverSidebar(null)} className="absolute inset-0 w-full bg-black/45" />
-              <aside role="dialog" aria-modal="true" aria-label="Driver navigation" className="absolute left-0 top-0 h-full w-[min(86vw,350px)] overflow-y-auto bg-[#e9edf4] dark:bg-[#1c1e24] px-5 pb-10 pt-6 shadow-[10px_0_30px_rgba(0,0,0,0.25)] animate-[slideIn_220ms_ease-out]">
+              <aside role="dialog" aria-modal="true" aria-label="Driver navigation" className="absolute left-0 top-0 h-full w-[78vw] max-w-[300px] overflow-y-auto bg-[#e9edf4] dark:bg-[#1c1e24] px-5 pb-10 pt-6 shadow-[10px_0_30px_rgba(0,0,0,0.25)] animate-[slideIn_220ms_ease-out]">
                 <div className="flex items-center justify-between"><span className="text-xl font-semibold tracking-widest">ROUTE<span className="text-[#ff6846]">X</span></span><button type="button" onClick={() => setDriverSidebar(null)} aria-label="Close menu" className="rounded-xl p-2 text-xl">✕</button></div>
                 <nav className="mt-8 space-y-2" aria-label="Driver menu">
                   {([ ["dashboard", "Dashboard", "⌂"], ["earnings", "My earnings", "◷"], ["trips", "Completed rides", "↶"], ["deliveries", "Completed deliveries", "▣"], ["profile", "My profile", "♙"] ] as const).map(([key,label,symbol]) => (

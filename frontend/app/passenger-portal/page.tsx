@@ -97,6 +97,7 @@ export default function PassengerPortalPage() {
   const [photo, setPhoto] = useState<File | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [photoVersion, setPhotoVersion] = useState(0);
+  const [photoFailed, setPhotoFailed] = useState(false);
 
   const [reviewRatings, setReviewRatings] = useState<Record<number, number>>(
     {},
@@ -607,7 +608,15 @@ export default function PassengerPortalPage() {
 
       console.log("PASSENGER FROM LOCAL STORAGE:", passengerData);
 
-      setPassenger(passengerData);
+      // Restore the last successfully uploaded photo for this passenger if
+      // the login session was saved without its profile_image field.
+      const cachedPhoto = localStorage.getItem(`routex-passenger-photo-${passengerData.id}`);
+      const restoredPassenger = {
+        ...passengerData,
+        profile_image: passengerData.profile_image || cachedPhoto || "",
+      };
+      setPassenger(restoredPassenger);
+      setPhotoFailed(false);
 
       loadTrips(passengerData.id);
       loadScheduledRides(passengerData.id);
@@ -688,6 +697,8 @@ export default function PassengerPortalPage() {
       };
 
       setPassenger(updatedPassenger);
+      setPhotoFailed(false);
+      localStorage.setItem(`routex-passenger-photo-${passenger.id}`, finalImageUrl);
 
       localStorage.setItem("passenger", JSON.stringify(updatedPassenger));
 
@@ -796,15 +807,15 @@ export default function PassengerPortalPage() {
         .dark .rx-thumb{transform:translateX(30px);background:#d9e0ec;color:#35435b}
         .rx-action{transition:transform .18s}.rx-action:active{transform:scale(.985)}
         .rx-menu{background:#e9edf4;box-shadow:10px 0 30px #1115}.dark .rx-menu{background:#292e37}
-        .rx-menu-link{width:100%;display:flex;align-items:center;gap:20px;padding:16px 17px;border-radius:18px;text-align:left;font-size:16px;font-weight:500;line-height:1.6;color:#465160;transition:color .15s,box-shadow .15s}
+        .rx-menu-link{width:100%;display:flex;align-items:center;gap:13px;padding:12px 12px;border-radius:18px;text-align:left;font-size:14px;font-weight:500;line-height:1.45;color:#465160;transition:color .15s,box-shadow .15s}
         .rx-menu-link svg{width:23px;height:23px;flex-shrink:0;stroke-width:1.8}
         .rx-menu-link:hover,.rx-menu-link[aria-current="page"]{box-shadow:inset 5px 5px 10px #cdd1da,inset -5px -5px 10px #fff;color:#f15b3e}
         .dark .rx-menu-link{color:#d5dce7}
         .dark .rx-menu-link:hover,.dark .rx-menu-link[aria-current="page"]{box-shadow:inset 4px 4px 9px #171b22,inset -4px -4px 9px #3c4350;color:#ff8064}
       `}</style>
       {sidebarOpen && <div className="fixed inset-0 z-[9998] bg-[#101923]/65" onClick={() => setSidebarOpen(false)}>
-        <aside className="rx-menu h-full w-[min(400px,86vw)] px-4 py-7 text-[#202631] dark:text-[#edf0f6]" onClick={(event) => event.stopPropagation()} aria-label="Passenger navigation">
-          <div className="mb-11 flex items-center justify-between">
+        <aside className="rx-menu h-full w-[min(300px,78vw)] px-3 py-5 text-[#202631] dark:text-[#edf0f6]" onClick={(event) => event.stopPropagation()} aria-label="Passenger navigation">
+          <div className="mb-7 flex items-center justify-between">
             <span className="text-[25px] font-bold tracking-[.12em]">ROUTE<span className="text-[#ff6846]">X</span></span>
             <button type="button" onClick={() => setSidebarOpen(false)} aria-label="Close menu" className="rounded-xl p-2 text-[#17191f] dark:text-white">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
@@ -908,9 +919,9 @@ export default function PassengerPortalPage() {
         </div>
       )}
       <div className="mx-auto w-full max-w-[790px] pb-10">
-        <header className="rx-hero px-5 pb-5 pt-4 sm:px-7">
+        <header className="rx-hero px-5 pb-4 pt-3 sm:px-7">
           <div className="relative z-10 flex items-start justify-between gap-3">
-            <div className="flex flex-col items-start gap-3 pt-1">
+            <div className="flex flex-col items-start gap-2 pt-1">
               <span className="text-[17px] font-bold tracking-[.15em]">ROUTE<span className="text-[#ff987f]">X</span></span>
               <button type="button" aria-label="Open menu" onClick={() => setSidebarOpen(true)} className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-white/30 bg-white/10 shadow-[3px_3px_9px_#1115,inset_1px_1px_2px_#fff4]">
                 <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
@@ -921,9 +932,9 @@ export default function PassengerPortalPage() {
                 <span className="absolute left-[9px] top-[7px] text-sm text-[#f59a40]">☀</span><span className="absolute right-[9px] top-[7px] text-sm text-[#657084]">☾</span><span className="rx-thumb">{portalDark ? "☾" : "☀"}</span>
               </button>
               <div className="relative flex flex-col items-center">
-                <label title="Change profile photo" className="relative block h-[112px] w-[112px] cursor-pointer overflow-hidden rounded-full border-4 border-white bg-[#e9edf4] p-0.5 shadow-[5px_5px_14px_#1118,-3px_-3px_10px_#fff7]">
+                <label title="Change profile photo" className="relative block h-[88px] w-[88px] cursor-pointer overflow-hidden rounded-full border-4 border-white bg-[#e9edf4] p-0.5 shadow-[5px_5px_14px_#1118,-3px_-3px_10px_#fff7]">
                   <span className="block h-full w-full overflow-hidden rounded-full bg-[#e9edf4]">
-                    {photo ? <img src={photoPreviewUrl} alt="Selected profile" className="h-full w-full object-cover"/> : profileImageUrl ? <img key={`${passenger?.profile_image}-${photoVersion}`} src={`${profileImageUrl}${profileImageUrl.includes("?") ? "&" : "?"}v=${photoVersion}`} alt={passenger?.full_name || "Passenger"} className="h-full w-full object-cover"/> : <span className="grid h-full w-full place-items-center text-2xl font-semibold text-[#d9674d]">{firstName.charAt(0).toUpperCase()}</span>}
+                    {photo ? <img src={photoPreviewUrl} alt="Selected profile" className="h-full w-full object-cover"/> : !photoFailed && profileImageUrl ? <img onError={() => setPhotoFailed(true)} key={`${passenger?.profile_image}-${photoVersion}`} src={`${profileImageUrl}${profileImageUrl.includes("?") ? "&" : "?"}v=${photoVersion}`} alt={passenger?.full_name || "Passenger"} className="h-full w-full object-cover"/> : <span className="grid h-full w-full place-items-center text-2xl font-semibold text-[#d9674d]">{firstName.charAt(0).toUpperCase()}</span>}
                   </span>
                   <input id="routex-profile-photo" type="file" accept="image/*" disabled={uploadingPhoto} className="hidden" onChange={async (e) => { const file = e.target.files?.[0]; if (!file) return; setPhoto(file); await uploadPhoto(file); e.target.value = ""; }}/>
                 </label>
@@ -931,14 +942,14 @@ export default function PassengerPortalPage() {
               </div>
             </div>
           </div>
-          <div className="relative z-10 mt-3">
-            <h1 className="text-[29px] font-semibold leading-tight tracking-[-.045em] sm:text-[33px]">Hi, {firstName}</h1>
-            <p className="mt-2 text-sm text-white/85">Where would you like to go today?</p>
-            <div className="mt-3 flex justify-end">
+          <div className="relative z-10 mt-1">
+            <h1 className="text-[25px] font-semibold leading-tight tracking-[-.045em] sm:text-[33px]">Hi, {firstName}</h1>
+            <p className="mt-1 text-[12px] text-white/85">Where would you like to go today?</p>
+            <div className="mt-2 flex justify-end">
               <button
                 type="button"
                 onClick={logoutPassenger}
-                className="rounded-[15px] border border-white/30 bg-white/10 px-4 py-2.5 text-[12px] font-semibold text-white shadow-[3px_3px_9px_#1113] transition hover:bg-white/20"
+                className="rounded-[15px] border border-white/30 bg-white/10 px-4 py-2 text-[12px] font-semibold text-white shadow-[3px_3px_9px_#1113] transition hover:bg-white/20"
               >
                 Log out
               </button>
