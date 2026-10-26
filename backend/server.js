@@ -6493,6 +6493,508 @@ app.post("/admin/applications/:id/reject", async (req, res) => {
     });
   }
 });
+// =====================================
+// ROUTEX PACKAGE DELIVERY
+// Shared fares, signed quotes and passenger-authenticated bookings.
+// =====================================
+
+function packageDeliveryCoordinate(value, min, max) {
+  return value !== undefined && value !== null &&
+    String(value).trim() !== "" && Number.isFinite(Number(value)) &&
+    Number(value) >= min && Number(value) <= max;
+}
+
+function packageDeliveryValidCoordinates(data) {
+  return packageDeliveryCoordinate(data.pickup_lat, -90, 90) &&
+    packageDeliveryCoordinate(data.pickup_lng, -180, 180) &&
+    packageDeliveryCoordinate(data.dropoff_lat, -90, 90) &&
+    packageDeliveryCoordinate(data.dropoff_lng, -180, 180);
+}
+
+function parsePackageDeliverySchedule(value) {
+  if (typeof value !== "string" ||
+      !/^\d{4}-\d{2}-\d{2}T([01]\d|2[0-3]):[0-5]\d$/.test(value)) {
+    const error = new Error("A valid scheduled collection date and time are required.");
+    error.statusCode = 400;
+    throw error;
+  }
+  const date = new Date(`${value}:00+02:00`);
+  // Detect impossible calendar dates (e.g. 31 February) that JS normalises.
+  if (!Number.isFinite(date.getTime()) ||
+      new Date(date.getTime() + 2 * 60 * 60 * 1000).toISOString().slice(0, 16) !== value ||
+      date <= new Date()) {
+    const error = new Error("Scheduled collection must be a valid future date and time.");
+    error.statusCode = 400;
+    throw error;
+  }
+  return date;
+}
+
+async function calculatePackageDeliveryFare({
+  delivery_type, pickup_area, dropoff_area, pickup_lat, pickup_lng,
+  dropoff_lat, dropoff_lng, scheduled_pickup_at,
+}) {
+  if (!["now", "scheduled"].includes(delivery_type)) {
+    const error = new Error("Invalid delivery type.");
+    error.statusCode = 400;
+    throw error;
+  }
+  if (!packageDeliveryValidCoordinates({ pickup_lat, pickup_lng, dropoff_lat, dropoff_lng })) {
+    const error = new Error("Valid collection and delivery coordinates are required.");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const pickupAt = delivery_type === "scheduled"
+    ? parsePackageDeliverySchedule(scheduled_pickup_at)
+    : new Date();
+
+  const routeFare = await calculateRouteXFare({
+    pickup_area, dropoff_area, pickup_lat, pickup_lng, dropoff_lat, dropoff_lng,
+  });
+  const nightPricing = calculateRouteXNightFare(Number(routeFare.fare), pickupAt);
+
+  let pickupEstimate = null;
+  let pickupFeeAvailable = delivery_type === "scheduled";
+  if (delivery_type === "now") {
+    try {
+      pickupEstimate = await calculateRouteXPickupDistance(
+        Number(pickup_lat), Number(pickup_lng)
+      );
+      pickupFeeAvailable = true;
+    } catch (error) {
+      // Only lack of a pickup estimate produces a provisional fare.
+      // Database errors and all other unexpected errors must still fail.
+      if (error.statusCode !== 503) throw error;
+      console.warn("PACKAGE DELIVERY: Pickup estimate unavailable:", error.message);
+    }
+  }
+
+  const isLongOutOfTown = routeFare.pricing_method === "distance" &&
+    Number(routeFare.out_of_town_fee) > 0 && Number(routeFare.distance_km) > 20;
+  // Scheduled parcel deliveries have a fixed R5 collection fee.
+  // Preserve the existing long out-of-town pickup-fee exemption.
+  const pickupSurcharge = isLongOutOfTown
+    ? 0
+    : delivery_type === "scheduled"
+      ? 5
+      : Number(pickupEstimate?.surcharge ?? 0);
+  const fareAmount = Number(nightPricing.journey_fare) + pickupSurcharge;
+  if (!Number.isFinite(fareAmount) || fareAmount <= 0) {
+    const error = new Error("Unable to calculate delivery fare.");
+    error.statusCode = 400;
+    throw error;
+  }
+  return {
+    ...routeFare,
+    delivery_type,
+    scheduled_pickup_at: delivery_type === "scheduled" ? pickupAt.toISOString() : null,
+    night_surcharge: nightPricing.night_surcharge,
+    night_percentage: nightPricing.night_percentage,
+    night_minimum_fare: nightPricing.night_minimum_fare,
+    journey_fare: nightPricing.journey_fare,
+    pickup_surcharge: pickupSurcharge,
+    pickup_distance_km: pickupEstimate?.distance_km ?? null,
+    quote_status: pickupFeeAvailable ? "confirmed" : "provisional",
+    pickup_fee_available: pickupFeeAvailable,
+    booking_allowed: pickupFeeAvailable,
+    fare_amount: fareAmount,
+    currency: "ZAR",
+  };
+}
+
+function authenticatePackagePassenger(req, res, next) {
+  const secret = process.env.PASSENGER_JWT_SECRET;
+  if (!secret) {
+    return res.status(503).json({ error: "Passenger authentication is temporarily unavailable." });
+  }
+  const match = /^Bearer (.+)$/i.exec(String(req.headers.authorization || ""));
+  if (!match) {
+    return res.status(401).json({ error: "Please sign in to request package delivery." });
+  }
+  try {
+    const identity = jwt.verify(match[1], secret, { algorithms: ["HS256"] });
+    const passengerId = Number(identity.passengerId);
+    if (identity.role !== "passenger" || !Number.isSafeInteger(passengerId) || passengerId <= 0) {
+      return res.status(403).json({ error: "Passenger access required." });
+    }
+    req.authenticatedPassengerId = passengerId;
+    return next();
+  } catch {
+    return res.status(401).json({ error: "Passenger session expired. Please sign in again." });
+  }
+}
+
+// Fare quote: a provisional estimate cannot be booked.
+// A confirmed quote includes a short-lived signed token for explicit acceptance.
+app.get("/package-deliveries/calculate-fare", async (req, res) => {
+  try {
+    const delivery_type = req.query.delivery_type || "now";
+    const { pickup_area, dropoff_area, pickup_lat, pickup_lng,
+      dropoff_lat, dropoff_lng, scheduled_pickup_at } = req.query;
+    const fare = await calculatePackageDeliveryFare({
+      delivery_type, pickup_area, dropoff_area, pickup_lat, pickup_lng,
+      dropoff_lat, dropoff_lng, scheduled_pickup_at,
+    });
+    const quoteToken = fare.booking_allowed
+      ? signRouteXFareQuote({
+          purpose: "package_delivery",
+          delivery_type,
+          pickup_area: String(pickup_area || ""),
+          dropoff_area: String(dropoff_area || ""),
+          pickup_lat: Number(pickup_lat),
+          pickup_lng: Number(pickup_lng),
+          dropoff_lat: Number(dropoff_lat),
+          dropoff_lng: Number(dropoff_lng),
+          scheduled_pickup_at: fare.scheduled_pickup_at,
+          fare_amount: fare.fare_amount,
+          expires_at: Date.now() + ROUTEX_FARE_QUOTE_TTL_MS,
+        })
+      : null;
+    return res.json({ ...fare, fare_quote_token: quoteToken });
+  } catch (error) {
+    console.error("PACKAGE DELIVERY FARE ERROR:", error);
+    return res.status(error.statusCode || 500).json({
+      error: error.statusCode ? error.message : "Unable to calculate package delivery fare.",
+    });
+  }
+});
+
+app.post("/package-deliveries", authenticatePackagePassenger, async (req, res) => {
+  try {
+    const passenger_id = req.authenticatedPassengerId;
+    const {
+      delivery_type, pickup_area, dropoff_area, pickup_address, pickup_lat,
+      pickup_lng, dropoff_address, dropoff_lat, dropoff_lng,
+      parcel_description, parcel_size, recipient_name, recipient_phone,
+      scheduled_pickup_at, fare_quote_token, accepted_fare_amount,
+    } = req.body || {};
+
+    const requiredText = (value, max) =>
+      typeof value === "string" && value.trim().length > 0 && value.trim().length <= max;
+    if (!requiredText(pickup_address, 500) || !requiredText(dropoff_address, 500) ||
+        !requiredText(parcel_description, 1000) || !requiredText(recipient_name, 150) ||
+        !requiredText(recipient_phone, 30)) {
+      return res.status(400).json({ error: "Required delivery information is missing or too long." });
+    }
+    if (!["now", "scheduled"].includes(delivery_type) ||
+        !["small", "medium"].includes(parcel_size)) {
+      return res.status(400).json({ error: "Invalid delivery type or parcel size." });
+    }
+    if (!packageDeliveryValidCoordinates({ pickup_lat, pickup_lng, dropoff_lat, dropoff_lng })) {
+      return res.status(400).json({ error: "Valid collection and delivery coordinates are required." });
+    }
+    const scheduledPickup = delivery_type === "scheduled"
+      ? parsePackageDeliverySchedule(scheduled_pickup_at) : null;
+
+    // Require the passenger to submit the exact confirmed quote they accepted.
+    const acceptedFare = Number(accepted_fare_amount);
+    if (accepted_fare_amount == null || !Number.isFinite(acceptedFare) || acceptedFare <= 0) {
+      return res.status(400).json({ error: "Please review and accept a confirmed delivery fare." });
+    }
+    let quote;
+    try { quote = verifyRouteXFareQuote(fare_quote_token); }
+    catch { quote = null; }
+    const sameCoordinate = (a, b) =>
+      Number.isFinite(Number(a)) && Number.isFinite(Number(b)) &&
+      Math.abs(Number(a) - Number(b)) < 0.000001;
+    const quoteMatches = quote && quote.purpose === "package_delivery" &&
+      quote.delivery_type === delivery_type &&
+      quote.pickup_area === String(pickup_area || "") &&
+      quote.dropoff_area === String(dropoff_area || "") &&
+      sameCoordinate(quote.pickup_lat, pickup_lat) &&
+      sameCoordinate(quote.pickup_lng, pickup_lng) &&
+      sameCoordinate(quote.dropoff_lat, dropoff_lat) &&
+      sameCoordinate(quote.dropoff_lng, dropoff_lng) &&
+      quote.scheduled_pickup_at === (scheduledPickup ? scheduledPickup.toISOString() : null) &&
+      Number.isFinite(Number(quote.fare_amount)) && Number(quote.fare_amount) > 0 &&
+      Math.abs(Number(quote.fare_amount) - acceptedFare) < 0.01;
+    if (!quoteMatches) {
+      return res.status(409).json({
+        error: "Delivery quote expired or changed. Please review a new quote before booking.",
+        quote_expired: true,
+      });
+    }
+
+    // Recheck the live pickup fee and night pricing before saving the booking.
+    const deliveryFare = await calculatePackageDeliveryFare({
+      delivery_type, pickup_area, dropoff_area, pickup_lat, pickup_lng,
+      dropoff_lat, dropoff_lng, scheduled_pickup_at,
+    });
+    if (!deliveryFare.booking_allowed) {
+      return res.status(409).json({
+        error: "No driver is available to confirm the collection fee. Please try again later.",
+        quote_status: "provisional", estimated_fare: deliveryFare.fare_amount,
+      });
+    }
+    if (Math.abs(Number(deliveryFare.fare_amount) - acceptedFare) >= 0.01) {
+      return res.status(409).json({
+        error: "The delivery fare has changed. Please review the new price before booking.",
+        fare_changed: true, updated_fare: deliveryFare.fare_amount,
+      });
+    }
+
+    // The recipient must give this one-time PIN to the driver at handover.
+    // Only the passenger receives the plaintext PIN; never return it to drivers.
+    const deliveryPin = String(crypto.randomInt(100000, 1000000));
+    const deliveryPinHash = crypto.createHash("sha256").update(deliveryPin).digest("hex");
+
+    const result = await pool.query(`
+      INSERT INTO public.package_deliveries (
+        passenger_id, delivery_type, pickup_address, pickup_lat, pickup_lng,
+        dropoff_address, dropoff_lat, dropoff_lng, parcel_description,
+        parcel_size, recipient_name, recipient_phone, scheduled_pickup_at,
+        fare_amount, status, delivery_pin_hash
+      ) VALUES (
+        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,'pending',$15
+      ) RETURNING id, delivery_type, fare_amount, status, scheduled_pickup_at, created_at
+    `, [
+      passenger_id, delivery_type, pickup_address.trim(), Number(pickup_lat),
+      Number(pickup_lng), dropoff_address.trim(), Number(dropoff_lat),
+      Number(dropoff_lng), parcel_description.trim(), parcel_size,
+      recipient_name.trim(), recipient_phone.trim(), scheduledPickup, acceptedFare, deliveryPinHash,
+    ]);
+    return res.status(201).json({
+      message: "Package delivery request created. Save the handover PIN and share it with the recipient.", delivery: result.rows[0], delivery_pin: deliveryPin,
+    });
+  } catch (error) {
+    console.error("PACKAGE DELIVERY BOOKING ERROR:", error);
+    if (error.code === "23503") {
+      return res.status(400).json({ error: "Passenger account was not found." });
+    }
+    return res.status(error.statusCode || 500).json({
+      error: error.statusCode ? error.message : "Unable to create package delivery.",
+    });
+  }
+});
+
+
+// Passenger package history: authenticated owner only, with assigned driver details.
+// The PIN hash is never returned; the one-time PIN is shown at booking confirmation.
+app.get("/passenger/package-deliveries", authenticatePackagePassenger, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT p.id, p.delivery_type, p.pickup_address, p.pickup_lat, p.pickup_lng,
+             p.dropoff_address, p.dropoff_lat, p.dropoff_lng, p.parcel_description,
+             p.parcel_size, p.recipient_name, p.scheduled_pickup_at, p.fare_amount,
+             p.status, p.driver_id, p.created_at, p.accepted_at, p.collected_at,
+             p.delivered_at,
+             d.full_name AS driver_name, d.phone AS driver_phone,
+             d.profile_image AS driver_profile_image, d.vehicle_type,
+             d.vehicle_color, d.license_plate, d.current_lat AS driver_lat,
+             d.current_lng AS driver_lng
+      FROM public.package_deliveries p
+      LEFT JOIN public.drivers d ON d.id = p.driver_id
+      WHERE p.passenger_id = $1
+      ORDER BY p.created_at DESC, p.id DESC LIMIT 100
+    `, [req.authenticatedPassengerId]);
+    return res.json(result.rows);
+  } catch (error) {
+    console.error("PASSENGER PACKAGE HISTORY ERROR:", error);
+    return res.status(500).json({ error: "Unable to load package deliveries." });
+  }
+});
+
+// Passenger-only PIN replacement. The old PIN becomes invalid atomically.
+// The plaintext PIN is returned once and never written to logs or driver responses.
+app.post("/passenger/package-deliveries/:id/reset-pin", authenticatePackagePassenger, async (req, res) => {
+  const deliveryId = Number(req.params.id);
+  if (!Number.isSafeInteger(deliveryId) || deliveryId <= 0) {
+    return res.status(400).json({ error: "Invalid delivery reference." });
+  }
+
+  try {
+    const pin = String(crypto.randomInt(100000, 1000000));
+    const pinHash = crypto.createHash("sha256").update(pin).digest("hex");
+
+    const result = await pool.query(`
+      UPDATE public.package_deliveries
+      SET delivery_pin_hash = $1
+      WHERE id = $2
+        AND passenger_id = $3
+        AND status IN ('pending', 'accepted', 'collected', 'in_transit')
+      RETURNING id
+    `, [pinHash, deliveryId, req.authenticatedPassengerId]);
+
+    if (result.rowCount !== 1) {
+      return res.status(404).json({
+        error: "Active delivery not found, or this delivery cannot have its PIN reset.",
+      });
+    }
+
+    res.set("Cache-Control", "no-store");
+    return res.json({
+      success: true,
+      pin,
+      message: "New handover PIN generated. The previous PIN is no longer valid.",
+    });
+  } catch (error) {
+    console.error("PACKAGE PIN RESET ERROR:", error.message);
+    return res.status(500).json({ error: "Unable to reset the handover PIN." });
+  }
+});
+
+// =====================================
+// PACKAGE DELIVERY — DRIVER WORKFLOW
+// =====================================
+// Only authenticated drivers can view and act on deliveries.
+// Scheduled deliveries are visible and available for acceptance immediately after booking.
+app.get("/driver/package-deliveries/available", authenticateDriver, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT pd.id, pd.delivery_type, pd.pickup_address, pd.pickup_lat, pd.pickup_lng,
+             pd.dropoff_address, pd.dropoff_lat, pd.dropoff_lng, pd.parcel_description,
+             pd.parcel_size, pd.scheduled_pickup_at, pd.fare_amount, pd.created_at,
+             p.full_name AS passenger_name,
+             p.phone AS passenger_phone,
+             p.profile_image AS passenger_profile_image
+      FROM public.package_deliveries pd
+      LEFT JOIN public.passengers p ON p.id = pd.passenger_id
+      WHERE pd.status = 'pending' AND pd.driver_id IS NULL
+
+      ORDER BY CASE WHEN pd.delivery_type = 'now' THEN 0 ELSE 1 END,
+               pd.scheduled_pickup_at NULLS FIRST, pd.created_at
+      LIMIT 50
+    `);
+    return res.json(result.rows);
+  } catch (error) {
+    console.error("PACKAGE DELIVERY AVAILABLE ERROR:", error);
+    return res.status(500).json({ error: "Unable to load available deliveries." });
+  }
+});
+
+app.get("/driver/package-deliveries/mine", authenticateDriver, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT id, delivery_type, pickup_address, pickup_lat, pickup_lng,
+             dropoff_address, dropoff_lat, dropoff_lng, parcel_description,
+             parcel_size, recipient_name, recipient_phone, scheduled_pickup_at,
+             fare_amount, status, accepted_at, collected_at, delivered_at
+      FROM public.package_deliveries
+      WHERE driver_id = $1
+      ORDER BY CASE WHEN status = 'delivered' THEN 1 ELSE 0 END, id DESC
+      LIMIT 100
+    `, [req.authenticatedDriverId]);
+    return res.json(result.rows);
+  } catch (error) {
+    console.error("PACKAGE DELIVERY MINE ERROR:", error);
+    return res.status(500).json({ error: "Unable to load your deliveries." });
+  }
+});
+
+app.post("/driver/package-deliveries/:id/accept", authenticateDriver, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const driverResult = await client.query(`
+      SELECT id FROM drivers WHERE id = $1 AND status = 'Available'
+        AND is_online = true FOR UPDATE
+    `, [req.authenticatedDriverId]);
+    if (!driverResult.rows.length) {
+      await client.query("ROLLBACK");
+      return res.status(409).json({ error: "Go online and become available before accepting a delivery." });
+    }
+    const activeRide = await client.query(`
+      SELECT 1 FROM trip_bookings WHERE assigned_driver_id = $1
+        AND trip_status IN ('Accepted', 'In Progress') LIMIT 1
+    `, [req.authenticatedDriverId]);
+    const activeParcel = await client.query(`
+      SELECT 1 FROM public.package_deliveries WHERE driver_id = $1
+        AND status IN ('accepted', 'collected', 'in_transit') LIMIT 1
+    `, [req.authenticatedDriverId]);
+    if (activeRide.rows.length || activeParcel.rows.length) {
+      await client.query("ROLLBACK");
+      return res.status(409).json({ error: "Complete your active trip or delivery first." });
+    }
+    const result = await client.query(`
+      UPDATE public.package_deliveries
+      SET driver_id = $2, status = 'accepted', accepted_at = NOW()
+      WHERE id = $1 AND status = 'pending' AND driver_id IS NULL
+
+      RETURNING id, passenger_id, delivery_type, pickup_address, pickup_lat,
+                pickup_lng, dropoff_address, dropoff_lat, dropoff_lng,
+                recipient_name, recipient_phone, parcel_description,
+                parcel_size, scheduled_pickup_at, fare_amount, status
+    `, [req.params.id, req.authenticatedDriverId]);
+    if (!result.rows.length) {
+      await client.query("ROLLBACK");
+      return res.status(409).json({ error: "This delivery is no longer available for acceptance." });
+    }
+    await client.query(`UPDATE drivers SET status = 'Busy' WHERE id = $1`,
+      [req.authenticatedDriverId]);
+    await client.query("COMMIT");
+    return res.json({ message: "Delivery accepted. Navigate to the collection address.", delivery: result.rows[0] });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("PACKAGE DELIVERY ACCEPT ERROR:", error);
+    return res.status(500).json({ error: "Unable to accept delivery." });
+  } finally { client.release(); }
+});
+
+app.post("/driver/package-deliveries/:id/collect", authenticateDriver, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      UPDATE public.package_deliveries
+      SET status = 'collected', collected_at = NOW()
+      WHERE id = $1 AND driver_id = $2 AND status = 'accepted'
+      RETURNING id, status, dropoff_address, dropoff_lat, dropoff_lng,
+                recipient_name, recipient_phone
+    `, [req.params.id, req.authenticatedDriverId]);
+    if (!result.rows.length) return res.status(409).json({ error: "Delivery cannot be collected in its current state." });
+    return res.json({ message: "Parcel collected. Navigate to the recipient.", delivery: result.rows[0] });
+  } catch (error) {
+    console.error("PACKAGE DELIVERY COLLECT ERROR:", error);
+    return res.status(500).json({ error: "Unable to mark parcel collected." });
+  }
+});
+
+app.post("/driver/package-deliveries/:id/in-transit", authenticateDriver, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      UPDATE public.package_deliveries SET status = 'in_transit'
+      WHERE id = $1 AND driver_id = $2 AND status = 'collected'
+      RETURNING id, status
+    `, [req.params.id, req.authenticatedDriverId]);
+    if (!result.rows.length) return res.status(409).json({ error: "Collect the parcel before starting delivery." });
+    return res.json({ delivery: result.rows[0] });
+  } catch (error) {
+    console.error("PACKAGE DELIVERY IN TRANSIT ERROR:", error);
+    return res.status(500).json({ error: "Unable to start delivery." });
+  }
+});
+
+app.post("/driver/package-deliveries/:id/complete", authenticateDriver, async (req, res) => {
+  const pin = String(req.body?.delivery_pin || "").trim();
+  if (!/^\d{6}$/.test(pin)) return res.status(400).json({ error: "Enter the recipient's six-digit delivery PIN." });
+  const suppliedHash = crypto.createHash("sha256").update(pin).digest("hex");
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const result = await client.query(`
+      UPDATE public.package_deliveries
+      SET status = 'delivered', delivered_at = NOW(), pin_verified_at = NOW()
+      WHERE id = $1 AND driver_id = $2
+        AND status IN ('collected', 'in_transit')
+        AND delivery_pin_hash = $3
+      RETURNING id, status, fare_amount, delivered_at
+    `, [req.params.id, req.authenticatedDriverId, suppliedHash]);
+    if (!result.rows.length) {
+      await client.query("ROLLBACK");
+      return res.status(409).json({ error: "Incorrect PIN or delivery is not ready for completion." });
+    }
+    await client.query(`
+      UPDATE drivers SET status = CASE WHEN is_online = true THEN 'Available' ELSE 'Offline' END
+      WHERE id = $1 AND status = 'Busy'
+    `, [req.authenticatedDriverId]);
+    await client.query("COMMIT");
+    return res.json({ message: "Parcel delivered and recipient PIN verified.", delivery: result.rows[0] });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("PACKAGE DELIVERY COMPLETE ERROR:", error);
+    return res.status(500).json({ error: "Unable to complete delivery." });
+  } finally { client.release(); }
+});
+
 app.get("/calculate-fare", async (req, res) => {
   console.log("FARE INPUT:", {
     pickup_area: req.query.pickup_area,

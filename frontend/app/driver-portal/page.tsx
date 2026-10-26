@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import AuthGuard from "../components/AuthGuard";
+import LogoutButton from "../components/LogoutButton";
 import { showNotification } from "../lib/notifications";
 import { API_URL } from "../lib/api";
 
@@ -13,6 +14,11 @@ export default function DriverPortalPage() {
     lat: number;
     lng: number;
   } | null>(null);
+  const [availableDeliveries, setAvailableDeliveries] = useState<any[]>([]);
+  const [myDeliveries, setMyDeliveries] = useState<any[]>([]);
+  const [deliveryBusyId, setDeliveryBusyId] = useState<number | null>(null);
+  const [deliveryPins, setDeliveryPins] = useState<Record<number, string>>({});
+  const [deliveryLoading, setDeliveryLoading] = useState(true);
   const [scheduledRides, setScheduledRides] = useState<any[]>([]);
   const [liveRequests, setLiveRequests] = useState<any[]>([]);
   const [acceptedTrips, setAcceptedTrips] = useState<any[]>([]);
@@ -27,12 +33,23 @@ export default function DriverPortalPage() {
   const [showEarningsHistory, setShowEarningsHistory] = useState(false);
   const [completingId, setCompletingId] = useState<number | null>(null);
   const [showRecentTrips, setShowRecentTrips] = useState(false);
-  const [driverSidebar, setDriverSidebar] = useState<"earnings" | "trips" | null>(null);
+  const [driverSidebar, setDriverSidebar] = useState<"dashboard" | "earnings" | "trips" | "deliveries" | "profile" | null>(null);
   const [loadingScheduled, setLoadingScheduled] = useState(true);
   const [acceptingId, setAcceptingId] = useState<number | null>(null);
   const [startingId, setStartingId] = useState<number | null>(null);
   const [nowMs, setNowMs] = useState(Date.now());
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [portalDark, setPortalDark] = useState(false);
+  useEffect(() => {
+    const saved = localStorage.getItem("routex-theme");
+    setPortalDark(saved === "dark" || (saved !== "light" && document.documentElement.classList.contains("dark")));
+  }, []);
+  const togglePortalTheme = () => {
+    const next = !document.documentElement.classList.contains("dark");
+    document.documentElement.classList.toggle("dark", next);
+    localStorage.setItem("routex-theme", next ? "dark" : "light");
+    setPortalDark(next);
+  };
   const [driverRating, setDriverRating] = useState<{
     average_rating: number | null;
     review_count: number;
@@ -151,6 +168,73 @@ const response = await fetch(`${API_URL}/driver/upload-photo`, {
     }
   };
 
+  const loadPackageDeliveries = async () => {
+    const token = sessionStorage.getItem("driverToken");
+    if (!token) return;
+    try {
+      const headers = { Authorization: `Bearer ${token}` };
+      const [availableResponse, mineResponse] = await Promise.all([
+        fetch(`${API_URL}/driver/package-deliveries/available`, { headers, cache: "no-store" }),
+        fetch(`${API_URL}/driver/package-deliveries/mine`, { headers, cache: "no-store" }),
+      ]);
+      if (!availableResponse.ok || !mineResponse.ok) {
+        throw new Error("Unable to load package deliveries.");
+      }
+      const [available, mine] = await Promise.all([
+        availableResponse.json(), mineResponse.json(),
+      ]);
+      setAvailableDeliveries(Array.isArray(available) ? available : []);
+      setMyDeliveries(Array.isArray(mine) ? mine : []);
+    } catch (error) {
+      console.error("PACKAGE DELIVERY LOAD ERROR:", error);
+    } finally {
+      setDeliveryLoading(false);
+    }
+  };
+
+  const changeDeliveryStatus = async (
+    deliveryId: number,
+    action: "accept" | "collect" | "in-transit" | "complete",
+  ) => {
+    const token = sessionStorage.getItem("driverToken");
+    if (!token) {
+      showAppPopup("Sign in required", "Please sign in again.", "error");
+      return;
+    }
+    try {
+      setDeliveryBusyId(deliveryId);
+      const response = await fetch(`${API_URL}/driver/package-deliveries/${deliveryId}/${action}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify(action === "complete" ? { delivery_pin: deliveryPins[deliveryId] || "" } : {}),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result?.error || "Unable to update delivery.");
+      if (action === "complete") {
+        setDeliveryPins((previous) => ({ ...previous, [deliveryId]: "" }));
+      }
+      await loadPackageDeliveries();
+      await loadDriverRides(Number(driver?.id));
+      showAppPopup("Package delivery", action === "complete" ? "Delivery completed. PIN verified." : "Delivery updated successfully.", "success");
+    } catch (error: any) {
+      showAppPopup("Package delivery", error?.message || "Unable to update delivery.", "error");
+    } finally {
+      setDeliveryBusyId(null);
+    }
+  };
+
+  const navigateDelivery = (delivery: any, destination: "pickup" | "dropoff") => {
+    const lat = Number(destination === "pickup" ? delivery.pickup_lat : delivery.dropoff_lat);
+    const lng = Number(destination === "pickup" ? delivery.pickup_lng : delivery.dropoff_lng);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng) ||
+        lat < -90 || lat > 90 || lng < -180 || lng > 180 ||
+        (lat === 0 && lng === 0)) {
+      showAppPopup("Navigation unavailable", "This delivery has no valid GPS coordinates.", "error");
+      return;
+    }
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, "_blank", "noopener,noreferrer");
+  };
+
   const loadDriverRides = async (driverId: number) => {
     try {
       const [
@@ -238,6 +322,7 @@ const response = await fetch(`${API_URL}/driver/upload-photo`, {
       setDriver(parsedDriver);
 
       loadDriverRides(Number(parsedDriver.id));
+      void loadPackageDeliveries();
       void loadDriverEarnings();
       loadDriverRating(Number(parsedDriver.id));
       loadDriverReviews(Number(parsedDriver.id));
@@ -259,6 +344,7 @@ const response = await fetch(`${API_URL}/driver/upload-photo`, {
 
       const interval = setInterval(() => {
         loadDriverRides(Number(parsedDriver.id));
+        void loadPackageDeliveries();
       }, 5000);
 
       return () => clearInterval(interval);
@@ -536,6 +622,15 @@ const response = await fetch(
     }
   };
 
+  // Compact display only; original addresses remain unchanged for GPS/navigation.
+  const shortDeliveryAddress = (value: unknown) => {
+    const parts = String(value || "Address unavailable").split(",").map((part) => part.trim()).filter(Boolean);
+    if (parts.length <= 3) return parts.join(", ");
+    const upington = parts.findIndex((part) => /^Upington$/i.test(part));
+    if (upington >= 0) return parts.slice(0, upington + 1).join(", ");
+    return parts.slice(0, 3).join(", ");
+  };
+
   const formatRideDate = (value: string) =>
     new Date(value).toLocaleDateString("en-ZA", {
       day: "numeric",
@@ -551,142 +646,137 @@ const response = await fetch(
 
   return (
     <AuthGuard>
-      <main className="min-h-[100dvh] bg-[#e7e9ee] dark:bg-[#1c1e24] text-[#17191f] dark:text-[#f5f6f8]">
-        <div className="mx-auto min-h-[100dvh] w-full max-w-md px-5 pb-10">
-          {/* HEADER */}
-          <header className="flex items-center justify-between pt-6">
-            <h1 className="text-[25px] font-black tracking-[-0.06em]">
-              Route<span className="text-[#ff6846]">X</span>
-            </h1>
-            <button
-              type="button"
-              onClick={() => setDriverSidebar("earnings")}
-              aria-label="Open earnings and completed bookings sidebar"
-              className="flex h-11 w-11 items-center justify-center rounded-[15px] bg-[#e7e9ee] dark:bg-[#1c1e24] shadow-[4px_4px_9px_#c4c6ca,-4px_-4px_9px_#ffffff] dark:shadow-[5px_5px_12px_#101116,-5px_-5px_12px_#30333d]"
-            >
-              <span className="text-[22px] leading-none" aria-hidden="true">☰</span>
-            </button>
+      <main className="min-h-[100dvh] bg-[#e9edf4] dark:bg-[#262b34] text-[#17191f] dark:text-[#f5f6f8]">
+        <div className="mx-auto min-h-[100dvh] w-full max-w-[790px] px-5 pb-10">
+          {/* FULL-WIDTH DRIVER HERO — matches passenger portal */}
+          <header className="relative -mx-5 overflow-hidden rounded-b-[32px] bg-gradient-to-br from-[#172c42] via-[#253e57] to-[#d9674d] px-5 pb-5 pt-4 text-white shadow-[0_14px_30px_rgba(30,39,53,0.20)]">
+            <div className="relative z-10 flex items-center justify-between gap-2">
+              <button type="button" aria-label="Open driver menu" onClick={() => setDriverSidebar("dashboard")} className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-white/30 bg-white/10 shadow-[3px_3px_9px_#1115,inset_1px_1px_2px_#fff4]">
+                <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+              </button>
+              <span className="text-[15px] font-semibold tracking-[.15em]">ROUTE<span className="text-[#ff987f]">X</span></span>
+              <div className="flex items-center gap-3">
+                <button type="button" onClick={togglePortalTheme} aria-label="Switch between light and dark mode" aria-pressed={portalDark} className="relative h-[34px] w-[64px] shrink-0 rounded-full bg-[#e4e8ee] shadow-[inset_3px_3px_6px_#aab0bc,inset_-3px_-3px_6px_#fff]">
+                  <span className="absolute left-[9px] top-[7px] text-sm text-[#f59a40]">☀</span><span className="absolute right-[9px] top-[7px] text-sm text-[#657084]">☾</span>
+                  <span className={`absolute top-1 left-1 grid h-[26px] w-[26px] place-items-center rounded-full bg-white text-[#f28c3f] shadow-md transition-transform ${portalDark ? "translate-x-[30px]" : ""}`}>{portalDark ? "☾" : "☀"}</span>
+                </button>
+                <div className="flex flex-col items-center">
+                  <div className="relative h-[108px] w-[108px]">
+                    <label htmlFor="routex-driver-photo" className="absolute inset-0 block cursor-pointer rounded-full border-[4px] border-white bg-[#e9edf4] p-1 shadow-[6px_7px_16px_rgba(9,21,37,.48),-3px_-3px_10px_rgba(255,255,255,.24)]" title="Change driver profile photo">
+                      <span className="block h-full w-full overflow-hidden rounded-full bg-[#e9edf4] shadow-[inset_3px_3px_7px_#bbc2cf,inset_-3px_-3px_7px_#ffffff]">
+                        {driver?.profile_image ? <img src={driver.profile_image} alt={driver?.full_name || "Driver"} className="h-full w-full object-cover"/> : <span className="grid h-full w-full place-items-center text-2xl font-semibold text-[#d9674d]">{driver?.full_name?.charAt(0)?.toUpperCase() || "D"}</span>}
+                      </span>
+                    </label>
+                    <input id="routex-driver-photo" type="file" accept="image/*" disabled={uploadingPhoto} className="sr-only" onChange={(event) => {const file=event.target.files?.[0];if(file) void uploadDriverPhoto(file);event.currentTarget.value="";}}/>
+                    <span title={status === "available" ? "Online" : "Offline"} className={`absolute bottom-1 right-1 z-10 h-3 w-3 rounded-full border-2 border-white shadow-[1px_2px_5px_rgba(0,0,0,.25)] ${status === "available" ? "bg-[#31bf78]" : "bg-[#9ca5b4]"}`} />
+                  </div>
+                  <span className="mt-1 text-xs text-white/85">{uploadingPhoto ? "Uploading…" : "Profile"}</span>
+                </div>
+              </div>
+            </div>
+            <div className="relative z-10 mt-2">
+              <h1 className="text-[35px] font-semibold leading-tight tracking-[-.045em] sm:text-[39px]">Hi, {driver?.full_name?.trim()?.split(/\s+/)?.[0] || "Driver"}</h1>
+              <p className="mt-1.5 flex items-center gap-2 text-xs text-white/85"><span className="text-[#ffb39b]">★</span>{driverRating.average_rating !== null ? driverRating.average_rating.toFixed(1) : "New driver"}</p>
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                <div className="inline-flex items-center gap-3 rounded-[19px] border border-white/25 bg-white/[.12] px-3.5 py-2.5 shadow-[5px_6px_12px_rgba(14,28,45,.26),-2px_-2px_6px_rgba(255,255,255,.12),inset_1px_1px_1px_rgba(255,255,255,.17)]">
+                  <span className={`h-2 w-2 rounded-full ${status === "available" ? "bg-[#60e6a0]" : "bg-[#d1d6df]"}`} />
+                  <span className="min-w-[40px] text-[12px] font-medium">{status === "available" ? "Online" : "Offline"}</span>
+                  <button type="button" role="switch" aria-checked={status === "available"} aria-label="Toggle driver availability" onClick={toggleStatus} className={`relative h-[30px] w-[52px] rounded-full border border-white/20 shadow-[inset_3px_3px_6px_rgba(0,0,0,.26),inset_-2px_-2px_4px_rgba(255,255,255,.15)] transition-colors ${status === "available" ? "bg-[#ff6846]" : "bg-[#a7b0be]/75"}`}><span className={`absolute top-[3px] h-[22px] w-[22px] rounded-full bg-white shadow-[2px_3px_5px_rgba(0,0,0,.26),inset_1px_1px_2px_#fff] transition-all ${status === "available" ? "left-[26px]" : "left-[3px]"}`} /></button>
+                </div>
+                <div className="rounded-xl border border-white/25 bg-white/10 px-3 py-2 text-[12px] font-medium text-white [&_button]:text-white [&_a]:text-white"><LogoutButton /></div>
+              </div>
+
+            </div>
           </header>
 
-          {/* DRIVER */}
-          <section className="mt-6 flex items-center gap-4">
-            <div className="relative h-[82px] w-[82px] shrink-0">
-              <label
-                className={`relative flex h-[82px] w-[82px] cursor-pointer items-center justify-center rounded-[27px] bg-[#e7e9ee] dark:bg-[#1c1e24] shadow-[7px_7px_15px_#c4c6ca,-7px_-7px_15px_#ffffff] dark:shadow-[7px_7px_16px_#101116,-7px_-7px_16px_#30333d] ${
-                  uploadingPhoto ? "pointer-events-none opacity-70" : ""
-                }`}
-                title="Change driver photo"
-              >
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  disabled={uploadingPhoto}
-                  onChange={(event) => {
-                    const file = event.target.files?.[0];
-
-                    if (file) {
-                      uploadDriverPhoto(file);
-                    }
-
-                    event.currentTarget.value = "";
-                  }}
-                />
-
-                <div className="relative flex h-[64px] w-[64px] items-center justify-center overflow-hidden rounded-[21px] bg-[#dfe1e6] dark:bg-[#262932] text-[20px] font-black text-[#ff6846] shadow-[inset_3px_3px_7px_#c2c4c9,inset_-3px_-3px_7px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d]">
-                  {driver?.profile_image ? (
-                    <img
-                      src={driver.profile_image}
-                      alt={driver?.full_name || "Driver"}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    driver?.full_name?.charAt(0)?.toUpperCase() || "D"
-                  )}
-
-                  {uploadingPhoto && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/45 text-[8px] font-black uppercase tracking-[0.08em] text-white">
-                      Uploading
-                    </div>
-                  )}
+          {/* PACKAGE DELIVERIES — separate from passenger rides */}
+          <section className="mt-7">
+            <p className="text-[9px] font-extrabold uppercase tracking-[0.15em] text-[#ff6846]">Extra earning opportunity</p>
+            <h3 className="mt-1 text-[19px] font-semibold">Package deliveries</h3>
+            <p className="mt-1 text-[10px] text-[#777b83] dark:text-[#b1b5c0]">Collect parcels, navigate to recipients and confirm delivery with their six-digit PIN.</p>
+            {deliveryLoading && <p className="mt-3 text-[10px]">Loading deliveries...</p>}
+            {myDeliveries.filter((d) => d.status !== "delivered" && d.status !== "cancelled").map((delivery) => (
+              <article key={`mine-${delivery.id}`} className="mt-4 space-y-4 text-[#17191f] dark:text-white">
+                <div className="flex items-start justify-between gap-3 rounded-[22px] bg-white p-5 shadow-[7px_7px_18px_rgba(30,48,74,.12),-6px_-6px_18px_rgba(255,255,255,.9)] dark:bg-[#252b35]">
+                  <div>
+                    <p className="text-[10px] uppercase text-[#666] dark:text-[#bec6d0]">Package delivery</p>
+                    <h4 className="mt-1 text-[20px] font-semibold">PX-{String(delivery.id).padStart(4, "0")}</h4>
+                    <p className="mt-1 text-[12px] text-[#666] dark:text-[#bec6d0]">{delivery.parcel_description || delivery.parcel_size || "Parcel"}</p>
+                  </div>
+                  <div className="text-right">
+                    <span className="inline-block rounded-full bg-[#eaf8ef] shadow-[3px_3px_7px_rgba(30,48,74,.1),-3px_-3px_7px_#ffffff] px-2.5 py-1 text-[12px] font-medium capitalize text-[#168745] dark:bg-[#214938] dark:text-[#8ce6af]">{String(delivery.status).replace(/_/g, " ")}</span>
+                    <p className="mt-1 text-[20px] font-semibold">R{Number(delivery.fare_amount || 0).toFixed(0)}</p>
+                  </div>
                 </div>
-
-                <span className="absolute -bottom-1 -left-1 flex h-7 w-7 items-center justify-center rounded-[10px] bg-[#ff6846] text-white shadow-[2px_2px_6px_rgba(0,0,0,0.2)]">
-                  <CameraIcon />
-                </span>
-
-                <span
-                  className={`absolute -bottom-1 -right-1 h-5 w-5 rounded-full border-[4px] border-[#e7e9ee] dark:border-[#1c1e24] ${
-                    status === "available" ? "bg-[#35b86b]" : "bg-[#a2a5ab]"
-                  }`}
-                />
-              </label>
-            </div>
-
-            <div className="min-w-0 flex-1">
-              <p className="text-[9px] font-extrabold uppercase tracking-[0.16em] text-[#ff6846]">
-                Driver portal
-              </p>
-              <h2 className="mt-1 text-[26px] font-black tracking-[-0.045em]">
-                Hi, {driver?.full_name?.split(" ")[0] || "Driver"}.
-              </h2>
-              <div className="mt-1 flex items-center gap-1.5">
-                <StarIcon />
-                <span className="text-[10px] font-extrabold">
-                  {driverRating.average_rating !== null
-                    ? driverRating.average_rating.toFixed(1)
-                    : "New"}
-                </span>
-                <span className="text-[9px] font-semibold text-[#92959b] dark:text-[#a9acb6]">
-                  · RouteX Driver
-                </span>
+                {delivery.delivery_type === "scheduled" && delivery.scheduled_pickup_at && (
+                  <div className="mt-4 flex items-center gap-3 rounded-[19px] bg-white p-3 shadow-[inset_4px_4px_10px_rgba(30,48,74,.08),inset_-4px_-4px_10px_#ffffff]">
+                    <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[14px] bg-white text-[#ff6846] shadow-[4px_4px_10px_rgba(30,48,74,.14),-4px_-4px_10px_#ffffff] dark:bg-[#343b46] dark:text-[#d5d9df]">
+                      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18M8 14h2M14 14h2M8 18h2"/></svg>
+                    </span>
+                    <div className="min-w-0 flex-1"><p className="text-[12px] text-[#666] dark:text-[#bec6d0]">Scheduled collection</p><p className="mt-1 text-[16px] font-semibold">{new Date(delivery.scheduled_pickup_at).toLocaleDateString("en-ZA", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</p></div>
+                    <div className="shrink-0 text-right"><p className="text-[12px] text-[#666] dark:text-[#bec6d0]">Time</p><p className="mt-1 text-[19px] font-semibold text-[#ff6846] dark:text-white">{new Date(delivery.scheduled_pickup_at).toLocaleTimeString("en-ZA", { hour: "2-digit", minute: "2-digit", hour12: false })}</p></div>
+                  </div>
+                )}
+                <div className="mt-4 rounded-[19px] bg-white px-4 py-3 shadow-[inset_4px_4px_10px_rgba(30,48,74,.09),inset_-4px_-4px_10px_#ffffff] dark:bg-[#343b46]">
+                  <div className="flex items-start gap-3"><span className="mt-0.5 text-[20px] leading-none text-[#666] dark:text-[#d0d5dd]" aria-hidden="true">◉</span><div className="min-w-0"><p className="text-[11px] uppercase text-[#666] dark:text-[#bec6d0]">Collection</p><p className="mt-1 text-[15px] font-medium leading-5">{shortDeliveryAddress(delivery.pickup_address)}</p></div></div>
+                  <div className="ml-[7px] my-2 h-5 border-l border-dashed border-[#d6d6d6] dark:border-[#697384]" />
+                  <div className="flex items-start gap-3"><svg className="mt-0.5 shrink-0 text-[#ff4d42]" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg><div className="min-w-0"><p className="text-[11px] uppercase text-[#666] dark:text-[#bec6d0]">Destination</p><p className="mt-1 text-[15px] font-medium leading-5">{shortDeliveryAddress(delivery.dropoff_address)}</p></div></div>
+                </div>
+                {(delivery.recipient_name || delivery.recipient_phone) && (
+                  <div className="mt-3 rounded-[19px] bg-white px-4 py-3 shadow-[inset_4px_4px_10px_rgba(30,48,74,.09),inset_-4px_-4px_10px_#ffffff] dark:bg-[#343b46]">
+                    <div className="flex items-center gap-2"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="7" r="4"/><path d="M5 21v-2a7 7 0 0 1 14 0v2"/></svg><h5 className="text-[15px] font-medium">Recipient details</h5></div>
+                    <div className="mt-3 flex items-end justify-between gap-3"><div className="min-w-0"><p className="text-[16px] font-medium">{delivery.recipient_name || "Name unavailable"}</p>{delivery.recipient_phone && <p className="mt-1 text-[14px] text-[#777] dark:text-[#bec6d0]">{delivery.recipient_phone}</p>}</div>
+                    {delivery.recipient_phone && <a href={`tel:${delivery.recipient_phone}`} aria-label="Call recipient" className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-[#08a452] hover:bg-[#dff4e8] dark:hover:bg-[#29483b]"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.79 19.79 0 0 1 3.09 5.18 2 2 0 0 1 5.08 3h3a2 2 0 0 1 2 1.72l.4 2.81a2 2 0 0 1-.57 1.7L8.2 10.94a16 16 0 0 0 4.86 4.86l1.71-1.71a2 2 0 0 1 1.7-.57l2.81.4A2 2 0 0 1 22 16.92Z"/></svg></a>}</div>
+                  </div>
+                )}
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  {(delivery.status === "accepted" || delivery.status === "collected" || delivery.status === "in_transit") && <button type="button" onClick={() => navigateDelivery(delivery, delivery.status === "accepted" ? "pickup" : "dropoff")} className="flex min-h-[68px] flex-col items-center justify-center gap-1.5 rounded-[18px] bg-[#202d40] shadow-[4px_6px_12px_rgba(30,48,74,.23)] px-2 py-3 text-[12px] font-semibold text-white"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m21 3-8 18-2.5-7.5L3 11z"/></svg>{delivery.status === "accepted" ? "Navigate to collection" : "Navigate to recipient"}</button>}
+                  {delivery.status === "accepted" && <button type="button" disabled={deliveryBusyId !== null} onClick={() => void changeDeliveryStatus(delivery.id, "collect")} className="flex min-h-[68px] flex-col items-center justify-center gap-1.5 rounded-[18px] bg-[#ff6846] shadow-[4px_6px_12px_rgba(255,104,70,.23)] px-2 py-3 text-[12px] font-semibold text-white disabled:opacity-50"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m3 7 9-4 9 4-9 4-9-4ZM3 7v10l9 4 9-4V7M12 11v10M7 5l9 4"/></svg>{deliveryBusyId === delivery.id ? "Updating…" : "Confirm collected"}</button>}
+                  {delivery.status === "collected" && <button type="button" disabled={deliveryBusyId !== null} onClick={() => void changeDeliveryStatus(delivery.id, "in-transit")} className="flex min-h-[68px] flex-col items-center justify-center gap-1.5 rounded-[18px] bg-[#ff6846] shadow-[4px_6px_12px_rgba(255,104,70,.23)] px-2 py-3 text-[12px] font-semibold text-white disabled:opacity-50">{deliveryBusyId === delivery.id ? "Updating…" : "Start delivery"}</button>}
+                </div>
+                {(delivery.status === "collected" || delivery.status === "in_transit") && <div className="mt-3 rounded-[16px] bg-white p-4 shadow-[inset_4px_4px_10px_rgba(30,48,74,.09),inset_-4px_-4px_10px_#ffffff] dark:bg-[#343b46]">
+                  <h5 className="text-[15px] font-semibold">Complete package delivery</h5><p className="mt-1 text-[12px] leading-5 text-[#666] dark:text-[#bec6d0]">Ask the recipient for the six-digit delivery PIN.</p>
+                  <label className="mt-3 block text-[12px] font-medium" htmlFor={`delivery-pin-${delivery.id}`}>Recipient's delivery PIN</label>
+                  <input id={`delivery-pin-${delivery.id}`} type="text" inputMode="numeric" autoComplete="off" maxLength={6} value={deliveryPins[delivery.id] || ""} onChange={(event) => setDeliveryPins((previous) => ({ ...previous, [delivery.id]: event.target.value.replace(/\D/g, "").slice(0, 6) }))} placeholder="Enter six-digit PIN" className="mt-2 w-full rounded-[13px] border border-[#c7cdd7] bg-white px-4 py-3 text-[18px] tracking-[.25em] text-[#1c2533]" />
+                  <button type="button" disabled={deliveryBusyId !== null || !/^\d{6}$/.test(deliveryPins[delivery.id] || "")} onClick={() => void changeDeliveryStatus(delivery.id, "complete")} className="mt-3 w-full rounded-[14px] bg-[#ff6846] shadow-[4px_6px_12px_rgba(255,104,70,.23)] px-2 py-3 text-[12px] font-semibold text-white disabled:opacity-50">{deliveryBusyId === delivery.id ? "Verifying…" : "Verify PIN & complete delivery"}</button>
+                </div>}
+              </article>
+            ))}
+            <h4 className="mt-5 text-[13px] font-semibold">Available package requests ({availableDeliveries.length})</h4>
+            {!deliveryLoading && availableDeliveries.length === 0 && <p className="mt-3 rounded-[16px] p-4 text-center text-[10px] text-[#777b83] dark:text-[#b1b5c0]">No package deliveries available right now.</p>}
+            {availableDeliveries.map((delivery) => (
+              <div key={`available-${delivery.id}`} className="mt-3 rounded-[20px] bg-[#e9edf4] p-4 shadow-[5px_5px_12px_#c4c6ca,-5px_-5px_12px_#ffffff] dark:bg-[#1c1e24] dark:shadow-[7px_7px_16px_#101116,-7px_-7px_16px_#30333d]">
+                <div className="flex items-center justify-between gap-2"><p className="text-[12px] font-semibold">{delivery.delivery_type === "scheduled" ? "Scheduled delivery" : "Deliver now"}</p><p className="text-[16px] font-semibold text-[#ff6846]">R{Number(delivery.fare_amount || 0).toFixed(0)}</p></div>
+                <p className="mt-2 text-[12px] text-[#515d70] dark:text-[#c7cfdb]">{delivery.parcel_size || "Parcel"} · {delivery.parcel_description || "Package"}</p>
+                <div className="mt-4 flex items-center gap-3 rounded-[16px] border border-white/60 bg-[#e9edf4] p-3 dark:border-white/10 dark:bg-[#292e38]">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#dce2eb] text-lg font-semibold text-[#ff6846] dark:bg-[#343d4b]">
+                    {(delivery.passenger_profile_image || delivery.customer_profile_image || delivery.sender_profile_image || delivery.profile_image) ? <img src={String(delivery.passenger_profile_image || delivery.customer_profile_image || delivery.sender_profile_image || delivery.profile_image)} alt="Customer" className="h-full w-full object-cover" /> : String(delivery.passenger_name || delivery.customer_name || delivery.sender_name || "C").charAt(0).toUpperCase()}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[9px] text-[#748198] dark:text-[#abb4c3]">Customer</p>
+                    <p className="truncate text-[13px] font-semibold">{delivery.passenger_name || delivery.customer_name || delivery.sender_name || delivery.sender_full_name || "Customer details unavailable"}</p>
+                    {(delivery.passenger_phone || delivery.customer_phone || delivery.sender_phone) && <a href={`tel:${delivery.passenger_phone || delivery.customer_phone || delivery.sender_phone}`} className="mt-1 inline-block text-[11px] text-[#ed684b]">{delivery.passenger_phone || delivery.customer_phone || delivery.sender_phone}</a>}
+                  </div>
+                </div>
+                <RouteBox pickup={delivery.pickup_address} destination={delivery.dropoff_address} />
+                {delivery.scheduled_pickup_at && (
+                  <div className="mt-4 flex flex-wrap items-center gap-3 rounded-[16px] border border-white/70 bg-[#e9edf4] px-4 py-3 dark:border-white/10 dark:bg-[#303743]">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#e0e5ee] text-[#e56548] dark:bg-[#3c4554]" aria-hidden="true">
+                      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/></svg>
+                    </div>
+                    <div className="min-w-[130px] flex-1">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[#69758a] dark:text-[#c3cad7]">Collection date</p>
+                      <p className="mt-0.5 text-[15px] font-semibold">{new Date(delivery.scheduled_pickup_at).toLocaleDateString("en-ZA", { day: "numeric", month: "short", year: "numeric" })}</p>
+                    </div>
+                    <div className="rounded-xl bg-[#e1e5ee] px-4 py-2 dark:bg-[#3c4554]">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[#69758a] dark:text-[#c3cad7]">Time</p>
+                      <p className="text-[17px] font-semibold text-[#d85e44] dark:text-[#ff987f]">{new Date(delivery.scheduled_pickup_at).toLocaleTimeString("en-ZA", { hour: "2-digit", minute: "2-digit", hour12: false })}</p>
+                    </div>
+                  </div>
+                )}
+                <button type="button" disabled={status !== "available" || deliveryBusyId !== null} onClick={() => void changeDeliveryStatus(delivery.id, "accept")} className="mt-4 w-full rounded-[13px] bg-[#ff6846] px-3 py-3.5 text-[13px] font-semibold text-white disabled:opacity-50">{status === "available" ? "Accept package delivery" : "Go online to accept"}</button>
               </div>
-            </div>
-          </section>
-
-          {/* ONLINE CONTROL */}
-          <section className="mt-6 flex items-center justify-between rounded-[24px] bg-[#e7e9ee] dark:bg-[#1c1e24] p-4 shadow-[6px_6px_14px_#c4c6ca,-6px_-6px_14px_#ffffff] dark:shadow-[7px_7px_16px_#101116,-7px_-7px_16px_#30333d]">
-            <div className="flex items-center gap-3">
-              <div
-                className={`flex h-11 w-11 items-center justify-center rounded-[15px] shadow-[inset_2px_2px_5px_#c5c7cc,inset_-2px_-2px_5px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d] ${
-                  status === "available" ? "text-[#35a967]" : "text-[#92959b] dark:text-[#a9acb6]"
-                }`}
-              >
-                <PowerIcon />
-              </div>
-              <div>
-                <p className="text-[12px] font-black">
-                  {status === "available" ? "You're online" : "You're offline"}
-                </p>
-                <p className="mt-0.5 text-[9px] font-semibold text-[#92959b] dark:text-[#a9acb6]">
-                  {status === "available"
-                    ? "Ready to receive ride requests"
-                    : "You won't receive new requests"}
-                </p>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={toggleStatus}
-              className={`relative h-8 w-[55px] rounded-full transition-all duration-300 shadow-[inset_2px_2px_5px_rgba(0,0,0,0.18),inset_-2px_-2px_5px_rgba(255,255,255,0.5)] ${
-                status === "available" ? "bg-[#ff6846]" : "bg-[#cfd1d6] dark:bg-[#383b45]"
-              }`}
-            >
-              <span
-                className={`absolute top-1 h-6 w-6 rounded-full bg-white shadow-md transition-all duration-300 ${
-                  status === "available" ? "left-[27px]" : "left-1"
-                }`}
-              />
-            </button>
-          </section>
-
-          {/* MONTHLY SHARED TRANSPORT — independent of Ride Now */}
-          <section className="mt-6 rounded-[24px] bg-[#e7e9ee] p-4 shadow-[6px_6px_14px_#c4c6ca,-6px_-6px_14px_#ffffff] dark:bg-[#1c1e24] dark:shadow-[7px_7px_16px_#101116,-7px_-7px_16px_#30333d]">
-            <p className="text-[9px] font-extrabold uppercase tracking-[0.13em] text-[#ff6846]">Extra earning opportunity</p>
-            <h3 className="mt-1 text-[17px] font-black">Monthly shared transport</h3>
-            <p className="mt-1 text-[10px] leading-5 text-[#777b83] dark:text-[#b1b5c0]">Offer regular morning and return trips. Set your route, monthly fare and passenger seats. Participation is optional.</p>
-            <a href="/driver-portal/monthly-transport" className="mt-3 flex w-full items-center justify-center rounded-[14px] bg-[#ff6846] px-4 py-3 text-[11px] font-black text-white">Manage monthly routes →</a>
+            ))}
           </section>
 
           {/* SCHEDULED RIDES */}
@@ -696,26 +786,26 @@ const response = await fetch(
                 <p className="text-[8px] font-extrabold uppercase tracking-[0.15em] text-[#ff6846]">
                   Coming up
                 </p>
-                <h3 className="mt-0.5 text-[17px] font-black tracking-[-0.035em]">
+                <h3 className="mt-0.5 text-[17px] font-semibold tracking-[-0.035em]">
                   Scheduled rides
                 </h3>
               </div>
 
               {scheduledRides.length > 0 && (
-                <span className="flex h-7 min-w-7 items-center justify-center rounded-full bg-[#17191f] dark:bg-[#30333d] px-2 text-[8px] font-black text-white">
+                <span className="flex h-7 min-w-7 items-center justify-center rounded-full bg-[#17191f] dark:bg-[#30333d] px-2 text-[8px] font-semibold text-white">
                   {scheduledRides.length}
                 </span>
               )}
             </div>
 
             {loadingScheduled ? (
-              <div className="rounded-[20px] bg-[#e7e9ee] dark:bg-[#1c1e24] p-4 text-center shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d]">
+              <div className="rounded-[20px] bg-[#e9edf4] dark:bg-[#1c1e24] p-4 text-center shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d]">
                 <p className="text-[9px] font-bold text-[#92959b] dark:text-[#a9acb6]">
                   Loading scheduled rides...
                 </p>
               </div>
             ) : scheduledRides.length === 0 ? (
-              <div className="rounded-[20px] bg-[#e7e9ee] dark:bg-[#1c1e24] p-4 text-center shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d]">
+              <div className="rounded-[20px] bg-[#e9edf4] dark:bg-[#1c1e24] p-4 text-center shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d]">
                 <p className="text-[9px] font-bold text-[#92959b] dark:text-[#a9acb6]">
                   No upcoming scheduled rides.
                 </p>
@@ -730,7 +820,7 @@ const response = await fetch(
                   return (
                     <div
                       key={ride.id}
-                      className="rounded-[23px] bg-[#e7e9ee] dark:bg-[#1c1e24] p-4 shadow-[6px_6px_14px_#c3c5ca,-6px_-6px_14px_#ffffff] dark:shadow-[7px_7px_16px_#101116,-7px_-7px_16px_#30333d]"
+                      className="rounded-[23px] bg-[#e9edf4] dark:bg-[#1c1e24] p-4 shadow-[6px_6px_14px_#c3c5ca,-6px_-6px_14px_#ffffff] dark:shadow-[7px_7px_16px_#101116,-7px_-7px_16px_#30333d]"
                     >
                       <PassengerInfo ride={ride} />
 
@@ -739,7 +829,7 @@ const response = await fetch(
                           <p className="text-[8px] font-extrabold uppercase tracking-[0.11em] text-[#92959b] dark:text-[#a9acb6]">
                             Pickup
                           </p>
-                          <p className="mt-0.5 text-[19px] font-black tracking-[-0.04em]">
+                          <p className="mt-0.5 text-[19px] font-semibold tracking-[-0.04em]">
                             {formatRideDate(ride.scheduled_pickup_at)}
                           </p>
                         </div>
@@ -748,26 +838,26 @@ const response = await fetch(
                           <p className="text-[7px] font-bold uppercase tracking-[0.1em] text-white/45">
                             Time
                           </p>
-                          <p className="text-[15px] font-black">
+                          <p className="text-[15px] font-semibold">
                             {formatRideTime(ride.scheduled_pickup_at)}
                           </p>
                         </div>
 
                         <div className="mt-4 flex items-start justify-between gap-4">
-                          <p className="text-[10px] font-black">Ride Now</p>
+                          <p className="text-[10px] font-semibold">Ride Now</p>
 
                           <div className="text-right">
                             <p className="text-[7px] font-extrabold uppercase tracking-[0.1em] text-[#92959b] dark:text-[#a9acb6]">
                               Full fare
                             </p>
 
-                            <p className="mt-0.5 text-[17px] font-black">
+                            <p className="mt-0.5 text-[17px] font-semibold">
                               R{Number(ride.fare_amount || 0).toFixed(0)}
                             </p>
 
                             {Number(ride.discount_amount || 0) > 0 && (
                               <div className="mt-1">
-                                <p className="text-[9px] font-black text-[#ff6846]">
+                                <p className="text-[9px] font-semibold text-[#ff6846]">
                                   Passenger pays R
                                   {Number(
                                     ride.passenger_amount ??
@@ -786,17 +876,17 @@ const response = await fetch(
                         </div>
                       </div>
 
-                      <div className="mt-3 rounded-[16px] bg-[#e7e9ee] dark:bg-[#1c1e24] px-3.5 py-3 shadow-[inset_2px_2px_5px_#c7c9ce,inset_-2px_-2px_5px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d]">
+                      <div className="mt-3 rounded-[16px] bg-[#e9edf4] dark:bg-[#1c1e24] px-3.5 py-3 shadow-[inset_2px_2px_5px_#c7c9ce,inset_-2px_-2px_5px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d]">
                         <div className="flex items-center gap-2.5">
                           <span className="h-[10px] w-[10px] shrink-0 rounded-full border-[3px] border-[#17191f] dark:border-[#f0f1f5]" />
-                          <p className="min-w-0 flex-1 truncate text-[10px] font-black">
+                          <p className="min-w-0 flex-1 truncate text-[10px] font-semibold">
                             {ride.pickup_address}
                           </p>
                         </div>
                         <div className="ml-[4px] my-1 h-3 border-l border-dashed border-[#b6b9bf] dark:border-[#50545f]" />
                         <div className="flex items-center gap-2.5">
                           <span className="h-[10px] w-[10px] shrink-0 rounded-[3px] bg-[#ff6846]" />
-                          <p className="min-w-0 flex-1 truncate text-[10px] font-black">
+                          <p className="min-w-0 flex-1 truncate text-[10px] font-semibold">
                             {ride.dropoff_address}
                           </p>
                         </div>
@@ -808,7 +898,7 @@ const response = await fetch(
                         </div>
 
                         <div className="min-w-0 flex-1">
-                          <p className="text-[9px] font-black">
+                          <p className="text-[9px] font-semibold">
                             {matchingActive
                               ? "Driver matching is open"
                               : `Matching opens at ${formatRideTime(ride.matching_opens_at)}`}
@@ -820,11 +910,11 @@ const response = await fetch(
                           </p>
                         </div>
 
-                        <div className="rounded-[10px] bg-[#e7e9ee] dark:bg-[#1c1e24] px-2.5 py-2 text-center shadow-[inset_2px_2px_4px_#c7c9ce,inset_-2px_-2px_4px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d]">
+                        <div className="rounded-[10px] bg-[#e9edf4] dark:bg-[#1c1e24] px-2.5 py-2 text-center shadow-[inset_2px_2px_4px_#c7c9ce,inset_-2px_-2px_4px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d]">
                           <p className="text-[7px] font-bold uppercase tracking-[0.08em] text-[#9a9da3] dark:text-[#a9acb6]">
                             Booking
                           </p>
-                          <p className="mt-0.5 text-[8px] font-black">
+                          <p className="mt-0.5 text-[8px] font-semibold">
                             BK-{ride.id.toString().padStart(4, "0")}
                           </p>
                         </div>
@@ -838,7 +928,7 @@ const response = await fetch(
                           acceptingId === ride.id
                         }
                         onClick={() => acceptRide(ride.id)}
-                        className={`mt-3 w-full rounded-[14px] py-2.5 text-[9px] font-black transition active:scale-[0.985] ${
+                        className={`mt-3 w-full rounded-[14px] py-2.5 text-[9px] font-semibold transition active:scale-[0.985] ${
                           matchingActive && status === "available"
                             ? "bg-[#17191f] dark:bg-[#30333d] text-white shadow-[3px_3px_7px_#c4c6ca,-3px_-3px_7px_#ffffff] dark:shadow-[7px_7px_16px_#101116,-7px_-7px_16px_#30333d]"
                             : "cursor-not-allowed bg-[#d3d5da] dark:bg-[#30333d] text-[#8f9298] dark:text-[#a9acb6] shadow-[inset_2px_2px_5px_#c2c4c9,inset_-2px_-2px_5px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d]"
@@ -866,7 +956,7 @@ const response = await fetch(
               <p className="text-[8px] font-extrabold uppercase tracking-[0.15em] text-[#ff6846]">
                 Driver assigned
               </p>
-              <h3 className="mt-1 text-[19px] font-black tracking-[-0.035em]">
+              <h3 className="mt-1 text-[19px] font-semibold tracking-[-0.035em]">
                 Accepted ride
               </h3>
 
@@ -876,11 +966,11 @@ const response = await fetch(
                   .map((ride) => (
                     <div
                       key={ride.id}
-                      className="rounded-[23px] bg-[#e7e9ee] dark:bg-[#1c1e24] p-4 shadow-[6px_6px_14px_#c3c5ca,-6px_-6px_14px_#ffffff] dark:shadow-[7px_7px_16px_#101116,-7px_-7px_16px_#30333d]"
+                      className="rounded-[23px] bg-[#e9edf4] dark:bg-[#1c1e24] p-4 shadow-[6px_6px_14px_#c3c5ca,-6px_-6px_14px_#ffffff] dark:shadow-[7px_7px_16px_#101116,-7px_-7px_16px_#30333d]"
                     >
                       <div className="flex items-center justify-between gap-3">
                         <div className="flex items-center gap-3">
-                          <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#e7e9ee] dark:bg-[#1c1e24] shadow-[inset_3px_3px_6px_#c5c7cc,inset_-3px_-3px_6px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d]">
+                          <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#e9edf4] dark:bg-[#1c1e24] shadow-[inset_3px_3px_6px_#c5c7cc,inset_-3px_-3px_6px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d]">
                             {ride.passenger_profile_image ? (
                               <img
                                 src={ride.passenger_profile_image}
@@ -892,7 +982,7 @@ const response = await fetch(
                                 className="h-full w-full object-cover"
                               />
                             ) : (
-                              <span className="text-[15px] font-black text-[#ff6846]">
+                              <span className="text-[15px] font-semibold text-[#ff6846]">
                                 {(ride.full_name || ride.passenger_name || "P")
                                   .charAt(0)
                                   .toUpperCase()}
@@ -905,7 +995,7 @@ const response = await fetch(
                               Passenger
                             </p>
 
-                            <p className="mt-1 text-[15px] font-black">
+                            <p className="mt-1 text-[15px] font-semibold">
                               {ride.full_name ||
                                 ride.passenger_name ||
                                 "Passenger"}
@@ -918,7 +1008,7 @@ const response = await fetch(
                           </div>
                         </div>
 
-                        <span className="rounded-full bg-[#17191f] dark:bg-[#30333d] px-3 py-1.5 text-[8px] font-black text-white">
+                        <span className="rounded-full bg-[#17191f] dark:bg-[#30333d] px-3 py-1.5 text-[8px] font-semibold text-white">
                           Accepted
                         </span>
                       </div>
@@ -934,13 +1024,13 @@ const response = await fetch(
                             Full fare
                           </p>
 
-                          <p className="mt-0.5 text-[17px] font-black">
+                          <p className="mt-0.5 text-[17px] font-semibold">
                             R{Number(ride.fare_amount || 0).toFixed(0)}
                           </p>
 
                           {Number(ride.discount_amount || 0) > 0 && (
                             <div className="mt-1">
-                              <p className="text-[9px] font-black text-[#ff6846]">
+                              <p className="text-[9px] font-semibold text-[#ff6846]">
                                 Passenger pays R
                                 {Number(
                                   ride.passenger_amount ??
@@ -957,7 +1047,7 @@ const response = await fetch(
                           )}
                         </div>
 
-                        <p className="text-[8px] font-black text-[#ff6846]">
+                        <p className="text-[8px] font-semibold text-[#ff6846]">
                           BK-{ride.id.toString().padStart(4, "0")}
                         </p>
                       </div>
@@ -973,7 +1063,7 @@ const response = await fetch(
                               );
                             }
                           }}
-                          className="rounded-[14px] bg-[#17191f] dark:bg-[#30333d] py-3 text-[9px] font-black text-white transition active:scale-[0.985]"
+                          className="rounded-[14px] bg-[#17191f] dark:bg-[#30333d] py-3 text-[9px] font-semibold text-white transition active:scale-[0.985]"
                         >
                           Navigate to pickup
                         </button>
@@ -982,7 +1072,7 @@ const response = await fetch(
                           type="button"
                           disabled={startingId === ride.id}
                           onClick={() => startRide(ride.id)}
-                          className="rounded-[14px] bg-[#ff6846] py-3 text-[9px] font-black text-white transition active:scale-[0.985] disabled:opacity-50"
+                          className="rounded-[14px] bg-[#ff6846] py-3 text-[9px] font-semibold text-white transition active:scale-[0.985] disabled:opacity-50"
                         >
                           {startingId === ride.id
                             ? "Starting..."
@@ -1002,7 +1092,7 @@ const response = await fetch(
               <p className="text-[8px] font-extrabold uppercase tracking-[0.15em] text-[#ff6846]">
                 Your upcoming pickup
               </p>
-              <h3 className="mt-1 text-[19px] font-black tracking-[-0.035em]">
+              <h3 className="mt-1 text-[19px] font-semibold tracking-[-0.035em]">
                 Accepted scheduled ride
               </h3>
 
@@ -1024,11 +1114,11 @@ const response = await fetch(
                     return (
                       <div
                         key={ride.id}
-                        className="rounded-[23px] bg-[#e7e9ee] dark:bg-[#1c1e24] p-4 shadow-[6px_6px_14px_#c3c5ca,-6px_-6px_14px_#ffffff] dark:shadow-[7px_7px_16px_#101116,-7px_-7px_16px_#30333d]"
+                        className="rounded-[23px] bg-[#e9edf4] dark:bg-[#1c1e24] p-4 shadow-[6px_6px_14px_#c3c5ca,-6px_-6px_14px_#ffffff] dark:shadow-[7px_7px_16px_#101116,-7px_-7px_16px_#30333d]"
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex min-w-0 items-center gap-3">
-                            <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#e7e9ee] dark:bg-[#1c1e24] shadow-[inset_3px_3px_6px_#c5c7cc,inset_-3px_-3px_6px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d]">
+                            <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#e9edf4] dark:bg-[#1c1e24] shadow-[inset_3px_3px_6px_#c5c7cc,inset_-3px_-3px_6px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d]">
                               {ride.passenger_profile_image ? (
                                 <img
                                   src={ride.passenger_profile_image}
@@ -1043,7 +1133,7 @@ const response = await fetch(
                                   }}
                                 />
                               ) : (
-                                <span className="text-[15px] font-black text-[#ff6846]">
+                                <span className="text-[15px] font-semibold text-[#ff6846]">
                                   {(
                                     ride.passenger_name ||
                                     ride.full_name ||
@@ -1059,7 +1149,7 @@ const response = await fetch(
                               <p className="text-[8px] font-extrabold uppercase tracking-[0.12em] text-[#92959b] dark:text-[#a9acb6]">
                                 Passenger
                               </p>
-                              <p className="mt-1 truncate text-[15px] font-black">
+                              <p className="mt-1 truncate text-[15px] font-semibold">
                                 {ride.passenger_name ||
                                   ride.full_name ||
                                   "Passenger"}
@@ -1072,7 +1162,7 @@ const response = await fetch(
 
                                   <a
                                     href={`tel:${ride.passenger_phone}`}
-                                    className="rounded-full bg-[#17191f] dark:bg-[#30333d] px-2.5 py-1 text-[8px] font-black text-white"
+                                    className="rounded-full bg-[#17191f] dark:bg-[#30333d] px-2.5 py-1 text-[8px] font-semibold text-white"
                                   >
                                     Call
                                   </a>
@@ -1081,16 +1171,16 @@ const response = await fetch(
                             </div>
                           </div>
 
-                          <span className="shrink-0 rounded-full bg-[#17191f] dark:bg-[#30333d] px-3 py-1.5 text-[8px] font-black text-white">
+                          <span className="shrink-0 rounded-full bg-[#17191f] dark:bg-[#30333d] px-3 py-1.5 text-[8px] font-semibold text-white">
                             Accepted
                           </span>
                         </div>
 
-                        <div className="mt-4 rounded-[16px] bg-[#e7e9ee] dark:bg-[#1c1e24] px-4 py-3 shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d]">
+                        <div className="mt-4 rounded-[16px] bg-[#e9edf4] dark:bg-[#1c1e24] px-4 py-3 shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d]">
                           <p className="text-[7px] font-extrabold uppercase tracking-[0.12em] text-[#92959b] dark:text-[#a9acb6]">
                             Scheduled pickup
                           </p>
-                          <p className="mt-1 text-[15px] font-black">
+                          <p className="mt-1 text-[15px] font-semibold">
                             {formatRideDate(ride.scheduled_pickup_at)} ·{" "}
                             {formatRideTime(ride.scheduled_pickup_at)}
                           </p>
@@ -1106,11 +1196,11 @@ const response = await fetch(
                             <p className="text-[7px] font-extrabold uppercase tracking-[0.1em] text-[#92959b] dark:text-[#a9acb6]">
                               Fare
                             </p>
-                            <p className="mt-0.5 text-[17px] font-black">
+                            <p className="mt-0.5 text-[17px] font-semibold">
                               R{Number(ride.fare_amount || 0).toFixed(0)}
                             </p>
                           </div>
-                          <p className="text-[8px] font-black text-[#ff6846]">
+                          <p className="text-[8px] font-semibold text-[#ff6846]">
                             BK-{ride.id.toString().padStart(4, "0")}
                           </p>
                         </div>
@@ -1129,7 +1219,7 @@ const response = await fetch(
                                 );
                               }
                             }}
-                            className={`rounded-[14px] py-3 text-[9px] font-black transition ${
+                            className={`rounded-[14px] py-3 text-[9px] font-semibold transition ${
                               canNavigate
                                 ? "bg-[#17191f] dark:bg-[#30333d] text-white active:scale-[0.985]"
                                 : "cursor-not-allowed bg-[#d3d5da] dark:bg-[#30333d] text-[#8f9298] dark:text-[#a9acb6] shadow-[inset_2px_2px_5px_#c2c4c9,inset_-2px_-2px_5px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d]"
@@ -1146,7 +1236,7 @@ const response = await fetch(
                             type="button"
                             disabled={!canStart || startingId === ride.id}
                             onClick={() => startRide(ride.id)}
-                            className={`rounded-[14px] py-3 text-[9px] font-black transition ${
+                            className={`rounded-[14px] py-3 text-[9px] font-semibold transition ${
                               canStart && startingId !== ride.id
                                 ? "bg-[#ff6846] text-white active:scale-[0.985]"
                                 : "cursor-not-allowed bg-[#d3d5da] dark:bg-[#30333d] text-[#8f9298] dark:text-[#a9acb6] shadow-[inset_2px_2px_5px_#c2c4c9,inset_-2px_-2px_5px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d]"
@@ -1184,7 +1274,7 @@ const response = await fetch(
               <p className="text-[8px] font-extrabold uppercase tracking-[0.15em] text-[#ff6846]">
                 Active trip
               </p>
-              <h3 className="mt-1 text-[19px] font-black tracking-[-0.035em]">
+              <h3 className="mt-1 text-[19px] font-semibold tracking-[-0.035em]">
                 Trip in progress
               </h3>
 
@@ -1192,11 +1282,11 @@ const response = await fetch(
                 {inProgressTrips.map((ride) => (
                   <div
                     key={ride.id}
-                    className="rounded-[23px] bg-[#e7e9ee] dark:bg-[#1c1e24] p-4 shadow-[6px_6px_14px_#c3c5ca,-6px_-6px_14px_#ffffff] dark:shadow-[7px_7px_16px_#101116,-7px_-7px_16px_#30333d]"
+                    className="rounded-[23px] bg-[#e9edf4] dark:bg-[#1c1e24] p-4 shadow-[6px_6px_14px_#c3c5ca,-6px_-6px_14px_#ffffff] dark:shadow-[7px_7px_16px_#101116,-7px_-7px_16px_#30333d]"
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#e7e9ee] dark:bg-[#1c1e24] shadow-[inset_3px_3px_6px_#c5c7cc,inset_-3px_-3px_6px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d]">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#e9edf4] dark:bg-[#1c1e24] shadow-[inset_3px_3px_6px_#c5c7cc,inset_-3px_-3px_6px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d]">
                           {ride.passenger_profile_image ? (
                             <img
                               src={ride.passenger_profile_image}
@@ -1208,7 +1298,7 @@ const response = await fetch(
                               className="h-full w-full object-cover"
                             />
                           ) : (
-                            <span className="text-[15px] font-black text-[#ff6846]">
+                            <span className="text-[15px] font-semibold text-[#ff6846]">
                               {(ride.full_name || ride.passenger_name || "P")
                                 .charAt(0)
                                 .toUpperCase()}
@@ -1221,7 +1311,7 @@ const response = await fetch(
                             Passenger
                           </p>
 
-                          <p className="mt-1 text-[15px] font-black">
+                          <p className="mt-1 text-[15px] font-semibold">
                             {ride.full_name ||
                               ride.passenger_name ||
                               "Passenger"}
@@ -1234,7 +1324,7 @@ const response = await fetch(
                         </div>
                       </div>
 
-                      <span className="rounded-full bg-[#ff6846] px-3 py-1.5 text-[8px] font-black text-white">
+                      <span className="rounded-full bg-[#ff6846] px-3 py-1.5 text-[8px] font-semibold text-white">
                         In Progress
                       </span>
                     </div>
@@ -1250,13 +1340,13 @@ const response = await fetch(
                           Full fare
                         </p>
 
-                        <p className="mt-0.5 text-[17px] font-black">
+                        <p className="mt-0.5 text-[17px] font-semibold">
                           R{Number(ride.fare_amount || 0).toFixed(0)}
                         </p>
 
                         {Number(ride.discount_amount || 0) > 0 && (
                           <div className="mt-1">
-                            <p className="text-[9px] font-black text-[#ff6846]">
+                            <p className="text-[9px] font-semibold text-[#ff6846]">
                               Passenger pays R
                               {Number(
                                 ride.passenger_amount ?? ride.fare_amount ?? 0,
@@ -1271,7 +1361,7 @@ const response = await fetch(
                         )}
                       </div>
 
-                      <p className="text-[8px] font-black text-[#ff6846]">
+                      <p className="text-[8px] font-semibold text-[#ff6846]">
                         BK-{ride.id.toString().padStart(4, "0")}
                       </p>
                     </div>
@@ -1287,7 +1377,7 @@ const response = await fetch(
                             );
                           }
                         }}
-                        className="rounded-[14px] bg-[#17191f] dark:bg-[#30333d] py-3 text-[9px] font-black text-white"
+                        className="rounded-[14px] bg-[#17191f] dark:bg-[#30333d] py-3 text-[9px] font-semibold text-white"
                       >
                         Navigate to destination
                       </button>
@@ -1296,7 +1386,7 @@ const response = await fetch(
                         type="button"
                         disabled={completingId === ride.id}
                         onClick={() => completeRide(ride.id)}
-                        className="rounded-[14px] bg-[#ff6846] py-3 text-[9px] font-black text-white disabled:opacity-50"
+                        className="rounded-[14px] bg-[#ff6846] py-3 text-[9px] font-semibold text-white disabled:opacity-50"
                       >
                         {completingId === ride.id
                           ? "Completing..."
@@ -1314,17 +1404,17 @@ const response = await fetch(
             <p className="text-[9px] font-extrabold uppercase tracking-[0.15em] text-[#92959b] dark:text-[#a9acb6]">
               Live requests
             </p>
-            <h3 className="mt-1 text-[19px] font-black tracking-[-0.035em]">
+            <h3 className="mt-1 text-[19px] font-semibold tracking-[-0.035em]">
               Rides available now
             </h3>
 
             {liveRequests.filter((ride) => ride.ride_type !== "scheduled")
               .length === 0 ? (
-              <div className="mt-4 rounded-[24px] bg-[#e7e9ee] dark:bg-[#1c1e24] p-5 text-center shadow-[inset_4px_4px_9px_#c5c7cc,inset_-4px_-4px_9px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d]">
+              <div className="mt-4 rounded-[24px] bg-[#e9edf4] dark:bg-[#1c1e24] p-5 text-center shadow-[inset_4px_4px_9px_#c5c7cc,inset_-4px_-4px_9px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d]">
                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-[17px] text-[#ff6846]">
                   <RadarIcon />
                 </div>
-                <p className="mt-3 text-[10px] font-black">
+                <p className="mt-3 text-[10px] font-semibold">
                   {status === "available"
                     ? "Looking for rides"
                     : "You're offline"}
@@ -1342,25 +1432,25 @@ const response = await fetch(
                   .map((ride) => (
                     <div
                       key={ride.id}
-                      className="rounded-[21px] bg-[#e7e9ee] dark:bg-[#1c1e24] p-4 shadow-[5px_5px_12px_#c4c6ca,-5px_-5px_12px_#ffffff] dark:shadow-[7px_7px_16px_#101116,-7px_-7px_16px_#30333d]"
+                      className="rounded-[21px] bg-[#e9edf4] dark:bg-[#1c1e24] p-4 shadow-[5px_5px_12px_#c4c6ca,-5px_-5px_12px_#ffffff] dark:shadow-[7px_7px_16px_#101116,-7px_-7px_16px_#30333d]"
                     >
                       <PassengerInfo ride={ride} />
 
                       <div className="mt-4 flex items-start justify-between gap-4">
-                        <p className="text-[10px] font-black">Ride Now</p>
+                        <p className="text-[10px] font-semibold">Ride Now</p>
 
                         <div className="text-right">
                           <p className="text-[7px] font-extrabold uppercase tracking-[0.1em] text-[#92959b] dark:text-[#a9acb6]">
                             Full fare
                           </p>
 
-                          <p className="mt-0.5 text-[17px] font-black">
+                          <p className="mt-0.5 text-[17px] font-semibold">
                             R{Number(ride.fare_amount || 0).toFixed(0)}
                           </p>
 
                           {Number(ride.discount_amount || 0) > 0 && (
                             <div className="mt-1">
-                              <p className="text-[9px] font-black text-[#ff6846]">
+                              <p className="text-[9px] font-semibold text-[#ff6846]">
                                 Passenger pays R
                                 {Number(
                                   ride.passenger_amount ??
@@ -1387,7 +1477,7 @@ const response = await fetch(
                           status !== "available" || acceptingId === ride.id
                         }
                         onClick={() => acceptRide(ride.id)}
-                        className="mt-3 w-full rounded-[14px] bg-[#17191f] dark:bg-[#30333d] py-3 text-[9px] font-black text-white disabled:opacity-40"
+                        className="mt-3 w-full rounded-[14px] bg-[#17191f] dark:bg-[#30333d] py-3 text-[9px] font-semibold text-white disabled:opacity-40"
                       >
                         {acceptingId === ride.id
                           ? "Accepting..."
@@ -1406,7 +1496,7 @@ const response = await fetch(
                 <p className="text-[9px] font-extrabold uppercase tracking-[0.13em] text-[#92959b] dark:text-[#a9acb6]">
                   Feedback
                 </p>
-                <p className="mt-1 text-[12px] font-black">Passenger reviews</p>
+                <p className="mt-1 text-[12px] font-semibold">Passenger reviews</p>
               </div>
               <span className="text-[9px] font-bold text-[#92959b] dark:text-[#a9acb6]">
                 {driverRating.review_count}{" "}
@@ -1415,7 +1505,7 @@ const response = await fetch(
             </div>
 
             {driverReviews.length === 0 ? (
-              <div className="mt-4 rounded-[18px] bg-[#e7e9ee] dark:bg-[#1c1e24] px-4 py-4 text-center shadow-[inset_3px_3px_7px_#c5c7cc,inset_-3px_-3px_7px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d]">
+              <div className="mt-4 rounded-[18px] bg-[#e9edf4] dark:bg-[#1c1e24] px-4 py-4 text-center shadow-[inset_3px_3px_7px_#c5c7cc,inset_-3px_-3px_7px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d]">
                 <p className="text-[9px] font-semibold text-[#96999f] dark:text-[#a9acb6]">
                   No passenger reviews yet.
                 </p>
@@ -1425,13 +1515,13 @@ const response = await fetch(
                 {driverReviews.slice(0, 5).map((review: any) => (
                   <div
                     key={review.id}
-                    className="rounded-[18px] bg-[#e7e9ee] dark:bg-[#1c1e24] px-4 py-4 shadow-[3px_3px_8px_#c5c7cc,-3px_-3px_8px_#ffffff] dark:shadow-[7px_7px_16px_#101116,-7px_-7px_16px_#30333d]"
+                    className="rounded-[18px] bg-[#e9edf4] dark:bg-[#1c1e24] px-4 py-4 shadow-[3px_3px_8px_#c5c7cc,-3px_-3px_8px_#ffffff] dark:shadow-[7px_7px_16px_#101116,-7px_-7px_16px_#30333d]"
                   >
                     <div className="flex items-center justify-between">
-                      <p className="text-[10px] font-black">
+                      <p className="text-[10px] font-semibold">
                         {review.passenger_name || "Passenger"}
                       </p>
-                      <p className="text-[9px] font-black text-[#ff6846]">
+                      <p className="text-[9px] font-semibold text-[#ff6846]">
                         {Number(review.rating || 0).toFixed(1)} ★
                       </p>
                     </div>
@@ -1448,7 +1538,7 @@ const response = await fetch(
 
           {appPopup && (
             <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/35 px-5 pb-6 sm:items-center sm:pb-0">
-              <div className="w-full max-w-sm rounded-[26px] bg-[#e7e9ee] dark:bg-[#1c1e24] p-5 shadow-[10px_10px_28px_rgba(0,0,0,0.22),-6px_-6px_18px_rgba(255,255,255,0.75)]">
+              <div className="w-full max-w-sm rounded-[26px] bg-[#e9edf4] dark:bg-[#1c1e24] p-5 shadow-[10px_10px_28px_rgba(0,0,0,0.22),-6px_-6px_18px_rgba(255,255,255,0.75)]">
                 <div className="flex items-start gap-3">
                   <div
                     className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] ${
@@ -1457,10 +1547,10 @@ const response = await fetch(
                         : "bg-[#17191f] dark:bg-[#30333d] text-white"
                     }`}
                   >
-                    <span className="text-[18px] font-black">!</span>
+                    <span className="text-[18px] font-semibold">!</span>
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[15px] font-black text-[#17191f] dark:text-[#f5f6f8]">
+                    <p className="text-[15px] font-semibold text-[#17191f] dark:text-[#f5f6f8]">
                       {appPopup.title}
                     </p>
                     <p className="mt-1 text-[10px] font-semibold leading-5 text-[#7c7f86] dark:text-[#b2b5bf]">
@@ -1472,7 +1562,7 @@ const response = await fetch(
                 <button
                   type="button"
                   onClick={() => setAppPopup(null)}
-                  className="mt-5 w-full rounded-[16px] bg-[#17191f] dark:bg-[#30333d] px-4 py-3.5 text-[11px] font-black text-white active:scale-[0.985]"
+                  className="mt-5 w-full rounded-[16px] bg-[#17191f] dark:bg-[#30333d] px-4 py-3.5 text-[11px] font-semibold text-white active:scale-[0.985]"
                 >
                   OK
                 </button>
@@ -1483,20 +1573,23 @@ const response = await fetch(
           {driverSidebar !== null && (
             <div className="fixed inset-0 z-[90]">
               <button type="button" aria-label="Close sidebar" onClick={() => setDriverSidebar(null)} className="absolute inset-0 w-full bg-black/45" />
-              <aside role="dialog" aria-modal="true" aria-label="Driver earnings and completed bookings" className="absolute right-0 top-0 h-full w-[min(92vw,420px)] overflow-y-auto bg-[#e7e9ee] dark:bg-[#1c1e24] px-5 pb-10 pt-6 shadow-[-10px_0_30px_rgba(0,0,0,0.25)] animate-[slideIn_220ms_ease-out]">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-[19px] font-black">Driver activity</h2>
-                  <button type="button" onClick={() => setDriverSidebar(null)} aria-label="Close sidebar" className="rounded-[12px] bg-[#17191f] px-3 py-2 text-[12px] font-bold text-white">✕</button>
-                </div>
-                <div className="mt-5 grid grid-cols-2 gap-2">
-                  <button type="button" onClick={() => setDriverSidebar("earnings")} aria-pressed={driverSidebar === "earnings"} className={`rounded-[13px] px-3 py-3 text-[11px] font-bold ${driverSidebar === "earnings" ? "bg-[#ff6846] text-white" : "bg-[#d7d9df] text-[#17191f] dark:bg-[#30333d] dark:text-white"}`}>Trip earnings</button>
-                  <button type="button" onClick={() => {setDriverSidebar("trips"); setShowRecentTrips(true);}} aria-pressed={driverSidebar === "trips"} className={`rounded-[13px] px-3 py-3 text-[11px] font-bold ${driverSidebar === "trips" ? "bg-[#ff6846] text-white" : "bg-[#d7d9df] text-[#17191f] dark:bg-[#30333d] dark:text-white"}`}>Completed bookings</button>
-                </div>
+              <aside role="dialog" aria-modal="true" aria-label="Driver navigation" className="absolute left-0 top-0 h-full w-[min(86vw,350px)] overflow-y-auto bg-[#e9edf4] dark:bg-[#1c1e24] px-5 pb-10 pt-6 shadow-[10px_0_30px_rgba(0,0,0,0.25)] animate-[slideIn_220ms_ease-out]">
+                <div className="flex items-center justify-between"><span className="text-xl font-semibold tracking-widest">ROUTE<span className="text-[#ff6846]">X</span></span><button type="button" onClick={() => setDriverSidebar(null)} aria-label="Close menu" className="rounded-xl p-2 text-xl">✕</button></div>
+                <nav className="mt-8 space-y-2" aria-label="Driver menu">
+                  {([ ["dashboard", "Dashboard", "⌂"], ["earnings", "My earnings", "◷"], ["trips", "Completed rides", "↶"], ["deliveries", "Completed deliveries", "▣"], ["profile", "My profile", "♙"] ] as const).map(([key,label,symbol]) => (
+                    <button key={key} type="button" onClick={() => {setDriverSidebar(key);if(key==="trips")setShowRecentTrips(true);}} aria-current={driverSidebar===key?"page":undefined} className={`flex w-full items-center gap-4 rounded-[17px] px-4 py-4 text-left text-[14px] font-medium ${driverSidebar===key?"text-[#ed684b] shadow-[inset_4px_4px_9px_#cdd1da,inset_-4px_-4px_9px_#fff] dark:shadow-[inset_4px_4px_9px_#171b22,inset_-4px_-4px_9px_#3c4350]":"text-[#344152] dark:text-[#e8ecf2]"}`}><span aria-hidden="true" className="w-7 text-center text-[22px] font-normal">{symbol}</span>{label}</button>
+                  ))}
+                </nav>
+                <a href="/driver-portal/monthly-transport" onClick={() => setDriverSidebar(null)} className="mt-3 flex w-full items-center gap-4 rounded-[17px] px-4 py-4 text-left text-[14px] font-medium text-[#344152] dark:text-[#e8ecf2]"><span aria-hidden="true" className="w-7 text-center text-[21px]">▤</span>Monthly shared transport</a>
+                <a href="https://wa.me/27799132513" target="_blank" rel="noopener noreferrer" className="flex w-full items-center gap-4 rounded-[17px] px-4 py-4 text-left text-[14px] font-medium text-[#344152] dark:text-[#e8ecf2]"><span aria-hidden="true" className="w-7 text-center text-[21px]">✉</span>Support</a>
+                {driverSidebar === "dashboard" && <p className="mt-8 text-sm text-[#748198] dark:text-[#b1bccb]">Close the menu to view your driver dashboard.</p>}
+                {driverSidebar === "profile" && <div className="mt-7 space-y-3 text-sm"><h3 className="font-semibold">My profile</h3><p>{driver?.full_name || "Driver"}</p><p>{driver?.phone || ""}</p><button type="button" className="rounded-xl bg-[#ff6846] px-4 py-3 text-white" onClick={() => {setDriverSidebar(null);document.getElementById("routex-driver-photo")?.click();}}>Change profile photo</button></div>}
+                {driverSidebar === "deliveries" && <div className="mt-7 space-y-4"><h3 className="text-base font-semibold">Completed deliveries</h3>{myDeliveries.filter(d=>d.status==="delivered").length===0?<p className="text-sm text-[#748198]">No completed deliveries yet.</p>:myDeliveries.filter(d=>d.status==="delivered").map(d=><div key={d.id} className="rounded-2xl p-4 shadow-[4px_4px_10px_#c4c6ca,-4px_-4px_10px_#fff] dark:shadow-none"><p className="font-semibold">Delivery PX-{String(d.id).padStart(4,"0")}</p><RouteBox pickup={d.pickup_address} destination={d.dropoff_address}/><p className="mt-2 text-[#ff6846]">R{Number(d.fare_amount||0).toFixed(0)}</p></div>)}</div>}
           {driverSidebar === "earnings" && (<>
           {/* MONTHLY EARNINGS */}
-          <section className="mt-9 rounded-[24px] bg-[#e7e9ee] dark:bg-[#1c1e24] p-5 shadow-[6px_6px_14px_#c4c6ca,-6px_-6px_14px_#ffffff] dark:shadow-[7px_7px_16px_#101116,-7px_-7px_16px_#30333d]">
+          <section className="mt-9 rounded-[24px] bg-[#e9edf4] dark:bg-[#1c1e24] p-5 shadow-[6px_6px_14px_#c4c6ca,-6px_-6px_14px_#ffffff] dark:shadow-[7px_7px_16px_#101116,-7px_-7px_16px_#30333d]">
             <p className="text-[9px] font-extrabold uppercase tracking-[0.14em] text-[#ff6846]">My earnings</p>
-            <h3 className="mt-1 text-[17px] font-black">Monthly RouteX earnings</h3>
+            <h3 className="mt-1 text-[17px] font-semibold">Monthly RouteX earnings</h3>
             {earningsLoading ? (
               <p className="mt-4 text-[11px]">Loading earnings...</p>
             ) : earningsError ? (
@@ -1508,7 +1601,7 @@ const response = await fetch(
               return (
                 <>
                   <p className="mt-4 text-[9px] font-bold text-[#92959b] dark:text-[#a9acb6]">This month · {thisMonth}</p>
-                  <p className="mt-1 text-[30px] font-black text-[#ff6846]">{money(current?.gross_fares || 0)}</p>
+                  <p className="mt-1 text-[30px] font-semibold text-[#ff6846]">{money(current?.gross_fares || 0)}</p>
                   <p className="mt-1 text-[10px] font-semibold">{current?.trips || 0} completed trips</p>
                   <p className="mt-2 text-[9px] leading-4 text-[#92959b] dark:text-[#a9acb6]">Gross trip fares, including RouteX-funded promotions. This is not a confirmation of payment received.</p>
                   <button type="button" onClick={() => setShowEarningsHistory((value) => !value)} aria-expanded={showEarningsHistory} className="mt-4 w-full rounded-[14px] bg-[#17191f] dark:bg-[#30333d] px-4 py-3 text-[11px] font-bold text-white">
@@ -1519,7 +1612,7 @@ const response = await fetch(
                       {earningsMonths.length === 0 ? <p className="text-[10px]">No completed trips recorded yet.</p> : earningsMonths.map((item) => (
                         <div key={item.month} className="flex items-center justify-between rounded-[12px] border border-black/10 dark:border-white/10 p-3">
                           <div><p className="text-[11px] font-bold">{item.month}</p><p className="text-[9px] text-[#92959b] dark:text-[#a9acb6]">{item.trips} trips</p></div>
-                          <p className="text-[12px] font-black">{money(item.gross_fares)}</p>
+                          <p className="text-[12px] font-semibold">{money(item.gross_fares)}</p>
                         </div>
                       ))}
                     </div>
@@ -1536,7 +1629,7 @@ const response = await fetch(
             <button
               type="button"
               onClick={() => setShowRecentTrips((current) => !current)}
-              className="flex w-full items-center justify-between rounded-[20px] bg-[#e7e9ee] dark:bg-[#1c1e24] px-4 py-4 text-left shadow-[4px_4px_9px_#c4c6ca,-4px_-4px_9px_#ffffff] dark:shadow-[7px_7px_16px_#101116,-7px_-7px_16px_#30333d] transition active:scale-[0.99]"
+              className="flex w-full items-center justify-between rounded-[20px] bg-[#e9edf4] dark:bg-[#1c1e24] px-4 py-4 text-left shadow-[4px_4px_9px_#c4c6ca,-4px_-4px_9px_#ffffff] dark:shadow-[7px_7px_16px_#101116,-7px_-7px_16px_#30333d] transition active:scale-[0.99]"
               aria-expanded={showRecentTrips}
             >
               <div className="flex items-center gap-3">
@@ -1548,7 +1641,7 @@ const response = await fetch(
                   <p className="text-[9px] font-extrabold uppercase tracking-[0.13em] text-[#92959b] dark:text-[#a9acb6]">
                     Activity
                   </p>
-                  <p className="mt-1 text-[12px] font-black">Recent trips</p>
+                  <p className="mt-1 text-[12px] font-semibold">Recent trips</p>
                   <p className="mt-0.5 text-[8px] font-semibold text-[#96999f] dark:text-[#a9acb6]">
                     View your previous RouteX rides
                   </p>
@@ -1556,7 +1649,7 @@ const response = await fetch(
               </div>
 
               <div className="flex items-center gap-3">
-                <span className="flex h-8 min-w-8 items-center justify-center rounded-full bg-[#ff6846] px-2 text-[10px] font-black text-white">
+                <span className="flex h-8 min-w-8 items-center justify-center rounded-full bg-[#ff6846] px-2 text-[10px] font-semibold text-white">
                   {completedTrips.length}
                 </span>
 
@@ -1573,7 +1666,7 @@ const response = await fetch(
             {showRecentTrips && (
               <div className="mt-4 space-y-3">
                 {completedTrips.length === 0 ? (
-                  <div className="rounded-[18px] bg-[#e7e9ee] dark:bg-[#1c1e24] px-4 py-5 text-center shadow-[inset_3px_3px_7px_#c5c7cc,inset_-3px_-3px_7px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d]">
+                  <div className="rounded-[18px] bg-[#e9edf4] dark:bg-[#1c1e24] px-4 py-5 text-center shadow-[inset_3px_3px_7px_#c5c7cc,inset_-3px_-3px_7px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d]">
                     <p className="text-[9px] font-semibold text-[#96999f] dark:text-[#a9acb6]">
                       No completed trips yet.
                     </p>
@@ -1594,7 +1687,7 @@ const response = await fetch(
 
           <footer className="pt-10 text-center">
             <p className="text-[9px] font-semibold text-[#a0a3a9] dark:text-[#a9acb6]">
-              RouteX â€¢ Driver Portal
+              RouteX · Driver Portal
             </p>
           </footer>
         </div>
@@ -1625,11 +1718,11 @@ function PassengerInfo({ ride }: { ride: any }) {
 
   return (
     <div className="flex min-w-0 items-center gap-3">
-      <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#e7e9ee] dark:bg-[#1c1e24] shadow-[inset_3px_3px_6px_#c5c7cc,inset_-3px_-3px_6px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d]">
+      <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#e9edf4] dark:bg-[#1c1e24] shadow-[inset_3px_3px_6px_#c5c7cc,inset_-3px_-3px_6px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d]">
         {image ? (
           <img src={image} alt={name} className="h-full w-full object-cover" />
         ) : (
-          <span className="text-[15px] font-black text-[#ff6846]">
+          <span className="text-[15px] font-semibold text-[#ff6846]">
             {name.charAt(0).toUpperCase()}
           </span>
         )}
@@ -1639,13 +1732,22 @@ function PassengerInfo({ ride }: { ride: any }) {
         <p className="text-[8px] font-extrabold uppercase tracking-[0.12em] text-[#92959b] dark:text-[#a9acb6]">
           Passenger
         </p>
-        <p className="mt-1 truncate text-[15px] font-black">{name}</p>
+        <p className="mt-1 truncate text-[15px] font-semibold">{name}</p>
         {phone && (
           <p className="mt-0.5 text-[9px] font-bold text-[#8b8e95] dark:text-[#a9acb6]">{phone}</p>
         )}
       </div>
     </div>
   );
+}
+
+function compactDriverAddress(value: unknown): string {
+  const raw = String(value ?? "").trim();
+  if (!raw) return "Address not provided";
+  const parts = raw.split(",").map(part => part.trim()).filter(Boolean);
+  const upingtonIndex = parts.findIndex(part => /^Upington$/i.test(part));
+  if (upingtonIndex > 0) return [...parts.slice(0, Math.min(2, upingtonIndex)), "Upington"].join(", ");
+  return parts.filter(part => !/municipality|district|province|south africa|ward|^\d{4,5}$/i.test(part)).slice(0, 3).join(", ") || raw;
 }
 
 function RouteBox({
@@ -1656,10 +1758,10 @@ function RouteBox({
   destination: string;
 }) {
   return (
-    <div className="mt-5 rounded-[19px] bg-[#e7e9ee] dark:bg-[#1c1e24] px-4 py-4 shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d]">
-      <RouteRow type="pickup" label="Pickup" value={pickup} />
+    <div className="mt-5 rounded-[19px] bg-[#e9edf4] dark:bg-[#1c1e24] px-4 py-4 shadow-[inset_3px_3px_7px_#c7c9ce,inset_-3px_-3px_7px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d]">
+      <RouteRow type="pickup" label="Pickup" value={compactDriverAddress(pickup)} />
       <div className="ml-[5px] h-5 border-l border-dashed border-[#b6b9bf] dark:border-[#50545f]" />
-      <RouteRow type="destination" label="Destination" value={destination} />
+      <RouteRow type="destination" label="Destination" value={compactDriverAddress(destination)} />
     </div>
   );
 }
@@ -1684,7 +1786,7 @@ function RouteRow({
         <p className="text-[8px] font-extrabold uppercase tracking-[0.11em] text-[#9a9da3] dark:text-[#a9acb6]">
           {label}
         </p>
-        <p className="mt-1 text-[10px] font-black leading-4">
+        <p className="mt-1 text-[10px] font-semibold leading-4">
           {value || "Location unavailable"}
         </p>
       </div>
@@ -1694,19 +1796,19 @@ function RouteRow({
 
 function HistoryRide({ trip }: { trip: any }) {
   return (
-    <div className="flex items-center rounded-[18px] bg-[#e7e9ee] dark:bg-[#1c1e24] px-4 py-3.5 shadow-[3px_3px_8px_#c5c7cc,-3px_-3px_8px_#ffffff] dark:shadow-[7px_7px_16px_#101116,-7px_-7px_16px_#30333d]">
+    <div className="flex items-center rounded-[18px] bg-[#e9edf4] dark:bg-[#1c1e24] px-4 py-3.5 shadow-[3px_3px_8px_#c5c7cc,-3px_-3px_8px_#ffffff] dark:shadow-[7px_7px_16px_#101116,-7px_-7px_16px_#30333d]">
       <div className="flex h-9 w-9 items-center justify-center rounded-[12px] text-[#ff6846] shadow-[inset_2px_2px_5px_#c5c7cc,inset_-2px_-2px_5px_#ffffff] dark:shadow-[inset_3px_3px_8px_#101116,inset_-3px_-3px_8px_#30333d]">
         <RideIcon />
       </div>
       <div className="ml-3 min-w-0 flex-1">
-        <p className="truncate text-[10px] font-black">
+        <p className="truncate text-[10px] font-semibold">
           {trip.dropoff_address || "Completed ride"}
         </p>
         <p className="mt-0.5 text-[8px] font-semibold text-[#999ca2] dark:text-[#a9acb6]">
           Completed · BK-{trip.id.toString().padStart(4, "0")}
         </p>
       </div>
-      <p className="text-[11px] font-black">R{trip.fare_amount}</p>
+      <p className="text-[11px] font-semibold">R{trip.fare_amount}</p>
     </div>
   );
 }

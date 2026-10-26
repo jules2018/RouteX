@@ -1130,19 +1130,21 @@ if (rideType === "scheduled") {
   };
 
   return (
-    <main className="min-h-[100dvh] bg-[#f1f2f6] dark:bg-[#111216] text-[#17191f] dark:text-[#f5f6f8]">
-      <div className="mx-auto min-h-[100dvh] w-full max-w-md bg-[#e9ebf1] dark:bg-[#1c1e24] px-5 pb-8 pt-5">
-        {/* HEADER */}
-
-        <header className="mb-7">
-          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#ff6846]">
-            RouteX
-          </p>
-
-          <h1 className="mt-1 text-[28px] font-black tracking-[-0.045em]">
-            Where to?
-          </h1>
-        </header>
+    <main className="min-h-[100dvh] bg-[#edf0f6] text-[#202c40] dark:bg-[#10141e] dark:text-[#f5f6f8]">
+      <div className="mx-auto min-h-[100dvh] w-full max-w-md bg-[#e9edf5] pb-8 dark:bg-[#202736]">
+        {/* Compact back navigation; booking content begins immediately below. */}
+        <div className="px-5 pt-5">
+          <a
+            href="/passenger-portal"
+            aria-label="Back to passenger portal"
+            className="inline-flex items-center gap-2 rounded-[14px] bg-[#e9edf5] px-4 py-2.5 text-[12px] font-semibold text-[#26364d] shadow-[4px_4px_10px_rgba(0,0,0,0.09),-4px_-4px_10px_rgba(255,255,255,0.9)] transition active:scale-[0.98] dark:bg-[#242b39] dark:text-white dark:shadow-[4px_4px_10px_rgba(0,0,0,0.2),-4px_-4px_10px_rgba(48,51,61,0.5)]"
+          >
+            <span aria-hidden="true" className="text-[19px] leading-none">‹</span>
+            Back
+          </a>
+        </div>
+        <div className="px-5 pt-6">
+          <div className="mb-6 flex items-center gap-3"><span className="h-9 w-1.5 rounded-full bg-gradient-to-b from-[#263750] via-[#61738f] to-[#ed704d]" aria-hidden="true" /><h1 className="text-[26px] font-semibold tracking-[-0.035em]">Where to?</h1></div>
 
         {requestState === "idle" ? (
           <>
@@ -1157,15 +1159,15 @@ if (rideType === "scheduled") {
 
 
 
-    rounded-[22px]
+    rounded-[24px]
 
 
 
-    bg-[#e9ebf1] dark:bg-[#1c1e24]
+    bg-[#e9edf5] dark:bg-[#242b39]
 
 
 
-    shadow-[5px_5px_13px_rgba(0,0,0,0.10),-5px_-5px_13px_rgba(255,255,255,0.95)] dark:shadow-[7px_7px_18px_rgba(0,0,0,0.08),-7px_-7px_18px_rgba(48,51,61,0.85)]
+    shadow-[8px_8px_20px_rgba(31,45,72,0.11),-7px_-7px_18px_rgba(255,255,255,0.95)] dark:shadow-[7px_7px_18px_rgba(0,0,0,0.08),-7px_-7px_18px_rgba(48,51,61,0.85)]
 
 
 
@@ -1184,7 +1186,7 @@ if (rideType === "scheduled") {
 
 
 
-  bg-[#e9ebf1] dark:bg-[#1c1e24] px-5 py-5 text-left
+  bg-[#e9edf5] dark:bg-[#242b39] px-5 py-5 text-left
 
 
 
@@ -1202,14 +1204,14 @@ if (rideType === "scheduled") {
 
 "
               >
-                <span className="h-3 w-3 shrink-0 rounded-full border-[3px] border-[#17191f] dark:border-[#17191f]" />
+                <span className="h-3 w-3 shrink-0 rounded-full border-[3px] border-[#263750] dark:border-[#263750]" />
 
                 <div className="min-w-0 flex-1">
                   <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-[#6c7280] dark:text-white/68">
                     Pickup
                   </p>
 
-                  <p className="mt-1 truncate text-[14px] font-bold">
+                  <p className="mt-1 truncate text-[14px] font-medium">
                     {selectedPickup
                       ? selectedPickup.address
                       : "Choose pickup location"}
@@ -1240,7 +1242,7 @@ if (rideType === "scheduled") {
 
 
 
-  bg-[#e9ebf1] dark:bg-[#1c1e24] px-5 py-5 text-left
+  bg-[#e9edf5] dark:bg-[#242b39] px-5 py-5 text-left
 
 
 
@@ -1258,7 +1260,7 @@ if (rideType === "scheduled") {
 
 "
               >
-                <span className="h-3 w-3 shrink-0 rounded-[3px] bg-[#ff6846]" />
+                <span className="h-3 w-3 shrink-0 rounded-[3px] bg-[#ed704d]" />
 
                 <div className="min-w-0 flex-1">
                   <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-[#6c7280] dark:text-white/68">
@@ -1266,8 +1268,8 @@ if (rideType === "scheduled") {
                   </p>
 
                   <p
-                    className={`mt-1 truncate text-[14px] font-bold ${
-                      selectedDestination ? "text-[#17191f] dark:text-[#f5f6f8]" : "text-[#6c7280] dark:text-white/68"
+                    className={`mt-1 truncate text-[14px] font-medium ${
+                      selectedDestination ? "text-[#202c40] dark:text-[#f5f6f8]" : "text-[#6c7280] dark:text-white/68"
                     }`}
                   >
                     {selectedDestination
@@ -1302,7 +1304,7 @@ if (rideType === "scheduled") {
 
 
 
-    bg-[#e9ebf1] dark:bg-[#1c1e24] p-1.5
+    bg-[#e9edf5] dark:bg-[#242b39] p-1.5
 
 
 
@@ -1319,7 +1321,7 @@ if (rideType === "scheduled") {
 
                   className={`rounded-[13px] px-4 py-3 text-[12px] font-bold transition ${
                     rideType === "now"
-                      ? "bg-[#17191f] text-white"
+                      ? "bg-[#263750] text-white"
                       : "text-[#6c7280] dark:text-white/73"
                   }`}
                 >
@@ -1333,7 +1335,7 @@ if (rideType === "scheduled") {
 
                   className={`rounded-[13px] px-4 py-3 text-[12px] font-bold transition ${
                     rideType === "scheduled"
-                      ? "bg-[#17191f] text-white"
+                      ? "bg-[#263750] text-white"
                       : "text-[#6c7280] dark:text-white/73"
                   }`}
                 >
@@ -1350,15 +1352,15 @@ if (rideType === "scheduled") {
 
 
 
-    mt-4 rounded-[22px]
+    mt-4 rounded-[24px]
 
 
 
-    bg-[#e9ebf1] dark:bg-[#1c1e24] p-4
+    bg-[#e9edf5] dark:bg-[#242b39] p-4
 
 
 
-    shadow-[5px_5px_13px_rgba(0,0,0,0.10),-5px_-5px_13px_rgba(255,255,255,0.95)] dark:shadow-[7px_7px_18px_rgba(0,0,0,0.07),-7px_-7px_18px_rgba(48,51,61,0.85)]
+    shadow-[8px_8px_20px_rgba(31,45,72,0.11),-7px_-7px_18px_rgba(255,255,255,0.95)] dark:shadow-[7px_7px_18px_rgba(0,0,0,0.07),-7px_-7px_18px_rgba(48,51,61,0.85)]
 
 
 
@@ -1371,7 +1373,7 @@ if (rideType === "scheduled") {
                     Trip details
                   </p>
 
-                  <h2 className="mt-1 text-[16px] font-black tracking-[-0.02em] text-[#17191f] dark:text-[#f5f6f8]">
+                  <h2 className="mt-1 text-[16px] font-semibold tracking-[-0.02em] text-[#202c40] dark:text-[#f5f6f8]">
                     Choose pickup time
                   </h2>
                 </div>
@@ -1397,7 +1399,7 @@ if (rideType === "scheduled") {
 
 
 
-  rounded-[14px] bg-[#e9ebf1] dark:bg-[#1c1e24]
+  rounded-[14px] bg-[#e9edf5] dark:bg-[#242b39]
 
 
 
@@ -1405,7 +1407,7 @@ if (rideType === "scheduled") {
 
 
 
-  shadow-[5px_5px_13px_rgba(0,0,0,0.10),-5px_-5px_13px_rgba(255,255,255,0.95)] dark:shadow-[4px_4px_10px_rgba(0,0,0,0.09),-4px_-4px_10px_rgba(48,51,61,0.85)]
+  shadow-[8px_8px_20px_rgba(31,45,72,0.11),-7px_-7px_18px_rgba(255,255,255,0.95)] dark:shadow-[4px_4px_10px_rgba(0,0,0,0.09),-4px_-4px_10px_rgba(48,51,61,0.85)]
 
 
 
@@ -1437,7 +1439,7 @@ if (rideType === "scheduled") {
 
 
 
-    rounded-[14px] bg-[#e9ebf1] dark:bg-[#1c1e24] px-2
+    rounded-[14px] bg-[#e9edf5] dark:bg-[#242b39] px-2
 
 
 
@@ -1447,7 +1449,7 @@ if (rideType === "scheduled") {
 
   "
                     >
-                      <p className="truncate text-[13px] font-bold text-[#17191f] dark:text-[#f5f6f8]">
+                      <p className="truncate text-[13px] font-semibold text-[#202c40] dark:text-[#f5f6f8]">
                         {formattedTravelDate}
                       </p>
 
@@ -1501,15 +1503,15 @@ if (rideType === "scheduled") {
 
 
 
-  bg-[#e9ebf1] dark:bg-[#1c1e24]
+  bg-[#e9edf5] dark:bg-[#242b39]
 
 
 
-  text-[20px] font-bold text-[#17191f] dark:text-[#f5f6f8]
+  text-[20px] font-bold text-[#202c40] dark:text-[#f5f6f8]
 
 
 
-  shadow-[5px_5px_13px_rgba(0,0,0,0.10),-5px_-5px_13px_rgba(255,255,255,0.95)] dark:shadow-[4px_4px_10px_rgba(0,0,0,0.09),-4px_-4px_10px_rgba(48,51,61,0.85)]
+  shadow-[8px_8px_20px_rgba(31,45,72,0.11),-7px_-7px_18px_rgba(255,255,255,0.95)] dark:shadow-[4px_4px_10px_rgba(0,0,0,0.09),-4px_-4px_10px_rgba(48,51,61,0.85)]
 
 
 
@@ -1532,7 +1534,7 @@ if (rideType === "scheduled") {
                       −
                     </button>
 
-                    <div className="flex h-12 items-center justify-center rounded-[13px] bg-[#17191f] px-3 text-[20px] font-black text-white">
+                    <div className="flex h-12 items-center justify-center rounded-[13px] bg-[#263750] px-3 text-[20px] font-semibold text-white">
                       {pickupTime}
                     </div>
 
@@ -1553,15 +1555,15 @@ if (rideType === "scheduled") {
 
 
 
-  bg-[#e9ebf1] dark:bg-[#1c1e24]
+  bg-[#e9edf5] dark:bg-[#242b39]
 
 
 
-  text-[20px] font-bold text-[#17191f] dark:text-[#f5f6f8]
+  text-[20px] font-bold text-[#202c40] dark:text-[#f5f6f8]
 
 
 
-  shadow-[5px_5px_13px_rgba(0,0,0,0.10),-5px_-5px_13px_rgba(255,255,255,0.95)] dark:shadow-[4px_4px_10px_rgba(0,0,0,0.09),-4px_-4px_10px_rgba(48,51,61,0.85)]
+  shadow-[8px_8px_20px_rgba(31,45,72,0.11),-7px_-7px_18px_rgba(255,255,255,0.95)] dark:shadow-[4px_4px_10px_rgba(0,0,0,0.09),-4px_-4px_10px_rgba(48,51,61,0.85)]
 
 
 
@@ -1597,7 +1599,7 @@ if (rideType === "scheduled") {
 
 
 
-    bg-[#e9ebf1] dark:bg-[#1c1e24] px-3 py-2.5
+    bg-[#e9edf5] dark:bg-[#242b39] px-3 py-2.5
 
 
 
@@ -1611,7 +1613,7 @@ if (rideType === "scheduled") {
 
   "
                 >
-                  <p className="text-[10px] font-bold text-[#17191f] dark:text-[#f5f6f8]">
+                  <p className="text-[10px] font-bold text-[#202c40] dark:text-[#f5f6f8]">
                     Schedule at least 30 minutes ahead
                   </p>
 
@@ -1622,7 +1624,7 @@ if (rideType === "scheduled") {
                 </div>
 
                 {!scheduledTimeIsValid && (
-                  <p className="mt-2 text-[9px] font-semibold text-[#ff6846]">
+                  <p className="mt-2 text-[9px] font-semibold text-[#e66d4b]">
                     Choose a pickup time at least 30 minutes from now.
                   </p>
                 )}
@@ -1636,7 +1638,7 @@ if (rideType === "scheduled") {
                 Estimated fare
               </p>
 
-              <p className="mt-1 text-[34px] font-black tracking-[-0.05em]">
+              <p className="mt-1 text-[34px] font-semibold tracking-[-0.05em]">
                 {calculatingFare ? "..." : fare ? `R${fare}` : "—"}
               </p>
 
@@ -1664,7 +1666,7 @@ if (rideType === "scheduled") {
                     </p>
                   )}
                   {outOfTownFee > 0 && <p>Out-of-town fee: R{outOfTownFee}</p>}
-                  <p className="font-bold text-[#17191f] dark:text-[#f5f6f8]">
+                  <p className="font-bold text-[#202c40] dark:text-[#f5f6f8]">
                     Total before promo code: R{fare}
                   </p>
                 </div>
@@ -1684,7 +1686,7 @@ if (rideType === "scheduled") {
                       type="button"
                       onClick={() => setFareRetryKey((value) => value + 1)}
                       disabled={calculatingFare}
-                      className="mt-2 rounded-full bg-[#17191f] px-4 py-2 text-[10px] font-bold text-white disabled:opacity-50"
+                      className="mt-2 rounded-full bg-[#263750] px-4 py-2 text-[10px] font-bold text-white disabled:opacity-50"
                     >
                       {calculatingFare ? "Trying again..." : "Try again"}
                     </button>
@@ -1716,7 +1718,7 @@ if (rideType === "scheduled") {
 
 
 
-  bg-[#e9ebf1] dark:bg-[#1c1e24]
+  bg-[#e9edf5] dark:bg-[#242b39]
 
 
 
@@ -1776,7 +1778,7 @@ if (rideType === "scheduled") {
                   </span>
 
                   <div className="min-w-0 text-left">
-                    <p className="text-[14px] font-bold text-[#ff7a00]">
+                    <p className="text-[14px] font-medium text-[#ff7a00]">
                       No Drivers Available
                     </p>
 
@@ -1823,10 +1825,10 @@ if (rideType === "scheduled") {
 
                 disabled={!canBook}
 
-                className="mt-6 flex w-full items-center justify-between rounded-[18px] bg-[#17191f] px-5 py-4 text-white transition active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-35"
+                className="mt-6 flex w-full items-center justify-between rounded-[18px] bg-[#263750] px-5 py-4 text-white transition active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-35"
               >
                 <div className="text-left">
-                  <p className="text-[13px] font-black">
+                  <p className="text-[13px] font-semibold">
                     {loading
                       ? rideType === "scheduled"
                         ? "Scheduling..."
@@ -1849,7 +1851,7 @@ if (rideType === "scheduled") {
                 </p>
                 </div>
 
-                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#ff6846] text-xl">
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#ed704d] text-xl">
                   →
                 </span>
               </button>
@@ -1867,14 +1869,14 @@ if (rideType === "scheduled") {
 
                 <div className="flex flex-col items-center text-center">
                   <div className="relative flex h-16 w-16 items-center justify-center">
-                    <span className="absolute h-16 w-16 animate-ping rounded-full bg-[#ff6846]/10" />
+                    <span className="absolute h-16 w-16 animate-ping rounded-full bg-[#ed704d]/10" />
 
-                    <span className="relative flex h-12 w-12 items-center justify-center rounded-full bg-[#ff6846] shadow-[5px_5px_13px_rgba(0,0,0,0.10),-5px_-5px_13px_rgba(255,255,255,0.95)] dark:shadow-[5px_5px_12px_rgba(0,0,0,0.12),-5px_-5px_12px_rgba(48,51,61,0.65)]">
+                    <span className="relative flex h-12 w-12 items-center justify-center rounded-full bg-[#ed704d] shadow-[8px_8px_20px_rgba(31,45,72,0.11),-7px_-7px_18px_rgba(255,255,255,0.95)] dark:shadow-[5px_5px_12px_rgba(0,0,0,0.12),-5px_-5px_12px_rgba(48,51,61,0.65)]">
                       <span className="h-4 w-4 rounded-full border-[3px] border-white" />
                     </span>
                   </div>
 
-                  <h2 className="mt-5 text-[23px] font-black tracking-[-0.045em]">
+                  <h2 className="mt-5 text-[23px] font-semibold tracking-[-0.045em]">
                     Finding your driver...
                   </h2>
 
@@ -1885,7 +1887,7 @@ if (rideType === "scheduled") {
 
                 {/* MAIN RIDE PANEL */}
 
-                <div className="mt-6 w-full rounded-[28px] bg-[#e9ebf1] dark:bg-[#24262e] p-5 text-left shadow-[5px_5px_13px_rgba(0,0,0,0.10),-5px_-5px_13px_rgba(255,255,255,0.95)] dark:shadow-[12px_12px_24px_rgba(0,0,0,0.10),-10px_-10px_22px_rgba(48,51,61,0.65)]">
+                <div className="mt-6 w-full rounded-[28px] bg-[#e9edf5] dark:bg-[#24262e] p-5 text-left shadow-[8px_8px_20px_rgba(31,45,72,0.11),-7px_-7px_18px_rgba(255,255,255,0.95)] dark:shadow-[12px_12px_24px_rgba(0,0,0,0.10),-10px_-10px_22px_rgba(48,51,61,0.65)]">
                   {/* HEADER */}
 
                   <div className="flex items-center justify-between">
@@ -1910,10 +1912,10 @@ if (rideType === "scheduled") {
 
                   {/* ROUTE */}
 
-                  <div className="mt-5 rounded-[20px] bg-[#e9ebf1] dark:bg-[#24262e] p-4 shadow-[inset_3px_3px_7px_rgba(0,0,0,0.10),inset_-3px_-3px_7px_rgba(255,255,255,0.9)] dark:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.06),inset_-3px_-3px_7px_rgba(48,51,61,0.65)]">
+                  <div className="mt-5 rounded-[20px] bg-[#e9edf5] dark:bg-[#24262e] p-4 shadow-[inset_3px_3px_7px_rgba(0,0,0,0.10),inset_-3px_-3px_7px_rgba(255,255,255,0.9)] dark:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.06),inset_-3px_-3px_7px_rgba(48,51,61,0.65)]">
                     <div className="flex gap-4">
                       <div className="flex w-3 shrink-0 flex-col items-center">
-                        <span className="mt-1 h-3 w-3 rounded-full border-[2px] border-[#17191f] dark:border-[#17191f] bg-[#e9ebf1] dark:bg-[#24262e]" />
+                        <span className="mt-1 h-3 w-3 rounded-full border-[2px] border-[#263750] dark:border-[#263750] bg-[#e9edf5] dark:bg-[#24262e]" />
 
                         <span className="my-1.5 h-9 w-px bg-[#e95432]/45" />
 
@@ -1922,7 +1924,7 @@ if (rideType === "scheduled") {
 
                       <div className="min-w-0 flex-1">
                         <div>
-                          <p className="truncate text-[14px] font-bold tracking-[-0.015em] text-[#17191f] dark:text-[#f5f6f8]">
+                          <p className="truncate text-[14px] font-medium tracking-[-0.015em] text-[#202c40] dark:text-[#f5f6f8]">
                             {selectedPickup?.address}
                           </p>
 
@@ -1932,7 +1934,7 @@ if (rideType === "scheduled") {
                         </div>
 
                         <div className="mt-5">
-                          <p className="truncate text-[14px] font-bold tracking-[-0.015em] text-[#17191f] dark:text-[#f5f6f8]">
+                          <p className="truncate text-[14px] font-medium tracking-[-0.015em] text-[#202c40] dark:text-[#f5f6f8]">
                             {selectedDestination?.address}
                           </p>
 
@@ -1962,7 +1964,7 @@ if (rideType === "scheduled") {
                         Ride type
                       </p>
 
-                      <p className="mt-1 text-[9px] font-semibold text-[#17191f] dark:text-[#f5f6f8]">
+                      <p className="mt-1 text-[9px] font-semibold text-[#202c40] dark:text-[#f5f6f8]">
                         Ride Now
                       </p>
                     </div>
@@ -1974,7 +1976,7 @@ if (rideType === "scheduled") {
                     <div className="flex items-center justify-between gap-4">
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#ff6846]" />
+                          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#ed704d]" />
 
                           <p className="text-[8px] font-semibold uppercase tracking-[0.13em] text-[#6c7280] dark:text-white/75">
                             Finding your driver
@@ -1986,7 +1988,7 @@ if (rideType === "scheduled") {
                         </p>
                       </div>
 
-                      <p className="shrink-0 text-[23px] font-bold tracking-[-0.04em] text-[#17191f] dark:text-white">
+                      <p className="shrink-0 text-[23px] font-bold tracking-[-0.04em] text-[#202c40] dark:text-white">
                         {Math.floor(searchSecondsLeft / 60)}:
                         {String(searchSecondsLeft % 60).padStart(2, "0")}
                       </p>
@@ -2005,9 +2007,9 @@ if (rideType === "scheduled") {
                         <div
                           key={driver.id}
 
-                          className="mb-2 flex items-center gap-3 rounded-[16px] bg-[#e9ebf1] dark:bg-[#24262e] px-3 py-3 shadow-[5px_5px_13px_rgba(0,0,0,0.10),-5px_-5px_13px_rgba(255,255,255,0.95)] dark:shadow-[5px_5px_10px_rgba(0,0,0,0.06),-4px_-4px_9px_rgba(48,51,61,0.65)]"
+                          className="mb-2 flex items-center gap-3 rounded-[16px] bg-[#e9edf5] dark:bg-[#24262e] px-3 py-3 shadow-[8px_8px_20px_rgba(31,45,72,0.11),-7px_-7px_18px_rgba(255,255,255,0.95)] dark:shadow-[5px_5px_10px_rgba(0,0,0,0.06),-4px_-4px_9px_rgba(48,51,61,0.65)]"
                         >
-                          <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-[#e9ebf1] dark:bg-[#24262e] shadow-[inset_3px_3px_7px_rgba(0,0,0,0.10),inset_-3px_-3px_7px_rgba(255,255,255,0.9)] dark:shadow-[inset_2px_2px_4px_rgba(0,0,0,0.07),inset_-2px_-2px_4px_rgba(48,51,61,0.85)]">
+                          <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-[#e9edf5] dark:bg-[#24262e] shadow-[inset_3px_3px_7px_rgba(0,0,0,0.10),inset_-3px_-3px_7px_rgba(255,255,255,0.9)] dark:shadow-[inset_2px_2px_4px_rgba(0,0,0,0.07),inset_-2px_-2px_4px_rgba(48,51,61,0.85)]">
                             {driver.profile_image ? (
                               <img
                                 src={driver.profile_image}
@@ -2025,7 +2027,7 @@ if (rideType === "scheduled") {
                           </div>
 
                           <div className="min-w-0 flex-1">
-                            <p className="truncate text-[10px] font-semibold text-[#17191f] dark:text-[#f5f6f8]">
+                            <p className="truncate text-[10px] font-semibold text-[#202c40] dark:text-[#f5f6f8]">
                               {driver.first_name}
                             </p>
 
@@ -2059,7 +2061,7 @@ if (rideType === "scheduled") {
 
                     onClick={cancelBooking}
 
-                    className="mt-5 w-full rounded-[15px] bg-[#e95432] px-5 py-3 text-[10px] font-semibold text-[#17191f] dark:text-white shadow-[5px_5px_13px_rgba(0,0,0,0.10),-5px_-5px_13px_rgba(255,255,255,0.95)] dark:shadow-[5px_5px_11px_rgba(0,0,0,0.12),-4px_-4px_9px_rgba(48,51,61,0.65)] transition active:scale-[0.985] active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.10),inset_-3px_-3px_7px_rgba(255,255,255,0.9)] dark:active:shadow-[inset_3px_3px_6px_rgba(0,0,0,0.16),inset_-2px_-2px_5px_rgba(48,51,61,0.65)]"
+                    className="mt-5 w-full rounded-[15px] bg-[#e95432] px-5 py-3 text-[10px] font-semibold text-[#202c40] dark:text-white shadow-[8px_8px_20px_rgba(31,45,72,0.11),-7px_-7px_18px_rgba(255,255,255,0.95)] dark:shadow-[5px_5px_11px_rgba(0,0,0,0.12),-4px_-4px_9px_rgba(48,51,61,0.65)] transition active:scale-[0.985] active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.10),inset_-3px_-3px_7px_rgba(255,255,255,0.9)] dark:active:shadow-[inset_3px_3px_6px_rgba(0,0,0,0.16),inset_-2px_-2px_5px_rgba(48,51,61,0.65)]"
                   >
                     Cancel booking
                   </button>
@@ -2071,11 +2073,11 @@ if (rideType === "scheduled") {
               </>
             ) : (
               <>
-                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#f0f1f5] dark:bg-[#292c35] text-[24px] font-black text-[#6c7280] dark:text-white/63">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#f0f1f5] dark:bg-[#292c35] text-[24px] font-semibold text-[#6c7280] dark:text-white/63">
                   ×
                 </div>
 
-                <h2 className="mt-6 text-[23px] font-black tracking-[-0.04em]">
+                <h2 className="mt-6 text-[23px] font-semibold tracking-[-0.04em]">
                   No driver accepted your ride
                 </h2>
 
@@ -2093,7 +2095,7 @@ if (rideType === "scheduled") {
                     setActiveBookingId(null);
                   }}
 
-                  className="mt-7 w-full rounded-[17px] bg-[#17191f] dark:bg-[#17191f] px-5 py-4 text-[13px] font-black text-[#17191f] dark:text-white"
+                  className="mt-7 w-full rounded-[17px] bg-[#263750] dark:bg-[#263750] px-5 py-4 text-[13px] font-semibold text-[#202c40] dark:text-white"
                 >
                   Try again
                 </button>
@@ -2109,7 +2111,7 @@ if (rideType === "scheduled") {
                     chooseRideType("scheduled");
                   }}
 
-                  className="mt-3 w-full rounded-[17px] border border-black/10 px-5 py-4 text-[13px] font-black"
+                  className="mt-3 w-full rounded-[17px] border border-black/10 px-5 py-4 text-[13px] font-semibold"
                 >
                   Schedule instead
                 </button>
@@ -2117,13 +2119,14 @@ if (rideType === "scheduled") {
             )}
           </section>
         )}
+        </div>
       </div>
 
       {/* PICKUP SEARCH */}
 
       {showPickupSearch && (
-        <div className="fixed inset-0 z-[100] bg-[#e9ebf1] dark:bg-[#1c1e24]">
-          <div className="mx-auto h-[100dvh] w-full max-w-md overflow-y-auto bg-[#e9ebf1] dark:bg-[#1c1e24] px-5 pb-6 pt-4">
+        <div className="fixed inset-0 z-[100] bg-[#e9edf5] dark:bg-[#242b39]">
+          <div className="mx-auto h-[100dvh] w-full max-w-md overflow-y-auto bg-[#e9edf5] dark:bg-[#242b39] px-5 pb-6 pt-4">
             <div className="flex items-center">
               <button
                 type="button"
@@ -2143,11 +2146,11 @@ if (rideType === "scheduled") {
                 <BackIcon />
               </button>
 
-              <p className="ml-4 text-[14px] font-black">Pickup</p>
+              <p className="ml-4 text-[14px] font-semibold">Pickup</p>
             </div>
 
             <div className="mt-6">
-              <h2 className="max-w-[320px] text-[24px] font-black leading-[1.05] tracking-[-0.04em]">
+              <h2 className="max-w-[320px] text-[24px] font-semibold leading-[1.05] tracking-[-0.04em]">
                 Where should we pick you up?
               </h2>
 
@@ -2200,7 +2203,7 @@ if (rideType === "scheduled") {
 
 
 
-  bg-[#e9ebf1] dark:bg-[#1c1e24]
+  bg-[#e9edf5] dark:bg-[#242b39]
 
 
 
@@ -2212,7 +2215,7 @@ if (rideType === "scheduled") {
 
 
 
-  shadow-[5px_5px_13px_rgba(0,0,0,0.10),-5px_-5px_13px_rgba(255,255,255,0.95)] dark:shadow-[5px_5px_14px_rgba(0,0,0,0.07),-5px_-5px_14px_rgba(48,51,61,0.85)]
+  shadow-[8px_8px_20px_rgba(31,45,72,0.11),-7px_-7px_18px_rgba(255,255,255,0.95)] dark:shadow-[5px_5px_14px_rgba(0,0,0,0.07),-5px_-5px_14px_rgba(48,51,61,0.85)]
 
 
 
@@ -2238,12 +2241,12 @@ if (rideType === "scheduled") {
 
 "
               >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#fff0e9] dark:bg-[#35241f] text-[#ff6846]">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#fff0e9] dark:bg-[#35241f] text-[#e66d4b]">
                   <GpsIcon />
                 </span>
 
                 <span>
-                  <span className="block text-[12px] font-black">
+                  <span className="block text-[12px] font-semibold">
                     {gettingLocation
                       ? "Finding your location..."
                       : "Use my current location"}
@@ -2326,8 +2329,8 @@ if (rideType === "scheduled") {
       {/* DESTINATION SEARCH */}
 
       {showDestinationSearch && (
-        <div className="fixed inset-0 z-[100] bg-[#e9ebf1] dark:bg-[#1c1e24]">
-          <div className="mx-auto h-[100dvh] w-full max-w-md overflow-y-auto bg-[#e9ebf1] dark:bg-[#1c1e24] px-5 pb-6 pt-4">
+        <div className="fixed inset-0 z-[100] bg-[#e9edf5] dark:bg-[#242b39]">
+          <div className="mx-auto h-[100dvh] w-full max-w-md overflow-y-auto bg-[#e9edf5] dark:bg-[#242b39] px-5 pb-6 pt-4">
             <div className="flex items-center">
               <button
                 type="button"
@@ -2347,11 +2350,11 @@ if (rideType === "scheduled") {
                 <BackIcon />
               </button>
 
-              <p className="ml-4 text-[14px] font-black">Destination</p>
+              <p className="ml-4 text-[14px] font-semibold">Destination</p>
             </div>
 
             <div className="mt-6">
-              <h2 className="max-w-[320px] text-[24px] font-black leading-[1.05] tracking-[-0.04em]">
+              <h2 className="max-w-[320px] text-[24px] font-semibold leading-[1.05] tracking-[-0.04em]">
                 Where are you going?
               </h2>
 
@@ -2451,8 +2454,8 @@ if (rideType === "scheduled") {
 
       {appPopup && (
         <div className="fixed inset-0 z-[10000] flex items-end justify-center bg-black/35 dark:bg-black/35 p-5 sm:items-center">
-          <div className="w-full max-w-sm rounded-[24px] bg-[#e9ebf1] dark:bg-[#1c1e24] p-5 shadow-2xl">
-            <p className="text-[15px] font-black">{appPopup.title}</p>
+          <div className="w-full max-w-sm rounded-[24px] bg-[#e9edf5] dark:bg-[#242b39] p-5 shadow-2xl">
+            <p className="text-[15px] font-semibold">{appPopup.title}</p>
 
             <p className="mt-2 text-[11px] leading-5 text-[#6c7280] dark:text-white/78">
               {appPopup.message}
@@ -2463,7 +2466,7 @@ if (rideType === "scheduled") {
 
               onClick={() => setAppPopup(null)}
 
-              className="mt-5 w-full rounded-[15px] bg-[#ff6846] px-4 py-3.5 text-[11px] font-black text-[#17191f] dark:text-white"
+              className="mt-5 w-full rounded-[15px] bg-[#ed704d] px-4 py-3.5 text-[11px] font-semibold text-[#202c40] dark:text-white"
             >
               OK
             </button>
@@ -2505,7 +2508,7 @@ function SearchBox({
 
 
 
-    bg-[#e9ebf1] dark:bg-[#1c1e24]
+    bg-[#e9edf5] dark:bg-[#242b39]
 
 
 
@@ -2517,7 +2520,7 @@ function SearchBox({
 
 
 
-    shadow-[5px_5px_13px_rgba(0,0,0,0.10),-5px_-5px_13px_rgba(255,255,255,0.95)] dark:shadow-[5px_5px_14px_rgba(0,0,0,0.08),-5px_-5px_14px_rgba(48,51,61,0.85)]
+    shadow-[8px_8px_20px_rgba(31,45,72,0.11),-7px_-7px_18px_rgba(255,255,255,0.95)] dark:shadow-[5px_5px_14px_rgba(0,0,0,0.08),-5px_-5px_14px_rgba(48,51,61,0.85)]
 
 
 
@@ -2641,7 +2644,7 @@ function AddressResults({
 
   return (
     <div className="mt-2">
-      <p className="text-[9px] font-black uppercase tracking-[0.14em] text-[#6c7280] dark:text-white/58">
+      <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-[#6c7280] dark:text-white/58">
         Search results
       </p>
 
@@ -2697,20 +2700,20 @@ function AddressResults({
                 className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
                   type === "destination"
                     ? "bg-[#fff0e9] dark:bg-[#35241f]"
-                    : "bg-[#e9ebf1] dark:bg-[#1c1e24] border border-black/[0.07] dark:border-white/[0.07]"
+                    : "bg-[#e9edf5] dark:bg-[#242b39] border border-black/[0.07] dark:border-white/[0.07]"
                 }`}
               >
                 <span
                   className={
                     type === "destination"
-                      ? "h-3 w-3 rounded-[3px] bg-[#ff6846]"
-                      : "h-3 w-3 rounded-full border-[3px] border-[#17191f] dark:border-[#17191f]"
+                      ? "h-3 w-3 rounded-[3px] bg-[#ed704d]"
+                      : "h-3 w-3 rounded-full border-[3px] border-[#263750] dark:border-[#263750]"
                   }
                 />
               </span>
 
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-[12px] font-black">
+                <span className="block truncate text-[12px] font-semibold">
                   {result.address}
                 </span>
 
@@ -2726,8 +2729,8 @@ function AddressResults({
       )}
 
       {!searching && finished && results.length === 0 && (
-        <div className="mt-3 rounded-[16px] bg-[#17191f] dark:bg-[#17191f] p-4">
-          <p className="text-[11px] font-black">Can't find this address?</p>
+        <div className="mt-3 rounded-[16px] bg-[#263750] dark:bg-[#263750] p-4">
+          <p className="text-[11px] font-semibold">Can't find this address?</p>
 
           <p className="mt-1 text-[9px] font-medium leading-4 text-[#6c7280] dark:text-white/68">
             Choose the exact {type} point on the map.
@@ -2738,7 +2741,7 @@ function AddressResults({
 
             onClick={onMap}
 
-            className="mt-3 w-full rounded-[14px] bg-[#ff6846] px-4 py-3 text-[11px] font-black text-[#17191f] dark:text-white active:scale-[0.985]"
+            className="mt-3 w-full rounded-[14px] bg-[#ed704d] px-4 py-3 text-[11px] font-semibold text-[#202c40] dark:text-white active:scale-[0.985]"
           >
             Choose {type} on map
           </button>
