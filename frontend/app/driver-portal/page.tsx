@@ -650,12 +650,14 @@ const response = await fetch(
         <div className="mx-auto min-h-[100dvh] w-full max-w-[790px] px-5 pb-10">
           {/* FULL-WIDTH DRIVER HERO — matches passenger portal */}
           <header className="relative -mx-5 overflow-hidden rounded-b-[32px] bg-gradient-to-br from-[#172c42] via-[#253e57] to-[#d9674d] px-5 pb-5 pt-4 text-white shadow-[0_14px_30px_rgba(30,39,53,0.20)]">
-            <div className="relative z-10 flex items-center justify-between gap-2">
+            <div className="relative z-10 flex items-start justify-between gap-2">
+              <div className="flex items-center gap-3 pt-1">
               <button type="button" aria-label="Open driver menu" onClick={() => setDriverSidebar("dashboard")} className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-white/30 bg-white/10 shadow-[3px_3px_9px_#1115,inset_1px_1px_2px_#fff4]">
                 <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
               </button>
-              <span className="text-[15px] font-semibold tracking-[.15em]">ROUTE<span className="text-[#ff987f]">X</span></span>
-              <div className="flex items-center gap-3">
+              <span className="whitespace-nowrap text-[15px] font-semibold tracking-[.15em]">ROUTE<span className="text-[#ff987f]">X</span></span>
+              </div>
+              <div className="flex shrink-0 flex-col items-end gap-2">
                 <button type="button" onClick={togglePortalTheme} aria-label="Switch between light and dark mode" aria-pressed={portalDark} className="relative h-[34px] w-[64px] shrink-0 rounded-full bg-[#e4e8ee] shadow-[inset_3px_3px_6px_#aab0bc,inset_-3px_-3px_6px_#fff]">
                   <span className="absolute left-[9px] top-[7px] text-sm text-[#f59a40]">☀</span><span className="absolute right-[9px] top-[7px] text-sm text-[#657084]">☾</span>
                   <span className={`absolute top-1 left-1 grid h-[26px] w-[26px] place-items-center rounded-full bg-white text-[#f28c3f] shadow-md transition-transform ${portalDark ? "translate-x-[30px]" : ""}`}>{portalDark ? "☾" : "☀"}</span>
@@ -678,10 +680,10 @@ const response = await fetch(
               <h1 className="text-[35px] font-semibold leading-tight tracking-[-.045em] sm:text-[39px]">Hi, {driver?.full_name?.trim()?.split(/\s+/)?.[0] || "Driver"}</h1>
               <p className="mt-1.5 flex items-center gap-2 text-xs text-white/85"><span className="text-[#ffb39b]">★</span>{driverRating.average_rating !== null ? driverRating.average_rating.toFixed(1) : "New driver"}</p>
               <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-                <div className="inline-flex items-center gap-3 rounded-[19px] border border-white/25 bg-white/[.12] px-3.5 py-2.5 shadow-[5px_6px_12px_rgba(14,28,45,.26),-2px_-2px_6px_rgba(255,255,255,.12),inset_1px_1px_1px_rgba(255,255,255,.17)]">
-                  <span className={`h-2 w-2 rounded-full ${status === "available" ? "bg-[#60e6a0]" : "bg-[#d1d6df]"}`} />
-                  <span className="min-w-[40px] text-[12px] font-medium">{status === "available" ? "Online" : "Offline"}</span>
-                  <button type="button" role="switch" aria-checked={status === "available"} aria-label="Toggle driver availability" onClick={toggleStatus} className={`relative h-[30px] w-[52px] rounded-full border border-white/20 shadow-[inset_3px_3px_6px_rgba(0,0,0,.26),inset_-2px_-2px_4px_rgba(255,255,255,.15)] transition-colors ${status === "available" ? "bg-[#ff6846]" : "bg-[#a7b0be]/75"}`}><span className={`absolute top-[3px] h-[22px] w-[22px] rounded-full bg-white shadow-[2px_3px_5px_rgba(0,0,0,.26),inset_1px_1px_2px_#fff] transition-all ${status === "available" ? "left-[26px]" : "left-[3px]"}`} /></button>
+                <div className="inline-flex items-center gap-2 rounded-[15px] border border-white/25 bg-white/[.12] px-2.5 py-1.5 shadow-[5px_6px_12px_rgba(14,28,45,.26),-2px_-2px_6px_rgba(255,255,255,.12),inset_1px_1px_1px_rgba(255,255,255,.17)]">
+                  <span className={`h-1.5 w-1.5 rounded-full ${status === "available" ? "bg-[#60e6a0]" : "bg-[#d1d6df]"}`} />
+                  <span className="min-w-[37px] text-[11px] font-medium">{status === "available" ? "Online" : "Offline"}</span>
+                  <button type="button" role="switch" aria-checked={status === "available"} aria-label="Toggle driver availability" onClick={toggleStatus} className={`relative h-[26px] w-[45px] rounded-full border border-white/20 shadow-[inset_3px_3px_6px_rgba(0,0,0,.26),inset_-2px_-2px_4px_rgba(255,255,255,.15)] transition-colors ${status === "available" ? "bg-[#ff6846]" : "bg-[#a7b0be]/75"}`}><span className={`absolute top-[3px] h-[18px] w-[18px] rounded-full bg-white shadow-[2px_3px_5px_rgba(0,0,0,.26),inset_1px_1px_2px_#fff] transition-all ${status === "available" ? "left-[23px]" : "left-[3px]"}`} /></button>
                 </div>
                 <div className="rounded-xl border border-white/25 bg-white/10 px-3 py-2 text-[12px] font-medium text-white [&_button]:text-white [&_a]:text-white"><LogoutButton /></div>
               </div>
