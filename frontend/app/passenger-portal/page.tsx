@@ -957,6 +957,16 @@ export default function PassengerPortalPage() {
           </div>
         </header>
         <div className="px-4 pb-8 pt-6 sm:px-6">
+          {!profileImageUrl && !photo && passenger?.id && (
+            <div className="mb-5 flex items-center gap-3 rounded-[18px] border border-[#f2c8b9] bg-[#fff3ed] px-4 py-3 text-[#263448] shadow-[3px_4px_12px_rgba(30,48,74,.07)] dark:border-[#785044] dark:bg-[#382d2c] dark:text-white">
+              <span aria-hidden="true" className="text-xl">📷</span>
+              <div className="min-w-0 flex-1">
+                <p className="text-[13px] font-semibold">Help your driver recognise you</p>
+                <p className="mt-0.5 text-[11px] leading-4 text-[#657184] dark:text-[#d0c4c0]">Add a clear profile photo so your driver can identify you at pickup.</p>
+              </div>
+              <button type="button" disabled={uploadingPhoto} onClick={() => document.getElementById("routex-profile-photo")?.click()} className="shrink-0 rounded-xl bg-[#ef6849] px-3 py-2 text-[11px] font-semibold text-white disabled:opacity-50">Add photo</button>
+            </div>
+          )}
           {portalView === "dashboard" && <>
           <p className="mb-4 text-[11px] font-semibold uppercase tracking-[.14em] text-[#8793a4] dark:text-[#a7b0bd]">Your services</p>
           <div className="grid grid-cols-1 gap-4">
