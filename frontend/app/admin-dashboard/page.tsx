@@ -35,7 +35,23 @@ type Section =
   | "bookings"
   | "drivers"
   | "passengers"
-  | "analytics";
+  | "analytics"
+  | "monthly";
+
+type MonthlyInterest = {
+  id: number;
+  transport_type: string;
+  pickup_area: string;
+  destination: string;
+  departure_time: string;
+  return_time: string | null;
+  needs_return: boolean;
+  operating_days: number[];
+  passenger_count: number;
+  whatsapp_number: string;
+  preferred_start_date: string | null;
+  created_at?: string | null;
+};
 
 type Stats = {
   passengers: number;
@@ -143,6 +159,7 @@ const NAV = [
   { id: "passengers", label: "Passengers", icon: Users },
 
   { id: "analytics", label: "Analytics", icon: ChartNoAxesCombined },
+  { id: "monthly", label: "Monthly Transport", icon: ClipboardList },
 ] as const;
 
 const EMPTY_STATS: Stats = {
@@ -162,7 +179,7 @@ function formatWhatsAppNumber(phone: string) {
 }
 
 function passengerMessage(passenger: Passenger) {
-  return `Hi ${passenger.full_name},\n\nAs one of our first RouteX members, you've received R20 OFF your first ride.\n\nUse promo code:\nWELCOME20\n\nEnter the code when booking your trip.\n\nBook here:\nhttps://routex-frontend.onrender.com\n\nRouteX • Getting Upington Moving`;
+  return `Hi ${passenger.full_name},\n\nAs one of our first RouteX members, you've received R20 OFF your first ride.\n\nUse promo code:\nWELCOME20\n\nEnter the code when booking your trip.\n\nBook here:\nhttps://routex-frontend.onrender.com\n\nRouteX â€¢ Getting Upington Moving`;
 }
 
 function SectionHeading({
@@ -245,7 +262,7 @@ function Detail({ label, value }: { label: string; value?: string | null }) {
         {label}
       </p>
       <p className="mt-1 break-words text-sm font-bold text-white">
-        {value || "—"}
+        {value || "â€”"}
       </p>
     </div>
   );
@@ -274,6 +291,10 @@ export default function AdminDashboardPage() {
   const [resettingDriverId, setResettingDriverId] = useState<number | null>(null);
   const [resetDriverName, setResetDriverName] = useState("");
   const [resetLink, setResetLink] = useState("");
+
+  const [monthlyInterests, setMonthlyInterests] = useState<MonthlyInterest[]>([]);
+  const [monthlyLoading, setMonthlyLoading] = useState(false);
+  const [monthlyError, setMonthlyError] = useState("");
 
   const [adminKey, setAdminKey] = useState("");
 
@@ -430,6 +451,34 @@ export default function AdminDashboardPage() {
     const timer = window.setInterval(() => void loadBookings(), 15000);
     return () => window.clearInterval(timer);
   }, [loadBookings, section]);
+
+  const loadMonthlyInterests = useCallback(async () => {
+    if (!adminKey) {
+      setMonthlyInterests([]);
+      setMonthlyError("");
+      return;
+    }
+    setMonthlyLoading(true);
+    try {
+      const response = await fetch(`${API_URL}/admin/monthly-transport/interests`, {
+        cache: "no-store",
+        headers: { "X-RouteX-Admin-Key": adminKey },
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || `Unable to load requests (${response.status})`);
+      if (!Array.isArray(data)) throw new Error("Unexpected monthly transport response");
+      setMonthlyInterests(data);
+      setMonthlyError("");
+    } catch (error) {
+      setMonthlyError(error instanceof Error ? error.message : "Unable to load monthly transport requests");
+    } finally {
+      setMonthlyLoading(false);
+    }
+  }, [adminKey]);
+
+  useEffect(() => {
+    if (section === "monthly") void loadMonthlyInterests();
+  }, [section, loadMonthlyInterests]);
 
   const loadDashboardData = useCallback(async (silent = false) => {
     if (!adminKey) return;
@@ -695,7 +744,7 @@ export default function AdminDashboardPage() {
                         driver.license_plate,
                       ]
                         .filter(Boolean)
-                        .join(" · ") || "Vehicle details unavailable"}
+                        .join(" Â· ") || "Vehicle details unavailable"}
                     </p>
                   </div>
                   <span
@@ -1211,6 +1260,59 @@ export default function AdminDashboardPage() {
             </>
           )}
 
+          {section === "monthly" && (
+            <section>
+              <SectionHeading
+                eyebrow="Route planning"
+                title="Monthly Transport Interests"
+                description="Passenger enquiries for future work and school transport routes. These are expressions of interest, not confirmed bookings."
+              />
+              <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+                <Metric label="Requests received" value={monthlyInterests.length} icon={ClipboardList} />
+                <button type="button" onClick={() => void loadMonthlyInterests()}
+                  disabled={!adminKey || monthlyLoading}
+                  className="rounded-xl border border-white/20 px-4 py-3 text-xs font-bold disabled:opacity-50">
+                  {monthlyLoading ? "Loading..." : "Refresh requests"}
+                </button>
+              </div>
+              {!adminKey ? (
+                <p className="rounded-2xl bg-[#1e2127] p-5 text-sm">Enter your admin access key to view requests.</p>
+              ) : monthlyError ? (
+                <p role="alert" className="rounded-2xl border border-red-800 bg-[#2d2225] p-5 text-sm text-red-200">{monthlyError}</p>
+              ) : monthlyLoading && monthlyInterests.length === 0 ? (
+                <p className="text-sm text-white/60">Loading monthly requests...</p>
+              ) : monthlyInterests.length === 0 ? (
+                <EmptyPanel icon={ClipboardList} title="No requests returned" description="No monthly transport interest submissions were returned by the backend." />
+              ) : (
+                <div className="grid gap-4 xl:grid-cols-2">
+                  {monthlyInterests.map((item) => (
+                    <article key={item.id} className="rounded-[22px] border border-[#353942] bg-[#1e2127] p-5">
+                      <div className="mb-4 flex items-center justify-between gap-3">
+                        <h3 className="font-black text-white">Request #{item.id}</h3>
+                        <span className="rounded-full bg-[#ff754d]/10 px-3 py-1 text-xs font-bold capitalize text-[#ff9b7c]">{item.transport_type}</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <Detail label="Pickup area" value={item.pickup_area} />
+                        <Detail label="Destination" value={item.destination} />
+                        <Detail label="Departure" value={item.departure_time} />
+                        <Detail label="Return" value={item.needs_return ? item.return_time : "One way"} />
+                        <Detail label="Days" value={(item.operating_days || []).map((day) => ["", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][day] || String(day)).join(", ")} />
+                        <Detail label="Passengers" value={String(item.passenger_count)} />
+                        <Detail label="Preferred start" value={item.preferred_start_date?.slice(0, 10)} />
+                        <Detail label="Submitted" value={item.created_at ? new Date(item.created_at).toLocaleDateString("en-ZA") : "Not recorded"} />
+                      </div>
+                      <a href={`https://wa.me/${formatWhatsAppNumber(item.whatsapp_number)}`}
+                        target="_blank" rel="noopener noreferrer"
+                        className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#ff754d] px-4 py-3 text-xs font-black text-black">
+                        <MessageCircle size={15} /> Contact on WhatsApp
+                      </a>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
+
           {section === "drivers" && (
             <>
               <SectionHeading
@@ -1431,12 +1533,12 @@ export default function AdminDashboardPage() {
                                   : "Not assigned")}
                             </span>
                             <span className="ml-3">
-                              Passenger #{booking.passenger_id ?? "—"}
+                              Passenger #{booking.passenger_id ?? "â€”"}
                             </span>
                           </div>
                           <p className="mt-2 text-[11px] text-white/40">
-                            Booking status: {booking.booking_status || "—"} ·
-                            Trip status: {booking.trip_status || "—"}
+                            Booking status: {booking.booking_status || "â€”"} Â·
+                            Trip status: {booking.trip_status || "â€”"}
                           </p>
                         </article>
                       );
@@ -1561,7 +1663,7 @@ export default function AdminDashboardPage() {
                               Booking #{booking.id}
                             </p>
                             <p className="mt-1 text-[11px] text-white/40">
-                              Passenger #{booking.passenger_id ?? "—"}
+                              Passenger #{booking.passenger_id ?? "â€”"}
                             </p>
                           </div>
                           <span className="rounded-full bg-[#ff754d]/10 px-3 py-1.5 text-[11px] font-bold capitalize text-[#ff9b7c]">
@@ -1592,7 +1694,7 @@ export default function AdminDashboardPage() {
                           booking.trip_status !== booking.booking_status && (
                             <p className="mt-4 text-[11px] text-white/40">
                               Booking status:{" "}
-                              {booking.booking_status.replace(/_/g, " ")} · Trip
+                              {booking.booking_status.replace(/_/g, " ")} Â· Trip
                               status: {booking.trip_status.replace(/_/g, " ")}
                             </p>
                           )}
@@ -1635,7 +1737,7 @@ export default function AdminDashboardPage() {
           )}
 
           <footer className="mt-10 border-t border-white/10 py-5 text-center text-[11px] text-white/40">
-            RouteX Control Centre · Upington
+            RouteX Control Centre Â· Upington
           </footer>
         </div>
       </div>

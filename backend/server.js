@@ -7827,3 +7827,32 @@ app.get("/monthly-transport/routes", async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
+// Add to backend/server.js, alongside the other /admin routes.
+// Uses the existing admin dashboard access key, not the public interest form.
+app.get("/admin/monthly-transport/interests", async (req, res) => {
+  try {
+    const configuredKey = process.env.ADMIN_DASHBOARD_KEY;
+    const suppliedKey = req.get("X-RouteX-Admin-Key") || "";
+    if (!configuredKey || !suppliedKey ||
+        !crypto.timingSafeEqual(
+          Buffer.from(crypto.createHash("sha256").update(suppliedKey).digest()),
+          Buffer.from(crypto.createHash("sha256").update(configuredKey).digest())
+        )) {
+      return res.status(403).json({ error: "Admin access denied." });
+    }
+    const result = await pool.query(`
+      SELECT id, transport_type, pickup_area, destination,
+             departure_time, return_time, needs_return, operating_days,
+             passenger_count, whatsapp_number, preferred_start_date, created_at
+      FROM public.monthly_transport_interests
+      ORDER BY id DESC
+      LIMIT 500
+    `);
+    return res.json(result.rows);
+  } catch (error) {
+    console.error("ADMIN MONTHLY INTERESTS ERROR:", error);
+    return res.status(500).json({ error: "Unable to load monthly transport interests." });
+  }
+});
+
