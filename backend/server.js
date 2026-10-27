@@ -185,7 +185,8 @@ async function sendWhatsAppDriverApproved(phone, driverName, setupLink) {
   }
 }
 const app = express();
-
+// Trust Render's reverse proxy for accurate client IP handling
+app.set("trust proxy", 1);
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY,
@@ -371,7 +372,13 @@ app.get("/passengers", async (req, res) => {
   }
 });
 
-app.post("/passengers", async (req, res) => {
+app.post("/passengers", (req, res) => {
+  return res.status(410).json({
+    error: "This registration endpoint is no longer available. Please use passenger registration."
+  });
+});
+
+app.post("/passengers-disabled", async (req, res) => {
   try {
     const {
       full_name,
@@ -2300,6 +2307,25 @@ app.get("/test-route", (req, res) => {
   res.json({ message: "NEW CODE IS RUNNING" });
 });
 
+// Shared protection for all RouteX admin API endpoints.
+// Keep ADMIN_DASHBOARD_KEY private in backend environment variables.
+function requireRouteXAdmin(req, res, next) {
+  const expected = process.env.ADMIN_DASHBOARD_KEY;
+  const provided = req.get("X-RouteX-Admin-Key") || "";
+  if (!expected || !provided) {
+    return res.status(403).json({ error: "Admin access required" });
+  }
+  const expectedHash = crypto.createHash("sha256").update(expected).digest();
+  const providedHash = crypto.createHash("sha256").update(provided).digest();
+  if (!crypto.timingSafeEqual(expectedHash, providedHash)) {
+    return res.status(403).json({ error: "Admin access denied" });
+  }
+  next();
+}
+
+// Must appear before the first /admin route. Protects GET, POST and future admin routes.
+app.use("/admin", requireRouteXAdmin);
+
 app.get("/admin/passengers", async (req, res) => {
   try {
     const result = await pool.query(`
@@ -2316,86 +2342,81 @@ app.get("/admin/passengers", async (req, res) => {
 });
 
 app.post("/passenger-register", async (req, res) => {
+  const client = await pool.connect();
+  let transactionStarted = false;
   try {
-    const {
-      full_name,
-      phone,
-      email,
-      password,
-      referral_code,
-      acceptedTerms,
-      acceptedPrivacy,
-    } = req.body;
-
-    // =========================================
-    // REQUIRE LEGAL ACCEPTANCE
-    // =========================================
+    const { full_name, phone, email, password, referral_code, acceptedTerms, acceptedPrivacy } = req.body || {};
     if (acceptedTerms !== true || acceptedPrivacy !== true) {
-      return res.status(400).json({
-        error: "Terms & Conditions and Privacy Policy must be accepted.",
+      return res.status(400).json({ error: "Terms & Conditions and Privacy Policy must be accepted." });
+    }
+
+    const cleanName = String(full_name || "").trim();
+    const cleanEmail = String(email || "").trim().toLowerCase();
+    const digits = String(phone || "").replace(/\D/g, "");
+    const localPhone = digits.startsWith("27") && digits.length === 11
+      ? "0" + digits.slice(2) : digits;
+    if (!cleanName || !cleanEmail || !password || !/^0[0-9]{9}$/.test(localPhone)) {
+      return res.status(400).json({ error: "Enter your name, email, password and a valid South African cellphone number." });
+    }
+
+    // One transaction and a lock for each normalized phone/email combination.
+    // This prevents two simultaneous requests from both passing the duplicate check.
+    await client.query("BEGIN");
+    transactionStarted = true;
+    await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", ["routex-passenger-phone:" + localPhone]);
+    await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", ["routex-passenger-email:" + cleanEmail]);
+
+    const existing = await client.query(`
+      SELECT id FROM passengers
+      WHERE (CASE
+        WHEN LEFT(REGEXP_REPLACE(COALESCE(phone, ''), '[^0-9]', '', 'g'), 2) = '27'
+          THEN '0' || SUBSTRING(REGEXP_REPLACE(COALESCE(phone, ''), '[^0-9]', '', 'g') FROM 3)
+        ELSE REGEXP_REPLACE(COALESCE(phone, ''), '[^0-9]', '', 'g')
+      END) = $1
+      OR LOWER(TRIM(COALESCE(email, ''))) = $2
+      LIMIT 1
+    `, [localPhone, cleanEmail]);
+    const existingLogin = await client.query(
+      "SELECT id FROM users WHERE LOWER(TRIM(email)) = $1 LIMIT 1",
+      [cleanEmail]
+    );
+    if (existing.rows.length || existingLogin.rows.length) {
+      await client.query("ROLLBACK");
+      transactionStarted = false;
+      return res.status(409).json({
+        error: "This cellphone number or email is already registered with RouteX. Please log in instead.",
+        code: "PASSENGER_ALREADY_REGISTERED"
       });
     }
 
-    // =========================================
-    // CREATE PASSENGER
-    // =========================================
-    const passengerResult = await pool.query(
-      `
+    const hashedPassword = await bcrypt.hash(String(password), 12);
+    const passengerResult = await client.query(`
       INSERT INTO passengers
-      (
-        full_name,
-        phone,
-        email,
-        referral_code,
-        terms_accepted_at,
-        terms_version,
-        privacy_accepted_at,
-        privacy_version
-      )
-      VALUES
-      (
-        $1,
-        $2,
-        $3,
-        $4,
-        NOW(),
-        $5,
-        NOW(),
-        $6
-      )
+        (full_name, phone, email, referral_code, terms_accepted_at, terms_version,
+         privacy_accepted_at, privacy_version)
+      VALUES ($1, $2, $3, $4, NOW(), $5, NOW(), $6)
       RETURNING *
-      `,
-      [full_name, phone, email, referral_code, "2026-09-14", "2026-09-14"],
-    );
+    `, [cleanName, localPhone, cleanEmail, referral_code || null, "2026-09-14", "2026-09-14"]);
+    await client.query(`
+      INSERT INTO users (full_name, email, password, role)
+      VALUES ($1, $2, $3, 'passenger')
+    `, [cleanName, cleanEmail, hashedPassword]);
 
-    // =========================================
-    // CREATE LOGIN ACCOUNT
-    // =========================================
-    const hashedPassword = await bcrypt.hash(password, 12);
-    await pool.query(
-      `
-      INSERT INTO users
-      (
-        full_name,
-        email,
-        password,
-        role
-      )
-      VALUES ($1,$2,$3,$4)
-      `,
-      [full_name, email, hashedPassword, "passenger"],
-    );
-
-    res.status(201).json({
+    await client.query("COMMIT");
+    transactionStarted = false;
+    return res.status(201).json({
       message: "Passenger registered successfully",
-      passenger: passengerResult.rows[0],
+      passenger: passengerResult.rows[0]
     });
   } catch (error) {
+    if (transactionStarted) await client.query("ROLLBACK").catch(console.error);
     console.error("PASSENGER REGISTRATION ERROR:", error);
-
-    res.status(500).json({
-      error: error.message,
-    });
+    if (error.code === "23505") {
+      return res.status(409).json({ error: "This account is already registered. Please log in instead." });
+    }
+    return res.status(500).json({ error: "Unable to register passenger. Please try again." });
+  } finally {
+    client.release();
   }
 });
 
@@ -7460,6 +7481,182 @@ const monthlyDaysValid = (days) => Array.isArray(days) && days.length > 0 && day
 const monthlyTimeValid = (time) => typeof time === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(time);
 const monthlyLabelValid = (value) => typeof value === "string" && value.trim().length >= 2 && value.trim().length <= 180;
 const monthlyCoordinateValid = (value, max) => value == null || (typeof value === "number" && Number.isFinite(value) && Math.abs(value) <= max);
+
+// ============================================
+// ROUTEX MONTHLY TRANSPORT INTEREST REGISTRATION
+// Work and school transport enquiries
+// ============================================
+
+const monthlyRateLimitSecret = process.env.MONTHLY_RATE_LIMIT_SECRET;
+
+if (!monthlyRateLimitSecret) {
+  console.warn("MONTHLY_RATE_LIMIT_SECRET is not configured");
+}
+
+app.post("/monthly-transport/interests", async (req, res) => {
+  try {
+    // Persistent rate limiting: 5 attempts per hour per IP
+if (!monthlyRateLimitSecret) {
+  return res.status(503).json({
+    error: "Registration is temporarily unavailable.",
+  });
+}
+
+const ip = req.ip || req.socket.remoteAddress || "unknown";
+
+const ipHash = crypto
+  .createHmac("sha256", monthlyRateLimitSecret)
+  .update(ip)
+  .digest("hex");
+
+const rateLimitResult = await pool.query(
+  `SELECT public.check_monthly_transport_rate_limit($1, $2) AS allowed`,
+  [ipHash, 5]
+);
+
+if (rateLimitResult.rows[0]?.allowed !== true) {
+  return res.status(429).json({
+    error: "Too many requests. Please try again later.",
+  });
+}
+
+    const {
+      transport_type,
+      pickup_area,
+      destination,
+      departure_time,
+      return_time,
+      needs_return,
+      operating_days,
+      passenger_count,
+      whatsapp_number,
+    whatsapp_consent,
+    preferred_start_date
+    } = req.body || {};
+
+    const validTime = (value) =>
+      typeof value === "string" &&
+      /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
+
+    const validLabel = (value) =>
+      typeof value === "string" &&
+      value.trim().length >= 2 &&
+      value.trim().length <= 150;
+// Validate the preferred start date
+const validStartDate = (value) => {
+  if (
+    typeof value !== "string" ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(value)
+  ) {
+    return false;
+  }
+
+  const date = new Date(`${value}T00:00:00Z`);
+
+  if (
+    Number.isNaN(date.getTime()) ||
+    date.toISOString().slice(0, 10) !== value
+  ) {
+    return false;
+  }
+
+  const today = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Africa/Johannesburg",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+
+  return value >= today;
+};
+    if (
+     !["work", "school"].includes(transport_type) ||
+!validStartDate(preferred_start_date) ||
+      !validLabel(pickup_area) ||
+      !validLabel(destination) ||
+      !validTime(departure_time) ||
+      typeof needs_return !== "boolean" ||
+      (needs_return && !validTime(return_time)) ||
+      !Array.isArray(operating_days) ||
+      operating_days.length < 1 ||
+      operating_days.length > 7 ||
+      !operating_days.every(
+        (day) => Number.isInteger(day) && day >= 1 && day <= 7
+      ) ||
+      new Set(operating_days).size !== operating_days.length ||
+      !Number.isInteger(passenger_count) ||
+      passenger_count < 1 ||
+      passenger_count > 30 ||
+      whatsapp_consent !== true
+    ) {
+      return res.status(400).json({
+        error: "Please check your transport details and consent.",
+      });
+    }
+
+    // Normalise South African WhatsApp numbers
+    let phone = String(whatsapp_number || "").replace(/\D/g, "");
+
+    if (phone.startsWith("0") && phone.length === 10) {
+      phone = "27" + phone.slice(1);
+    }
+
+    if (!/^27[1-9]\d{8}$/.test(phone)) {
+      return res.status(400).json({
+        error: "Please enter a valid South African WhatsApp number.",
+      });
+    }
+
+    const result = await pool.query(
+      `
+      INSERT INTO public.monthly_transport_interests
+      (
+        transport_type,
+        pickup_area,
+        destination,
+        departure_time,
+        return_time,
+        needs_return,
+        operating_days,
+        passenger_count,
+       whatsapp_number,
+        whatsapp_consent,
+        preferred_start_date
+      )
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+      RETURNING id
+      `,
+      [
+        transport_type,
+        pickup_area.trim(),
+        destination.trim(),
+        departure_time,
+        needs_return ? return_time : null,
+        needs_return,
+        operating_days,
+        passenger_count,
+        phone,
+        true,
+        preferred_start_date || null,
+              ]
+    );
+
+  
+
+    return res.status(201).json({
+      success: true,
+      id: result.rows[0].id,
+      message:
+        "Thank you! RouteX has received your monthly transport interest.",
+    });
+  } catch (error) {
+    console.error("MONTHLY INTEREST ERROR:", error);
+
+    return res.status(500).json({
+      error: "Unable to submit your request. Please try again later.",
+    });
+  }
+});
 
 app.get("/monthly-transport/my-routes", authenticateDriver, async (req, res) => {
   try {

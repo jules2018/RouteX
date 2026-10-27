@@ -38,6 +38,9 @@ export default function Navigation() {
     "/passenger-portal", "/driver-portal", "/bookings", "/package-delivery",
   ]);
   const normalizedPath = (pathname || "/").replace(/\/+$/, "") || "/";
+  if (normalizedPath === "/monthly-transport") {
+  return null;
+}
   if (hiddenRoutes.has(normalizedPath)) return null;
 
   const navLink =

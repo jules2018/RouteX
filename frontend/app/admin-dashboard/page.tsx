@@ -432,16 +432,17 @@ export default function AdminDashboardPage() {
   }, [loadBookings, section]);
 
   const loadDashboardData = useCallback(async (silent = false) => {
+    if (!adminKey) return;
     if (!silent) setRefreshing(true);
 
     try {
       const [statsResponse, applicationsResponse, passengersResponse] =
         await Promise.all([
-          fetch(`${API_URL}/admin/stats`, { cache: "no-store" }),
+          fetch(`${API_URL}/admin/stats`, { cache: "no-store", headers: { "X-RouteX-Admin-Key": adminKey } }),
 
-          fetch(`${API_URL}/admin/applications`, { cache: "no-store" }),
+          fetch(`${API_URL}/admin/applications`, { cache: "no-store", headers: { "X-RouteX-Admin-Key": adminKey } }),
 
-          fetch(`${API_URL}/admin/passengers`, { cache: "no-store" }),
+          fetch(`${API_URL}/admin/passengers`, { cache: "no-store", headers: { "X-RouteX-Admin-Key": adminKey } }),
         ]);
 
       if (
@@ -488,9 +489,16 @@ export default function AdminDashboardPage() {
 
       if (!silent) setRefreshing(false);
     }
-  }, []);
+  }, [adminKey]);
 
   useEffect(() => {
+    if (!adminKey) {
+      setStats(EMPTY_STATS);
+      setApplications([]);
+      setPassengers([]);
+      setLoading(false);
+      return;
+    }
     void loadDashboardData();
 
     const interval = window.setInterval(
@@ -499,15 +507,16 @@ export default function AdminDashboardPage() {
     );
 
     return () => window.clearInterval(interval);
-  }, [loadDashboardData]);
+  }, [loadDashboardData, adminKey]);
 
   const approveDriver = async (application: Application) => {
+    if (!adminKey) { window.alert("Enter the administrator access key first."); return; }
     setProcessingId(application.id);
 
     try {
       const response = await fetch(
         `${API_URL}/admin/applications/${application.id}/approve`,
-        { method: "POST" },
+        { method: "POST", headers: { "X-RouteX-Admin-Key": adminKey } },
       );
 
       const data = await response.json();
@@ -533,6 +542,7 @@ export default function AdminDashboardPage() {
   };
 
   const rejectDriver = async (application: Application) => {
+    if (!adminKey) { window.alert("Enter the administrator access key first."); return; }
     if (
       !window.confirm(`Reject ${application.full_name}'s driver application?`)
     )
@@ -543,7 +553,7 @@ export default function AdminDashboardPage() {
     try {
       const response = await fetch(
         `${API_URL}/admin/applications/${application.id}/reject`,
-        { method: "POST" },
+        { method: "POST", headers: { "X-RouteX-Admin-Key": adminKey } },
       );
 
       const data = await response.json();
@@ -965,6 +975,7 @@ export default function AdminDashboardPage() {
               />
               {stats.onlineDrivers} drivers online
             </span>
+            <button type="button" onClick={saveAdminKey} className="rounded-xl border border-white/15 px-3 py-2 text-xs font-bold text-white/80">{adminKey ? "Change admin key" : "Unlock admin"}</button>
             <button
               type="button"
               aria-label="Refresh dashboard"
