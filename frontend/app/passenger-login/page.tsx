@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { API_URL } from "../lib/api";
+import { isValidSessionToken } from "../lib/session";
 
 type NoticeType = "error" | "success";
 
@@ -31,10 +32,15 @@ export default function PassengerLoginPage() {
       showNotice("Your password was changed successfully.", "success");
     }
 
-    const passenger = JSON.parse(localStorage.getItem("passenger") || "null");
-
-    if (passenger) {
-      router.push("/passenger-portal");
+    try {
+      const passenger = JSON.parse(localStorage.getItem("passenger") || "null");
+      if (passenger?.id && isValidSessionToken(passenger.token)) {
+        router.replace("/passenger-portal");
+      } else {
+        localStorage.removeItem("passenger");
+      }
+    } catch {
+      localStorage.removeItem("passenger");
     }
   }, [router]);
 
@@ -84,12 +90,13 @@ export default function PassengerLoginPage() {
         return;
       }
 
-      // Make sure only the passenger session remains
-      localStorage.removeItem("driver");
-      localStorage.removeItem("user");
-      localStorage.removeItem("passenger");
+      if (!data?.id || !isValidSessionToken(data?.token)) {
+        throw new Error("The server did not return a valid passenger session.");
+      }
 
-      localStorage.setItem("passenger", JSON.stringify(data));
+  // Keep passenger and driver sessions independent.
+localStorage.removeItem("passenger");
+localStorage.setItem("passenger", JSON.stringify(data));
 
       showNotice("Login successful.", "success");
 

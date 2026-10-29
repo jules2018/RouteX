@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react";
 
 import AuthGuard from "../components/AuthGuard";
+import { DriverRegionalOffers } from "../components/RegionalFareOffers";
 import LogoutButton from "../components/LogoutButton";
 import { showNotification } from "../lib/notifications";
 import { API_URL } from "../lib/api";
+import { isValidSessionToken } from "../lib/session";
 
 export default function DriverPortalPage() {
   const [status, setStatus] = useState<"available" | "offline">("available");
@@ -80,7 +82,7 @@ export default function DriverPortalPage() {
       formData.append("photo", file);
       formData.append("driverId", String(driver.id));
 
-      const token = sessionStorage.getItem("driverToken");
+      const token = localStorage.getItem("driverToken");
 
 const response = await fetch(`${API_URL}/driver/upload-photo`, {
   method: "POST",
@@ -150,7 +152,7 @@ const response = await fetch(`${API_URL}/driver/upload-photo`, {
 
   const loadDriverEarnings = async () => {
     try {
-      const token = sessionStorage.getItem("driverToken");
+      const token = localStorage.getItem("driverToken");
       if (!token) throw new Error("Driver login required");
       const response = await fetch(`${API_URL}/drivers/me/earnings`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -169,7 +171,7 @@ const response = await fetch(`${API_URL}/driver/upload-photo`, {
   };
 
   const loadPackageDeliveries = async () => {
-    const token = sessionStorage.getItem("driverToken");
+    const token = localStorage.getItem("driverToken");
     if (!token) return;
     try {
       const headers = { Authorization: `Bearer ${token}` };
@@ -196,7 +198,7 @@ const response = await fetch(`${API_URL}/driver/upload-photo`, {
     deliveryId: number,
     action: "accept" | "collect" | "in-transit" | "complete",
   ) => {
-    const token = sessionStorage.getItem("driverToken");
+    const token = localStorage.getItem("driverToken");
     if (!token) {
       showAppPopup("Sign in required", "Please sign in again.", "error");
       return;
@@ -308,11 +310,11 @@ const response = await fetch(`${API_URL}/driver/upload-photo`, {
 
  useEffect(() => {
     const storedDriver = localStorage.getItem("driver");
-    const driverToken = sessionStorage.getItem("driverToken");
+    const driverToken = localStorage.getItem("driverToken");
 
-    if (!storedDriver || !driverToken) {
+    if (!storedDriver || !isValidSessionToken(driverToken)) {
       localStorage.removeItem("driver");
-      sessionStorage.removeItem("driverToken");
+      localStorage.removeItem("driverToken");
       window.location.replace("/driver-login");
       return;
     }
@@ -362,7 +364,7 @@ const response = await fetch(`${API_URL}/driver/upload-photo`, {
 
     const sendHeartbeat = async () => {
       try {
-        const token = sessionStorage.getItem("driverToken");
+        const token = localStorage.getItem("driverToken");
 
 await fetch(`${API_URL}/drivers/${driver.id}/heartbeat`, {
   method: "POST",
@@ -393,7 +395,7 @@ await fetch(`${API_URL}/drivers/${driver.id}/heartbeat`, {
           lng: position.coords.longitude,
         });
         try {
-          const token = sessionStorage.getItem("driverToken");
+          const token = localStorage.getItem("driverToken");
 
 await fetch(`${API_URL}/drivers/${driver.id}/location`, {
   method: "POST",
@@ -463,7 +465,7 @@ await fetch(`${API_URL}/drivers/${driver.id}/location`, {
         longitude = position.coords.longitude;
       }
 
-   const token = sessionStorage.getItem("driverToken");
+   const token = localStorage.getItem("driverToken");
 
 const response = await fetch(`${API_URL}/drivers/${driver.id}/status`, {
   method: "POST",
@@ -501,7 +503,7 @@ const response = await fetch(`${API_URL}/drivers/${driver.id}/status`, {
     try {
       setAcceptingId(rideId);
 
-      const token = sessionStorage.getItem("driverToken");
+      const token = localStorage.getItem("driverToken");
 
 const response = await fetch(
   `${API_URL}/trip-requests/${rideId}/accept`,
@@ -552,7 +554,7 @@ const response = await fetch(
     try {
       setStartingId(rideId);
 
-      const token = sessionStorage.getItem("driverToken");
+      const token = localStorage.getItem("driverToken");
 
 const response = await fetch(`${API_URL}/trip-requests/${rideId}/start`, {
   method: "POST",
@@ -588,7 +590,7 @@ const response = await fetch(`${API_URL}/trip-requests/${rideId}/start`, {
     try {
       setCompletingId(rideId);
 
-      const token = sessionStorage.getItem("driverToken");
+      const token = localStorage.getItem("driverToken");
 
 const response = await fetch(
   `${API_URL}/trip-requests/${rideId}/complete`,
@@ -690,6 +692,8 @@ const response = await fetch(
 
             </div>
           </header>
+
+          {process.env.NEXT_PUBLIC_ROUTEX_REGIONAL_OFFERS_ENABLED === "true" && <DriverRegionalOffers isAvailable={status === "available"} />}
 
           {/* PACKAGE DELIVERIES — separate from passenger rides */}
           <section className="mt-7">

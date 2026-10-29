@@ -1721,6 +1721,23 @@ app.post("/bookings", async (req, res) => {
         Number(passenger_id),
       ]);
 
+      // Prevent a normal Ride Now booking while a fare negotiation is open.
+      // Uses the same passenger advisory lock as fare-request creation.
+      if (!isScheduledRide) {
+        const negotiating = await bookingClient.query(`
+          SELECT id FROM routex_fare_requests
+          WHERE passenger_id = $1 AND status = 'open' AND expires_at > NOW()
+          LIMIT 1
+        `, [passenger_id]);
+        if (negotiating.rowCount) {
+          await bookingClient.query("ROLLBACK");
+          return res.status(409).json({
+            error: "You have an open fare offer. Finish or cancel it before booking at the suggested fare.",
+            request_id: negotiating.rows[0].id
+          });
+        }
+      }
+
       // Expire any old waiting request before checking for an active ride.
       await bookingClient.query(
         `
@@ -5989,6 +6006,7 @@ app.post(
         acceptedPrivacy,
         residential_address,
         id_passport_number,
+        operating_town,
       } = req.body;
       if (
         !full_name?.trim() ||
@@ -6014,6 +6032,11 @@ app.post(
         return res.status(400).json({
           error: "A profile photo is required.",
         });
+      }
+
+      const operatingTown = String(operating_town || "Upington").trim();
+      if (!operatingTown || operatingTown.length > 100) {
+        return res.status(400).json({ error: "Please enter a valid operating town." });
       }
 
       // =========================================
@@ -6103,6 +6126,7 @@ app.post(
         (
           full_name,
           phone,
+          operating_town,
            residential_address,
           id_passport_number,
           vehicle_type,
@@ -6120,6 +6144,7 @@ app.post(
 (
   $1,
   $2,
+  $13,
   $3,
   $4,
   $5,
@@ -6148,6 +6173,7 @@ RETURNING *
           profileImage,
           "2026-09-14",
           "2026-09-14",
+          operatingTown,
         ],
       );
       res.json(result.rows[0]);
@@ -6412,6 +6438,7 @@ app.post("/admin/applications/:id/approve", async (req, res) => {
   (
     full_name,
     phone,
+    operating_town,
     status,
     password,
     role,
@@ -6429,6 +6456,7 @@ app.post("/admin/applications/:id/approve", async (req, res) => {
   (
     $1,
     $2,
+    $12,
     'Offline',
     NULL,
     'driver',
@@ -6455,6 +6483,7 @@ app.post("/admin/applications/:id/approve", async (req, res) => {
         appData.id_passport_number,
         setupToken,
         setupExpires,
+        appData.operating_town || "Upington",
       ],
     );
     await pool.query(
@@ -7015,6 +7044,443 @@ app.post("/driver/package-deliveries/:id/complete", authenticateDriver, async (r
     return res.status(500).json({ error: "Unable to complete delivery." });
   } finally { client.release(); }
 });
+
+
+// ===== RouteX negotiated regional fares (feature gated; no booking confirmation yet) =====
+function authenticateFarePassenger(req, res, next) {
+  const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+  try {
+    const data = jwt.verify(token, process.env.PASSENGER_JWT_SECRET, { algorithms: ['HS256'] });
+    if (data.role !== 'passenger' || !data.passengerId) throw new Error('Invalid passenger');
+    req.farePassengerId = String(data.passengerId);
+    next();
+  } catch { res.status(401).json({ error: 'Passenger login required.' }); }
+}
+function fareOffersEnabled(req, res, next) {
+  if (process.env.ROUTEX_REGIONAL_OFFERS_ENABLED !== 'true')
+    return res.status(503).json({ error: 'Regional fare offers are not yet available.' });
+  next();
+}
+function positiveFare(value) {
+  const n = Number(value);
+  return Number.isFinite(n) && n >= 20 && n <= 10000 && Math.round(n * 100) === n * 100 ? n : null;
+}
+const routexFareDistanceSQL = `(6371 * ACOS(LEAST(1, GREATEST(-1,
+  COS(RADIANS($1)) * COS(RADIANS(current_lat)) * COS(RADIANS(current_lng) - RADIANS($2)) +
+  SIN(RADIANS($1)) * SIN(RADIANS(current_lat)) ))))`;
+
+app.post('/regional-fare-requests', fareOffersEnabled, authenticateFarePassenger, async (req, res) => {
+  try {
+    const { fare_quote_token, pickup_address, dropoff_address, passenger_offer } = req.body;
+    const offer = positiveFare(passenger_offer);
+    if (!offer || !pickup_address?.trim() || !dropoff_address?.trim())
+      return res.status(400).json({ error: 'Valid addresses and offer of R20–R10,000 required.' });
+    let quote;
+    try { quote = verifyRouteXFareQuote(fare_quote_token); } catch { return res.status(409).json({ error: 'Fare quote expired. Refresh the suggested price.' }); }
+    if (!quote || quote.ride_type !== 'now' || !quote.fare || !Number.isFinite(Number(quote.fare.fare)))
+      return res.status(400).json({ error: 'A signed Ride Now quote is required.' });
+    const coords = ['pickup_lat','pickup_lng','dropoff_lat','dropoff_lng'].map(k => Number(quote[k]));
+    if (coords.some(n => !Number.isFinite(n)) || Math.abs(coords[0]) > 90 || Math.abs(coords[2]) > 90 || Math.abs(coords[1]) > 180 || Math.abs(coords[3]) > 180)
+      return res.status(400).json({ error: 'Invalid route coordinates.' });
+    // Fare negotiation is available for all Ride Now routes, including local Upington.
+    // Scheduled rides are excluded by the signed quote ride_type check above.
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query('SELECT pg_advisory_xact_lock($1)', [Number(req.farePassengerId)]);
+      const existing = await client.query(`SELECT id FROM routex_fare_requests WHERE passenger_id=$1 AND status='open' AND expires_at>NOW() LIMIT 1`, [req.farePassengerId]);
+      if (existing.rowCount) { await client.query('ROLLBACK'); return res.status(409).json({ error: 'You already have an active fare offer.', request_id: existing.rows[0].id }); }
+      const activeRide = await client.query(`SELECT id FROM trip_bookings WHERE passenger_id=$1 AND ride_type='now' AND trip_status IN ('Waiting','Accepted','In Progress') LIMIT 1`, [req.farePassengerId]);
+      if (activeRide.rowCount) { await client.query('ROLLBACK'); return res.status(409).json({ error: 'You already have an active Ride Now booking.' }); }
+      const result = await client.query(`INSERT INTO routex_fare_requests
+        (passenger_id,pickup_address,dropoff_address,pickup_lat,pickup_lng,dropoff_lat,dropoff_lng,suggested_fare,passenger_offer,expires_at)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,NOW() + INTERVAL '15 minutes') RETURNING id,status,expires_at,suggested_fare,passenger_offer`,
+        [req.farePassengerId,pickup_address.trim().slice(0,300),dropoff_address.trim().slice(0,300),...coords,Number(quote.fare.fare),offer]);
+      await client.query('COMMIT'); return res.status(201).json(result.rows[0]);
+    } catch(e) { await client.query('ROLLBACK'); throw e; } finally { client.release(); }
+  } catch(e) { console.error('REGIONAL FARE CREATE',e); return res.status(500).json({error:'Unable to create fare request.'}); }
+});
+
+app.get('/regional-fare-requests/mine', fareOffersEnabled, authenticateFarePassenger, async (req,res) => {
+  try {
+    const data = await pool.query(`SELECT r.*, COALESCE(json_agg(json_build_object('id',o.id,'driver_id',o.driver_id,'offered_fare',o.offered_fare,'response',o.response,'status',o.status)) FILTER (WHERE o.id IS NOT NULL), '[]') AS offers
+      FROM routex_fare_requests r LEFT JOIN routex_driver_offers o ON o.request_id=r.id
+      WHERE r.passenger_id=$1 GROUP BY r.id ORDER BY r.created_at DESC LIMIT 15`,[req.farePassengerId]);
+    res.json(data.rows);
+  } catch(e) { console.error(e); res.status(500).json({error:'Unable to load offers.'}); }
+});
+
+app.get('/driver/regional-fare-requests', fareOffersEnabled, authenticateDriver, async (req,res) => {
+  try {
+    const driver = await pool.query(`SELECT id,current_lat,current_lng FROM drivers WHERE id=$1 AND status='Available' AND is_online=true AND current_lat IS NOT NULL AND current_lng IS NOT NULL AND (last_online_at IS NULL OR last_online_at > NOW() - INTERVAL '2 minutes')`,[req.authenticatedDriverId]);
+    if (!driver.rowCount) return res.json([]);
+    const {current_lat,current_lng}=driver.rows[0];
+    const rows=await pool.query(`SELECT r.id,r.pickup_address,r.dropoff_address,r.suggested_fare,r.passenger_offer,r.expires_at,r.created_at,
+      o.response AS my_response,o.offered_fare AS my_fare,o.status AS my_status
+      FROM routex_fare_requests r
+      LEFT JOIN routex_driver_offers o ON o.request_id=r.id AND o.driver_id=$3
+      WHERE r.status='open' AND r.expires_at>NOW()
+      AND (6371 * ACOS(LEAST(1,GREATEST(-1,COS(RADIANS($1))*COS(RADIANS(r.pickup_lat))*COS(RADIANS(r.pickup_lng)-RADIANS($2))+SIN(RADIANS($1))*SIN(RADIANS(r.pickup_lat)) ))))<=30
+      ORDER BY r.created_at DESC LIMIT 30`,[current_lat,current_lng,req.authenticatedDriverId]);
+    res.json(rows.rows);
+  } catch(e) { console.error(e); res.status(500).json({error:'Unable to load regional requests.'}); }
+});
+
+app.post('/driver/regional-fare-requests/:id/respond', fareOffersEnabled, authenticateDriver, async (req,res) => {
+  const {response,offered_fare}=req.body;
+  if (!['accept','counter','decline'].includes(response)) return res.status(400).json({error:'Invalid response.'});
+  const fare = response==='decline' ? 20 : positiveFare(offered_fare);
+  if (response==='counter' && !fare) return res.status(400).json({error:'Enter a valid counteroffer.'});
+  // Accepting the passenger's exact price confirms the booking immediately.
+  // Counteroffers and declines continue through the existing negotiation flow.
+  if (response === 'accept') {
+    const requestId = Number(req.params.id);
+    if (!Number.isSafeInteger(requestId) || requestId <= 0) {
+      return res.status(400).json({ error: 'Invalid fare request ID.' });
+    }
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      // Match the passenger-confirm endpoint's lock order:
+      // passenger advisory lock -> driver row -> fare request row.
+      const preliminary = await client.query(
+        `SELECT passenger_id FROM routex_fare_requests WHERE id = $1`,
+        [requestId]
+      );
+      if (!preliminary.rowCount) {
+        await client.query('ROLLBACK');
+        return res.status(404).json({ error: 'Fare request not found.' });
+      }
+      const passengerId = preliminary.rows[0].passenger_id;
+      await client.query('SELECT pg_advisory_xact_lock($1)', [Number(passengerId)]);
+      const driverResult = await client.query(`
+        SELECT id, current_lat, current_lng FROM drivers
+        WHERE id = $1 AND status = 'Available' AND is_online = true
+          AND current_lat IS NOT NULL AND current_lng IS NOT NULL
+          AND last_online_at > NOW() - INTERVAL '2 minutes'
+        FOR UPDATE
+      `, [req.authenticatedDriverId]);
+      if (!driverResult.rowCount) {
+        await client.query('ROLLBACK');
+        return res.status(409).json({ error: 'Go online and set Available first.' });
+      }
+      const requestResult = await client.query(`
+        SELECT * FROM routex_fare_requests
+        WHERE id = $1 AND passenger_id = $2 FOR UPDATE
+      `, [requestId, passengerId]);
+      const request = requestResult.rows[0];
+      if (!request || request.status !== 'open' ||
+          request.booking_id != null || new Date(request.expires_at).getTime() <= Date.now()) {
+        await client.query('ROLLBACK');
+        return res.status(409).json({ error: 'Another driver accepted this fare, or the request expired.' });
+      }
+      const d = driverResult.rows[0];
+      const distanceResult = await client.query(`
+        SELECT (6371 * ACOS(LEAST(1, GREATEST(-1,
+          COS(RADIANS($1)) * COS(RADIANS($2)) *
+          COS(RADIANS($3) - RADIANS($4)) +
+          SIN(RADIANS($1)) * SIN(RADIANS($2))
+        )))) AS km
+      `, [d.current_lat, request.pickup_lat, d.current_lng, request.pickup_lng]);
+      if (Number(distanceResult.rows[0].km) > 30) {
+        await client.query('ROLLBACK');
+        return res.status(403).json({ error: 'Pickup is outside your 30 km service radius.' });
+      }
+      const agreedFare = Number(request.passenger_offer);
+      if (!positiveFare(agreedFare)) {
+        await client.query('ROLLBACK');
+        return res.status(409).json({ error: 'Passenger fare is invalid.' });
+      }
+      const previousResponse = await client.query(`
+        SELECT id FROM routex_driver_offers
+        WHERE request_id = $1 AND driver_id = $2 AND status <> 'superseded'
+        LIMIT 1
+      `, [requestId, d.id]);
+      if (previousResponse.rowCount) {
+        await client.query('ROLLBACK');
+        return res.status(409).json({ error: 'You already responded to this passenger offer.' });
+      }
+      const activeRide = await client.query(`
+        SELECT id FROM trip_bookings WHERE passenger_id = $1
+          AND COALESCE(ride_type, 'now') = 'now'
+          AND trip_status IN ('Waiting', 'Accepted', 'In Progress') LIMIT 1
+      `, [passengerId]);
+      const driverRide = await client.query(`
+        SELECT id FROM trip_bookings WHERE assigned_driver_id = $1
+          AND trip_status IN ('Accepted', 'In Progress') LIMIT 1
+      `, [d.id]);
+      const driverParcel = await client.query(`
+        SELECT id FROM public.package_deliveries WHERE driver_id = $1
+          AND status IN ('accepted', 'collected', 'in_transit') LIMIT 1
+      `, [d.id]);
+      if (activeRide.rowCount || driverRide.rowCount || driverParcel.rowCount) {
+        await client.query('ROLLBACK');
+        return res.status(409).json({ error: 'Passenger or driver already has an active trip or delivery.' });
+      }
+      const bookingResult = await client.query(`
+        INSERT INTO trip_bookings
+          (passenger_id, fare_amount, discount_amount, passenger_amount,
+           pickup_address, dropoff_address, travel_date,
+           booking_status, trip_status, assigned_driver_id,
+           pickup_lat, pickup_lng, destination_lat, destination_lng,
+           ride_type, accepted_at)
+        VALUES ($1,$2,0,$2,$3,$4,(NOW() AT TIME ZONE 'Africa/Johannesburg')::date,
+                'Accepted','Accepted',$5,$6,$7,$8,$9,'now',NOW())
+        RETURNING *
+      `, [passengerId, agreedFare, request.pickup_address, request.dropoff_address,
+          d.id, request.pickup_lat, request.pickup_lng,
+          request.dropoff_lat, request.dropoff_lng]);
+      const booking = bookingResult.rows[0];
+      // The unique (request_id, driver_id) offer row may be superseded
+      // from a previous negotiation round.
+      const offerResult = await client.query(`
+        INSERT INTO routex_driver_offers
+          (request_id, driver_id, offered_fare, response, status)
+        VALUES ($1, $2, $3, 'accept', 'selected')
+        ON CONFLICT (request_id, driver_id) DO UPDATE
+          SET offered_fare = EXCLUDED.offered_fare,
+              response = 'accept', status = 'selected', updated_at = NOW()
+          WHERE routex_driver_offers.status = 'superseded'
+        RETURNING id
+      `, [requestId, d.id, agreedFare]);
+      if (!offerResult.rowCount) {
+        await client.query('ROLLBACK');
+        return res.status(409).json({ error: 'You already responded to this passenger offer.' });
+      }
+      await client.query(`
+        UPDATE routex_driver_offers
+        SET status = 'superseded', updated_at = NOW()
+        WHERE request_id = $1 AND id <> $2 AND status = 'active'
+      `, [requestId, offerResult.rows[0].id]);
+      await client.query(`UPDATE drivers SET status = 'Busy' WHERE id = $1`, [d.id]);
+      await client.query(`
+        UPDATE routex_fare_requests
+        SET status = 'confirmed', selected_driver_id = $2, agreed_fare = $3,
+            booking_id = $4, updated_at = NOW()
+        WHERE id = $1
+      `, [requestId, d.id, agreedFare, booking.id]);
+      await client.query(`
+        INSERT INTO notifications (recipient_type, recipient_id, title, message)
+        VALUES ('passenger', $1, 'Ride Confirmed',
+                'A driver accepted your fare. Your RouteX booking is confirmed.')
+      `, [passengerId]);
+      await client.query('COMMIT');
+      return res.status(201).json({
+        status: 'confirmed', auto_confirmed: true, booking,
+        agreed_fare: agreedFare, driver_id: d.id
+      });
+    } catch (error) {
+      try { await client.query('ROLLBACK'); } catch (_) {}
+      console.error('REGIONAL FARE AUTO ACCEPT ERROR:', error);
+      return res.status(500).json({ error: 'Unable to confirm accepted fare.' });
+    } finally {
+      client.release();
+    }
+  }
+  const client=await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const driver=await client.query(`SELECT id,current_lat,current_lng FROM drivers WHERE id=$1 AND status='Available' AND is_online=true AND current_lat IS NOT NULL AND current_lng IS NOT NULL AND (last_online_at IS NULL OR last_online_at > NOW()-INTERVAL '2 minutes') FOR UPDATE`,[req.authenticatedDriverId]);
+    if (!driver.rowCount) {await client.query('ROLLBACK');return res.status(409).json({error:'Go online and set Available first.'});}
+    const request=await client.query(`SELECT * FROM routex_fare_requests WHERE id=$1 AND status='open' AND expires_at>NOW() FOR UPDATE`,[req.params.id]);
+    if (!request.rowCount) {await client.query('ROLLBACK');return res.status(409).json({error:'Offer is no longer open.'});}
+    const d=driver.rows[0],r=request.rows[0];
+    const nearby=await client.query(`SELECT (6371*ACOS(LEAST(1,GREATEST(-1,COS(RADIANS($1))*COS(RADIANS($2))*COS(RADIANS($3)-RADIANS($4))+SIN(RADIANS($1))*SIN(RADIANS($2)))))) AS km`,[d.current_lat,r.pickup_lat,d.current_lng,r.pickup_lng]);
+    if (Number(nearby.rows[0].km)>30) {await client.query('ROLLBACK');return res.status(403).json({error:'Pickup is outside your 30 km service radius.'});}
+    const finalFare=response==='accept'?Number(r.passenger_offer):response==='counter'?fare:20;
+    const result=await client.query(`INSERT INTO routex_driver_offers (request_id,driver_id,offered_fare,response,status)
+      VALUES($1,$2,$3,$4,$5)
+      ON CONFLICT(request_id,driver_id) DO UPDATE
+      SET offered_fare=EXCLUDED.offered_fare,response=EXCLUDED.response,status=EXCLUDED.status,updated_at=NOW()
+      WHERE routex_driver_offers.status='superseded'
+      RETURNING *`,[r.id,d.id,finalFare,response,response==='decline'?'rejected':'active']);
+    if (!result.rowCount) {await client.query('ROLLBACK');return res.status(409).json({error:'You have already responded to the current passenger offer.'});}
+    await client.query('COMMIT');res.status(201).json(result.rows[0]);
+  } catch(e) {await client.query('ROLLBACK');console.error(e);res.status(500).json({error:'Unable to submit response.'});} finally {client.release();}
+});
+// Passenger revises the price during the original 15-minute window.
+// Existing driver replies become superseded, requiring fresh responses.
+app.post('/regional-fare-requests/:id/revise', fareOffersEnabled, authenticateFarePassenger, async (req,res) => {
+  const id=Number(req.params.id), fare=positiveFare(req.body?.passenger_offer);
+  if (!Number.isSafeInteger(id) || id<=0 || fare===null || fare%5!==0)
+    return res.status(400).json({error:'Enter a fare between R20 and R10,000 in R5 steps.'});
+  const client=await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const found=await client.query(`SELECT id,passenger_offer FROM routex_fare_requests
+      WHERE id=$1 AND passenger_id=$2 AND status='open' AND expires_at>NOW() FOR UPDATE`,[id,req.farePassengerId]);
+    if (!found.rowCount) { await client.query('ROLLBACK');return res.status(409).json({error:'Fare request is closed or expired.'}); }
+    if (Number(found.rows[0].passenger_offer)===fare) { await client.query('ROLLBACK');return res.status(400).json({error:'Choose a different fare.'}); }
+    await client.query(`UPDATE routex_driver_offers SET status='superseded',updated_at=NOW()
+      WHERE request_id=$1 AND status IN ('active','rejected')`,[id]);
+    const updated=await client.query(`UPDATE routex_fare_requests SET passenger_offer=$2,updated_at=NOW()
+      WHERE id=$1 RETURNING id,passenger_offer,expires_at,status`,[id,fare]);
+    await client.query('COMMIT');return res.json(updated.rows[0]);
+  } catch(e) { await client.query('ROLLBACK');console.error('REGIONAL FARE REVISE',e);return res.status(500).json({error:'Unable to revise fare.'}); }
+  finally {client.release();}
+});
+
+// Cancel an unconfirmed fare negotiation. This does not cancel a trip booking.
+app.post('/regional-fare-requests/:id/cancel', fareOffersEnabled, authenticateFarePassenger, async (req, res) => {
+  const requestId = Number(req.params.id);
+  if (!Number.isSafeInteger(requestId) || requestId <= 0) {
+    return res.status(400).json({ error: 'Invalid fare request ID.' });
+  }
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query('SELECT pg_advisory_xact_lock($1)', [Number(req.farePassengerId)]);
+    const found = await client.query(`
+      SELECT id, status, booking_id FROM routex_fare_requests
+      WHERE id = $1 AND passenger_id = $2 FOR UPDATE
+    `, [requestId, req.farePassengerId]);
+    if (!found.rowCount) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Fare request not found.' });
+    }
+    const current = found.rows[0];
+    if (current.booking_id != null || current.status === 'confirmed') {
+      await client.query('ROLLBACK');
+      return res.status(409).json({ error: 'This offer is already booked. Use the normal booking cancellation process.' });
+    }
+    if (current.status === 'cancelled') {
+      await client.query('COMMIT');
+      return res.json({ id: requestId, status: 'cancelled', message: 'Fare request already cancelled.' });
+    }
+    if (current.status !== 'open') {
+      await client.query('ROLLBACK');
+      return res.status(409).json({ error: 'This fare request can no longer be cancelled.' });
+    }
+    const updated = await client.query(`
+      UPDATE routex_fare_requests SET status = 'cancelled', updated_at = NOW()
+      WHERE id = $1 AND passenger_id = $2 AND status = 'open' AND booking_id IS NULL
+      RETURNING id, status
+    `, [requestId, req.farePassengerId]);
+    if (!updated.rowCount) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({ error: 'Fare request state changed. Refresh and try again.' });
+    }
+    await client.query('COMMIT');
+    return res.json({ ...updated.rows[0], message: 'Fare request cancelled.' });
+  } catch (error) {
+    try { await client.query('ROLLBACK'); } catch (_) {}
+    console.error('REGIONAL FARE CANCEL ERROR:', error);
+    return res.status(500).json({ error: 'Unable to cancel fare request.' });
+  } finally {
+    client.release();
+  }
+});
+
+// Passenger selects one accepted/countered driver offer and creates a real booking.
+// Driver row lock serializes this against normal Ride Now and parcel acceptance.
+app.post('/regional-fare-requests/:id/confirm', fareOffersEnabled, authenticateFarePassenger, async (req, res) => {
+  const requestId = Number(req.params.id);
+  const offerId = Number(req.body?.offer_id);
+  if (!Number.isSafeInteger(requestId) || requestId <= 0 ||
+      !Number.isSafeInteger(offerId) || offerId <= 0) {
+    return res.status(400).json({ error: 'Valid fare request and driver offer IDs are required.' });
+  }
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query('SELECT pg_advisory_xact_lock($1)', [Number(req.farePassengerId)]);
+
+    // Read IDs first, then lock driver before request: same lock order as driver response.
+    const preliminary = await client.query(`
+      SELECT r.passenger_id, o.driver_id
+      FROM routex_fare_requests r
+      JOIN routex_driver_offers o ON o.request_id = r.id
+      WHERE r.id = $1 AND o.id = $2
+    `, [requestId, offerId]);
+    if (!preliminary.rowCount || String(preliminary.rows[0].passenger_id) !== req.farePassengerId) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Fare request or offer not found.' });
+    }
+    const driverId = preliminary.rows[0].driver_id;
+    const driver = await client.query(`
+      SELECT id FROM drivers WHERE id = $1 AND status = 'Available' AND is_online = true
+        AND last_online_at > NOW() - INTERVAL '2 minutes' FOR UPDATE
+    `, [driverId]);
+    if (!driver.rowCount) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({ error: 'This driver is no longer available. Select another offer.' });
+    }
+    const requestResult = await client.query(`
+      SELECT * FROM routex_fare_requests WHERE id = $1 AND passenger_id = $2 FOR UPDATE
+    `, [requestId, req.farePassengerId]);
+    const request = requestResult.rows[0];
+    if (!request || request.status !== 'open' || new Date(request.expires_at).getTime() <= Date.now()) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({ error: 'This fare request is closed or expired.' });
+    }
+    const offerResult = await client.query(`
+      SELECT * FROM routex_driver_offers
+      WHERE id = $1 AND request_id = $2 AND driver_id = $3 AND status = 'active'
+        AND response IN ('accept', 'counter') FOR UPDATE
+    `, [offerId, requestId, driverId]);
+    const offer = offerResult.rows[0];
+    const agreedFare = Number(offer?.offered_fare);
+    if (!offer || !positiveFare(agreedFare)) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({ error: 'This driver offer is no longer valid.' });
+    }
+    const activeRide = await client.query(`
+      SELECT id FROM trip_bookings WHERE passenger_id = $1
+        AND COALESCE(ride_type,'now') = 'now'
+        AND trip_status IN ('Waiting','Accepted','In Progress') LIMIT 1
+    `, [req.farePassengerId]);
+    const driverRide = await client.query(`
+      SELECT id FROM trip_bookings WHERE assigned_driver_id = $1
+        AND trip_status IN ('Accepted','In Progress') LIMIT 1
+    `, [driverId]);
+    const driverParcel = await client.query(`
+      SELECT id FROM public.package_deliveries WHERE driver_id = $1
+        AND status IN ('accepted','collected','in_transit') LIMIT 1
+    `, [driverId]);
+    if (activeRide.rowCount || driverRide.rowCount || driverParcel.rowCount) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({ error: 'Passenger or driver already has an active trip or delivery.' });
+    }
+    const bookingResult = await client.query(`
+      INSERT INTO trip_bookings
+        (passenger_id, fare_amount, discount_amount, passenger_amount,
+         pickup_address, dropoff_address, travel_date,
+         booking_status, trip_status, assigned_driver_id,
+         pickup_lat, pickup_lng, destination_lat, destination_lng,
+         ride_type, accepted_at)
+      VALUES ($1,$2,0,$2,$3,$4,(NOW() AT TIME ZONE 'Africa/Johannesburg')::date,
+              'Accepted','Accepted',$5,$6,$7,$8,$9,'now',NOW())
+      RETURNING *
+    `, [req.farePassengerId, agreedFare, request.pickup_address, request.dropoff_address,
+        driverId, request.pickup_lat, request.pickup_lng, request.dropoff_lat, request.dropoff_lng]);
+    const booking = bookingResult.rows[0];
+    await client.query(`UPDATE drivers SET status = 'Busy' WHERE id = $1`, [driverId]);
+    await client.query(`
+      UPDATE routex_fare_requests
+      SET status = 'confirmed', selected_driver_id = $2, agreed_fare = $3,
+          booking_id = $4, updated_at = NOW()
+      WHERE id = $1
+    `, [requestId, driverId, agreedFare, booking.id]);
+    await client.query(`
+      UPDATE routex_driver_offers
+      SET status = CASE WHEN id = $2 THEN 'selected' ELSE 'superseded' END,
+          updated_at = NOW()
+      WHERE request_id = $1
+    `, [requestId, offerId]);
+    await client.query(`
+      INSERT INTO notifications (recipient_type, recipient_id, title, message)
+      VALUES ('passenger', $1, 'Driver Assigned', 'Your negotiated fare is confirmed. Your driver is on the way.')
+    `, [req.farePassengerId]);
+    await client.query('COMMIT');
+    return res.status(201).json({ booking, agreed_fare: agreedFare, driver_id: driverId });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('REGIONAL FARE CONFIRM ERROR:', error);
+    return res.status(500).json({ error: 'Unable to confirm the negotiated fare.' });
+  } finally { client.release(); }
+});
+
+// ===== End regional fare requests =====
 
 app.get("/calculate-fare", async (req, res) => {
   console.log("FARE INPUT:", {

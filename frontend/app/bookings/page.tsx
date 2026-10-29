@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import LocationPicker from "../components/LocationPicker";
+import { PassengerRegionalOffers } from "../components/RegionalFareOffers";
 
 type RideType = "now" | "scheduled";
 
@@ -70,6 +71,7 @@ export default function BookingTestPage() {
   const earliestSchedule = useMemo(() => getEarliestScheduledRide(), []);
 
   const [rideType, setRideType] = useState<RideType>("now");
+  const [fareMode, setFareMode] = useState<"suggested" | "offer">("suggested");
 
   const [showPickupSearch, setShowPickupSearch] = useState(false);
 
@@ -1764,9 +1766,27 @@ if (rideType === "scheduled") {
               )}
             </section>
 
+            {process.env.NEXT_PUBLIC_ROUTEX_REGIONAL_OFFERS_ENABLED === "true" && rideType === "now" && Number(fare) > 0 && fareQuoteToken && selectedPickup && selectedDestination && (
+              <section className="mt-5 rounded-[22px] border border-white/80 bg-[#e9edf4] p-4 shadow-[6px_6px_15px_#c7cbd4,-6px_-6px_15px_#ffffff] dark:border-[#424b59] dark:bg-[#292e37] dark:shadow-none">
+                <h3 className="text-sm font-bold">How would you like to book?</h3>
+                <p className="mt-1 text-xs text-[#6c7280] dark:text-white/70">RouteX suggested fare: R{Number(fare).toFixed(2)}</p>
+                <div className="mt-4 grid grid-cols-2 gap-2">
+                  <button type="button" aria-pressed={fareMode === "suggested"} onClick={() => setFareMode("suggested")} className={`flex min-h-[58px] min-w-0 items-center justify-center gap-1.5 rounded-2xl border px-2 py-2 text-center text-[11px] font-semibold leading-tight transition ${fareMode === "suggested" ? "border-[#ff6846] bg-white text-[#172334] ring-2 ring-[#ff6846]/30" : "border-slate-300 bg-white/60 text-[#172334]"}`}>
+                    <span aria-hidden="true" className="shrink-0 text-[15px]">⚡</span>
+                    <span className="min-w-0">Suggested Fare</span>
+                  </button>
+                  <button type="button" aria-pressed={fareMode === "offer"} onClick={() => setFareMode("offer")} className={`flex min-h-[58px] min-w-0 items-center justify-center gap-1.5 rounded-2xl border px-2 py-2 text-center text-[11px] font-semibold leading-tight transition ${fareMode === "offer" ? "border-[#ff6846] bg-white text-[#172334] ring-2 ring-[#ff6846]/30" : "border-slate-300 bg-white/60 text-[#172334]"}`}>
+                    <span aria-hidden="true" className="shrink-0 text-[15px]">🤝</span>
+                    <span className="min-w-0">Offer Your Fare</span>
+                  </button>
+                </div>
+                {fareMode === "offer" && <PassengerRegionalOffers key={fareQuoteToken} suggestedFare={Number(fare)} quoteToken={fareQuoteToken} pickupAddress={selectedPickup.address} dropoffAddress={selectedDestination.address} pickupLat={selectedPickup.lat} pickupLng={selectedPickup.lng} />}
+              </section>
+            )}
+
             {/* REQUEST / AVAILABILITY */}
 
-            {rideType === "now" && availabilityStatus === "none" ? (
+            {process.env.NEXT_PUBLIC_ROUTEX_REGIONAL_OFFERS_ENABLED === "true" && rideType === "now" && fareMode === "offer" && fareQuoteToken ? null : rideType === "now" && availabilityStatus === "none" ? (
               <section
                 className="mt-6 w-full rounded-[18px] bg-black px-5 py-4 text-white shadow-[0_8px_20px_rgba(0,0,0,0.18)]"
                 role="status"

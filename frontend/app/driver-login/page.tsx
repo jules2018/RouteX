@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { API_URL } from "../lib/api";
+import { isValidSessionToken } from "../lib/session";
 
 export default function DriverLoginPage() {
   const router = useRouter();
@@ -19,11 +20,11 @@ export default function DriverLoginPage() {
 
 useEffect(() => {
   const storedDriver = localStorage.getItem("driver");
-  const token = sessionStorage.getItem("driverToken");
+  const token = localStorage.getItem("driverToken");
 
-  if (!storedDriver || !token) {
+  if (!storedDriver || !isValidSessionToken(token)) {
     localStorage.removeItem("driver");
-    sessionStorage.removeItem("driverToken");
+    localStorage.removeItem("driverToken");
     return;
   }
 
@@ -34,11 +35,11 @@ useEffect(() => {
       router.replace("/driver-portal");
     } else {
       localStorage.removeItem("driver");
-      sessionStorage.removeItem("driverToken");
+      localStorage.removeItem("driverToken");
     }
   } catch {
     localStorage.removeItem("driver");
-    sessionStorage.removeItem("driverToken");
+    localStorage.removeItem("driverToken");
   }
 }, [router]);
 
@@ -88,10 +89,10 @@ useEffect(() => {
 
       const { token, ...driverData } = data;
 
-if (token) {
-  sessionStorage.setItem("driverToken", token);
+if (isValidSessionToken(token)) {
+  localStorage.setItem("driverToken", token);
 } else {
-  sessionStorage.removeItem("driverToken");
+  localStorage.removeItem("driverToken");
 }
 
 localStorage.setItem("driver", JSON.stringify(driverData));
