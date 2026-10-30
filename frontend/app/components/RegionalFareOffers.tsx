@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { API_URL } from "../lib/api";
 
 type FareOffer = { id: number; driver_id: number; offered_fare: number; response: string; status: string };
@@ -226,12 +226,13 @@ export function PassengerRegionalOffers({ suggestedFare, quoteToken, pickupAddre
   </section>;
 }
 
-type DriverRequest = { id: number; pickup_address: string; dropoff_address: string; suggested_fare: number; passenger_offer: number; expires_at: string; my_response?: string | null; my_fare?: number | null; my_status?: string | null };
+type DriverRequest = { id: number; pickup_address: string; dropoff_address: string; suggested_fare: number; passenger_offer: number; expires_at: string; distance_km?: number | null; my_response?: string | null; my_fare?: number | null; my_status?: string | null };
 export function DriverRegionalOffers({ isAvailable }: { isAvailable: boolean }) {
   const [requests, setRequests] = useState<DriverRequest[]>([]);
   const [counter, setCounter] = useState<Record<number, number>>({});
   const [error, setError] = useState("");
   const [busy, setBusy] = useState<number | null>(null);
+  const hiddenDeclines = useRef(new Set<number>());
   useEffect(() => {
     if (!isAvailable) { setRequests([]); setError(""); return; }
     let active = true;
@@ -252,7 +253,12 @@ export function DriverRegionalOffers({ isAvailable }: { isAvailable: boolean }) 
         }
         const data = await r.json();
         if (active) {
-          setRequests(Array.isArray(data) ? data : []);
+          if (Array.isArray(data)) {
+            for (const item of data as DriverRequest[]) {
+              if (item.my_status === "superseded") hiddenDeclines.current.delete(item.id);
+            }
+          }
+          setRequests(Array.isArray(data) ? data.filter((item: DriverRequest) => item.my_status !== "rejected" && !hiddenDeclines.current.has(item.id)) : []);
           setError("");
         }
       } catch (e) {
@@ -283,7 +289,16 @@ export function DriverRegionalOffers({ isAvailable }: { isAvailable: boolean }) 
     try {
       const r = await fetch(`${API_URL}/driver/regional-fare-requests/${id}/respond`, { method: "POST", headers: headers(token), body: JSON.stringify({ response, offered_fare: fare }) });
       const data = await r.json(); if (!r.ok) throw Error(data.error || "Unable to respond.");
-      setRequests(old => old.map(x => x.id === id ? {...x,my_response:response,my_fare:fare,my_status:response === "decline" ? "rejected" : "active"} : x));
+      if (response === "decline") {
+        hiddenDeclines.current.add(id);
+        setRequests(old => old.filter(x => x.id !== id));
+      } else if (data.auto_confirmed) {
+        setRequests(old => old.filter(x => x.id !== id));
+      } else {
+        setRequests(old => old.map(x => x.id === id ? {
+          ...x, my_response: response, my_fare: fare, my_status: "active"
+        } : x));
+      }
     } catch (e) { setError(e instanceof Error ? e.message : "Unable to respond."); }
     finally { setBusy(null); }
   }
@@ -292,13 +307,41 @@ export function DriverRegionalOffers({ isAvailable }: { isAvailable: boolean }) 
     <p className="mt-1 text-xs opacity-70">Review passenger offers and respond with your price.</p>
     {!isAvailable ? <p className="mt-2 text-xs">Go online and set Available to view requests.</p> : requests.length === 0 ? <p className="mt-2 text-xs">No fare offers available right now.</p> : requests.map(r => <div key={r.id} className="mt-3 rounded-[19px] bg-[#e9eef6] p-3 text-xs shadow-[inset_5px_5px_11px_#cbd3df,inset_-5px_-5px_11px_#ffffff] dark:bg-[#28384d] dark:shadow-[inset_5px_5px_11px_#182638,inset_-5px_-5px_11px_#354a64]">
       <p className="font-semibold">{r.pickup_address} → {r.dropoff_address}</p>
+      <p className="mt-2 text-[11px] font-semibold text-[#52647d] dark:text-slate-200">
+        📍 Trip distance: {r.distance_km != null && Number.isFinite(Number(r.distance_km))
+          ? `${Number(r.distance_km).toFixed(1)} km`
+          : "Not available"}
+      </p>
+      
       <div className="mt-2 rounded-[15px] bg-[#e9eef6] px-3 py-2 text-center shadow-[inset_3px_3px_7px_#cbd3df,inset_-3px_-3px_7px_#ffffff] dark:bg-[#28384d] dark:shadow-[inset_3px_3px_7px_#182638,inset_-3px_-3px_7px_#354a64]">
         <p className="text-[9px] font-bold uppercase tracking-[0.13em] text-[#59677d] dark:text-white/70">Passenger's offer</p>
         <p className="mt-0.5 text-[24px] font-extrabold tabular-nums leading-tight text-[#e95432]">R{Number(r.passenger_offer).toFixed(2)}</p>
       </div>
       {r.my_status === "active" ? <p className="mt-3 rounded-xl bg-white/60 p-3 font-semibold dark:bg-[#34465e]">Your {r.my_response === "counter" ? "counteroffer" : "accepted fare"}: R{Number(r.my_fare).toFixed(2)} · Awaiting passenger decision</p> : r.my_status === "rejected" ? <p className="mt-3 text-xs opacity-70">You declined this offer. Waiting for any revised fare.</p> : null}
       {!r.my_status || r.my_status === "superseded" ? <><div className="mt-2 flex flex-wrap items-center gap-2">
-        <button disabled={busy === r.id} onClick={() => respond(r.id, "accept", Number(r.passenger_offer))} className="rounded-xl bg-[#e9eef6] px-3 py-2 font-semibold text-[#172334] shadow-[4px_4px_9px_#c8d0dc,-4px_-4px_9px_#ffffff] transition active:shadow-inner disabled:opacity-50 dark:bg-[#34465e] dark:text-white dark:shadow-none">Accept offer</button>
+        <button
+  disabled={busy === r.id}
+  onClick={() => respond(r.id, "accept", Number(r.passenger_offer))}
+  className="
+    rounded-xl
+    bg-[#16a34a]
+    px-3 py-2
+    font-semibold
+    text-white
+    shadow-[4px_4px_9px_#c8d0dc,-4px_-4px_9px_#ffffff]
+    transition-all duration-200
+    hover:bg-[#15803d]
+    active:scale-95
+    active:shadow-inner
+    disabled:opacity-50
+    dark:bg-[#15803d]
+    dark:text-white
+    dark:shadow-none
+    dark:hover:bg-[#166534]
+  "
+>
+  Accept offer
+</button>
         <button disabled={busy === r.id} onClick={() => respond(r.id, "decline", Number(r.passenger_offer))} className="rounded-xl bg-[#e9eef6] px-3 py-2 font-semibold text-[#59677d] shadow-[4px_4px_9px_#c8d0dc,-4px_-4px_9px_#ffffff] transition active:shadow-inner disabled:opacity-50 dark:bg-[#34465e] dark:text-white dark:shadow-none">Decline</button>
       </div>
       <p className="mb-1 mt-3 text-[10px] font-bold uppercase tracking-[0.12em] text-[#59677d] dark:text-white/70">Your counteroffer</p>
