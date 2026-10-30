@@ -7110,20 +7110,132 @@ app.get('/regional-fare-requests/mine', fareOffersEnabled, authenticateFarePasse
   } catch(e) { console.error(e); res.status(500).json({error:'Unable to load offers.'}); }
 });
 
-app.get('/driver/regional-fare-requests', fareOffersEnabled, authenticateDriver, async (req,res) => {
+app.get('/driver/regional-fare-requests', fareOffersEnabled, authenticateDriver, async (req, res) => {
   try {
-    const driver = await pool.query(`SELECT id,current_lat,current_lng FROM drivers WHERE id=$1 AND status='Available' AND is_online=true AND current_lat IS NOT NULL AND current_lng IS NOT NULL AND (last_online_at IS NULL OR last_online_at > NOW() - INTERVAL '2 minutes')`,[req.authenticatedDriverId]);
-    if (!driver.rowCount) return res.json([]);
-    const {current_lat,current_lng}=driver.rows[0];
-    const rows=await pool.query(`SELECT r.id,r.pickup_address,r.dropoff_address,r.suggested_fare,r.passenger_offer,r.expires_at,r.created_at,
-      o.response AS my_response,o.offered_fare AS my_fare,o.status AS my_status
-      FROM routex_fare_requests r
-      LEFT JOIN routex_driver_offers o ON o.request_id=r.id AND o.driver_id=$3
-      WHERE r.status='open' AND r.expires_at>NOW()
-      AND (6371 * ACOS(LEAST(1,GREATEST(-1,COS(RADIANS($1))*COS(RADIANS(r.pickup_lat))*COS(RADIANS(r.pickup_lng)-RADIANS($2))+SIN(RADIANS($1))*SIN(RADIANS(r.pickup_lat)) ))))<=30
-      ORDER BY r.created_at DESC LIMIT 30`,[current_lat,current_lng,req.authenticatedDriverId]);
-    res.json(rows.rows);
-  } catch(e) { console.error(e); res.status(500).json({error:'Unable to load regional requests.'}); }
+    const driver = await pool.query(
+      `SELECT id, current_lat, current_lng
+       FROM drivers
+       WHERE id = $1
+         AND status = 'Available'
+         AND is_online = true
+         AND current_lat IS NOT NULL
+         AND current_lng IS NOT NULL
+         AND (
+           last_online_at IS NULL
+           OR last_online_at > NOW() - INTERVAL '2 minutes'
+         )`,
+      [req.authenticatedDriverId]
+    );
+
+    if (!driver.rowCount) {
+      return res.json([]);
+    }
+
+    const { current_lat, current_lng } = driver.rows[0];
+
+    // Get available requests, excluding offers declined by this driver
+    const rows = await pool.query(
+      `SELECT
+         r.id,
+         r.pickup_address,
+         r.dropoff_address,
+         r.pickup_lat,
+         r.pickup_lng,
+         r.dropoff_lat,
+         r.dropoff_lng,
+         r.suggested_fare,
+         r.passenger_offer,
+         r.expires_at,
+         r.created_at,
+         o.response AS my_response,
+         o.offered_fare AS my_fare,
+         o.status AS my_status
+       FROM routex_fare_requests r
+       LEFT JOIN routex_driver_offers o
+         ON o.request_id = r.id
+         AND o.driver_id = $3
+       WHERE r.status = 'open'
+         AND r.expires_at > NOW()
+
+         -- Hide requests declined by this driver
+         AND (
+           o.id IS NULL
+           OR o.status <> 'rejected'
+         )
+
+         -- Only show requests within 30 km of the driver
+         AND (
+           6371 * ACOS(
+             LEAST(1, GREATEST(-1,
+               COS(RADIANS($1)) *
+               COS(RADIANS(r.pickup_lat)) *
+               COS(RADIANS(r.pickup_lng) - RADIANS($2)) +
+               SIN(RADIANS($1)) *
+               SIN(RADIANS(r.pickup_lat))
+             ))
+           )
+         ) <= 30
+
+       ORDER BY r.created_at DESC
+       LIMIT 30`,
+      [current_lat, current_lng, req.authenticatedDriverId]
+    );
+
+    // Calculate actual road distance using OSRM
+    const results = await Promise.all(
+      rows.rows.map(async (request) => {
+        let distance_km = null;
+
+        try {
+          const coordinates = [
+            request.pickup_lng,
+            request.pickup_lat,
+            request.dropoff_lng,
+            request.dropoff_lat
+          ].map(Number);
+
+          if (coordinates.some(v => !Number.isFinite(v))) {
+            return { ...request, distance_km };
+          }
+
+          const url =
+            `https://router.project-osrm.org/route/v1/driving/` +
+            `${coordinates[0]},${coordinates[1]};` +
+            `${coordinates[2]},${coordinates[3]}` +
+            `?overview=false`;
+
+          const response = await fetch(url, {
+            signal: AbortSignal.timeout(5000)
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            const metres = Number(data.routes?.[0]?.distance);
+
+            if (Number.isFinite(metres) && metres >= 0) {
+              distance_km = Number((metres / 1000).toFixed(1));
+            }
+          }
+        } catch (error) {
+          console.error("RouteX distance calculation error:", error);
+        }
+
+        return {
+          ...request,
+          distance_km
+        };
+      })
+    );
+
+    return res.json(results);
+
+  } catch (error) {
+    console.error("Regional fare requests error:", error);
+
+    return res.status(500).json({
+      error: 'Unable to load regional requests.'
+    });
+  }
 });
 
 app.post('/driver/regional-fare-requests/:id/respond', fareOffersEnabled, authenticateDriver, async (req,res) => {
