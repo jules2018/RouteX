@@ -912,7 +912,7 @@ const response = await fetch(
                           <p className="mt-0.5 text-[8px] font-semibold leading-3.5 text-[#8b8e95] dark:text-[#a9acb6]">
                             {matchingActive
                               ? "This scheduled ride is available to accept now."
-                              : "Accept becomes available 30 min before pickup."}
+                              : "Accept becomes available 90 min before pickup."}
                           </p>
                         </div>
 
@@ -1109,7 +1109,7 @@ const response = await fetch(
                     const pickupMs = new Date(
                       ride.scheduled_pickup_at,
                     ).getTime();
-                    const navigateOpensMs = pickupMs - 15 * 60 * 1000;
+                    const navigateOpensMs = 0;
 
                     const canNavigate =
                       Number.isFinite(pickupMs) && nowMs >= navigateOpensMs;

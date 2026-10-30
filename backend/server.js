@@ -1457,7 +1457,7 @@ app.post("/bookings", async (req, res) => {
         });
       }
 
-      matchingOpensAt = new Date(scheduledPickupAt.getTime() - 30 * 60 * 1000);
+      matchingOpensAt = new Date(scheduledPickupAt.getTime() - 90 * 60 * 1000);
 
       if (scheduledPickupAt <= new Date()) {
         return res.status(400).json({
@@ -2099,10 +2099,7 @@ async function releaseScheduledBookings() {
         SET
           booking_status = 'Waiting',
           trip_status = 'Waiting',
-          expires_at = LEAST(
-            scheduled_pickup_at,
-            NOW() + INTERVAL '10 minutes'
-          )
+          expires_at = scheduled_pickup_at
         WHERE booking_status = 'Scheduled'
           AND trip_status = 'Scheduled'
           AND matching_opens_at IS NOT NULL
