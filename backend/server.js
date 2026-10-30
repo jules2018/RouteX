@@ -1149,32 +1149,23 @@ function routeXDistanceKm(lat1, lng1, lat2, lng2) {
 }
 
 function routeXDistanceFare(distanceKm) {
-  // Local road-distance base fares; pickup surcharge and out-of-town fee are separate.
+  // Upington road-distance base fares; surcharges are calculated separately.
   if (!Number.isFinite(distanceKm) || distanceKm < 0) {
     throw new Error("Invalid route distance for fare calculation.");
   }
 
-  if (distanceKm <= 2) return 50;
-  if (distanceKm <= 3) return 55;
-  if (distanceKm <= 4) return 55;
+  if (distanceKm <= 2) return 45;
+  if (distanceKm <= 4) return 50;
   if (distanceKm <= 5) return 60;
   if (distanceKm <= 6) return 65;
-  if (distanceKm <= 7) return 75;
-  if (distanceKm <= 8) return 85;
-  if (distanceKm <= 9) return 95;
-  if (distanceKm <= 10) return 105;
+  if (distanceKm <= 7) return 70;
+  if (distanceKm <= 9) return 80;
+  if (distanceKm <= 12) return 95;
+  if (distanceKm <= 15) return 110;
+  if (distanceKm <= 20) return 130;
+  if (distanceKm <= 25) return 160;
 
-  // Preserve the original fare formula for journeys over 10 km.
-  const minimumFare = 50;
-  const shortTripRate = 8;
-  const longTripRate = 2;
-  const shortRateDistance = Math.min(Math.max(distanceKm - 2, 0), 8);
-  const longRateDistance = Math.max(distanceKm - 10, 0);
-  const rawFare =
-    minimumFare +
-    shortRateDistance * shortTripRate +
-    longRateDistance * longTripRate;
-  return Math.ceil(rawFare / 5) * 5;
+  return Math.ceil((160 + (distanceKm - 25) * 3) / 5) * 5;
 }
 // RouteX night fare pricing (South African time)
 function calculateRouteXNightFare(baseFare, pickupDate) {
@@ -1359,7 +1350,7 @@ async function calculateRouteXFare({
   let baseFare;
 
   if (pickup_area === dropoff_area) {
-    baseFare = 40;
+    baseFare = 45;
   } else {
     const fareResult = await pool.query(
       `SELECT fare FROM public.fare_matrix WHERE from_category = $1 AND to_category = $2`,
