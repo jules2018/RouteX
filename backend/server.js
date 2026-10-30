@@ -1165,7 +1165,7 @@ function routeXDistanceFare(distanceKm) {
   if (distanceKm <= 20) return 130;
   if (distanceKm <= 25) return 160;
 
-  return Math.ceil((160 + (distanceKm - 25) * 3) / 5) * 5;
+  return Math.ceil((114 + (distanceKm - 10) * 2) / 5) * 5;
 }
 // RouteX night fare pricing (South African time)
 function calculateRouteXNightFare(baseFare, pickupDate) {
