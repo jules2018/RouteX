@@ -1763,18 +1763,20 @@ app.post("/bookings", async (req, res) => {
     FROM trip_bookings
     WHERE passenger_id = $1
       AND ride_type = 'scheduled'
+AND scheduled_pickup_at > ($2::timestamptz - INTERVAL '30 minutes')
+AND scheduled_pickup_at < ($2::timestamptz + INTERVAL '30 minutes')
       AND trip_status IN ('Scheduled', 'Waiting', 'Accepted', 'In Progress')
     ORDER BY scheduled_pickup_at ASC
     LIMIT 1
     `,
-          [passenger_id],
+        [passenger_id, scheduledPickupAt],
         );
 
         if (activeBookingResult.rows.length > 0) {
           await bookingClient.query("ROLLBACK");
 
           return res.status(409).json({
-            error: "You already have an upcoming scheduled RouteX ride.",
+         error: "You already have a scheduled RouteX ride within 30 minutes of this pickup time.",
             booking: activeBookingResult.rows[0],
           });
         }
