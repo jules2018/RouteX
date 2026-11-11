@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -205,7 +205,7 @@ localStorage.setItem("passenger", JSON.stringify(data));
                   }
                 `}
               >
-                {notice.type === "success" ? "âœ“" : "!"}
+                {notice.type === "success" ? "\u2713" : "!"}
               </span>
             </div>
           )}
@@ -241,7 +241,7 @@ localStorage.setItem("passenger", JSON.stringify(data));
               active:shadow-[inset_3px_3px_7px_#c4c6ca,inset_-3px_-3px_7px_#ffffff]
             "
           >
-            â†
+            &#8592;
           </button>
         </header>
 
@@ -544,7 +544,7 @@ localStorage.setItem("passenger", JSON.stringify(data));
                 {loading ? "Signing in..." : "Sign in"}
               </span>
 
-              {!loading && <span className="text-[16px]">â†’</span>}
+              {!loading && <span className="text-[16px]">&#8594;</span>}
             </button>
           </div>
 
@@ -586,7 +586,7 @@ localStorage.setItem("passenger", JSON.stringify(data));
         <footer className="relative z-20 mt-auto border-t border-[#d1d3d8] pt-3">
           <div className="flex items-center justify-between">
             <p className="text-[7px] font-semibold text-[#a0a3aa]">
-              RouteX Â· Upington
+              RouteX &#183; Upington
             </p>
 
             <div className="flex gap-3 text-[7px] font-semibold text-[#999ca4]">
