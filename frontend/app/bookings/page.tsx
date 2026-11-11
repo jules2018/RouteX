@@ -989,7 +989,12 @@ const response = await fetch(
         const response = await fetch(
           `${API_URL}/passenger-bookings/${passenger.id}`,
 
-          { cache: "no-store" },
+          {
+            cache: "no-store",
+            headers: {
+              Authorization: `Bearer ${passenger.token}`,
+            },
+          },
         );
 
         if (response.ok) {

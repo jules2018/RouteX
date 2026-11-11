@@ -49,7 +49,7 @@ export default function Home() {
             <div className="sectionhead"><strong>YOUR SERVICES</strong><small>UPINGTON ●</small></div>
             <a className="service" href="/passenger-login">
               <div className="icon"><svg viewBox="0 0 24 24"><path d="M5 11 7 5.5A2 2 0 0 1 8.9 4h6.2A2 2 0 0 1 17 5.5L19 11M5 11h14a2 2 0 0 1 2 2v4H3v-4a2 2 0 0 1 2-2ZM5 17v2a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-2m8 0v2a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-2M7 14h.01M17 14h.01"/></svg></div>
-              <div className="copy"><b>Book a ride</b><p>Travel anywhere in Upington</p></div><span className="arrow">→</span>
+              <div className="copy"><b>Book a ride</b><p>Travel anywhere in South Africa</p></div><span className="arrow">→</span>
             </a>
             <a className="service" href="/passenger-login">
               <div className="icon"><svg viewBox="0 0 24 24"><path d="m3 7 9-4 9 4v10l-9 4-9-4V7ZM3 7l9 5 9-5M12 12v9"/></svg></div>

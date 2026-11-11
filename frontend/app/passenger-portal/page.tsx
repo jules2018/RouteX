@@ -92,6 +92,28 @@ export default function PassengerPortalPage() {
   const [pinError, setPinError] = useState<Record<string, string>>({});
   const [trackingDeliveryId, setTrackingDeliveryId] = useState<number | null>(null);
   const [trips, setTrips] = useState<any[]>([]);
+  const previousTripStatuses = useRef<Record<number, string>>({});
+  const tripStatusesInitialized = useRef(false);
+  const [ratingPromptTripId, setRatingPromptTripId] = useState<number | null>(null);
+  // Remember rating prompts dismissed by this passenger.
+  const dismissedRatingTrips = useRef<Record<number, boolean>>({});
+
+  const dismissRatingPrompt = (tripId: number) => {
+    if (!passenger?.id) {
+      setRatingPromptTripId(null);
+      return;
+    }
+
+    dismissedRatingTrips.current[tripId] = true;
+
+    localStorage.setItem(
+      `routex-dismissed-ratings-${passenger.id}`,
+      JSON.stringify(dismissedRatingTrips.current)
+    );
+
+    setRatingPromptTripId(null);
+  };
+
   const [onlineDrivers, setOnlineDrivers] = useState(0);
   const [availableDrivers, setAvailableDrivers] = useState<any[]>([]);
   const [photo, setPhoto] = useState<File | null>(null);
@@ -445,6 +467,37 @@ export default function PassengerPortalPage() {
 
       console.log("PASSENGER TRIPS REFRESH:", rides);
 
+      // Detect newly completed trips, not historical completed trips.
+      const nextStatuses: Record<number, string> = {};
+
+      for (const trip of rides) {
+        const tripId = Number(trip.id);
+        const status = String(
+          trip.trip_status || trip.booking_status || ""
+        ).trim().toLowerCase().replace(/[_-]/g, " ");
+
+        nextStatuses[tripId] = status;
+
+        const previousStatus = previousTripStatuses.current[tripId];
+
+        if (
+          status === "completed" &&
+          !trip.has_reviewed &&
+          !reviewedTrips[tripId] &&
+          !dismissedRatingTrips.current[tripId] &&
+          (
+            ["accepted", "in progress"].includes(previousStatus) ||
+            !tripStatusesInitialized.current
+          )
+        ) {
+          setRatingPromptTripId(tripId);
+          setPortalView("rides");
+          setShowCompletedTrips(true);
+        }
+      }
+
+      previousTripStatuses.current = nextStatuses;
+      tripStatusesInitialized.current = true;
       setTrips(rides);
 
       // Find the passenger's current active ride.
@@ -567,6 +620,11 @@ export default function PassengerPortalPage() {
         [trip.id]: true,
       }));
 
+      // Close the rating prompt after a successful review.
+      setRatingPromptTripId((current) =>
+        current === trip.id ? null : current
+      );
+
       showNotice("Thank you for rating your driver.");
     } catch (error: any) {
       console.error("REVIEW ERROR:", error);
@@ -643,6 +701,18 @@ export default function PassengerPortalPage() {
         ...passengerData,
         profile_image: passengerData.profile_image || cachedPhoto || "",
       };
+      // Restore rating prompts previously dismissed by this passenger.
+      try {
+        const savedDismissals = localStorage.getItem(
+          `routex-dismissed-ratings-${passengerData.id}`
+        );
+
+        dismissedRatingTrips.current = savedDismissals
+          ? JSON.parse(savedDismissals)
+          : {};
+      } catch {
+        dismissedRatingTrips.current = {};
+      }
       setPassenger(restoredPassenger);
       setPhotoFailed(false);
 
@@ -805,6 +875,34 @@ export default function PassengerPortalPage() {
 
   return (
     <main className="min-h-[100dvh] bg-[#e9edf4] text-[#202631] dark:bg-[#262b34] dark:text-[#edf0f6]">
+      {ratingPromptTripId !== null && (
+        <div className="fixed inset-x-4 bottom-5 z-[10040] mx-auto max-w-sm rounded-[22px] border border-white/80 bg-[#f7f9fc] p-5 text-[#202b3c] shadow-2xl dark:border-[#46505e] dark:bg-[#2b3340] dark:text-white" role="status">
+          <p className="text-base font-bold">Trip completed!</p>
+          <p className="mt-2 text-sm text-[#566274] dark:text-[#d5dce7]">
+            How was your trip? Your feedback helps other RouteX passengers.
+          </p>
+          <div className="mt-4 flex gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                setPortalView("rides");
+                setShowCompletedTrips(true);
+                setRatingPromptTripId(null);
+              }}
+              className="flex-1 rounded-xl bg-[#f26a46] px-4 py-3 text-sm font-semibold text-white"
+            >
+              Rate Driver
+            </button>
+            <button
+              type="button"
+              onClick={() => dismissRatingPrompt(ratingPromptTripId)}
+              className="flex-1 rounded-xl bg-[#e4e9f1] px-4 py-3 text-sm font-semibold text-[#344054] dark:bg-[#414b5b] dark:text-white"
+            >
+              Maybe Later
+            </button>
+          </div>
+        </div>
+      )}
       {appDialog && (
         <div className="fixed inset-0 z-[10050] flex items-center justify-center bg-[#101923]/65 p-5" role="presentation">
           <div role="alertdialog" aria-modal="true" aria-labelledby="routex-dialog-title" aria-describedby="routex-dialog-description" className="w-full max-w-sm rounded-[26px] border border-white/90 bg-[#f7f9fc] p-6 text-[#202b3c] shadow-[12px_12px_35px_#10192340,-5px_-5px_20px_#ffffff60] dark:border-[#46505e] dark:bg-[#2b3340] dark:text-white">
@@ -1000,7 +1098,7 @@ export default function PassengerPortalPage() {
           <div className="grid grid-cols-1 gap-4">
             <a href="/bookings" className="rx-action rx-surface flex items-center gap-4 px-5 py-4">
               <span className="rx-surface grid h-14 w-14 shrink-0 place-items-center text-[#ff6846]"><svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M5 11 7 5h10l2 6M4 11h16v7H4zM7 18v2m10-2v2"/><path d="M7 14h.01M17 14h.01"/></svg></span>
-              <span className="min-w-0 flex-1"><strong className="block text-[16px] font-semibold">Book a ride</strong><small className="mt-1 block text-xs text-[#7c8797] dark:text-[#a7b0bd]">Travel anywhere in Upington</small></span><span className="text-[#9aa5b3]">→</span>
+              <span className="min-w-0 flex-1"><strong className="block text-[16px] font-semibold">Book a ride</strong><small className="mt-1 block text-xs text-[#7c8797] dark:text-[#a7b0bd]">Travel anywhere in South Africa</small></span><span className="text-[#9aa5b3]">→</span>
             </a>
             <a href="/package-delivery" className="rx-action rx-surface flex items-center gap-4 px-5 py-4">
               <span className="rx-surface grid h-14 w-14 shrink-0 place-items-center text-[#ff6846]"><svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="m3 7 9-4 9 4v10l-9 4-9-4V7Z"/><path d="m3 7 9 4 9-4M12 11v10M7.5 5l9 4"/></svg></span>
