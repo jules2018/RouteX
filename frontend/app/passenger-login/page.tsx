@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -205,7 +205,7 @@ localStorage.setItem("passenger", JSON.stringify(data));
                   }
                 `}
               >
-                {notice.type === "success" ? "✓" : "!"}
+                {notice.type === "success" ? "âœ“" : "!"}
               </span>
             </div>
           )}
@@ -241,7 +241,7 @@ localStorage.setItem("passenger", JSON.stringify(data));
               active:shadow-[inset_3px_3px_7px_#c4c6ca,inset_-3px_-3px_7px_#ffffff]
             "
           >
-            ←
+            â†
           </button>
         </header>
 
@@ -364,15 +364,6 @@ localStorage.setItem("passenger", JSON.stringify(data));
                     placeholder:text-[#9b9ea5]
                   "
                 />
-                <div className="mt-3 text-right">
-                  <button
-                    type="button"
-                    onClick={() => router.push("/forgot-password")}
-                    className="text-[11px] font-bold text-[#ff6846]"
-                  >
-                    Forgot password?
-                  </button>
-                </div>
               </div>
             </div>
 
@@ -516,6 +507,15 @@ localStorage.setItem("passenger", JSON.stringify(data));
               </div>
             </div>
 
+                <div className="mt-3 text-right">
+                  <button
+                    type="button"
+                    onClick={() => router.push("/forgot-password")}
+                    className="text-[11px] font-bold text-[#ff6846]"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
             {/* SIGN IN */}
 
             <button
@@ -544,7 +544,7 @@ localStorage.setItem("passenger", JSON.stringify(data));
                 {loading ? "Signing in..." : "Sign in"}
               </span>
 
-              {!loading && <span className="text-[16px]">→</span>}
+              {!loading && <span className="text-[16px]">â†’</span>}
             </button>
           </div>
 
@@ -586,7 +586,7 @@ localStorage.setItem("passenger", JSON.stringify(data));
         <footer className="relative z-20 mt-auto border-t border-[#d1d3d8] pt-3">
           <div className="flex items-center justify-between">
             <p className="text-[7px] font-semibold text-[#a0a3aa]">
-              RouteX · Upington
+              RouteX Â· Upington
             </p>
 
             <div className="flex gap-3 text-[7px] font-semibold text-[#999ca4]">

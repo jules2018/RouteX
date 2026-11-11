@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import RouteXIntro from "./RouteXIntro";
 
 type InstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -10,6 +11,7 @@ type InstallPromptEvent = Event & {
 export default function Home() {
   const [installPrompt, setInstallPrompt] = useState<InstallPromptEvent | null>(null);
   const [installNotice, setInstallNotice] = useState(false);
+  const [introComplete, setIntroComplete] = useState(false);
 
   useEffect(() => {
     const onInstall = (event: Event) => {
@@ -32,7 +34,9 @@ export default function Home() {
 
   return (
     <>
-      <div className="routex-home app">
+      <RouteXIntro onComplete={() => setIntroComplete(true)} />
+      <style jsx global>{`@keyframes routexHomeReveal { from { opacity: 0; } to { opacity: 1; } }`}</style>
+      <div className="routex-home app" style={{ visibility: introComplete ? "visible" : "hidden" }}>
         <header className="hero">
           <div className="top">
             <div className="logo">ROUTE<span>X</span></div>
@@ -40,13 +44,13 @@ export default function Home() {
           </div>
           <div className="welcome">
             <div className="eyebrow">WELCOME TO ROUTEX</div>
-            <h1>Getting Upington<br />moving.</h1>
+            <h1>Getting you<br />moving.</h1>
             <p>Local rides and package deliveries,<br />all in one simple app.</p>
           </div>
         </header>
         <main>
           <section className="section">
-            <div className="sectionhead"><strong>YOUR SERVICES</strong><small>UPINGTON ●</small></div>
+            <div className="sectionhead"><strong>YOUR SERVICES</strong><small>LOCAL &amp; REGIONAL ●</small></div>
             <a className="service" href="/passenger-login">
               <div className="icon"><svg viewBox="0 0 24 24"><path d="M5 11 7 5.5A2 2 0 0 1 8.9 4h6.2A2 2 0 0 1 17 5.5L19 11M5 11h14a2 2 0 0 1 2 2v4H3v-4a2 2 0 0 1 2-2ZM5 17v2a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-2m8 0v2a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-2M7 14h.01M17 14h.01"/></svg></div>
               <div className="copy"><b>Book a ride</b><p>Travel anywhere in South Africa</p></div><span className="arrow">→</span>
