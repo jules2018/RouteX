@@ -1893,6 +1893,41 @@ app.post("/bookings", async (req, res) => {
           });
         }
       }
+      // Nationwide: require a nearby available driver for Ride Now.
+if (!isScheduledRide) {
+  const nearbyDrivers = await bookingClient.query(
+    `
+    SELECT COUNT(*)::int AS total
+    FROM drivers
+    WHERE status = 'Available'
+      AND is_online = true
+      AND current_lat IS NOT NULL
+      AND current_lng IS NOT NULL
+      AND (
+        6371 * ACOS(
+          LEAST(1, GREATEST(-1,
+            COS(RADIANS($1::float8))
+            * COS(RADIANS(current_lat))
+            * COS(RADIANS(current_lng) - RADIANS($2::float8))
+            + SIN(RADIANS($1::float8))
+            * SIN(RADIANS(current_lat))
+          ))
+        )
+      ) <= 30
+    `,
+    [pickupLat, pickupLng]
+  );
+
+  if (nearbyDrivers.rows[0].total === 0) {
+    await bookingClient.query("ROLLBACK");
+
+    return res.status(409).json({
+      error:
+        "No RouteX drivers are currently available within 30 km of your pickup location. Please try again later.",
+      no_drivers_available: true,
+    });
+  }
+}
       const bookingResult = await bookingClient.query(
         `
       INSERT INTO trip_bookings

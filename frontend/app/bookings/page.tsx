@@ -344,6 +344,47 @@ if (rideType === "scheduled") {
     fareRetryKey,
   ]);
 
+  // Keep the town selector aligned with the actual pickup.
+  useEffect(() => {
+    if (!selectedPickup) return;
+
+    const lat = Number(selectedPickup.lat);
+    const lng = Number(selectedPickup.lng);
+
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+
+    const toRadians = (value: number) => value * Math.PI / 180;
+
+    const distanceKm = (aLat: number, aLng: number) => {
+      const dLat = toRadians(lat - aLat);
+      const dLng = toRadians(lng - aLng);
+
+      const a =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos(toRadians(aLat)) *
+        Math.cos(toRadians(lat)) *
+        Math.sin(dLng / 2) ** 2;
+
+      return 6371 * 2 * Math.atan2(
+        Math.sqrt(a),
+        Math.sqrt(Math.max(0, 1 - a))
+      );
+    };
+
+    const nearest = Object.entries(TOWN_CENTERS)
+      .map(([town, center]) => ({
+        town,
+        distance: distanceKm(center.lat, center.lng),
+      }))
+      .sort((a, b) => a.distance - b.distance)[0];
+
+    // Avoid assigning a distant or unsupported town.
+    if (nearest && nearest.distance <= 50) {
+      setSelectedTown((current) =>
+        current === nearest.town ? current : nearest.town
+      );
+    }
+  }, [selectedPickup?.lat, selectedPickup?.lng]);
   const pickupSearchRequestId = useRef(0);
   const destinationSearchRequestId = useRef(0);
   const pickupSearchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -744,7 +785,20 @@ if (rideType === "scheduled") {
 
   const loadOnlineDrivers = async () => {
     try {
-      const response = await fetch(`${API_URL}/online-drivers`);
+      if (!selectedPickup) {
+  setOnlineDrivers(0);
+  return;
+}
+
+const params = new URLSearchParams({
+  pickup_lat: String(selectedPickup.lat),
+  pickup_lng: String(selectedPickup.lng),
+});
+
+const response = await fetch(
+  `${API_URL}/online-drivers?${params}`,
+  { cache: "no-store" }
+);
 
       if (!response.ok) {
         throw new Error(`Failed to load drivers: ${response.status}`);
@@ -1863,7 +1917,7 @@ if (rideType === "scheduled") {
                     <span className="min-w-0">Suggested Fare</span>
                   </button>
                   <button type="button" aria-pressed={fareMode === "offer"} onClick={() => setFareMode("offer")} className={`flex min-h-[58px] min-w-0 items-center justify-center gap-1.5 rounded-2xl border px-2 py-2 text-center text-[11px] font-semibold leading-tight transition ${fareMode === "offer" ? "border-[#ff6846] bg-white text-[#172334] ring-2 ring-[#ff6846]/30" : "border-slate-300 bg-white/60 text-[#172334]"}`}>
-                    <span aria-hidden="true" className="shrink-0 text-[15px]">ðŸ¤</span>
+                    <span aria-hidden="true" className="shrink-0 text-[15px]">{"\u{1F697}"}</span>
                     <span className="min-w-0">Offer Your Fare</span>
                   </button>
                 </div>
@@ -3007,6 +3061,7 @@ function GpsIcon() {
     </svg>
   );
 }
+
 
 
 
