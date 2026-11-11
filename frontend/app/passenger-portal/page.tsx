@@ -378,8 +378,24 @@ export default function PassengerPortalPage() {
   ======================================================= */
   const loadDriverLocation = async (passengerId: number, bookingId: number) => {
     try {
+      const storedPassenger = localStorage.getItem("passenger");
+      const passengerSession = storedPassenger
+        ? JSON.parse(storedPassenger)
+        : null;
+
+      if (!passengerSession?.token) {
+        setDriverLocation(null);
+        return;
+      }
+
       const response = await fetch(
         `${API_URL}/passenger-bookings/${passengerId}/${bookingId}/driver-location`,
+        {
+          headers: {
+            Authorization: `Bearer ${passengerSession.token}`,
+          },
+          cache: "no-store",
+        },
       );
 
       if (!response.ok) {
@@ -401,9 +417,21 @@ export default function PassengerPortalPage() {
 
   const loadTrips = async (passengerId: number) => {
     try {
+      const storedPassenger = localStorage.getItem("passenger");
+      const passengerSession = storedPassenger
+        ? JSON.parse(storedPassenger)
+        : null;
+
+      if (!passengerSession?.token) {
+        throw new Error("Passenger authentication required");
+      }
+
       const response = await fetch(
         `${API_URL}/passenger-bookings/${passengerId}`,
         {
+          headers: {
+            Authorization: `Bearer ${passengerSession.token}`,
+          },
           cache: "no-store",
         },
       );

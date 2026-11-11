@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, Suspense } from "react";
 
 import { useSearchParams } from "next/navigation";
 
-import { supabase } from "../lib/supabase";
+import { API_URL } from "../lib/api";
 
 import LiveMap, { type RouteInfo } from "../components/LiveMap";
 
@@ -138,318 +138,140 @@ function PassengerPageContent() {
 
   // ==========================================================
 
-  // LOAD BOOKING
+  // LOAD BOOKING AND DRIVER THROUGH AUTHENTICATED BACKEND
 
-  // ==========================================================
-
-  useEffect(() => {
-    async function loadBooking() {
-      setLoading(true);
-      setError(null);
-      setBooking(null);
-      setDriver(null);
-      setRouteInfo(null);
-
-      if (!bookingId) {
-        setError("No valid RouteX booking was provided.");
-        setLoading(false);
-        return;
-      }
-
-      const { data, error } = await supabase
-
-        .from("trip_bookings")
-
-        .select(
-          `
-
-            id,
-
-            passenger_id,
-
-            assigned_driver_id,
-
-            pickup_address,
-
-            dropoff_address,
-
-            pickup_lat,
-            pickup_lng,
-            destination_lat,
-            destination_lng,
-            confirmed_pickup_lat,
-            confirmed_pickup_lng,
-            booking_status,
-            trip_status
-
-          `,
-        )
-
-        .eq(
-          "id",
-
-          bookingId,
-        )
-
-        .single();
-
-      if (error) {
-        console.error(
-          "BOOKING LOAD ERROR:",
-
-          error,
-        );
-
-        setError("Could not load the RouteX booking.");
-
-        setLoading(false);
-
-        return;
-      }
-
-      setBooking(data as Booking);
-
-      setLoading(false);
-    }
-
-    loadBooking();
-  }, [bookingId]);
-  useEffect(() => {
-    if (!bookingId) return;
-
-    async function refreshBookingStatus() {
-      const { data, error } = await supabase
-        .from("trip_bookings")
-        .select(
-          `
-        id,
-        passenger_id,
-        assigned_driver_id,
-        pickup_address,
-        dropoff_address,
-        pickup_lat,
-        pickup_lng,
-        destination_lat,
-        destination_lng,
-        confirmed_pickup_lat,
-        confirmed_pickup_lng,
-        booking_status,
-        trip_status
-      `,
-        )
-        .eq("id", bookingId)
-        .single();
-
-      if (error || !data) {
-        console.error("BOOKING STATUS REFRESH ERROR:", error);
-        return;
-      }
-
-      setBooking((current) => {
-        if (!current) return data as Booking;
-
-        return {
-          ...current,
-          ...(data as Booking),
-        };
-      });
-    }
-
-    const interval = window.setInterval(() => {
-      refreshBookingStatus();
-    }, 5000);
-
-    return () => {
-      window.clearInterval(interval);
-    };
-  }, [bookingId]);
-  // ==========================================================
-  // REALTIME BOOKING STATUS
   // ==========================================================
 
   useEffect(() => {
     if (!bookingId) {
+      setError("No valid RouteX booking was provided.");
+      setLoading(false);
       return;
     }
 
-    const channel = supabase
-      .channel(`routex-booking-${bookingId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "trip_bookings",
-          filter: `id=eq.${bookingId}`,
-        },
-        (payload) => {
-          console.log("LIVE BOOKING UPDATE:", payload.new);
+    let cancelled = false;
+    let refreshing = false;
 
-          const updatedBooking = payload.new as Booking;
+    const refreshTracking = async () => {
+      if (refreshing) return;
+      refreshing = true;
 
-          setBooking((current) => {
-            if (!current) {
-              return updatedBooking;
-            }
+      try {
+        const storedPassenger = localStorage.getItem("passenger");
+        const session = storedPassenger
+          ? JSON.parse(storedPassenger)
+          : null;
 
-            return {
-              ...current,
-              ...updatedBooking,
-            };
-          });
-        },
-      )
-      .subscribe((status) => {
-        console.log("BOOKING REALTIME:", status);
-      });
+        if (!session?.id || !session?.token) {
+          throw new Error("Please log in to track your booking.");
+        }
+
+        const headers = {
+          Authorization: `Bearer ${session.token}`,
+        };
+
+        const bookingsResponse = await fetch(
+          `${API_URL}/passenger-bookings/${session.id}`,
+          { headers, cache: "no-store" },
+        );
+
+        if (!bookingsResponse.ok) {
+          throw new Error("Unable to load your booking.");
+        }
+
+        const bookings = await bookingsResponse.json();
+
+        if (!Array.isArray(bookings)) {
+          throw new Error("Invalid booking response.");
+        }
+
+        const currentBooking = bookings.find(
+          (item: Booking) =>
+            Number(item.id) === Number(bookingId) &&
+            Number(item.passenger_id) === Number(session.id),
+        );
+
+        if (!currentBooking) {
+          throw new Error("Booking not found for this passenger.");
+        }
+
+        if (cancelled) return;
+
+        setBooking(currentBooking as Booking);
+
+        const tripStatus = String(currentBooking.trip_status || "")
+          .trim()
+          .toLowerCase();
+
+        if (
+          !currentBooking.assigned_driver_id ||
+          !["accepted", "in progress"].includes(tripStatus)
+        ) {
+          setDriver(null);
+          setConnected(false);
+          setLoading(false);
+          return;
+        }
+
+        const locationResponse = await fetch(
+          `${API_URL}/passenger-bookings/${session.id}/${bookingId}/driver-location`,
+          { headers, cache: "no-store" },
+        );
+
+        if (!locationResponse.ok) {
+          throw new Error("Unable to retrieve driver location.");
+        }
+
+        const location = await locationResponse.json();
+
+        if (cancelled) return;
+
+        setDriver({
+          id: Number(location.driver_id),
+          full_name:
+            currentBooking.driver_name ||
+            location.driver_name ||
+            null,
+          vehicle_type: location.vehicle_type ?? null,
+          vehicle_color: location.vehicle_color ?? null,
+          license_plate: location.license_plate ?? null,
+          profile_image: location.driver_profile_image ?? null,
+          current_lat: location.driver_lat ?? null,
+          current_lng: location.driver_lng ?? null,
+        });
+
+        setConnected(true);
+        setError(null);
+      } catch (err) {
+        if (!cancelled) {
+          console.error("TRACKING REFRESH ERROR:", err);
+          setConnected(false);
+          setError((current) =>
+            loading
+              ? err instanceof Error
+                ? err.message
+                : "Unable to load tracking."
+              : current,
+          );
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+        refreshing = false;
+      }
+    };
+
+    setLoading(true);
+    refreshTracking();
+
+    const interval = window.setInterval(refreshTracking, 5000);
 
     return () => {
-      supabase.removeChannel(channel);
+      cancelled = true;
+      window.clearInterval(interval);
     };
   }, [bookingId]);
 
   // ==========================================================
-
-  // LOAD ASSIGNED DRIVER
-
-  // ==========================================================
-
-  useEffect(() => {
-    if (!booking?.assigned_driver_id) {
-      return;
-    }
-
-    async function loadDriver() {
-      const { data, error } = await supabase
-
-        .from("drivers")
-
-        .select(
-          `
-
-            id,
-
-            full_name,
-
-            vehicle_type,
-
-            vehicle_color,
-
-            license_plate,
-
-            profile_image,
-
-            current_lat,
-
-            current_lng
-
-          `,
-        )
-
-        .eq(
-          "id",
-
-          booking!.assigned_driver_id,
-        )
-
-        .single();
-
-      if (error) {
-        console.error(
-          "DRIVER LOAD ERROR:",
-
-          error,
-        );
-
-        setError("Could not load the assigned driver.");
-
-        return;
-      }
-
-      setDriver(data as Driver);
-    }
-
-    loadDriver();
-  }, [booking?.assigned_driver_id]);
-
-  // ==========================================================
-
-  // REALTIME DRIVER LOCATION
-
-  // ==========================================================
-
-  useEffect(() => {
-    if (!booking?.assigned_driver_id) {
-      return;
-    }
-
-    const driverId = booking.assigned_driver_id;
-
-    const channel = supabase
-
-      .channel(`routex-driver-${driverId}`)
-
-      .on(
-        "postgres_changes",
-
-        {
-          event: "UPDATE",
-
-          schema: "public",
-
-          table: "drivers",
-
-          filter: `id=eq.${driverId}`,
-        },
-
-        (payload) => {
-          console.log(
-            "LIVE DRIVER UPDATE:",
-
-            payload.new,
-          );
-
-          const updatedDriver = payload.new as Driver;
-
-          setDriver((current) => {
-            if (!current) {
-              return updatedDriver;
-            }
-
-            return {
-              ...current,
-
-              ...updatedDriver,
-            };
-          });
-        },
-      )
-
-      .subscribe((status) => {
-        console.log(
-          "DRIVER REALTIME:",
-
-          status,
-        );
-
-        if (status === "SUBSCRIBED") {
-          setConnected(true);
-        }
-
-        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
-          setConnected(false);
-
-          setError("Live driver connection was interrupted.");
-        }
-      });
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [booking?.assigned_driver_id]);
-
-  // ==========================================================
-
   // PICKUP
 
   // ==========================================================

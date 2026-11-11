@@ -9,6 +9,34 @@ const { createClient } = require("@supabase/supabase-js");
 const fs = require("fs");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+// RouteX Nationwide development notification safeguard
+require("dotenv").config();
+
+if (process.env.NODE_ENV !== "production") {
+  const originalFetch = global.fetch;
+
+  global.fetch = async (url, options) => {
+    const target = String(url);
+
+    const blocked =
+      target.startsWith("https://api.brevo.com/") ||
+      /^https:\/\/graph\.facebook\.com\/v[\d.]+\/[^/]+\/messages(?:\?|$)/.test(target);
+
+    if (blocked) {
+      console.log("[DEV] External notification blocked:", new URL(target).hostname);
+
+      return new Response(
+        JSON.stringify({ development: true, blocked: true }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    return originalFetch(url, options);
+  };
+}
 
 async function sendResetEmail(email, code) {
   const response = await fetch("https://api.brevo.com/v3/smtp/email", {
@@ -1154,7 +1182,7 @@ function routeXDistanceFare(distanceKm) {
     throw new Error("Invalid route distance for fare calculation.");
   }
 
-  if (distanceKm <= 2) return 50;
+  if (distanceKm <= 2) return 45;
   if (distanceKm <= 3) return 55;
   if (distanceKm <= 4) return 55;
   if (distanceKm <= 5) return 60;
@@ -1175,6 +1203,41 @@ function routeXDistanceFare(distanceKm) {
     shortRateDistance * shortTripRate +
     longRateDistance * longTripRate;
   return Math.ceil(rawFare / 5) * 5;
+}
+function routeXIsCapeTown(lat, lng) {
+  // Approximate Cape Town metropolitan service area.
+  // Excludes Upington and other distant towns.
+  return (
+    Number.isFinite(lat) &&
+    Number.isFinite(lng) &&
+    lat >= -34.35 &&
+    lat <= -33.45 &&
+    lng >= 18.25 &&
+    lng <= 19.15
+  );
+}
+function routeXCapeTownFare(distanceKm) {
+  if (!Number.isFinite(distanceKm) || distanceKm < 0) {
+    throw new Error("Invalid Cape Town route distance.");
+  }
+
+  if (distanceKm <= 2) return 35;
+  if (distanceKm <= 3) return 40;
+  if (distanceKm <= 4) return 45;
+  if (distanceKm <= 5) return 50;
+  if (distanceKm <= 6) return 55;
+  if (distanceKm <= 7) return 60;
+  if (distanceKm <= 8) return 65;
+  if (distanceKm <= 9) return 70;
+  if (distanceKm <= 10) return 75;
+
+  // Preserve shorter-trip pricing, then increase the rate beyond 12 km.
+  const fare =
+    distanceKm <= 12
+      ? 75 + (distanceKm - 10) * 5.5
+      : 86 + (distanceKm - 12) * 8;
+
+  return Math.ceil(fare / 5) * 5;
 }
 // RouteX night fare pricing (South African time)
 function calculateRouteXNightFare(baseFare, pickupDate) {
@@ -1284,7 +1347,13 @@ async function calculateRouteXFare({
         ) {
           const distanceKm = Number(routeData.routes[0].distance) / 1000;
           if (Number.isFinite(distanceKm) && distanceKm >= 0) {
-            const standardBaseFare = routeXDistanceFare(distanceKm);
+            const isCapeTownTrip =
+              routeXIsCapeTown(pickupLat, pickupLng) &&
+              routeXIsCapeTown(dropoffLat, dropoffLng);
+
+            const standardBaseFare = isCapeTownTrip
+              ? routeXCapeTownFare(distanceKm)
+              : routeXDistanceFare(distanceKm);
             const pickupDistanceFromUpington = routeXDistanceKm(
               pickupLat,
               pickupLng,
@@ -1297,9 +1366,16 @@ async function calculateRouteXFare({
               ROUTEX_UPINGTON_CENTRE_LAT,
               ROUTEX_UPINGTON_CENTRE_LNG,
             );
+            // Apply Upington's out-of-town fee only when
+            // at least one endpoint is within its 20 km service area.
+            const involvesUpington =
+              pickupDistanceFromUpington <= 20 ||
+              dropoffDistanceFromUpington <= 20;
+
             const outOfTownFee =
-              pickupDistanceFromUpington > 20 ||
-              dropoffDistanceFromUpington > 20
+              involvesUpington &&
+              (pickupDistanceFromUpington > 20 ||
+               dropoffDistanceFromUpington > 20)
                 ? 50
                 : 0;
             // Only long out-of-town routes get an additional distance allowance.
@@ -2748,7 +2824,7 @@ async function searchGeoapifyPlaces(searchText) {
 
     const url =
       "https://api.geoapify.com/v1/geocode/search" +
-      `?text=${encodeURIComponent(searchText + ", Upington, South Africa")}` +
+      `?text=${encodeURIComponent(searchText)}` +
       "&format=json" +
       "&filter=countrycode:za" +
       "&limit=10" +
@@ -2770,9 +2846,13 @@ async function searchGeoapifyPlaces(searchText) {
   }
 }
 
+const landmarkSearchCache = new Map();
+const LANDMARK_CACHE_TTL_MS = 30 * 60 * 1000;
+
 app.get("/addresses/search", async (req, res) => {
   try {
     const query = String(req.query.q || "").trim();
+    const selectedTown = String(req.query.town || "").trim();
 
     if (query.length < 2) {
       return res.json([]);
@@ -2902,7 +2982,7 @@ app.get("/addresses/search", async (req, res) => {
         .join(" ")
         .toLowerCase();
 
-      return searchableLocation.includes("upington");
+      return item.country_code === "za" || /south africa/i.test(searchableLocation);
     };
 
     const geoResultMatchesStreet = (item, searchQuery) => {
@@ -3034,9 +3114,18 @@ app.get("/addresses/search", async (req, res) => {
         )
       ) AS similarity_score
 
-    FROM public.addresses
+   FROM public.addresses
 
-    WHERE
+WHERE
+  (
+    $6 = ''
+    OR LOWER(COALESCE(full_address, '')) ~ (
+      '(^|[^[:alpha:]])' ||
+      LOWER($6) ||
+      '([^[:alpha:]]|$)'
+    )
+  )
+  AND (
   -- Direct match against what the passenger actually typed
   address ILIKE $1
   OR full_address ILIKE $1
@@ -3096,6 +3185,7 @@ app.get("/addresses/search", async (req, res) => {
     ) > 0.65
   )
 
+    )
     ORDER BY
       CASE
         WHEN LOWER(address) = LOWER($2) THEN 0
@@ -3121,6 +3211,7 @@ app.get("/addresses/search", async (req, res) => {
         localEnglishVariant,
         localAfrikaansVariant,
         localBareStreet,
+        selectedTown,
       ],
     );
     // Return usable local matches immediately.
@@ -3171,7 +3262,7 @@ app.get("/addresses/search", async (req, res) => {
       return directMatch || score >= 0.75;
     });
 
-    if (localWithCoordinates.length > 0) {
+    if (localWithCoordinates.length > 0 && (getRoadType(query) || /^\s*\d+[a-z]?\s+/i.test(query))) {
       console.log("LOCAL ADDRESS RESULTS:", localWithCoordinates.length);
 
       return res.json(
@@ -3203,7 +3294,16 @@ app.get("/addresses/search", async (req, res) => {
         .trim();
 
     if (!roadWords.test(query) && !hasHouseNumber && query.length >= 4) {
-      const placeCandidates = await searchGeoapifyPlaces(query);
+      const cacheKey = selectedTown.toLowerCase() + ":" + query.toLowerCase().replace(/\s+/g, " ").trim();
+      const cached = landmarkSearchCache.get(cacheKey);
+
+      if (cached && cached.expiresAt > Date.now()) {
+        return res.json(cached.results);
+      }
+
+      if (cached) landmarkSearchCache.delete(cacheKey);
+
+      const placeCandidates = await searchGeoapifyPlaces(selectedTown ? `${query}, ${selectedTown}, South Africa` : query);
       const wanted = normalizePlaceName(query);
       const namedPlaces = placeCandidates.filter((item) => {
         const lat = Number(item.lat);
@@ -3219,20 +3319,27 @@ app.get("/addresses/search", async (req, res) => {
       });
 
       if (namedPlaces.length > 0) {
-        return res.json(namedPlaces.slice(0, 6).map((item) => {
+        const landmarkResults = namedPlaces.slice(0, 6).map((item) => {
           const locationText = [item.suburb, item.district, item.formatted]
             .filter(Boolean).join(" ").toLowerCase();
           const area = knownAreas.find((name) => locationText.includes(name.toLowerCase()));
           return {
             address: item.name,
             full_address: item.formatted || item.name,
-            area_name: area || item.suburb || "Upington",
+            area_name: area || item.suburb || item.city || item.town || item.district || "",
             place_type: item.result_type || "place",
             lat: Number(item.lat),
             lng: Number(item.lon),
             source: "geoapify-place",
           };
-        }));
+        });
+
+        landmarkSearchCache.set(cacheKey, {
+          results: landmarkResults,
+          expiresAt: Date.now() + LANDMARK_CACHE_TTL_MS,
+        });
+
+        return res.json(landmarkResults);
       }
     }
 
@@ -3296,7 +3403,7 @@ app.get("/addresses/search", async (req, res) => {
     // -----------------------------------------------------
 
     let geoResults = await searchGeoapifyAddress(
-      `${query}, Upington, South Africa`,
+      `${query}, South Africa`,
     );
     console.log(
       "RAW GEOAPIFY RESULTS:",
@@ -3401,7 +3508,7 @@ app.get("/addresses/search", async (req, res) => {
         console.log("GEOAPIFY SMART FALLBACK:", query, "->", fallbackQuery);
 
         const fallbackResults = await searchGeoapifyAddress(
-          `${fallbackQuery}, Upington, South Africa`,
+          `${fallbackQuery}, South Africa`,
         );
 
         const validFallbackResults = fallbackResults.filter((item) => {
@@ -3496,10 +3603,10 @@ app.get("/addresses/search", async (req, res) => {
           const rawArea = item.suburb || item.district || "";
 
           if (/ward\s*\d+/i.test(rawArea) || /khara hais ward/i.test(rawArea)) {
-            return "Upington";
+            return item.city || item.town || item.district || "";
           }
 
-          return rawArea || "Upington";
+          return rawArea || item.city || item.town || "";
         })(),
 
         place_type: item.result_type || null,
@@ -3594,6 +3701,20 @@ app.get("/addresses/search", async (req, res) => {
 
       return res.json(formattedGeoResults);
     }
+
+    // Preserve valid local results when Geoapify finds no suitable match.
+    if (localWithCoordinates.length > 0) {
+      return res.json(localWithCoordinates.map((item) => ({
+        address: item.address,
+        full_address: item.full_address || item.address,
+        area_name: item.area_name || "",
+        place_type: item.place_type,
+        lat: Number(item.latitude),
+        lng: Number(item.longitude),
+        source: "local",
+      })));
+    }
+
     // =====================================================
     // 2. TRY TO GEOCODE LOCAL MATCHES WITHOUT COORDINATES
     // =====================================================
@@ -3742,27 +3863,21 @@ app.get("/addresses/search", async (req, res) => {
     // Build our different search attempts
     const searchQueries = [
       // 1. Exact passenger address
-      `${query}, Upington, South Africa`,
-      `${query}, Upington`,
+      `${query}, South Africa`,
 
       // 2. Without house number
-      `${queryWithoutHouseNumber}, Upington, South Africa`,
-      `${queryWithoutHouseNumber}, Upington`,
+      `${queryWithoutHouseNumber}, South Africa`,
 
       // 3. Afrikaans -> English road terminology
-      `${translatedStreetQuery}, Upington, South Africa`,
-      `${translatedStreetQuery}, Upington`,
+      `${translatedStreetQuery}, South Africa`,
 
       // 4. English -> Afrikaans road terminology
-      `${afrikaansStreetQuery}, Upington, South Africa`,
-      `${afrikaansStreetQuery}, Upington`,
+      `${afrikaansStreetQuery}, South Africa`,
 
       // 5. Street name only
-      `${bareStreetQuery}, Upington, South Africa`,
-      `${bareStreetQuery}, Upington`,
+      `${bareStreetQuery}, South Africa`,
 
       // 6. Wider fallbacks
-      `${query}, Northern Cape, South Africa`,
       query,
     ]
       .map((value) => value.trim())
@@ -3813,7 +3928,7 @@ app.get("/addresses/search", async (req, res) => {
           const displayName = String(item.display_name || "");
 
           // We only want results relevant to Upington.
-          if (!displayName.toLowerCase().includes("upington")) {
+          if (!/south africa/i.test(displayName)) {
             continue;
           }
 
@@ -3887,7 +4002,7 @@ app.get("/addresses/search", async (req, res) => {
       // Upington business/POI results do not
       // always expose a suburb.
       if (!normalizedArea) {
-        normalizedArea = "Upington Central";
+        normalizedArea = address.city || address.town || address.village || "";
       }
 
       const street = address.road || address.pedestrian || "";
@@ -5158,13 +5273,26 @@ app.get("/driver-list", async (req, res) => {
 
 app.get("/online-drivers", async (req, res) => {
   try {
+    const lat = Number(req.query.pickup_lat);
+    const lng = Number(req.query.pickup_lng);
+    const hasPickup = req.query.pickup_lat != null && req.query.pickup_lng != null;
+    if (hasPickup && (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180)) {
+      return res.status(400).json({ error: "Invalid pickup coordinates" });
+    }
     const result = await pool.query(`
-  SELECT COUNT(*) AS total
-  FROM drivers
-  WHERE status = 'Available'
-    AND is_online = true
-`);
-
+      SELECT COUNT(*) AS total
+      FROM drivers
+      WHERE status = 'Available'
+        AND is_online = true
+        AND ($1::boolean = false OR (
+          current_lat IS NOT NULL AND current_lng IS NOT NULL
+          AND (6371 * ACOS(LEAST(1, GREATEST(-1,
+            COS(RADIANS($2::float8)) * COS(RADIANS(current_lat)) *
+            COS(RADIANS(current_lng) - RADIANS($3::float8)) +
+            SIN(RADIANS($2::float8)) * SIN(RADIANS(current_lat))
+          )))) <= 30
+        ))
+    `, [hasPickup, hasPickup ? lat : 0, hasPickup ? lng : 0]);
     res.json(result.rows[0]);
   } catch (error) {
     res.status(500).json({
@@ -6034,8 +6162,8 @@ app.post(
         });
       }
 
-      const operatingTown = String(operating_town || "Upington").trim();
-      if (!operatingTown || operatingTown.length > 100) {
+      const operatingTown = String(operating_town || "").trim();
+      if (operatingTown.length > 100) {
         return res.status(400).json({ error: "Please enter a valid operating town." });
       }
 
@@ -6483,7 +6611,7 @@ app.post("/admin/applications/:id/approve", async (req, res) => {
         appData.id_passport_number,
         setupToken,
         setupExpires,
-        appData.operating_town || "Upington",
+        appData.operating_town || null,
       ],
     );
     await pool.query(
@@ -6495,7 +6623,7 @@ app.post("/admin/applications/:id/approve", async (req, res) => {
       [applicationId],
     );
 
-    const setupLink = `https://routex-frontend.onrender.com/driver-set-password?token=${setupToken}`;
+    const setupLink = `${process.env.NODE_ENV === "production" ? "https://routex-frontend.onrender.com" : "http://localhost:3000"}/driver-set-password?token=${setupToken}`;
 
     // Send the approved driver their RouteX account setup link
     try {
@@ -7772,9 +7900,15 @@ app.get("/passenger-trips/:id", async (req, res) => {
   }
 });
 
-app.get("/passenger-bookings/:id", async (req, res) => {
+app.get("/passenger-bookings/:id", authenticatePackagePassenger, async (req, res) => {
   try {
     const passengerId = req.params.id;
+
+    if (Number(passengerId) !== Number(req.authenticatedPassengerId)) {
+      return res.status(403).json({
+        error: "You cannot access another passenger's bookings",
+      });
+    }
 
     // Mark waiting bookings as expired after 10 minutes
     await pool.query(
@@ -7845,9 +7979,16 @@ FROM trip_bookings tb
 
 app.get(
   "/passenger-bookings/:passengerId/:bookingId/driver-location",
+  authenticatePackagePassenger,
   async (req, res) => {
     try {
       const { passengerId, bookingId } = req.params;
+
+      if (Number(passengerId) !== Number(req.authenticatedPassengerId)) {
+        return res.status(403).json({
+          error: "You cannot track another passenger's booking",
+        });
+      }
 
       const result = await pool.query(
         `

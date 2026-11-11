@@ -33,7 +33,7 @@ type DriverForm = {
 
 const emptyForm: DriverForm = {
 
-  full_name: "", phone: "", residential_address: "", operating_town: "Upington", id_passport_number: "",
+  full_name: "", phone: "", residential_address: "", operating_town: "", id_passport_number: "",
 
   vehicle_type: "", vehicle_color: "", license_plate: "", referral_code: "",
 
@@ -368,11 +368,11 @@ export default function BecomeADriverPage() {
 
 
             <label className="block">
-              <span className="mb-3 block pl-1 text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#929baa]">Operating town *</span>
+              <span className="mb-3 block pl-1 text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#929baa]">Operating town (optional)</span>
               <input className={inputStyle} value={form.operating_town} maxLength={100}
                 onChange={(e) => update("operating_town", e.target.value)}
-                placeholder="e.g. Upington, Keimoes, Groblershoop"
-                disabled={submitting} required />
+                placeholder="Optional — GPS determines nearby trips"
+                disabled={submitting} />
               <span className="mt-2 block text-[11px] text-[#818a99]">Your normal operating town. Live GPS determines nearby bookings.</span>
             </label>
 

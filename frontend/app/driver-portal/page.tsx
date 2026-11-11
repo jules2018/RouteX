@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 
@@ -247,7 +247,7 @@ const response = await fetch(`${API_URL}/driver/upload-photo`, {
         completedResponse,
       ] = await Promise.all([
         fetch(`${API_URL}/scheduled-rides`, { cache: "no-store" }),
-        fetch(`${API_URL}/trip-requests`, { cache: "no-store" }),
+        fetch(`${API_URL}/trip-requests`, { cache: "no-store", headers: { Authorization: `Bearer ${localStorage.getItem("driverToken") || ""}` } }),
         fetch(`${API_URL}/accepted-trips`, { cache: "no-store" }),
         fetch(`${API_URL}/in-progress-trips`, { cache: "no-store" }),
         fetch(`${API_URL}/completed-trips`, { cache: "no-store" }),
@@ -360,7 +360,7 @@ const response = await fetch(`${API_URL}/driver/upload-photo`, {
   ========================= */
 
   useEffect(() => {
-    if (!driver?.id || status !== "available") return;
+    if (!driver?.id || (status !== "available" && acceptedTrips.length === 0 && inProgressTrips.length === 0)) return;
 
     const sendHeartbeat = async () => {
       try {
@@ -382,10 +382,10 @@ await fetch(`${API_URL}/drivers/${driver.id}/heartbeat`, {
     const interval = window.setInterval(sendHeartbeat, 30000);
 
     return () => window.clearInterval(interval);
-  }, [driver?.id, status]);
+  }, [driver?.id, status, acceptedTrips.length, inProgressTrips.length]);
 
   useEffect(() => {
-    if (!driver?.id || status !== "available") return;
+    if (!driver?.id || (status !== "available" && acceptedTrips.length === 0 && inProgressTrips.length === 0)) return;
     if (!navigator.geolocation) return;
 
     const watchId = navigator.geolocation.watchPosition(
@@ -430,8 +430,51 @@ await fetch(`${API_URL}/drivers/${driver.id}/location`, {
       },
     );
 
-    return () => navigator.geolocation.clearWatch(watchId);
-  }, [driver?.id, status]);
+    const gpsRefresh = window.setInterval(() => {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          try {
+            const token = localStorage.getItem("driverToken");
+            if (!token) return;
+
+            const response = await fetch(`${API_URL}/drivers/${driver.id}/location`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude,
+              }),
+            });
+
+            if (response.ok) {
+              setDriverLocation({
+                lat: position.coords.latitude,
+                lng: position.coords.longitude,
+              });
+            }
+          } catch (error) {
+            console.error("DRIVER GPS REFRESH ERROR:", error);
+          }
+        },
+        (error) => {
+          console.error("DRIVER GPS REFRESH UNAVAILABLE:", error.message);
+        },
+        {
+          enableHighAccuracy: true,
+          maximumAge: 5000,
+          timeout: 15000,
+        },
+      );
+    }, 60000);
+
+    return () => {
+      navigator.geolocation.clearWatch(watchId);
+      window.clearInterval(gpsRefresh);
+    };
+  }, [driver?.id, status, acceptedTrips.length, inProgressTrips.length]);
 
   const toggleStatus = async () => {
     if (!driver?.id) return;
@@ -2013,3 +2056,5 @@ function RadarIcon() {
     </svg>
   );
 }
+
+

@@ -16,8 +16,8 @@ type LocationPickerProps = {
 
 export default function LocationPicker({
   title,
-  initialLat = -28.4563,
-  initialLng = 21.2419,
+  initialLat = -29.0,
+  initialLng = 25.0,
   onConfirm,
   onClose,
 }: LocationPickerProps) {
@@ -46,7 +46,7 @@ export default function LocationPicker({
 
       style: "https://tiles.openfreemap.org/styles/liberty",
       center: [initialLng, initialLat],
-      zoom: 15,
+      zoom: Math.abs(initialLat + 29.0) < 0.0001 && Math.abs(initialLng - 25.0) < 0.0001 ? 5 : 15,
     });
 
     mapRef.current = map;

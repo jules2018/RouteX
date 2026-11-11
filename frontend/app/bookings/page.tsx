@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import LocationPicker from "../components/LocationPicker";
 import { PassengerRegionalOffers } from "../components/RegionalFareOffers";
@@ -33,9 +33,22 @@ type AppPopup = {
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
-const UPINGTON_LAT = -28.4563;
+const UPINGTON_LAT = -29.0;
 
-const UPINGTON_LNG = 21.2419;
+const UPINGTON_LNG = 25.0;
+
+const TOWN_CENTERS: Record<string, { lat: number; lng: number }> = {
+  "Upington": { lat: -28.4575, lng: 21.2425 },
+  "Keimoes": { lat: -28.7105, lng: 20.9681 },
+  "Groblershoop": { lat: -28.8958, lng: 21.9831 },
+  "Cape Town": { lat: -33.9249, lng: 18.4241 },
+  "Kimberley": { lat: -28.7282, lng: 24.7499 },
+  "Kathu": { lat: -27.6957, lng: 23.0493 },
+  "Kuruman": { lat: -27.4524, lng: 23.4325 },
+  "Springbok": { lat: -29.6643, lng: 17.8865 },
+  "De Aar": { lat: -30.6497, lng: 24.0123 },
+  "Postmasburg": { lat: -28.3339, lng: 23.0654 },
+};
 
 function localDateString(date: Date) {
   const year = date.getFullYear();
@@ -75,6 +88,8 @@ export default function BookingTestPage() {
 
   const [showPickupSearch, setShowPickupSearch] = useState(false);
 
+  const [selectedTown, setSelectedTown] = useState("Upington");
+
   const [pickupQuery, setPickupQuery] = useState("");
 
   const [pickupResults, setPickupResults] = useState<AddressResult[]>([]);
@@ -90,6 +105,7 @@ export default function BookingTestPage() {
   const [gettingLocation, setGettingLocation] = useState(false);
 
   const [showPickupMap, setShowPickupMap] = useState(false);
+  const [pickupMapStart, setPickupMapStart] = useState<{ lat: number; lng: number } | null>(null);
 
   const [onlineDrivers, setOnlineDrivers] = useState<number>(0);
 
@@ -328,11 +344,17 @@ if (rideType === "scheduled") {
     fareRetryKey,
   ]);
 
+  const pickupSearchRequestId = useRef(0);
+  const destinationSearchRequestId = useRef(0);
+  const pickupSearchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const destinationSearchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const searchPickupAddress = async (query: string) => {
+    const requestId = ++pickupSearchRequestId.current;
     const cleanQuery = query.trim();
 
     if (cleanQuery.length < 3) {
-      setPickupResults([]);
+      if (requestId === pickupSearchRequestId.current) setPickupResults([]);
 
       setPickupSearchFinished(false);
 
@@ -345,7 +367,7 @@ if (rideType === "scheduled") {
       setPickupSearchFinished(false);
 
       const response = await fetch(
-        `${API_URL}/addresses/search?q=${encodeURIComponent(cleanQuery)}`,
+        `${API_URL}/addresses/search?q=${encodeURIComponent(cleanQuery)}&town=${encodeURIComponent(selectedTown)}`,
       );
 
       if (!response.ok) {
@@ -355,6 +377,12 @@ if (rideType === "scheduled") {
       const data = await response.json();
 
       const publicResults: AddressResult[] = Array.isArray(data) ? data : data.results || data.items || [];
+      // Display public suggestions without waiting for saved locations.
+      if (requestId === pickupSearchRequestId.current) {
+        setPickupResults(publicResults);
+        setPickupSearchFinished(true);
+        setPickupSearching(false);
+      }
       let privateResults: AddressResult[] = [];
       const token = passenger?.token;
       if (token) {
@@ -371,25 +399,27 @@ if (rideType === "scheduled") {
           console.warn("Private pickup address search unavailable:", error);
         }
       }
+      if (requestId !== pickupSearchRequestId.current) return;
       setPickupResults([...privateResults, ...publicResults]);
 
       setPickupSearchFinished(true);
     } catch (error) {
       console.error("PICKUP SEARCH ERROR:", error);
 
-      setPickupResults([]);
+      if (requestId === pickupSearchRequestId.current) setPickupResults([]);
 
       setPickupSearchFinished(true);
     } finally {
-      setPickupSearching(false);
+      if (requestId === pickupSearchRequestId.current) setPickupSearching(false);
     }
   };
 
   const searchDestinationAddress = async (query: string) => {
+    const requestId = ++destinationSearchRequestId.current;
     const cleanQuery = query.trim();
 
     if (cleanQuery.length < 3) {
-      setDestinationResults([]);
+      if (requestId === destinationSearchRequestId.current) setDestinationResults([]);
 
       setDestinationSearchFinished(false);
 
@@ -428,20 +458,68 @@ if (rideType === "scheduled") {
           console.warn("Private destination address search unavailable:", error);
         }
       }
+      if (requestId !== destinationSearchRequestId.current) return;
       setDestinationResults([...privateResults, ...publicResults]);
 
       setDestinationSearchFinished(true);
     } catch (error) {
       console.error("DESTINATION SEARCH ERROR:", error);
 
-      setDestinationResults([]);
+      if (requestId === destinationSearchRequestId.current) setDestinationResults([]);
 
       setDestinationSearchFinished(true);
     } finally {
-      setDestinationSearching(false);
+      if (requestId === destinationSearchRequestId.current) setDestinationSearching(false);
     }
   };
 
+  const openPickupMapNearPassenger = () => {
+    if (selectedPickup || !navigator.geolocation) {
+      setPickupMapStart(null);
+      setShowPickupSearch(false);
+      setShowPickupMap(true);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        const town = TOWN_CENTERS[selectedTown];
+
+        const toRadians = (degrees: number) => degrees * Math.PI / 180;
+
+        const latDifference = toRadians(lat - town.lat);
+        const lngDifference = toRadians(lng - town.lng);
+
+        const a =
+          Math.sin(latDifference / 2) ** 2 +
+          Math.cos(toRadians(town.lat)) *
+          Math.cos(toRadians(lat)) *
+          Math.sin(lngDifference / 2) ** 2;
+
+        const distanceKm =
+          6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+        setPickupMapStart(
+          distanceKm <= 50 ? { lat, lng } : null
+        );
+
+        setShowPickupSearch(false);
+        setShowPickupMap(true);
+      },
+      () => {
+        setPickupMapStart(null);
+        setShowPickupSearch(false);
+        setShowPickupMap(true);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 8000,
+        maximumAge: 60000,
+      }
+    );
+  };
   const useCurrentPickupLocation = () => {
     if (!navigator.geolocation) {
       showAppPopup(
@@ -616,7 +694,15 @@ if (rideType === "scheduled") {
     if (showChecking) setAvailabilityStatus("checking");
 
     try {
-      const response = await fetch(`${API_URL}/online-drivers`, {
+      if (!selectedPickup) {
+        setAvailabilityStatus("idle");
+        return;
+      }
+      const driverParams = new URLSearchParams({
+        pickup_lat: String(selectedPickup.lat),
+        pickup_lng: String(selectedPickup.lng),
+      });
+      const response = await fetch(`${API_URL}/online-drivers?${driverParams}`, {
         cache: "no-store",
       });
 
@@ -646,6 +732,7 @@ if (rideType === "scheduled") {
 
     if (rideType !== "now") return;
 
+    if (!selectedPickup) return;
     const interval = window.setInterval(() => {
       void checkBookingAvailability(false);
     }, 10000);
@@ -1776,7 +1863,7 @@ if (rideType === "scheduled") {
                     <span className="min-w-0">Suggested Fare</span>
                   </button>
                   <button type="button" aria-pressed={fareMode === "offer"} onClick={() => setFareMode("offer")} className={`flex min-h-[58px] min-w-0 items-center justify-center gap-1.5 rounded-2xl border px-2 py-2 text-center text-[11px] font-semibold leading-tight transition ${fareMode === "offer" ? "border-[#ff6846] bg-white text-[#172334] ring-2 ring-[#ff6846]/30" : "border-slate-300 bg-white/60 text-[#172334]"}`}>
-                    <span aria-hidden="true" className="shrink-0 text-[15px]">🤝</span>
+                    <span aria-hidden="true" className="shrink-0 text-[15px]">ðŸ¤</span>
                     <span className="min-w-0">Offer Your Fare</span>
                   </button>
                 </div>
@@ -2179,6 +2266,43 @@ if (rideType === "scheduled") {
               </p>
             </div>
 
+            <div className="mt-5 mb-4">
+              <label htmlFor="routex-town" className="mb-2 block text-[12px] font-semibold">
+                Select your town or city
+              </label>
+              <select
+                id="routex-town"
+                value={selectedTown}
+                onChange={(e) => {
+                  setSelectedTown(e.target.value);
+                  setSelectedPickup(null);
+                  setSelectedDestination(null);
+                  setPickupMapStart(null);
+                  setPickupQuery("");
+                  setPickupResults([]);
+                  setDestinationQuery("");
+                  setDestinationResults([]);
+                  pickupSearchRequestId.current++;
+                  destinationSearchRequestId.current++;
+                  if (pickupSearchTimer.current) clearTimeout(pickupSearchTimer.current);
+                  if (destinationSearchTimer.current) clearTimeout(destinationSearchTimer.current);
+                  setPickupSearching(false);
+                  setDestinationSearching(false);
+                }}
+                className="w-full cursor-pointer rounded-[22px] border border-orange-400/30 bg-[#f97316] px-5 py-4 text-[14px] font-bold text-white shadow-[6px_6px_16px_rgba(194,83,20,0.22),-4px_-4px_12px_rgba(255,255,255,0.65)] outline-none transition focus:ring-2 focus:ring-orange-400/40 dark:bg-[#ea580c] dark:text-white"
+              >
+               <option value="Upington">Upington</option>
+                <option value="Keimoes">Keimoes</option>
+                <option value="Groblershoop">Groblershoop</option>
+                <option value="Cape Town">Cape Town</option>
+                                <option value="Kimberley">Kimberley</option>
+                <option value="Kathu">Kathu</option>
+                <option value="Kuruman">Kuruman</option>
+                <option value="Springbok">Springbok</option>
+                <option value="De Aar">De Aar</option>
+                <option value="Postmasburg">Postmasburg</option>
+              </select>
+            </div>
             <SearchBox
               value={pickupQuery}
 
@@ -2187,7 +2311,18 @@ if (rideType === "scheduled") {
               onChange={(value) => {
                 setPickupQuery(value);
 
-                searchPickupAddress(value);
+                if (pickupSearchTimer.current) clearTimeout(pickupSearchTimer.current);
+                pickupSearchRequestId.current++;
+                if (value.trim().length < 3) {
+                  setPickupResults([]);
+                  setPickupSearching(false);
+                  setPickupSearchFinished(false);
+                } else {
+                  setPickupSearching(true);
+                  pickupSearchTimer.current = setTimeout(() => {
+                    searchPickupAddress(value);
+                  }, 150);
+                }
               }}
 
               onClear={() => {
@@ -2302,11 +2437,7 @@ if (rideType === "scheduled") {
                 setShowPickupSearch(false);
               }}
 
-              onMap={() => {
-                setShowPickupSearch(false);
-
-                setShowPickupMap(true);
-              }}
+              onMap={openPickupMapNearPassenger}
             />
           </div>
         </div>
@@ -2318,9 +2449,9 @@ if (rideType === "scheduled") {
         <LocationPicker
           title="Choose pickup location"
 
-          initialLat={selectedPickup?.lat ?? UPINGTON_LAT}
+          initialLat={selectedPickup?.lat ?? pickupMapStart?.lat ?? TOWN_CENTERS[selectedTown]?.lat ?? UPINGTON_LAT}
 
-          initialLng={selectedPickup?.lng ?? UPINGTON_LNG}
+          initialLng={selectedPickup?.lng ?? pickupMapStart?.lng ?? TOWN_CENTERS[selectedTown]?.lng ?? UPINGTON_LNG}
 
           onClose={() => {
             setShowPickupMap(false);
@@ -2391,7 +2522,18 @@ if (rideType === "scheduled") {
               onChange={(value) => {
                 setDestinationQuery(value);
 
-                searchDestinationAddress(value);
+                if (destinationSearchTimer.current) clearTimeout(destinationSearchTimer.current);
+                destinationSearchRequestId.current++;
+                if (value.trim().length < 3) {
+                  setDestinationResults([]);
+                  setDestinationSearching(false);
+                  setDestinationSearchFinished(false);
+                } else {
+                  setDestinationSearching(true);
+                  destinationSearchTimer.current = setTimeout(() => {
+                    searchDestinationAddress(value);
+                  }, 150);
+                }
               }}
 
               onClear={() => {
@@ -2442,9 +2584,9 @@ if (rideType === "scheduled") {
         <LocationPicker
           title="Choose destination"
 
-          initialLat={selectedDestination?.lat ?? UPINGTON_LAT}
+          initialLat={selectedDestination?.lat ?? selectedPickup?.lat ?? TOWN_CENTERS[selectedTown]?.lat ?? UPINGTON_LAT}
 
-          initialLng={selectedDestination?.lng ?? UPINGTON_LNG}
+          initialLng={selectedDestination?.lng ?? selectedPickup?.lng ?? TOWN_CENTERS[selectedTown]?.lng ?? UPINGTON_LNG}
 
           onClose={() => {
             setShowDestinationMap(false);
@@ -2550,6 +2692,8 @@ function SearchBox({
 
       <input
         autoFocus
+        autoComplete="off"
+        name="routex-location-search"
 
         value={value}
 
@@ -2655,6 +2799,13 @@ function AddressResults({
   if (!query.trim()) {
     return (
       <div className="mt-8 text-center">
+        <button
+          type="button"
+          onClick={onMap}
+          className="w-full rounded-[16px] bg-[#263750] px-4 py-4 text-[12px] font-semibold text-white transition active:scale-[0.985]"
+        >
+          Choose {type} on map
+        </button>
         <p className="text-[10px] font-semibold text-[#6c7280] dark:text-white/58">
           Start typing to search for your {type}.
         </p>
@@ -2663,7 +2814,7 @@ function AddressResults({
   }
 
   return (
-    <div className="mt-2">
+    <div className="relative mt-2">
       <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-[#6c7280] dark:text-white/58">
         Search results
       </p>
@@ -2677,7 +2828,7 @@ function AddressResults({
       )}
 
       {!searching && results.length > 0 && (
-        <div className="mt-1">
+        <div className="absolute left-0 right-0 top-full z-50 mt-2 max-h-[300px] overflow-y-auto rounded-[20px] border border-black/[0.06] bg-[#e9edf5] p-2 shadow-[8px_10px_24px_rgba(31,45,72,0.18),-4px_-4px_14px_rgba(255,255,255,0.85)] dark:border-white/[0.06] dark:bg-[#242b39] dark:shadow-[8px_10px_24px_rgba(0,0,0,0.35)]">
           {results.map((result, index) => (
             <button
               key={`${result.lat}-${result.lng}-${index}`}
@@ -2856,3 +3007,6 @@ function GpsIcon() {
     </svg>
   );
 }
+
+
+

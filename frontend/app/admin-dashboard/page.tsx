@@ -179,7 +179,7 @@ function formatWhatsAppNumber(phone: string) {
 }
 
 function passengerMessage(passenger: Passenger) {
-  return `Hi ${passenger.full_name},\n\nAs one of our first RouteX members, you've received R20 OFF your first ride.\n\nUse promo code:\nWELCOME20\n\nEnter the code when booking your trip.\n\nBook here:\nhttps://routex-frontend.onrender.com\n\nRouteX â€¢ Getting Upington Moving`;
+  return `Hi ${passenger.full_name},\n\nAs one of our first RouteX members, you've received R20 OFF your first ride.\n\nUse promo code:\nWELCOME20\n\nEnter the code when booking your trip.\n\nBook here:\nhttp://localhost:3000\n\nRouteX â€¢ Getting Upington Moving`;
 }
 
 function SectionHeading({
