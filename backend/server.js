@@ -242,6 +242,7 @@ const upload = multer({
 
 const allowedOrigins = [
   "https://routex-frontend.onrender.com",
+"https://routex-nationwide-frontend.onrender.com",
 ];
 
 if (process.env.NODE_ENV !== "production") {
