@@ -16,6 +16,46 @@ const DriverMap = dynamic(() => import("./DriverMap"), {
    IMAGE URL HELPER
 ========================================================= */
 
+async function compressPassengerPhoto(file: File): Promise<File> {
+  if (!file.type.startsWith("image/")) {
+    throw new Error("Please select a valid image.");
+  }
+
+  const image = new Image();
+  const url = URL.createObjectURL(file);
+
+  try {
+    await new Promise<void>((resolve, reject) => {
+      image.onload = () => resolve();
+      image.onerror = () => reject(new Error("Could not read the photo."));
+      image.src = url;
+    });
+
+    const maxEdge = 600;
+    const ratio = Math.min(1, maxEdge / Math.max(image.naturalWidth, image.naturalHeight));
+    const canvas = document.createElement("canvas");
+
+    canvas.width = Math.max(1, Math.round(image.naturalWidth * ratio));
+    canvas.height = Math.max(1, Math.round(image.naturalHeight * ratio));
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Unable to process photo.");
+
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, "image/jpeg", 0.75)
+    );
+
+    if (!blob) throw new Error("Photo compression failed.");
+
+    return new File([blob], "profile-photo.jpg", { type: "image/jpeg" });
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
 function getProfileImageUrl(image: string | null | undefined) {
   if (!image) {
     return "";
@@ -752,7 +792,8 @@ export default function PassengerPortalPage() {
     setUploadingPhoto(true);
 
     const formData = new FormData();
-    formData.append("photo", file);
+    const compressedFile = await compressPassengerPhoto(file);
+    formData.append("photo", compressedFile);
     formData.append("passengerId", String(passenger.id));
 
     try {

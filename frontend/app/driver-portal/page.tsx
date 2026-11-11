@@ -9,6 +9,53 @@ import { showNotification } from "../lib/notifications";
 import { API_URL } from "../lib/api";
 import { isValidSessionToken } from "../lib/session";
 
+async function compressDriverPhoto(file: File): Promise<File> {
+  if (!file.type.startsWith("image/")) {
+    throw new Error("Please select a valid image.");
+  }
+
+  const image = new Image();
+  const url = URL.createObjectURL(file);
+
+  try {
+    await new Promise<void>((resolve, reject) => {
+      image.onload = () => resolve();
+      image.onerror = () => reject(new Error("Could not read the photo."));
+      image.src = url;
+    });
+
+    const maxEdge = 600;
+    const ratio = Math.min(
+      1,
+      maxEdge / Math.max(image.naturalWidth, image.naturalHeight)
+    );
+
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(image.naturalWidth * ratio));
+    canvas.height = Math.max(1, Math.round(image.naturalHeight * ratio));
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Unable to process photo.");
+
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, "image/jpeg", 0.75)
+    );
+
+    if (!blob) throw new Error("Photo compression failed.");
+
+    return new File(
+      [blob],
+      "driver-profile-photo.jpg",
+      { type: "image/jpeg" }
+    );
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
 export default function DriverPortalPage() {
   const [status, setStatus] = useState<"available" | "offline">("available");
   const [driver, setDriver] = useState<any>(null);
@@ -79,7 +126,8 @@ export default function DriverPortalPage() {
       setUploadingPhoto(true);
 
       const formData = new FormData();
-      formData.append("photo", file);
+      const compressedFile = await compressDriverPhoto(file);
+      formData.append("photo", compressedFile);
       formData.append("driverId", String(driver.id));
 
       const token = localStorage.getItem("driverToken");
