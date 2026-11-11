@@ -5319,6 +5319,7 @@ app.get("/online-drivers", async (req, res) => {
       FROM drivers
       WHERE status = 'Available'
         AND is_online = true
+        AND last_online_at > NOW() - INTERVAL '90 seconds'
         AND ($1::boolean = false OR (
           current_lat IS NOT NULL AND current_lng IS NOT NULL
           AND (6371 * ACOS(LEAST(1, GREATEST(-1,
@@ -5380,6 +5381,7 @@ app.get("/available-drivers", async (req, res) => {
       FROM drivers
   WHERE status = 'Available'
   AND is_online = true
+        AND last_online_at > NOW() - INTERVAL '90 seconds'
   AND current_lat IS NOT NULL
   AND current_lng IS NOT NULL
   AND (
