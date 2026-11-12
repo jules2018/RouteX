@@ -2757,6 +2757,179 @@ app.patch("/bookings/:id/cancel", async (req, res) => {
     });
   }
 });
+app.post("/accepted-bookings/:id/cancel", async (req, res) => {
+  const bookingId = Number(req.params.id);
+  const reason = typeof req.body?.reason === "string"
+    ? req.body.reason.trim().slice(0, 500)
+    : "";
+
+  if (!Number.isSafeInteger(bookingId) || bookingId <= 0) {
+    return res.status(400).json({ error: "Invalid booking ID." });
+  }
+  if (!reason) {
+    return res.status(400).json({ error: "Please provide a cancellation reason." });
+  }
+
+  const auth = req.headers.authorization || "";
+  if (!auth.startsWith("Bearer ")) {
+    return res.status(401).json({ error: "Login required." });
+  }
+
+  let actor;
+  try {
+    const token = auth.slice(7);
+    let decoded = null;
+
+    for (const [role, secret] of [
+      ["passenger", process.env.PASSENGER_JWT_SECRET],
+      ["driver", process.env.DRIVER_JWT_SECRET],
+    ]) {
+      if (!secret) continue;
+
+      try {
+        const candidate = jwt.verify(token, secret, {
+          algorithms: ["HS256"],
+        });
+
+        if (
+          candidate.role === role &&
+          (role === "passenger"
+            ? candidate.passengerId
+            : candidate.driverId)
+        ) {
+          decoded = candidate;
+          break;
+        }
+      } catch {
+        // Try the other authorised token type.
+      }
+    }
+
+    if (!decoded) throw new Error("Invalid cancellation token");
+    actor = decoded;
+  } catch {
+    return res.status(401).json({ error: "Invalid or expired session." });
+  }
+
+  const actorId = actor.role === "driver"
+    ? Number(actor.driverId)
+    : actor.role === "passenger"
+      ? Number(actor.passengerId)
+      : NaN;
+
+  if (!Number.isSafeInteger(actorId) || actorId <= 0 ||
+      !["driver", "passenger"].includes(actor.role)) {
+    return res.status(403).json({ error: "Not authorised." });
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    // Find the assigned driver before acquiring row locks.
+    const preliminary = await client.query(
+      `SELECT assigned_driver_id FROM trip_bookings WHERE id = $1`,
+      [bookingId]
+    );
+
+    if (preliminary.rows[0]?.assigned_driver_id) {
+      await client.query(
+        "SELECT id FROM drivers WHERE id = $1 FOR UPDATE",
+        [preliminary.rows[0].assigned_driver_id]
+      );
+    }
+
+    const result = await client.query(
+      `SELECT * FROM trip_bookings WHERE id = $1 FOR UPDATE`,
+      [bookingId]
+    );
+    const booking = result.rows[0];
+
+    if (
+      booking &&
+      String(booking.assigned_driver_id ?? "") !==
+        String(preliminary.rows[0]?.assigned_driver_id ?? "")
+    ) {
+      await client.query("ROLLBACK");
+      return res.status(409).json({
+        error: "The driver assignment changed. Please refresh and try again."
+      });
+    }
+
+    if (!booking) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ error: "Booking not found." });
+    }
+
+    const authorised = actor.role === "passenger"
+      ? Number(booking.passenger_id) === actorId
+      : Number(booking.assigned_driver_id) === actorId;
+
+    if (!authorised) {
+      await client.query("ROLLBACK");
+      return res.status(403).json({ error: "Not authorised to cancel this ride." });
+    }
+
+    if (booking.trip_status !== "Accepted" || booking.started_at) {
+      await client.query("ROLLBACK");
+      return res.status(409).json({
+        error: "Only accepted rides that have not started can be cancelled."
+      });
+    }
+
+    await client.query(
+      `UPDATE trip_bookings
+       SET booking_status = 'Cancelled',
+           trip_status = 'Cancelled',
+           cancelled_by = $2,
+           cancellation_reason = $3,
+           cancelled_at = NOW()
+       WHERE id = $1`,
+      [bookingId, actor.role, reason]
+    );
+
+    if (booking.assigned_driver_id) {
+
+      const active = await client.query(
+        `SELECT 1 FROM trip_bookings
+         WHERE assigned_driver_id = $1
+           AND id <> $2
+           AND trip_status IN ('Accepted', 'In Progress')
+         LIMIT 1`,
+        [booking.assigned_driver_id, bookingId]
+      );
+
+      const parcels = await client.query(
+        `SELECT 1 FROM public.package_deliveries
+         WHERE driver_id = $1
+           AND status IN ('accepted', 'collected', 'in_transit')
+         LIMIT 1`,
+        [booking.assigned_driver_id]
+      );
+
+      if (!active.rowCount && !parcels.rowCount) {
+        await client.query(
+          `UPDATE drivers
+           SET status = CASE
+             WHEN is_online = true THEN 'Available'
+             ELSE 'Offline'
+           END
+           WHERE id = $1 AND status = 'Busy'`,
+          [booking.assigned_driver_id]
+        );
+      }
+    }
+
+    await client.query("COMMIT");
+    return res.json({ message: "Ride cancelled.", booking_id: bookingId });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("ACCEPTED RIDE CANCEL ERROR:", error);
+    return res.status(500).json({ error: "Unable to cancel ride." });
+  } finally {
+    client.release();
+  }
+});
 app.get("/trips/:id/drop-order", async (req, res) => {
   try {
     const tripId = req.params.id;
@@ -5172,6 +5345,64 @@ app.post("/trip-requests/:id/complete", authenticateDriver, async (req, res) => 
     client.release();
   }
 });
+app.get("/driver/cancelled-rides", async (req, res) => {
+  const auth = req.headers.authorization || "";
+
+  if (!auth.startsWith("Bearer ")) {
+    return res.status(401).json({ error: "Driver login required." });
+  }
+
+  let driverId;
+
+  try {
+    if (!process.env.DRIVER_JWT_SECRET) {
+      return res.status(503).json({ error: "Driver authentication unavailable." });
+    }
+
+    const decoded = jwt.verify(auth.slice(7), process.env.DRIVER_JWT_SECRET, {
+      algorithms: ["HS256"],
+    });
+
+    driverId = Number(decoded.driverId);
+
+    if (
+      decoded.role !== "driver" ||
+      !Number.isSafeInteger(driverId) ||
+      driverId <= 0
+    ) {
+      return res.status(403).json({ error: "Not authorised." });
+    }
+  } catch {
+    return res.status(401).json({ error: "Invalid or expired driver session." });
+  }
+
+  try {
+    const result = await pool.query(
+      `SELECT
+         id,
+         cancelled_by,
+         cancellation_reason,
+         cancelled_at,
+         pickup_address,
+         dropoff_address
+       FROM trip_bookings
+       WHERE assigned_driver_id = $1
+         AND trip_status = 'Cancelled'
+         AND cancelled_by = 'passenger'
+         AND cancelled_at >= NOW() - INTERVAL '7 days'
+       ORDER BY cancelled_at DESC
+       LIMIT 30`,
+      [driverId]
+    );
+
+    return res.json(result.rows);
+  } catch (error) {
+    console.error("DRIVER CANCELLATION NOTIFICATIONS ERROR:", error);
+    return res.status(500).json({
+      error: "Unable to load cancellation notifications.",
+    });
+  }
+});
 app.get("/accepted-trips", async (req, res) => {
   try {
     const result = await pool.query(`
@@ -7243,6 +7474,12 @@ app.post('/regional-fare-requests', fareOffersEnabled, authenticateFarePassenger
       return res.status(400).json({ error: 'Valid addresses and offer of R20–R10,000 required.' });
     let quote;
     try { quote = verifyRouteXFareQuote(fare_quote_token); } catch { return res.status(409).json({ error: 'Fare quote expired. Refresh the suggested price.' }); }
+    console.log('FARE OFFER QUOTE DEBUG:', {
+      verified: Boolean(quote),
+      ride_type: quote?.ride_type,
+      fare: quote?.fare?.fare,
+      expires_at: quote?.expires_at
+    });
     if (!quote || quote.ride_type !== 'now' || !quote.fare || !Number.isFinite(Number(quote.fare.fare)))
       return res.status(400).json({ error: 'A signed Ride Now quote is required.' });
     const coords = ['pickup_lat','pickup_lng','dropoff_lat','dropoff_lng'].map(k => Number(quote[k]));
@@ -7590,7 +7827,7 @@ app.post('/regional-fare-requests/:id/revise', fareOffersEnabled, authenticateFa
     if (!found.rowCount) { await client.query('ROLLBACK');return res.status(409).json({error:'Fare request is closed or expired.'}); }
     if (Number(found.rows[0].passenger_offer)===fare) { await client.query('ROLLBACK');return res.status(400).json({error:'Choose a different fare.'}); }
     await client.query(`UPDATE routex_driver_offers SET status='superseded',updated_at=NOW()
-      WHERE request_id=$1 AND status IN ('active','rejected')`,[id]);
+      WHERE request_id=$1 AND status IN ('active','rejected','passenger_declined')`,[id]);
     const updated=await client.query(`UPDATE routex_fare_requests SET passenger_offer=$2,updated_at=NOW()
       WHERE id=$1 RETURNING id,passenger_offer,expires_at,status`,[id,fare]);
     await client.query('COMMIT');return res.json(updated.rows[0]);
@@ -7651,6 +7888,57 @@ app.post('/regional-fare-requests/:id/cancel', fareOffersEnabled, authenticateFa
 
 // Passenger selects one accepted/countered driver offer and creates a real booking.
 // Driver row lock serializes this against normal Ride Now and parcel acceptance.
+// Passenger declines one driver's offer without cancelling the request.
+app.post('/regional-fare-requests/:id/decline-offer', fareOffersEnabled, authenticateFarePassenger, async (req, res) => {
+  const requestId = Number(req.params.id);
+  const offerId = Number(req.body?.offer_id);
+
+  if (!Number.isSafeInteger(requestId) || requestId <= 0 ||
+      !Number.isSafeInteger(offerId) || offerId <= 0) {
+    return res.status(400).json({ error: 'Invalid request or offer ID.' });
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    // Serialize passenger actions against confirmation and cancellation.
+    await client.query('SELECT pg_advisory_xact_lock($1)', [Number(req.farePassengerId)]);
+
+    const result = await client.query(`
+      UPDATE routex_driver_offers o
+      SET status = 'passenger_declined', updated_at = NOW()
+      FROM routex_fare_requests r
+      WHERE o.request_id = r.id
+        AND r.id = $1
+        AND o.id = $2
+        AND r.passenger_id = $3
+        AND r.status = 'open'
+        AND r.expires_at > NOW()
+        AND o.status = 'active'
+        AND o.response IN ('accept', 'counter')
+      RETURNING o.id, o.driver_id
+    `, [requestId, offerId, req.farePassengerId]);
+
+    if (!result.rowCount) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({ error: 'Offer is unavailable or already closed.' });
+    }
+
+    await client.query('COMMIT');
+    return res.json({
+      success: true,
+      offer_id: offerId,
+      status: 'passenger_declined'
+    });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('PASSENGER DECLINE OFFER:', error);
+    return res.status(500).json({ error: 'Unable to decline driver offer.' });
+  } finally {
+    client.release();
+  }
+});
 app.post('/regional-fare-requests/:id/confirm', fareOffersEnabled, authenticateFarePassenger, async (req, res) => {
   const requestId = Number(req.params.id);
   const offerId = Number(req.body?.offer_id);
@@ -7854,9 +8142,7 @@ const nightPricing = calculateRouteXNightFare(
       routeFare.pricing_method === "distance" &&
       Number(routeFare.out_of_town_fee) > 0 &&
       Number(routeFare.distance_km) > 20;
-    const pickupSurcharge = isLongOutOfTownRide
-      ? 0
-      : (pickupEstimate?.surcharge ?? 0);
+    const pickupSurcharge = 0;
  const fare = {
   ...routeFare,
 

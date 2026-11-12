@@ -84,7 +84,7 @@ export default function BookingTestPage() {
   const earliestSchedule = useMemo(() => getEarliestScheduledRide(), []);
 
   const [rideType, setRideType] = useState<RideType>("now");
-  const [fareMode, setFareMode] = useState<"suggested" | "offer">("suggested");
+  const [fareMode, setFareMode] = useState<"suggested" | "offer">("offer");
 
   const [showPickupSearch, setShowPickupSearch] = useState(false);
 
@@ -183,6 +183,64 @@ export default function BookingTestPage() {
 
   useEffect(() => {
     const storedPassenger = localStorage.getItem("passenger");
+
+    // Recover an accepted ride after refreshing or reopening the booking page.
+    if (storedPassenger) {
+      try {
+        const savedPassenger = JSON.parse(storedPassenger);
+        const passengerToken =
+          savedPassenger.token || localStorage.getItem("passengerToken");
+
+        if (savedPassenger.id && passengerToken) {
+          void (async () => {
+            try {
+              const response = await fetch(
+                `${API_URL}/passenger-bookings/${savedPassenger.id}`,
+                {
+                  cache: "no-store",
+                  headers: {
+                    Authorization: `Bearer ${passengerToken}`,
+                  },
+                },
+              );
+
+              if (!response.ok) return;
+
+              const rides = await response.json();
+              if (!Array.isArray(rides)) return;
+
+              const activeRide = rides.find((ride: any) => {
+                const bookingStatus = String(
+                  ride.booking_status || "",
+                ).toLowerCase();
+
+                const tripStatus = String(
+                  ride.trip_status || "",
+                ).toLowerCase();
+
+                return (
+                  !ride.scheduled_pickup_at &&
+                  (
+                    ["accepted", "in_progress", "started"].includes(bookingStatus) ||
+                    ["accepted", "in_progress", "started"].includes(tripStatus)
+                  )
+                );
+              });
+
+              if (activeRide) {
+                window.location.replace(
+                  `/passenger-portal?booking=${activeRide.id}`,
+                );
+              }
+            } catch (error) {
+              console.error("ACTIVE RIDE RECOVERY ERROR:", error);
+            }
+          })();
+        }
+      } catch (error) {
+        console.error("ACTIVE RIDE SESSION ERROR:", error);
+      }
+    }
 
     if (!storedPassenger) return;
 
@@ -876,6 +934,75 @@ const response = await fetch(
     return () => window.clearInterval(interval);
   }, [requestState]);
 
+  // Independently monitor the current Ride Now booking for driver acceptance.
+  useEffect(() => {
+    if (requestState !== "searching" || !activeBookingId || !passenger?.id) {
+      return;
+    }
+
+    let stopped = false;
+
+    const checkAcceptance = async () => {
+      try {
+        const stored = localStorage.getItem("passenger");
+        const session = stored ? JSON.parse(stored) : null;
+        const token = session?.token || localStorage.getItem("passengerToken");
+
+        if (!token) return;
+
+        const response = await fetch(
+          `${API_URL}/passenger-bookings/${passenger.id}`,
+          {
+            cache: "no-store",
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
+
+        if (!response.ok || stopped) return;
+
+        const rides = await response.json();
+        if (!Array.isArray(rides)) return;
+
+        const ride = rides.find(
+          (item: any) => Number(item.id) === Number(activeBookingId),
+        );
+
+        if (!ride || stopped) return;
+
+        const bookingStatus = String(ride.booking_status || "")
+          .trim()
+          .toLowerCase();
+
+        const tripStatus = String(ride.trip_status || "")
+          .trim()
+          .toLowerCase();
+
+        if (
+          ["accepted", "in_progress", "started"].includes(bookingStatus) ||
+          ["accepted", "in_progress", "started"].includes(tripStatus)
+        ) {
+          stopped = true;
+          window.location.replace(
+            `/passenger-portal?booking=${activeBookingId}`,
+          );
+        }
+      } catch (error) {
+        console.error("LIVE ACCEPTANCE CHECK ERROR:", error);
+      }
+    };
+
+    void checkAcceptance();
+
+    const interval = window.setInterval(() => {
+      if (!stopped) void checkAcceptance();
+    }, 3000);
+
+    return () => {
+      stopped = true;
+      window.clearInterval(interval);
+    };
+  }, [requestState, activeBookingId, passenger?.id]);
+
   const changeScheduledDate = (days: number) => {
     const current = new Date(`${travelDate}T12:00:00`);
 
@@ -1023,16 +1150,15 @@ const response = await fetch(
             if (ride) {
               console.log("MATCHED BOOKING:", ride);
 
-              const status = String(
-                ride.trip_status ?? ride.booking_status ?? ride.status ?? "",
-              )
+              const tripStatus = String(ride.trip_status || "")
                 .trim()
-
                 .toLowerCase()
+                .replace(/[\s-]+/g, "_");
 
-                .replace(/-/g, "_")
-
-                .replace(/\s+/g, "_");
+              const bookingStatus = String(ride.booking_status || "")
+                .trim()
+                .toLowerCase()
+                .replace(/[\s-]+/g, "_");
 
               const assignedDriverId =
                 ride.assigned_driver_id ??
@@ -1041,32 +1167,26 @@ const response = await fetch(
                 ride.driver?.id ??
                 null;
 
-              console.log("BOOKING STATUS:", status);
-
-              console.log("ASSIGNED DRIVER:", assignedDriverId);
-
               const acceptedStatuses = [
                 "accepted",
-
                 "assigned",
-
                 "driver_assigned",
-
                 "on_the_way",
-
                 "arriving",
-
                 "arrived",
-
                 "in_progress",
-
                 "started",
               ];
 
               const driverAccepted =
-                Boolean(assignedDriverId) || acceptedStatuses.includes(status);
+                acceptedStatuses.includes(tripStatus) ||
+                acceptedStatuses.includes(bookingStatus) ||
+                (assignedDriverId != null && Number(assignedDriverId) > 0);
 
-              if (status === "expired") {
+              console.log("BOOKING STATUS:", bookingStatus);
+              console.log("TRIP STATUS:", tripStatus);
+              console.log("ASSIGNED DRIVER:", assignedDriverId);
+              if (tripStatus === "expired" || bookingStatus === "expired") {
                 setRequestState("no_driver");
 
                 return;
@@ -1804,15 +1924,7 @@ const response = await fetch(
                     Trip fare: R
                     {Math.max(0, Number(fare) - pickupSurcharge - outOfTownFee)}
                   </p>
-                  {rideType === "now" && (
-                    <p>
-                      Driver pickup (
-                      {pickupDistanceKm == null
-                        ? "distance unavailable"
-                        : `${pickupDistanceKm.toFixed(1)} km by road`}
-                      ): R{pickupSurcharge}
-                    </p>
-                  )}
+                  
                   {outOfTownFee > 0 && <p>Out-of-town fee: R{outOfTownFee}</p>}
                   <p className="font-bold text-[#202c40] dark:text-[#f5f6f8]">
                     Total before promo code: R{fare}
@@ -1912,23 +2024,7 @@ const response = await fetch(
               )}
             </section>
 
-            {process.env.NEXT_PUBLIC_ROUTEX_REGIONAL_OFFERS_ENABLED === "true" && rideType === "now" && Number(fare) > 0 && fareQuoteToken && selectedPickup && selectedDestination && (
-              <section className="mt-5 rounded-[22px] border border-white/80 bg-[#e9edf4] p-4 shadow-[6px_6px_15px_#c7cbd4,-6px_-6px_15px_#ffffff] dark:border-[#424b59] dark:bg-[#292e37] dark:shadow-none">
-                <h3 className="text-sm font-bold">How would you like to book?</h3>
-                <p className="mt-1 text-xs text-[#6c7280] dark:text-white/70">RouteX suggested fare: R{Number(fare).toFixed(2)}</p>
-                <div className="mt-4 grid grid-cols-2 gap-2">
-                  <button type="button" aria-pressed={fareMode === "suggested"} onClick={() => setFareMode("suggested")} className={`flex min-h-[58px] min-w-0 items-center justify-center gap-1.5 rounded-2xl border px-2 py-2 text-center text-[11px] font-semibold leading-tight transition ${fareMode === "suggested" ? "border-[#ff6846] bg-white text-[#172334] ring-2 ring-[#ff6846]/30" : "border-slate-300 bg-white/60 text-[#172334]"}`}>
-                    <span aria-hidden="true" className="shrink-0 text-[15px]">⚡</span>
-                    <span className="min-w-0">Suggested Fare</span>
-                  </button>
-                  <button type="button" aria-pressed={fareMode === "offer"} onClick={() => setFareMode("offer")} className={`flex min-h-[58px] min-w-0 items-center justify-center gap-1.5 rounded-2xl border px-2 py-2 text-center text-[11px] font-semibold leading-tight transition ${fareMode === "offer" ? "border-[#ff6846] bg-white text-[#172334] ring-2 ring-[#ff6846]/30" : "border-slate-300 bg-white/60 text-[#172334]"}`}>
-                    <span aria-hidden="true" className="shrink-0 text-[15px]">{"\u{1F697}"}</span>
-                    <span className="min-w-0">Offer Your Fare</span>
-                  </button>
-                </div>
-                {fareMode === "offer" && <PassengerRegionalOffers key={fareQuoteToken} suggestedFare={Number(fare)} quoteToken={fareQuoteToken} pickupAddress={selectedPickup.address} dropoffAddress={selectedDestination.address} pickupLat={selectedPickup.lat} pickupLng={selectedPickup.lng} />}
-              </section>
-            )}
+            {process.env.NEXT_PUBLIC_ROUTEX_REGIONAL_OFFERS_ENABLED === "true" && rideType === "now" && Number(fare) > 0 && fareQuoteToken && selectedPickup && selectedDestination && (<section className="mt-5"><PassengerRegionalOffers key={fareQuoteToken} suggestedFare={Number(fare)} quoteToken={fareQuoteToken} pickupAddress={selectedPickup.address} dropoffAddress={selectedDestination.address} pickupLat={selectedPickup.lat} pickupLng={selectedPickup.lng} /></section>)}
 
             {/* REQUEST / AVAILABILITY */}
 

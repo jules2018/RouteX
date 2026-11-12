@@ -129,6 +129,25 @@ export default function PassengerPortalPage() {
     resolve?.(confirmed);
   };
 
+  const [cancelReasonOpen, setCancelReasonOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelOtherReason, setCancelOtherReason] = useState("");
+  const cancelReasonResolve = useRef<((reason: string | null) => void) | null>(null);
+
+  const askCancellationReason = (): Promise<string | null> =>
+    new Promise((resolve) => {
+      cancelReasonResolve.current = resolve;
+      setCancelReason("");
+      setCancelOtherReason("");
+      setCancelReasonOpen(true);
+    });
+
+  const closeCancellationReason = (reason: string | null = null) => {
+    cancelReasonResolve.current?.(reason);
+    cancelReasonResolve.current = null;
+    setCancelReasonOpen(false);
+  };
+
   const [pinError, setPinError] = useState<Record<string, string>>({});
   const [trackingDeliveryId, setTrackingDeliveryId] = useState<number | null>(null);
   const [trips, setTrips] = useState<any[]>([]);
@@ -518,6 +537,24 @@ export default function PassengerPortalPage() {
 
         nextStatuses[tripId] = status;
 
+        // Notify the passenger when their driver cancels an active ride.
+        const oldStatus = previousTripStatuses.current[tripId];
+
+        if (
+          tripStatusesInitialized.current &&
+          status === "cancelled" &&
+          ["accepted", "in progress"].includes(oldStatus) &&
+          String(trip.cancelled_by || "").toLowerCase() === "driver"
+        ) {
+          const reason = String(trip.cancellation_reason || "").trim();
+
+          showNotice(
+            `Your driver cancelled ride #${tripId}.\n\n` +
+            `Reason: ${reason || "Not provided"}\n\n` +
+            "You can request another ride."
+          );
+        }
+
         const previousStatus = previousTripStatuses.current[tripId];
 
         if (
@@ -589,6 +626,63 @@ export default function PassengerPortalPage() {
     }
   };
 
+  const cancelAcceptedRide = async (bookingId: number) => {
+    const confirmed = await showConfirm(
+      "Cancel this accepted ride? Your driver will be notified through the booking status.",
+    );
+    if (!confirmed) return;
+
+    const reason = await askCancellationReason();
+
+    if (!reason) return;
+
+    try {
+      const passenger = JSON.parse(
+        localStorage.getItem("passenger") || "null",
+      );
+
+      if (!passenger?.token) {
+        showNotice("Please sign in again to cancel your ride.");
+        return;
+      }
+
+      const response = await fetch(
+        `${API_URL}/accepted-bookings/${bookingId}/cancel`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${passenger.token}`,
+          },
+          body: JSON.stringify({ reason }),
+        },
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        showNotice(data.error || "Unable to cancel ride.");
+        return;
+      }
+
+      setTrips((currentTrips) =>
+        currentTrips.map((trip) =>
+          trip.id === bookingId
+            ? {
+                ...trip,
+                booking_status: "Cancelled",
+                trip_status: "Cancelled",
+              }
+            : trip,
+        ),
+      );
+
+      showNotice("Your ride has been cancelled.");
+    } catch (error) {
+      console.error("CANCEL ACCEPTED RIDE ERROR:", error);
+      showNotice("Unable to cancel ride.");
+    }
+  };
   const cancelBooking = async (bookingId: number) => {
     const confirmed = await showConfirm(
       "Are you sure you want to cancel this booking?",
@@ -960,6 +1054,79 @@ export default function PassengerPortalPage() {
         </div>
       )}
 
+      {cancelReasonOpen && (
+        <div className="fixed inset-0 z-[10060] flex items-center justify-center bg-[#101923]/65 p-5">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="cancel-reason-title"
+            className="w-full max-w-sm rounded-[26px] border border-white/90 bg-[#f7f9fc] p-6 text-[#202b3c] shadow-[12px_12px_35px_#10192340,-5px_-5px_20px_#ffffff60] dark:border-[#46505e] dark:bg-[#2b3340] dark:text-white"
+          >
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-[#f26a46] shadow-[5px_5px_12px_#cbd0da,-5px_-5px_12px_#ffffff] dark:bg-[#364152] dark:shadow-none">
+              <span className="text-2xl">?</span>
+            </div>
+
+            <h2 id="cancel-reason-title" className="text-lg font-bold">
+              Cancel ride
+            </h2>
+
+            <p className="mt-2 text-sm text-[#566274] dark:text-[#d5dce7]">
+              Please tell us why you are cancelling.
+            </p>
+
+            <select
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              className="mt-5 w-full rounded-xl border border-[#d5dae3] bg-white p-3 text-sm text-[#202b3c] dark:border-[#46505e] dark:bg-[#364152] dark:text-white"
+            >
+              <option value="">Select a reason</option>
+              <option value="Change of plans">Change of plans</option>
+              <option value="Driver taking too long">Driver taking too long</option>
+              <option value="Booked by mistake">Booked by mistake</option>
+              <option value="Other">Other</option>
+            </select>
+
+            {cancelReason === "Other" && (
+              <textarea
+                value={cancelOtherReason}
+                onChange={(e) => setCancelOtherReason(e.target.value)}
+                placeholder="Enter your reason"
+                maxLength={500}
+                rows={3}
+                className="mt-3 w-full rounded-xl border border-[#d5dae3] bg-white p-3 text-sm text-[#202b3c] dark:border-[#46505e] dark:bg-[#364152] dark:text-white"
+              />
+            )}
+
+            <div className="mt-6 flex gap-3">
+              <button
+                type="button"
+                onClick={() => closeCancellationReason()}
+                className="flex-1 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-[#25364a] shadow-[3px_3px_9px_#d4d9e3,-3px_-3px_9px_#fff] dark:bg-[#424b59] dark:text-white"
+              >
+                Keep ride
+              </button>
+
+              <button
+                type="button"
+                disabled={
+                  !cancelReason ||
+                  (cancelReason === "Other" && !cancelOtherReason.trim())
+                }
+                onClick={() =>
+                  closeCancellationReason(
+                    cancelReason === "Other"
+                      ? cancelOtherReason.trim()
+                      : cancelReason
+                  )
+                }
+                className="flex-1 rounded-xl bg-[#ef6849] px-4 py-3 text-sm font-semibold text-white disabled:opacity-40"
+              >
+                Confirm cancellation
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <style>{`
         .rx-hero{background:linear-gradient(118deg,#172c42 0%,#253e57 48%,#d9674d 100%);border-radius:0 0 32px 32px;box-shadow:0 14px 30px rgba(30,39,53,.2);position:relative;overflow:hidden;color:white}
         .rx-hero:after{content:"";position:absolute;right:-100px;bottom:-170px;width:260px;height:260px;border:30px solid rgba(255,255,255,.055);border-radius:50%;pointer-events:none}
@@ -1478,6 +1645,15 @@ export default function PassengerPortalPage() {
                 )}
               </div>
 
+              {activeTrip.trip_status === "Accepted" && (
+                <button
+                  type="button"
+                  onClick={() => cancelAcceptedRide(activeTrip.id)}
+                  className="mt-3 w-full rounded-[14px] border border-[#ff6846]/40 bg-[#e7e9ee] py-3 text-[10px] font-semibold text-[#e55336] shadow-[3px_3px_7px_#c4c6ca,-3px_-3px_7px_#ffffff] transition active:scale-[0.98] dark:bg-[#17191e] dark:text-[#ff8065] dark:shadow-[6px_6px_14px_rgba(0,0,0,0.48),-5px_-5px_12px_rgba(255,255,255,0.035)]"
+                >
+                  Cancel ride
+                </button>
+              )}
               {/* SCHEDULED RIDE PICKUP CONFIRMATION */}
               {activeScheduledRide && (
                 <>

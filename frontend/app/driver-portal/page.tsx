@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import AuthGuard from "../components/AuthGuard";
 import { DriverRegionalOffers } from "../components/RegionalFareOffers";
@@ -71,6 +71,17 @@ export default function DriverPortalPage() {
   const [scheduledRides, setScheduledRides] = useState<any[]>([]);
   const [liveRequests, setLiveRequests] = useState<any[]>([]);
   const [acceptedTrips, setAcceptedTrips] = useState<any[]>([]);
+  const [driverCancellationNotice, setDriverCancellationNotice] = useState<any>(null);
+  const cancellationFeedInitialized = useRef(false);
+  const seenCancellationIds = useRef<Set<number>>(new Set());
+  const cancellationFeedBusy = useRef(false);
+
+  const [driverCancelRideId, setDriverCancelRideId] = useState<number | null>(null);
+  const [driverCancelReason, setDriverCancelReason] = useState("");
+  const [driverCancelOther, setDriverCancelOther] = useState("");
+  const [driverCancelBusy, setDriverCancelBusy] = useState(false);
+  const [driverCancelError, setDriverCancelError] = useState("");
+
   const [inProgressTrips, setInProgressTrips] = useState<any[]>([]);
   const [completedTrips, setCompletedTrips] = useState<any[]>([]);
   const [earningsMonths, setEarningsMonths] = useState<Array<{
@@ -285,6 +296,54 @@ const response = await fetch(`${API_URL}/driver/upload-photo`, {
     window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, "_blank", "noopener,noreferrer");
   };
 
+  const loadDriverCancellations = async () => {
+    if (cancellationFeedBusy.current) return;
+
+    const token = localStorage.getItem("driverToken");
+    if (!token) return;
+
+    cancellationFeedBusy.current = true;
+
+    try {
+      const response = await fetch(`${API_URL}/driver/cancelled-rides`, {
+        cache: "no-store",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) return;
+
+      const data = await response.json();
+      if (!Array.isArray(data)) return;
+
+      if (!cancellationFeedInitialized.current) {
+        data.forEach((ride: any) => {
+          seenCancellationIds.current.add(Number(ride.id));
+        });
+        cancellationFeedInitialized.current = true;
+        return;
+      }
+
+      const unseen = data.filter(
+        (ride: any) => !seenCancellationIds.current.has(Number(ride.id))
+      );
+
+      data.forEach((ride: any) => {
+        seenCancellationIds.current.add(Number(ride.id));
+      });
+
+      const latest = unseen[unseen.length - 1];
+
+      if (latest) {
+        setDriverCancellationNotice((current: any) => current || latest);
+      }
+    } catch (error) {
+      console.error("DRIVER CANCELLATION FEED ERROR:", error);
+    } finally {
+      cancellationFeedBusy.current = false;
+    }
+  };
   const loadDriverRides = async (driverId: number) => {
     try {
       const [
@@ -372,6 +431,7 @@ const response = await fetch(`${API_URL}/driver/upload-photo`, {
       setDriver(parsedDriver);
 
       loadDriverRides(Number(parsedDriver.id));
+      void loadDriverCancellations();
       void loadPackageDeliveries();
       void loadDriverEarnings();
       loadDriverRating(Number(parsedDriver.id));
@@ -394,6 +454,8 @@ const response = await fetch(`${API_URL}/driver/upload-photo`, {
 
       const interval = setInterval(() => {
         loadDriverRides(Number(parsedDriver.id));
+        void loadDriverCancellations();
+      void loadDriverCancellations();
         void loadPackageDeliveries();
       }, 5000);
 
@@ -639,6 +701,68 @@ const response = await fetch(
     return () => clearInterval(clock);
   }, []);
 
+  const openDriverCancellation = (rideId: number) => {
+    setDriverCancelRideId(rideId);
+    setDriverCancelReason("");
+    setDriverCancelOther("");
+    setDriverCancelError("");
+  };
+
+  const cancelAcceptedRide = async (rideId: number) => {
+    if (driverCancelBusy) return;
+
+    const reason =
+      driverCancelReason === "Other"
+        ? driverCancelOther.trim()
+        : driverCancelReason;
+
+    if (!reason) return;
+
+    const token = localStorage.getItem("driverToken");
+
+    if (!token) {
+      setDriverCancelError("Please sign in again.");
+      return;
+    }
+
+    setDriverCancelBusy(true);
+    setDriverCancelError("");
+
+    try {
+      const response = await fetch(
+        `${API_URL}/accepted-bookings/${rideId}/cancel`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ reason }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setDriverCancelError(data.error || "Unable to cancel ride.");
+        return;
+      }
+
+      setAcceptedTrips((current) =>
+        current.filter((ride) => ride.id !== rideId)
+      );
+
+      setDriverCancelRideId(null);
+      setDriverCancelReason("");
+      setDriverCancelOther("");
+      setDriverCancelError("");
+    } catch (error) {
+      console.error("DRIVER CANCEL RIDE ERROR:", error);
+      setDriverCancelError("Unable to cancel ride. Please try again.");
+    } finally {
+      setDriverCancelBusy(false);
+    }
+  };
   const startRide = async (rideId: number) => {
     if (!driver?.id) return;
 
@@ -1176,6 +1300,13 @@ const response = await fetch(
                             : "Start ride"}
                         </button>
                       </div>
+                      <button
+                        type="button"
+                        onClick={() => openDriverCancellation(ride.id)}
+                        className="mt-3 w-full rounded-[14px] border border-[#ff6846]/40 bg-[#e9edf4] py-3 text-[10px] font-semibold text-[#e55336] transition active:scale-[0.98] dark:bg-[#1c1e24] dark:text-[#ff8065]"
+                      >
+                        Cancel ride
+                      </button>
                     </div>
                   ))}
               </div>
@@ -1347,6 +1478,13 @@ const response = await fetch(
                           </button>
                         </div>
 
+                      <button
+                        type="button"
+                        onClick={() => openDriverCancellation(ride.id)}
+                        className="mt-3 w-full rounded-[14px] border border-[#ff6846]/40 bg-[#e9edf4] py-3 text-[10px] font-semibold text-[#e55336] shadow-[3px_3px_7px_#c7c9ce,-3px_-3px_7px_#ffffff] transition active:scale-[0.98] dark:bg-[#1c1e24] dark:text-[#ff8065] dark:shadow-[4px_4px_9px_#101116,-3px_-3px_8px_#30333d]"
+                      >
+                        Cancel ride
+                      </button>
                         <p className="mt-3 text-center text-[8px] font-semibold text-[#92959b] dark:text-[#a9acb6]">
                           {!canNavigate
                             ? `Navigation unlocks 15 minutes before pickup at ${formatRideTime(
@@ -1789,6 +1927,123 @@ const response = await fetch(
           </footer>
         </div>
       </main>
+      {driverCancelRideId !== null && (
+        <div className="fixed inset-0 z-[10060] flex items-center justify-center bg-[#101923]/65 p-5">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="driver-cancel-title"
+            className="w-full max-w-sm rounded-[26px] border border-white/90 bg-[#f7f9fc] p-6 text-[#202b3c] shadow-[12px_12px_35px_#10192340,-5px_-5px_20px_#ffffff60] dark:border-[#46505e] dark:bg-[#2b3340] dark:text-white"
+          >
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-[#f26a46] shadow-[5px_5px_12px_#cbd0da,-5px_-5px_12px_#ffffff] dark:bg-[#364152] dark:shadow-none">
+              <span className="text-2xl">?</span>
+            </div>
+
+            <h2 id="driver-cancel-title" className="text-lg font-bold">
+              Cancel ride
+            </h2>
+
+            <p className="mt-2 text-sm text-[#566274] dark:text-[#d5dce7]">
+              Please tell us why you are cancelling this booking.
+            </p>
+
+            <select
+              value={driverCancelReason}
+              onChange={(e) => {
+                setDriverCancelReason(e.target.value);
+                setDriverCancelError("");
+              }}
+              className="mt-5 w-full rounded-xl border border-[#d5dae3] bg-white p-3 text-sm text-[#202b3c] dark:border-[#46505e] dark:bg-[#364152] dark:text-white"
+            >
+              <option value="">Select a reason</option>
+              <option value="Vehicle problem">Vehicle problem</option>
+              <option value="Emergency">Emergency</option>
+              <option value="Unable to reach passenger">Unable to reach passenger</option>
+              <option value="Other">Other</option>
+            </select>
+
+            {driverCancelReason === "Other" && (
+              <textarea
+                value={driverCancelOther}
+                onChange={(e) => setDriverCancelOther(e.target.value)}
+                placeholder="Enter your reason"
+                maxLength={500}
+                rows={3}
+                className="mt-3 w-full rounded-xl border border-[#d5dae3] bg-white p-3 text-sm text-[#202b3c] dark:border-[#46505e] dark:bg-[#364152] dark:text-white"
+              />
+            )}
+
+            {driverCancelError && (
+              <p role="alert" className="mt-3 text-xs font-semibold text-[#e55336]">
+                {driverCancelError}
+              </p>
+            )}
+
+            <div className="mt-6 flex gap-3">
+              <button
+                type="button"
+                disabled={driverCancelBusy}
+                onClick={() => setDriverCancelRideId(null)}
+                className="flex-1 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-[#25364a] shadow-[3px_3px_9px_#d4d9e3,-3px_-3px_9px_#fff] dark:bg-[#424b59] dark:text-white"
+              >
+                Keep ride
+              </button>
+
+              <button
+                type="button"
+                disabled={
+                  driverCancelBusy ||
+                  !driverCancelReason ||
+                  (driverCancelReason === "Other" && !driverCancelOther.trim())
+                }
+                onClick={() => cancelAcceptedRide(driverCancelRideId)}
+                className="flex-1 rounded-xl bg-[#ef6849] px-4 py-3 text-sm font-semibold text-white disabled:opacity-40"
+              >
+                {driverCancelBusy ? "Cancelling..." : "Confirm cancellation"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {driverCancellationNotice && (
+        <div className="fixed inset-0 z-[10070] flex items-center justify-center bg-[#101923]/70 p-5">
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="driver-cancel-notice-title"
+            className="w-full max-w-sm rounded-[26px] border border-white/90 bg-[#f7f9fc] p-6 text-[#202b3c] shadow-[12px_12px_35px_#10192340,-5px_-5px_20px_#ffffff60] dark:border-[#46505e] dark:bg-[#2b3340] dark:text-white"
+          >
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-[#f26a46] shadow-[5px_5px_12px_#cbd0da,-5px_-5px_12px_#ffffff] dark:bg-[#364152] dark:shadow-none">
+              <span className="text-2xl">!</span>
+            </div>
+
+            <h2 id="driver-cancel-notice-title" className="text-lg font-bold">
+              Ride cancelled
+            </h2>
+
+            <p className="mt-2 text-sm text-[#566274] dark:text-[#d5dce7]">
+              Your passenger has cancelled booking BK-{String(driverCancellationNotice.id).padStart(4, "0")}.
+            </p>
+
+            <div className="mt-4 rounded-xl bg-[#e9edf4] p-4 shadow-[inset_2px_2px_6px_#cbd0da,inset_-2px_-2px_6px_#ffffff] dark:bg-[#364152] dark:shadow-none">
+              <p className="text-xs font-semibold">Cancelled by: Passenger</p>
+              <p className="mt-2 text-xs leading-5">
+                <span className="font-bold">Reason: </span>
+                {driverCancellationNotice.cancellation_reason || "Not provided"}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              autoFocus
+              onClick={() => setDriverCancellationNotice(null)}
+              className="mt-5 w-full rounded-xl bg-[#ef6849] px-4 py-3 text-sm font-semibold text-white"
+            >
+              Understood
+            </button>
+          </div>
+        </div>
+      )}
     </AuthGuard>
   );
 }
