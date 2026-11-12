@@ -36,8 +36,21 @@ type Section =
   | "drivers"
   | "passengers"
   | "analytics"
-  | "monthly";
+  | "monthly"
+  | "subscriptions";
 
+type SubscriptionPayment = {
+  id: number;
+  driver_id: number;
+  amount: number | string;
+  payment_reference: string | null;
+  status: "pending" | "approved" | "rejected";
+  submitted_at: string;
+  reviewed_at: string | null;
+  review_notes: string | null;
+  full_name?: string | null;
+  driver_name?: string | null;
+};
 type MonthlyInterest = {
   id: number;
   transport_type: string;
@@ -160,6 +173,7 @@ const NAV = [
 
   { id: "analytics", label: "Analytics", icon: ChartNoAxesCombined },
   { id: "monthly", label: "Monthly Transport", icon: ClipboardList },
+  { id: "subscriptions", label: "Driver Subscriptions", icon: Wallet },
 ] as const;
 
 const EMPTY_STATS: Stats = {
@@ -296,6 +310,10 @@ export default function AdminDashboardPage() {
   const [monthlyLoading, setMonthlyLoading] = useState(false);
   const [monthlyError, setMonthlyError] = useState("");
 
+  const [subscriptionPayments, setSubscriptionPayments] = useState<SubscriptionPayment[]>([]);
+  const [subscriptionEnabled, setSubscriptionEnabled] = useState(false);
+  const [subscriptionLoading, setSubscriptionLoading] = useState(false);
+  const [subscriptionError, setSubscriptionError] = useState("");
   const [adminKey, setAdminKey] = useState("");
 
   const [loading, setLoading] = useState(true);
@@ -480,6 +498,190 @@ export default function AdminDashboardPage() {
     if (section === "monthly") void loadMonthlyInterests();
   }, [section, loadMonthlyInterests]);
 
+  const loadSubscriptionPayments = useCallback(async () => {
+    if (!adminKey) {
+      setSubscriptionPayments([]);
+      setSubscriptionEnabled(false);
+      setSubscriptionError("Enter your admin access key to view payments.");
+      return;
+    }
+
+    setSubscriptionLoading(true);
+
+    try {
+      const response = await fetch(`${API_URL}/admin/subscription-payments`, {
+        cache: "no-store",
+        headers: { "X-RouteX-Admin-Key": adminKey },
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.error || `Unable to load payments (${response.status})`);
+      }
+
+      if (!Array.isArray(data.payments)) {
+        throw new Error("Unexpected subscription payment response.");
+      }
+
+      setSubscriptionPayments(data.payments);
+      setSubscriptionEnabled(data.enabled === true);
+      setSubscriptionError("");
+    } catch (error) {
+      setSubscriptionPayments([]);
+      setSubscriptionEnabled(false);
+      setSubscriptionError(
+        error instanceof Error ? error.message : "Unable to load subscription payments."
+      );
+    } finally {
+      setSubscriptionLoading(false);
+    }
+  }, [adminKey]);
+
+  useEffect(() => {
+    if (section === "subscriptions") void loadSubscriptionPayments();
+  }, [section, loadSubscriptionPayments]);
+  const rejectSubscriptionPayment = async (payment: SubscriptionPayment) => {
+    if (!adminKey || !subscriptionEnabled) return;
+
+    const reason = window.prompt(
+      `Why are you rejecting payment #${payment.id}?
+
+Enter a reason that can be recorded for audit purposes.`
+    );
+
+    if (reason === null) return;
+
+    const reviewNotes = reason.trim();
+
+    if (!reviewNotes || reviewNotes.length > 500) {
+      window.alert("Enter a rejection reason of 1 to 500 characters.");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Reject payment #${payment.id}?
+
+Reason: ${reviewNotes}`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      const response = await fetch(
+        `${API_URL}/admin/subscription-payments/${payment.id}/reject`,
+        {
+          method: "POST",
+          headers: {
+            "X-RouteX-Admin-Key": adminKey,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ review_notes: reviewNotes }),
+        }
+      );
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.error || "Unable to reject payment.");
+      }
+
+      window.alert("Payment rejected.");
+      await loadSubscriptionPayments();
+    } catch (error) {
+      window.alert(
+        error instanceof Error ? error.message : "Payment rejection failed."
+      );
+    }
+  };
+  const approveSubscriptionPayment = async (payment: SubscriptionPayment) => {
+    if (!adminKey || !subscriptionEnabled) return;
+
+    const confirmed = window.confirm(
+      `Have you verified receipt of R${Number(payment.amount).toFixed(2)} in the RouteX bank account?
+
+Approve payment #${payment.id} only after checking the bank statement.`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      const response = await fetch(
+        `${API_URL}/admin/subscription-payments/${payment.id}/approve`,
+        {
+          method: "POST",
+          headers: { "X-RouteX-Admin-Key": adminKey },
+        }
+      );
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.error || "Unable to approve payment.");
+      }
+
+      window.alert("Payment approved. Driver subscription updated.");
+      await loadSubscriptionPayments();
+    } catch (error) {
+      window.alert(
+        error instanceof Error ? error.message : "Payment approval failed."
+      );
+    }
+  };
+  const viewSubscriptionProof = async (paymentId: number) => {
+    if (!adminKey) {
+      window.alert("Enter your admin access key first.");
+      return;
+    }
+
+    // Open immediately so the browser does not block the new tab.
+    const proofTab = window.open("", "_blank");
+
+    if (proofTab) {
+      proofTab.opener = null;
+      proofTab.document.title = "Loading payment proof";
+      proofTab.document.body.textContent = "Loading payment proof...";
+    }
+
+    try {
+      const response = await fetch(
+        `${API_URL}/admin/subscription-payments/${paymentId}/proof`,
+        {
+          cache: "no-store",
+          headers: { "X-RouteX-Admin-Key": adminKey },
+        }
+      );
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.error || "Unable to retrieve payment proof.");
+      }
+
+      const proofUrl = data.signedUrl || data.signed_url || data.url;
+
+      if (
+        typeof proofUrl !== "string" ||
+        !proofUrl.startsWith("https://")
+      ) {
+        throw new Error("The server did not return a valid proof URL.");
+      }
+
+      if (proofTab && !proofTab.closed) {
+        proofTab.location.replace(proofUrl);
+      } else {
+        window.alert("Allow pop-ups for RouteX to view payment proofs.");
+      }
+    } catch (error) {
+      if (proofTab && !proofTab.closed) proofTab.close();
+
+      window.alert(
+        error instanceof Error
+          ? error.message
+          : "Unable to view payment proof."
+      );
+    }
+  };
   const loadDashboardData = useCallback(async (silent = false) => {
     if (!adminKey) return;
     if (!silent) setRefreshing(true);
@@ -499,7 +701,15 @@ export default function AdminDashboardPage() {
         !applicationsResponse.ok ||
         !passengersResponse.ok
       ) {
-        throw new Error("One or more dashboard requests failed.");
+        throw new Error(
+          [
+            !statsResponse.ok ? `Stats: HTTP ${statsResponse.status}` : null,
+            !applicationsResponse.ok ? `Applications: HTTP ${applicationsResponse.status}` : null,
+            !passengersResponse.ok ? `Passengers: HTTP ${passengersResponse.status}` : null,
+          ]
+            .filter(Boolean)
+            .join(" | ")
+        );
       }
 
       const [statsData, applicationData, passengerData] = await Promise.all([
@@ -1736,6 +1946,136 @@ export default function AdminDashboardPage() {
             </>
           )}
 
+          {section === "subscriptions" && (
+            <>
+              <SectionHeading
+                eyebrow="Driver membership"
+                title="Driver Subscriptions"
+                description="Manage monthly driver membership payments and EFT verification."
+              />
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="rounded-3xl border border-white/10 bg-[#1e2127] p-6">
+                  <p className="text-xs font-bold uppercase tracking-widest text-white/50">
+                    Monthly subscription
+                  </p>
+                  <p className="mt-3 text-4xl font-black text-white">
+                    R149
+                  </p>
+                  <p className="mt-2 text-sm text-white/50">
+                    Per driver, per calendar month
+                  </p>
+                </div>
+
+                <div className="rounded-3xl border border-white/10 bg-[#1e2127] p-6">
+                  <p className="text-xs font-bold uppercase tracking-widest text-white/50">
+                    Subscription enforcement
+                  </p>
+                  <p className="mt-3 text-xl font-black text-[#ff754d]">
+                    Not activated
+                  </p>
+                  <p className="mt-2 text-sm text-white/50">
+                    Drivers can continue accepting bookings without a subscription.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-6 rounded-3xl border border-white/10 bg-[#1e2127] p-6">
+                <h3 className="text-lg font-bold text-white">
+                  EFT Payment Verification
+                </h3>
+                <div className="mt-4">
+                  {subscriptionLoading ? (
+                    <p className="text-sm text-white/50">Loading payments...</p>
+                  ) : subscriptionError ? (
+                    <p role="alert" className="text-sm text-red-400">
+                      {subscriptionError}
+                    </p>
+                  ) : !subscriptionEnabled ? (
+                    <p className="text-sm text-white/50">
+                      Subscription payments are currently disabled.
+                    </p>
+                  ) : subscriptionPayments.length === 0 ? (
+                    <p className="text-sm text-white/50">
+                      No subscription payments have been submitted.
+                    </p>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full min-w-[700px] text-left text-sm">
+                        <thead>
+                          <tr className="border-b border-white/10 text-xs uppercase text-white/50">
+                            <th className="px-3 py-3">Driver</th>
+                            <th className="px-3 py-3">Reference</th>
+                            <th className="px-3 py-3">Amount</th>
+                            <th className="px-3 py-3">Submitted</th>
+                            <th className="px-3 py-3">Status</th>
+                            <th className="px-3 py-3">Proof</th>
+                            <th className="px-3 py-3">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {subscriptionPayments.map((payment) => (
+                            <tr key={payment.id} className="border-b border-white/10">
+                              <td className="px-3 py-4 text-white">
+                                {payment.driver_name || payment.full_name || `Driver #${payment.driver_id}`}
+                              </td>
+                              <td className="px-3 py-4 text-white/70">
+                                {payment.payment_reference || "Not provided"}
+                              </td>
+                              <td className="px-3 py-4 font-semibold text-white">
+                                R{Number(payment.amount).toFixed(2)}
+                              </td>
+                              <td className="px-3 py-4 text-white/70">
+                                {new Date(payment.submitted_at).toLocaleDateString("en-ZA")}
+                              </td>
+                              <td className="px-3 py-4">
+                                <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold capitalize text-white">
+                                  {payment.status}
+                                </span>
+                              </td>
+                              <td className="px-3 py-4">
+                                <button
+                                  type="button"
+                                  onClick={() => void viewSubscriptionProof(payment.id)}
+                                  className="rounded-xl border border-[#ff754d]/40 px-3 py-2 text-xs font-bold text-[#ff754d] transition hover:bg-[#ff754d]/10"
+                                >
+                                  View Proof
+                                </button>
+                              </td>
+                              <td className="px-3 py-4">
+                                {subscriptionEnabled && payment.status === "pending" ? (
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => void approveSubscriptionPayment(payment)}
+                                      className="rounded-xl bg-green-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-green-700"
+                                    >
+                                      Approve
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => void rejectSubscriptionPayment(payment)}
+                                      className="rounded-xl border border-red-500/50 px-3 py-2 text-xs font-bold text-red-400 transition hover:bg-red-500/10"
+                                    >
+                                      Reject
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <span className="text-xs text-white/40">
+                                    Reviewed
+                                  </span>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
           <footer className="mt-10 border-t border-white/10 py-5 text-center text-[11px] text-white/40">
             RouteX Control Centre Â· Upington
           </footer>

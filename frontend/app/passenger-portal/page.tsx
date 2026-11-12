@@ -248,6 +248,8 @@ export default function PassengerPortalPage() {
   const [scheduledRides, setScheduledRides] = useState<ScheduledRide[]>([]);
   const [scheduledLoading, setScheduledLoading] = useState(true);
   const [cancellingRideId, setCancellingRideId] = useState<number | null>(null);
+  const [comingBusyId, setComingBusyId] = useState<number | null>(null);
+
 
   const loadScheduledRides = async (passengerId: number) => {
     try {
@@ -716,6 +718,58 @@ export default function PassengerPortalPage() {
     } catch (error) {
       console.error("CANCEL BOOKING ERROR:", error);
       showNotice("Could not cancel booking.");
+    }
+  };
+
+
+  const confirmPassengerComing = async (bookingId: number) => {
+    if (comingBusyId !== null) return;
+
+    try {
+      setComingBusyId(bookingId);
+
+      const storedPassenger = localStorage.getItem("passenger");
+      const passenger = storedPassenger
+        ? JSON.parse(storedPassenger)
+        : null;
+
+      if (!passenger?.token) {
+        throw new Error("Please log in to confirm your response.");
+      }
+
+      const response = await fetch(
+        `${API_URL}/passenger-bookings/${bookingId}/coming`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${passenger.token}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error || "Unable to notify your driver.");
+      }
+
+      setTrips((current) =>
+        current.map((trip: any) =>
+          Number(trip.id) === Number(bookingId)
+            ? {
+                ...trip,
+                passenger_coming_at: data.booking.passenger_coming_at,
+              }
+            : trip
+        )
+      );
+
+      showNotice("Your driver has been notified that you're coming.");
+    } catch (error: any) {
+      console.error("PASSENGER COMING ERROR:", error);
+      showNotice(error?.message || "Unable to notify your driver.");
+    } finally {
+      setComingBusyId(null);
     }
   };
 
@@ -1644,6 +1698,36 @@ export default function PassengerPortalPage() {
                   </a>
                 )}
               </div>
+
+
+              {activeTrip.driver_arrived_at &&
+                normalizedStatus(activeTrip) === "accepted" && (
+                  <div className="mt-4 rounded-[17px] border border-[#ff6846]/30 bg-[#fff0e9] p-4 dark:bg-[#30221f]">
+                    <p className="text-[15px] font-bold text-[#e55336] dark:text-[#ff8065]">
+                      Your driver has arrived
+                    </p>
+
+                    <p className="mt-2 text-[12px] text-[#555963] dark:text-[#d1d3da]">
+                      Your driver is waiting at your pickup location.
+                    </p>
+
+                    <button
+                      type="button"
+                      disabled={
+                        Boolean(activeTrip.passenger_coming_at) ||
+                        comingBusyId !== null
+                      }
+                      onClick={() => confirmPassengerComing(activeTrip.id)}
+                      className="mt-4 w-full rounded-[14px] bg-[#ff6846] px-4 py-3.5 text-[14px] font-bold text-white transition active:scale-[0.98] disabled:opacity-60"
+                    >
+                      {activeTrip.passenger_coming_at
+                        ? "Driver Notified"
+                        : comingBusyId === activeTrip.id
+                          ? "Notifying Driver..."
+                          : "I'm Coming"}
+                    </button>
+                  </div>
+                )}
 
               {activeTrip.trip_status === "Accepted" && (
                 <button

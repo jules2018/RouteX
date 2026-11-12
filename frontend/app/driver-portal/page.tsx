@@ -97,6 +97,8 @@ export default function DriverPortalPage() {
   const [loadingScheduled, setLoadingScheduled] = useState(true);
   const [acceptingId, setAcceptingId] = useState<number | null>(null);
   const [startingId, setStartingId] = useState<number | null>(null);
+  const [arrivingId, setArrivingId] = useState<number | null>(null);
+
   const [nowMs, setNowMs] = useState(Date.now());
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [portalDark, setPortalDark] = useState(false);
@@ -763,6 +765,52 @@ const response = await fetch(
       setDriverCancelBusy(false);
     }
   };
+
+  const markDriverArrived = async (rideId: number) => {
+    if (!driver?.id || arrivingId !== null) return;
+
+    try {
+      setArrivingId(rideId);
+
+      const token = localStorage.getItem("driverToken");
+
+      const response = await fetch(
+        `${API_URL}/trip-requests/${rideId}/arrived`,
+        {
+          method: "POST",
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error || "Unable to confirm arrival.");
+      }
+
+      setAcceptedTrips((current) =>
+        current.map((ride) =>
+          ride.id === rideId
+            ? { ...ride, driver_arrived_at: data.booking.driver_arrived_at }
+            : ride
+        )
+      );
+
+      await loadDriverRides(driver.id);
+    } catch (error: any) {
+      console.error("DRIVER ARRIVAL ERROR:", error);
+      showAppPopup(
+        "RouteX",
+        error?.message || "Unable to confirm arrival.",
+        "error"
+      );
+    } finally {
+      setArrivingId(null);
+    }
+  };
+
   const startRide = async (rideId: number) => {
     if (!driver?.id) return;
 
@@ -1300,6 +1348,28 @@ const response = await fetch(
                             : "Start ride"}
                         </button>
                       </div>
+
+                      <button
+                        type="button"
+                        disabled={Boolean(ride.driver_arrived_at) || arrivingId !== null}
+                        onClick={() => markDriverArrived(ride.id)}
+                        className="mt-3 w-full rounded-[14px] bg-[#ff6846] px-4 py-3 text-[12px] font-bold text-white transition active:scale-[0.98] disabled:opacity-60"
+                      >
+                        {ride.driver_arrived_at
+                          ? "Arrival Confirmed"
+                          : arrivingId === ride.id
+                            ? "Confirming Arrival..."
+                            : "I've Arrived"}
+                      </button>
+                      {ride.passenger_coming_at && (
+                        <div className="mt-3 rounded-[14px] border border-[#ff6846]/30 bg-[#fff0e9] px-4 py-3 text-center dark:bg-[#30221f]">
+                          <p className="text-[13px] font-bold text-[#e55336] dark:text-[#ff8065]">
+                            Passenger is coming
+                          </p>
+                        </div>
+                      )}
+
+
                       <button
                         type="button"
                         onClick={() => openDriverCancellation(ride.id)}
@@ -1477,6 +1547,28 @@ const response = await fetch(
                                 : `Start at ${formatRideTime(ride.scheduled_pickup_at)}`}
                           </button>
                         </div>
+
+                      <button
+                        type="button"
+                        disabled={Boolean(ride.driver_arrived_at) || arrivingId !== null}
+                        onClick={() => markDriverArrived(ride.id)}
+                        className="mt-3 w-full rounded-[14px] bg-[#ff6846] px-4 py-3 text-[12px] font-bold text-white transition active:scale-[0.98] disabled:opacity-60"
+                      >
+                        {ride.driver_arrived_at
+                          ? "Arrival Confirmed"
+                          : arrivingId === ride.id
+                            ? "Confirming Arrival..."
+                            : "I've Arrived"}
+                      </button>
+                      {ride.passenger_coming_at && (
+                        <div className="mt-3 rounded-[14px] border border-[#ff6846]/30 bg-[#fff0e9] px-4 py-3 text-center dark:bg-[#30221f]">
+                          <p className="text-[13px] font-bold text-[#e55336] dark:text-[#ff8065]">
+                            Passenger is coming
+                          </p>
+                        </div>
+                      )}
+
+
 
                       <button
                         type="button"

@@ -240,6 +240,26 @@ const upload = multer({
   },
 });
 
+const subscriptionProofUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 5 * 1024 * 1024,
+    files: 1
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = [
+      "image/jpeg",
+      "image/png",
+      "application/pdf"
+    ];
+
+    if (allowedTypes.includes(file.mimetype)) {
+      return cb(null, true);
+    }
+
+    cb(new Error("Only JPG, PNG or PDF files are allowed."));
+  }
+});
 const allowedOrigins = [
   "https://routex-frontend.onrender.com",
 "https://routex-nationwide-frontend.onrender.com",
@@ -256,6 +276,10 @@ app.use(
   })
 );
 app.use(express.json());
+
+// RouteX driver subscriptions - disabled by default
+const ROUTEX_SUBSCRIPTIONS_ENABLED =
+  process.env.ROUTEX_SUBSCRIPTIONS_ENABLED === "true";
 function authenticateDriver(req, res, next) {
   const authHeader = req.headers.authorization || "";
 
@@ -288,6 +312,516 @@ function authenticateDriver(req, res, next) {
     });
   }
 }
+app.get("/driver/subscription", authenticateDriver, async (req, res) => {
+  if (!ROUTEX_SUBSCRIPTIONS_ENABLED) {
+    return res.json({
+      enabled: false,
+      monthly_fee: 149,
+      status: "inactive",
+      starts_at: null,
+      expires_at: null
+    });
+  }
+
+  try {
+    const result = await pool.query(
+      `SELECT monthly_fee, status, starts_at, expires_at
+       FROM driver_subscriptions
+       WHERE driver_id = $1`,
+      [req.authenticatedDriverId]
+    );
+
+    const subscription = result.rows[0];
+
+    return res.json({
+      enabled: true,
+      monthly_fee: 149,
+      status: subscription?.status || "inactive",
+      starts_at: subscription?.starts_at || null,
+      expires_at: subscription?.expires_at || null
+    });
+  } catch (error) {
+    console.error("DRIVER SUBSCRIPTION ERROR:", error);
+    return res.status(500).json({
+      error: "Unable to load subscription"
+    });
+  }
+});
+app.post(
+  "/driver/subscription/payment",
+  authenticateDriver,
+  (req, res, next) => {
+    if (!ROUTEX_SUBSCRIPTIONS_ENABLED) {
+      return res.status(403).json({
+        error: "Driver subscriptions are not yet active."
+      });
+    }
+
+    subscriptionProofUpload.single("proof")(req, res, (error) => {
+      if (error) {
+        return res.status(400).json({
+          error: "Invalid payment document or file exceeds 5 MB."
+        });
+      }
+      next();
+    });
+  },
+  async (req, res) => {
+    const driverId = Number(req.authenticatedDriverId);
+    const reference = String(req.body?.payment_reference || "").trim();
+    const file = req.file;
+
+    if (!Number.isSafeInteger(driverId) || driverId <= 0) {
+      return res.status(401).json({ error: "Invalid driver session." });
+    }
+
+    if (!reference || reference.length > 100 || !file) {
+      return res.status(400).json({
+        error: "Payment reference and proof of payment are required."
+      });
+    }
+
+    const signatures = {
+      "image/jpeg": file.buffer.subarray(0, 3).equals(
+        Buffer.from([0xff, 0xd8, 0xff])
+      ),
+      "image/png": file.buffer.subarray(0, 8).equals(
+        Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])
+      ),
+      "application/pdf": file.buffer.subarray(0, 5).toString() === "%PDF-"
+    };
+
+    if (!signatures[file.mimetype]) {
+      return res.status(400).json({
+        error: "Invalid JPG, PNG or PDF document."
+      });
+    }
+
+    let storagePath = null;
+
+    try {
+      const existing = await pool.query(
+        `SELECT id FROM driver_subscription_payments
+         WHERE driver_id = $1 AND status = 'pending'
+         LIMIT 1`,
+        [driverId]
+      );
+
+      if (existing.rowCount > 0) {
+        return res.status(409).json({
+          error: "You already have a payment awaiting verification."
+        });
+      }
+
+      const subscription = await pool.query(
+        `INSERT INTO driver_subscriptions (driver_id)
+         VALUES ($1)
+         ON CONFLICT (driver_id)
+         DO UPDATE SET updated_at = driver_subscriptions.updated_at
+         RETURNING id`,
+        [driverId]
+      );
+
+      const subscriptionId = subscription.rows[0].id;
+      const extension = {
+        "image/jpeg": "jpg",
+        "image/png": "png",
+        "application/pdf": "pdf"
+      }[file.mimetype];
+
+      storagePath =
+        `${driverId}/${require("crypto").randomUUID()}.${extension}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("driver-payment-proofs")
+        .upload(storagePath, file.buffer, {
+          contentType: file.mimetype,
+          upsert: false
+        });
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      await pool.query(
+        `INSERT INTO driver_subscription_payments
+         (driver_id, subscription_id, amount,
+          payment_reference, proof_of_payment_url, status)
+         VALUES ($1, $2, 149.00, $3, $4, 'pending')`,
+        [driverId, subscriptionId, reference, storagePath]
+      );
+
+      return res.status(201).json({
+        message: "Payment submitted for verification.",
+        status: "pending"
+      });
+    } catch (error) {
+      if (storagePath) {
+        await supabase.storage
+          .from("driver-payment-proofs")
+          .remove([storagePath])
+          .catch((cleanupError) =>
+            console.error("PAYMENT PROOF CLEANUP ERROR:", cleanupError)
+          );
+      }
+
+      if (error.code === "23505") {
+        return res.status(409).json({
+          error: "You already have a payment awaiting verification."
+        });
+      }
+
+      console.error("SUBSCRIPTION PAYMENT ERROR:", error);
+      return res.status(500).json({
+        error: "Unable to submit payment."
+      });
+    }
+  }
+);
+function authenticateSubscriptionAdmin(req, res, next) {
+  const expected = process.env.ADMIN_DASHBOARD_KEY;
+  const provided = req.get("X-RouteX-Admin-Key") || "";
+
+  if (!expected || !provided) {
+    return res.status(403).json({
+      error: "Admin access required"
+    });
+  }
+
+  const a = Buffer.from(expected);
+  const b = Buffer.from(provided);
+
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+    return res.status(403).json({
+      error: "Admin access denied"
+    });
+  }
+
+  next();
+}
+app.get(
+  "/admin/subscription-payments",
+  authenticateSubscriptionAdmin,
+  async (req, res) => {
+    if (!ROUTEX_SUBSCRIPTIONS_ENABLED) {
+      return res.json({
+        enabled: false,
+        payments: []
+      });
+    }
+
+    try {
+      const result = await pool.query(`
+        SELECT
+          p.id,
+          p.driver_id,
+          d.full_name AS driver_name,
+          p.amount,
+          p.payment_reference,
+          p.status,
+          p.submitted_at,
+          p.reviewed_at,
+          p.review_notes
+        FROM driver_subscription_payments p
+        INNER JOIN drivers d ON d.id = p.driver_id
+        ORDER BY
+          CASE WHEN p.status = 'pending' THEN 0 ELSE 1 END,
+          p.submitted_at DESC
+        LIMIT 200
+      `);
+
+      return res.json({
+        enabled: true,
+        payments: result.rows
+      });
+    } catch (error) {
+      console.error("ADMIN SUBSCRIPTION PAYMENTS ERROR:", error);
+      return res.status(500).json({
+        error: "Unable to load subscription payments"
+      });
+    }
+  }
+);
+app.get(
+  "/admin/subscription-payments/:id/proof",
+  authenticateSubscriptionAdmin,
+  async (req, res) => {
+    if (!ROUTEX_SUBSCRIPTIONS_ENABLED) {
+      return res.status(403).json({
+        error: "Driver subscriptions are not active."
+      });
+    }
+
+    const paymentId = Number(req.params.id);
+
+    if (!Number.isSafeInteger(paymentId) || paymentId <= 0) {
+      return res.status(400).json({
+        error: "Invalid payment ID."
+      });
+    }
+
+    try {
+      const result = await pool.query(
+        `SELECT driver_id, proof_of_payment_url
+         FROM driver_subscription_payments
+         WHERE id = $1`,
+        [paymentId]
+      );
+
+      const payment = result.rows[0];
+
+      if (!payment?.proof_of_payment_url) {
+        return res.status(404).json({
+          error: "Payment proof not found."
+        });
+      }
+
+      const path = payment.proof_of_payment_url;
+
+      if (
+        !path.startsWith(`${payment.driver_id}/`) ||
+        path.includes("..") ||
+        path.startsWith("/")
+      ) {
+        return res.status(400).json({
+          error: "Invalid payment document path."
+        });
+      }
+
+      const { data, error } = await supabase.storage
+        .from("driver-payment-proofs")
+        .createSignedUrl(path, 60);
+
+      if (error || !data?.signedUrl) {
+        throw error || new Error("Unable to create signed URL");
+      }
+
+      return res.json({
+        url: data.signedUrl,
+        expires_in_seconds: 60
+      });
+    } catch (error) {
+      console.error("SUBSCRIPTION PROOF ACCESS ERROR:", error);
+
+      return res.status(500).json({
+        error: "Unable to access payment proof."
+      });
+    }
+  }
+);
+function addRouteXSubscriptionMonth(date) {
+  const start = new Date(date);
+
+  if (Number.isNaN(start.getTime())) {
+    throw new Error("Invalid subscription date");
+  }
+
+  const year = start.getUTCFullYear();
+  const month = start.getUTCMonth();
+  const day = start.getUTCDate();
+
+  const result = new Date(start.getTime());
+
+  result.setUTCDate(1);
+  result.setUTCMonth(month + 1);
+
+  const lastDay = new Date(
+    Date.UTC(year, month + 2, 0)
+  ).getUTCDate();
+
+  result.setUTCDate(Math.min(day, lastDay));
+
+  return result;
+}
+app.post(
+  "/admin/subscription-payments/:id/approve",
+  authenticateSubscriptionAdmin,
+  async (req, res) => {
+    if (!ROUTEX_SUBSCRIPTIONS_ENABLED) {
+      return res.status(403).json({
+        error: "Driver subscriptions are not active."
+      });
+    }
+
+    const paymentId = Number(req.params.id);
+
+    if (!Number.isSafeInteger(paymentId) || paymentId <= 0) {
+      return res.status(400).json({
+        error: "Invalid payment ID."
+      });
+    }
+
+    let client;
+
+    try {
+      client = await pool.connect();
+      await client.query("BEGIN");
+
+      const paymentResult = await client.query(
+        `SELECT id, driver_id, subscription_id, status, amount
+         FROM driver_subscription_payments
+         WHERE id = $1
+         FOR UPDATE`,
+        [paymentId]
+      );
+
+      const payment = paymentResult.rows[0];
+
+      if (!payment) {
+        await client.query("ROLLBACK");
+        return res.status(404).json({
+          error: "Payment not found."
+        });
+      }
+
+      if (payment.status !== "pending") {
+        await client.query("ROLLBACK");
+        return res.status(409).json({
+          error: "This payment has already been reviewed."
+        });
+      }
+
+      if (Number(payment.amount) !== 149) {
+        await client.query("ROLLBACK");
+        return res.status(409).json({
+          error: "Payment amount does not match the subscription fee."
+        });
+      }
+
+      const subscriptionResult = await client.query(
+        `SELECT id, driver_id, starts_at, expires_at
+         FROM driver_subscriptions
+         WHERE id = $1 AND driver_id = $2
+         FOR UPDATE`,
+        [payment.subscription_id, payment.driver_id]
+      );
+
+      const subscription = subscriptionResult.rows[0];
+
+      if (!subscription) {
+        await client.query("ROLLBACK");
+        return res.status(404).json({
+          error: "Driver subscription not found."
+        });
+      }
+
+      const now = new Date();
+      const previousExpiry = subscription.expires_at
+        ? new Date(subscription.expires_at)
+        : null;
+
+      const startFrom =
+        previousExpiry && previousExpiry > now
+          ? previousExpiry
+          : now;
+
+      const newExpiry = addRouteXSubscriptionMonth(startFrom);
+
+      await client.query(
+        `UPDATE driver_subscriptions
+         SET status = 'active',
+             starts_at = CASE
+               WHEN expires_at > NOW() AND starts_at IS NOT NULL
+               THEN starts_at
+               ELSE $2
+             END,
+             expires_at = $3,
+             updated_at = NOW()
+         WHERE id = $1`,
+        [subscription.id, now, newExpiry]
+      );
+
+      await client.query(
+        `UPDATE driver_subscription_payments
+         SET status = 'approved',
+             reviewed_at = NOW(),
+             review_notes = 'EFT payment manually verified'
+         WHERE id = $1`,
+        [paymentId]
+      );
+
+      await client.query("COMMIT");
+
+      return res.json({
+        message: "Subscription payment approved.",
+        driver_id: payment.driver_id,
+        status: "active",
+        expires_at: newExpiry.toISOString()
+      });
+    } catch (error) {
+      if (client) {
+        try {
+          await client.query("ROLLBACK");
+        } catch (rollbackError) {
+          console.error("SUBSCRIPTION ROLLBACK ERROR:", rollbackError);
+        }
+      }
+
+      console.error("SUBSCRIPTION APPROVAL ERROR:", error);
+
+      return res.status(500).json({
+        error: "Unable to approve subscription payment."
+      });
+    } finally {
+      if (client) client.release();
+    }
+  }
+);
+app.post(
+  "/admin/subscription-payments/:id/reject",
+  authenticateSubscriptionAdmin,
+  async (req, res) => {
+    if (!ROUTEX_SUBSCRIPTIONS_ENABLED) {
+      return res.status(403).json({
+        error: "Driver subscriptions are not active."
+      });
+    }
+
+    const paymentId = Number(req.params.id);
+    const notes = String(req.body?.review_notes || "").trim();
+
+    if (!Number.isSafeInteger(paymentId) || paymentId <= 0) {
+      return res.status(400).json({
+        error: "Invalid payment ID."
+      });
+    }
+
+    if (!notes || notes.length > 500) {
+      return res.status(400).json({
+        error: "A rejection reason of up to 500 characters is required."
+      });
+    }
+
+    try {
+      const result = await pool.query(
+        `UPDATE driver_subscription_payments
+         SET status = 'rejected',
+             reviewed_at = NOW(),
+             review_notes = $2
+         WHERE id = $1
+           AND status = 'pending'
+         RETURNING id, driver_id, status`,
+        [paymentId, notes]
+      );
+
+      if (result.rowCount === 0) {
+        return res.status(409).json({
+          error: "Payment not found or already reviewed."
+        });
+      }
+
+      return res.json({
+        message: "Subscription payment rejected.",
+        payment: result.rows[0]
+      });
+    } catch (error) {
+      console.error("SUBSCRIPTION REJECTION ERROR:", error);
+      return res.status(500).json({
+        error: "Unable to reject subscription payment."
+      });
+    }
+  }
+);
 app.use("/uploads", express.static("uploads"));
 
 // =====================================
@@ -5181,6 +5715,43 @@ app.get("/notifications/:userId", async (req, res) => {
   }
 });
 
+
+app.post("/trip-requests/:id/arrived", authenticateDriver, async (req, res) => {
+  try {
+    const bookingId = req.params.id;
+    const driverId = req.authenticatedDriverId;
+
+    const result = await pool.query(
+      `
+      UPDATE trip_bookings
+      SET driver_arrived_at = NOW()
+      WHERE id = $1
+        AND assigned_driver_id = $2
+        AND trip_status = 'Accepted'
+        AND driver_arrived_at IS NULL
+      RETURNING *
+      `,
+      [bookingId, driverId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(409).json({
+        error: "Arrival cannot be recorded for this booking."
+      });
+    }
+
+    res.json({
+      message: "Driver arrival recorded",
+      booking: result.rows[0]
+    });
+  } catch (error) {
+    console.error("DRIVER ARRIVAL ERROR:", error);
+    res.status(500).json({
+      error: "Unable to record driver arrival"
+    });
+  }
+});
+
 app.post("/trip-requests/:id/start", authenticateDriver, async (req, res) => {
   try {
     const bookingId = req.params.id;
@@ -8220,6 +8791,44 @@ app.get("/passenger-trips/:id", async (req, res) => {
 
     res.status(500).json({
       error: error.message,
+    });
+  }
+});
+
+
+app.post("/passenger-bookings/:id/coming", authenticatePackagePassenger, async (req, res) => {
+  try {
+    const bookingId = req.params.id;
+    const passengerId = req.authenticatedPassengerId;
+
+    const result = await pool.query(
+      `
+      UPDATE trip_bookings
+      SET passenger_coming_at = NOW()
+      WHERE id = $1
+        AND passenger_id = $2
+        AND trip_status = 'Accepted'
+        AND driver_arrived_at IS NOT NULL
+        AND passenger_coming_at IS NULL
+      RETURNING *
+      `,
+      [bookingId, passengerId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(409).json({
+        error: "Unable to confirm that you are coming for this booking."
+      });
+    }
+
+    res.json({
+      message: "Passenger is coming",
+      booking: result.rows[0]
+    });
+  } catch (error) {
+    console.error("PASSENGER COMING ERROR:", error);
+    res.status(500).json({
+      error: "Unable to confirm passenger response"
     });
   }
 });
