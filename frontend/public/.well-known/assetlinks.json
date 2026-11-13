@@ -1,0 +1,14 @@
+﻿[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "za.co.routex.upington",
+      "sha256_cert_fingerprints": [
+        "C9:84:90:6C:DD:BB:C1:F6:54:08:22:0C:CB:D8:E0:06:F0:BD:69:86:0C:A4:0C:F1:E0:89:2E:D2:1B:47:C8:10"
+      ]
+    }
+  }
+]
