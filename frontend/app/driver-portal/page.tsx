@@ -507,7 +507,10 @@ const response = await fetch(`${API_URL}/drivers/${driver.id}/status`, {
 });
 
       if (!response.ok) {
-        throw new Error("Unable to update driver status.");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          `HTTP ${response.status}: ${errorData.error || errorData.message || "Unable to update driver status."}`
+        );
       }
 
       setStatus(newStatus === "Available" ? "available" : "offline");
