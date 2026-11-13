@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 
@@ -515,8 +515,8 @@ const response = await fetch(`${API_URL}/drivers/${driver.id}/status`, {
       console.error("DRIVER STATUS ERROR:", error);
       showAppPopup(
         "Unable to change status",
-        newStatus === "Available"
-          ? "RouteX needs your location before you can go online."
+        error instanceof Error
+          ? error.message
           : "Unable to update your status.",
         "error",
       );
