@@ -5011,6 +5011,118 @@ app.post("/trip-requests/:id/complete", authenticateDriver, async (req, res) => 
     client.release();
   }
 });
+
+/* =========================
+   DRIVER ARRIVAL CONFIRMATION
+========================= */
+
+app.post("/trip-requests/:id/arrived", authenticateDriver, async (req, res) => {
+  try {
+    const bookingId = Number(req.params.id);
+    const driverId = Number(req.authenticatedDriverId);
+
+    if (!Number.isSafeInteger(bookingId) || bookingId <= 0 ||
+        !Number.isSafeInteger(driverId) || driverId <= 0) {
+      return res.status(400).json({ error: "Invalid booking or driver ID." });
+    }
+
+    const result = await pool.query(
+      `
+      UPDATE trip_bookings AS tb
+      SET driver_arrived_at = NOW()
+      FROM drivers AS d
+      WHERE tb.id = $1
+        AND tb.assigned_driver_id = $2
+        AND d.id = $2
+        AND tb.trip_status = 'Accepted'
+        AND tb.driver_arrived_at IS NULL
+        AND d.current_lat IS NOT NULL
+        AND d.current_lng IS NOT NULL
+        AND d.location_updated_at >= NOW() - INTERVAL '60 seconds'
+        AND tb.pickup_lat IS NOT NULL
+        AND tb.pickup_lng IS NOT NULL
+        AND (
+          6371000 * 2 * ASIN(
+            LEAST(1, SQRT(
+              POWER(SIN(RADIANS((tb.pickup_lat - d.current_lat) / 2)), 2) +
+              COS(RADIANS(d.current_lat)) *
+              COS(RADIANS(tb.pickup_lat)) *
+              POWER(SIN(RADIANS((tb.pickup_lng - d.current_lng) / 2)), 2)
+            ))
+          )
+        ) <= 150
+      RETURNING tb.*
+      `,
+      [bookingId, driverId]
+    );
+
+    if (!result.rows.length) {
+      return res.status(409).json({
+        error: "Arrival unavailable. Move within 150 metres of pickup and ensure GPS is active."
+      });
+    }
+
+    return res.json({
+      success: true,
+      booking: result.rows[0]
+    });
+  } catch (error) {
+    console.error("DRIVER ARRIVAL ERROR:", error);
+    return res.status(500).json({
+      error: "Unable to confirm driver arrival."
+    });
+  }
+});
+
+/* =========================
+   PASSENGER COMING CONFIRMATION
+========================= */
+
+app.post(
+  "/passenger-bookings/:id/coming",
+  authenticatePackagePassenger,
+  async (req, res) => {
+    try {
+      const bookingId = Number(req.params.id);
+      const passengerId = req.authenticatedPassengerId;
+
+      if (!Number.isSafeInteger(bookingId) || bookingId <= 0) {
+        return res.status(400).json({ error: "Invalid booking ID." });
+      }
+
+      const result = await pool.query(
+        `
+        UPDATE trip_bookings
+        SET passenger_coming_at = NOW()
+        WHERE id = $1
+          AND passenger_id = $2
+          AND trip_status = 'Accepted'
+          AND driver_arrived_at IS NOT NULL
+          AND passenger_coming_at IS NULL
+        RETURNING *
+        `,
+        [bookingId, passengerId]
+      );
+
+      if (!result.rows.length) {
+        return res.status(409).json({
+          error: "Passenger confirmation is not available for this booking."
+        });
+      }
+
+      return res.json({
+        success: true,
+        booking: result.rows[0]
+      });
+    } catch (error) {
+      console.error("PASSENGER COMING ERROR:", error);
+      return res.status(500).json({
+        error: "Unable to confirm passenger response."
+      });
+    }
+  }
+);
+
 app.get("/accepted-trips", async (req, res) => {
   try {
     const result = await pool.query(`
@@ -5720,7 +5832,8 @@ if (String(driverId) !== req.authenticatedDriverId) {
       UPDATE drivers
       SET
         current_lat = $1,
-        current_lng = $2
+        current_lng = $2,
+        location_updated_at = NOW()
       WHERE id = $3
       RETURNING id, current_lat, current_lng
       `,
@@ -7394,12 +7507,76 @@ app.post('/driver/regional-fare-requests/:id/respond', fareOffersEnabled, authen
       VALUES($1,$2,$3,$4,$5)
       ON CONFLICT(request_id,driver_id) DO UPDATE
       SET offered_fare=EXCLUDED.offered_fare,response=EXCLUDED.response,status=EXCLUDED.status,updated_at=NOW()
-      WHERE routex_driver_offers.status='superseded'
+      WHERE routex_driver_offers.status IN ('superseded')
       RETURNING *`,[r.id,d.id,finalFare,response,response==='decline'?'rejected':'active']);
     if (!result.rowCount) {await client.query('ROLLBACK');return res.status(409).json({error:'You have already responded to the current passenger offer.'});}
     await client.query('COMMIT');res.status(201).json(result.rows[0]);
   } catch(e) {await client.query('ROLLBACK');console.error(e);res.status(500).json({error:'Unable to submit response.'});} finally {client.release();}
 });
+
+/* Passenger rejects one driver's counteroffer. */
+app.post('/regional-fare-requests/:id/offers/:offerId/reject',
+  fareOffersEnabled,
+  authenticateFarePassenger,
+  async (req, res) => {
+    const requestId = Number(req.params.id);
+    const offerId = Number(req.params.offerId);
+
+    if (!Number.isSafeInteger(requestId) || requestId <= 0 ||
+        !Number.isSafeInteger(offerId) || offerId <= 0) {
+      return res.status(400).json({ error: 'Invalid request or offer ID.' });
+    }
+
+    const client = await pool.connect();
+
+    try {
+      await client.query('BEGIN');
+
+      const request = await client.query(
+        `SELECT id FROM routex_fare_requests
+         WHERE id=$1 AND passenger_id=$2
+           AND status='open' AND expires_at>NOW()
+         FOR UPDATE`,
+        [requestId, req.farePassengerId]
+      );
+
+      if (!request.rowCount) {
+        await client.query('ROLLBACK');
+        return res.status(409).json({ error: 'Fare request is closed or expired.' });
+      }
+
+      const updated = await client.query(
+        `UPDATE routex_driver_offers
+         SET status='passenger_rejected', updated_at=NOW()
+         WHERE id=$1 AND request_id=$2
+           AND response='counter' AND status='active'
+         RETURNING id,driver_id,status`,
+        [offerId, requestId]
+      );
+
+      if (!updated.rowCount) {
+        await client.query('ROLLBACK');
+        return res.status(409).json({ error: 'Counteroffer is no longer available.' });
+      }
+
+      await client.query('COMMIT');
+
+      return res.json({
+        success: true,
+        offer: updated.rows[0],
+        message: 'Driver counteroffer rejected.'
+      });
+
+    } catch (error) {
+      try { await client.query('ROLLBACK'); } catch (_) {}
+      console.error('PASSENGER OFFER REJECTION ERROR:', error);
+      return res.status(500).json({ error: 'Unable to reject counteroffer.' });
+    } finally {
+      client.release();
+    }
+  }
+);
+
 // Passenger revises the price during the original 15-minute window.
 // Existing driver replies become superseded, requiring fresh responses.
 app.post('/regional-fare-requests/:id/revise', fareOffersEnabled, authenticateFarePassenger, async (req,res) => {
@@ -7414,7 +7591,7 @@ app.post('/regional-fare-requests/:id/revise', fareOffersEnabled, authenticateFa
     if (!found.rowCount) { await client.query('ROLLBACK');return res.status(409).json({error:'Fare request is closed or expired.'}); }
     if (Number(found.rows[0].passenger_offer)===fare) { await client.query('ROLLBACK');return res.status(400).json({error:'Choose a different fare.'}); }
     await client.query(`UPDATE routex_driver_offers SET status='superseded',updated_at=NOW()
-      WHERE request_id=$1 AND status IN ('active','rejected')`,[id]);
+      WHERE request_id=$1 AND status IN ('active','rejected','passenger_rejected')`,[id]);
     const updated=await client.query(`UPDATE routex_fare_requests SET passenger_offer=$2,updated_at=NOW()
       WHERE id=$1 RETURNING id,passenger_offer,expires_at,status`,[id,fare]);
     await client.query('COMMIT');return res.json(updated.rows[0]);
@@ -7835,6 +8012,7 @@ FROM trip_bookings tb
 
 app.get(
   "/passenger-bookings/:passengerId/:bookingId/driver-location",
+  authenticatePackagePassenger,
   async (req, res) => {
     try {
       const { passengerId, bookingId } = req.params;

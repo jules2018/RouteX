@@ -9,12 +9,35 @@ import { showNotification } from "../lib/notifications";
 import { API_URL } from "../lib/api";
 import { isValidSessionToken } from "../lib/session";
 
+
+function distanceToPickupMetres(
+  driverLat: number,
+  driverLng: number,
+  pickupLat: number,
+  pickupLng: number,
+): number {
+  const radians = (degrees: number) => degrees * Math.PI / 180;
+  const earthRadius = 6371000;
+
+  const latDifference = radians(pickupLat - driverLat);
+  const lngDifference = radians(pickupLng - driverLng);
+
+  const a =
+    Math.sin(latDifference / 2) ** 2 +
+    Math.cos(radians(driverLat)) *
+    Math.cos(radians(pickupLat)) *
+    Math.sin(lngDifference / 2) ** 2;
+
+  return earthRadius * 2 * Math.asin(Math.sqrt(Math.min(1, a)));
+}
+
 export default function DriverPortalPage() {
   const [status, setStatus] = useState<"available" | "offline">("available");
   const [driver, setDriver] = useState<any>(null);
   const [driverLocation, setDriverLocation] = useState<{
     lat: number;
     lng: number;
+    updatedAt: number;
   } | null>(null);
   const [availableDeliveries, setAvailableDeliveries] = useState<any[]>([]);
   const [myDeliveries, setMyDeliveries] = useState<any[]>([]);
@@ -39,6 +62,8 @@ export default function DriverPortalPage() {
   const [loadingScheduled, setLoadingScheduled] = useState(true);
   const [acceptingId, setAcceptingId] = useState<number | null>(null);
   const [startingId, setStartingId] = useState<number | null>(null);
+  const [arrivingId, setArrivingId] = useState<number | null>(null);
+
   const [nowMs, setNowMs] = useState(Date.now());
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [portalDark, setPortalDark] = useState(false);
@@ -385,7 +410,7 @@ await fetch(`${API_URL}/drivers/${driver.id}/heartbeat`, {
   }, [driver?.id, status]);
 
   useEffect(() => {
-    if (!driver?.id || status !== "available") return;
+    if (!driver?.id || (status !== "available" && acceptedTrips.length === 0 && inProgressTrips.length === 0)) return;
     if (!navigator.geolocation) return;
 
     const watchId = navigator.geolocation.watchPosition(
@@ -393,6 +418,7 @@ await fetch(`${API_URL}/drivers/${driver.id}/heartbeat`, {
         setDriverLocation({
           lat: position.coords.latitude,
           lng: position.coords.longitude,
+          updatedAt: position.timestamp,
         });
         try {
           const token = localStorage.getItem("driverToken");
@@ -431,7 +457,7 @@ await fetch(`${API_URL}/drivers/${driver.id}/location`, {
     );
 
     return () => navigator.geolocation.clearWatch(watchId);
-  }, [driver?.id, status]);
+  }, [driver?.id, status, acceptedTrips.length, inProgressTrips.length]);
 
   const toggleStatus = async () => {
     if (!driver?.id) return;
@@ -547,6 +573,52 @@ const response = await fetch(
 
     return () => clearInterval(clock);
   }, []);
+
+
+  const markDriverArrived = async (rideId: number) => {
+    if (!driver?.id || arrivingId !== null) return;
+
+    try {
+      setArrivingId(rideId);
+
+      const token = localStorage.getItem("driverToken");
+
+      const response = await fetch(
+        `${API_URL}/trip-requests/${rideId}/arrived`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error || "Could not confirm arrival.");
+      }
+
+      setAcceptedTrips((previous) =>
+        previous.map((ride) =>
+          ride.id === rideId
+            ? { ...ride, driver_arrived_at: data.booking.driver_arrived_at }
+            : ride
+        )
+      );
+
+      await loadDriverRides(driver.id);
+    } catch (error: any) {
+      showAppPopup(
+        "RouteX",
+        error?.message || "Could not confirm arrival.",
+        "error"
+      );
+    } finally {
+      setArrivingId(null);
+    }
+  };
 
   const startRide = async (rideId: number) => {
     if (!driver?.id) return;
@@ -1058,6 +1130,54 @@ const response = await fetch(
                         </p>
                       </div>
 
+                        <div className="mt-3 space-y-2">
+                          {!ride.driver_arrived_at && (
+  <p className="mb-2 text-center text-[10px] text-[#92959b]">
+    {!driverLocation ||
+    Date.now() - driverLocation.updatedAt > 60000
+      ? "Waiting for GPS"
+      : ride.pickup_lat == null || ride.pickup_lng == null
+        ? "Pickup location unavailable"
+        : (() => {
+            const metres = distanceToPickupMetres(
+              driverLocation.lat,
+              driverLocation.lng,
+              Number(ride.pickup_lat),
+              Number(ride.pickup_lng)
+            );
+
+            return metres <= 150
+              ? "Within pickup range - arrival available"
+              : Math.round(metres) + " m from pickup";
+          })()}
+  </p>
+)}
+                          {ride.driver_arrived_at ? (
+                            <div className="rounded-[14px] bg-green-100 px-4 py-3 text-center text-[11px] font-semibold text-green-800">
+                              Arrival Confirmed
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              disabled={arrivingId !== null}
+                              onClick={() => markDriverArrived(ride.id)}
+                              className="w-full rounded-[14px] bg-[#ff6846] px-4 py-3 text-[11px] font-semibold text-white transition active:scale-[0.985] disabled:opacity-50"
+                            >
+                              {arrivingId === ride.id
+                                ? "Confirming arrival..."
+                                : "I've Arrived"}
+                            </button>
+                          )}
+
+                          {ride.passenger_coming_at && (
+                            <div
+                              role="status"
+                              className="rounded-[14px] bg-green-100 px-4 py-3 text-center text-[11px] font-semibold text-green-800"
+                            >
+                              Passenger is coming
+                            </div>
+                          )}
+                        </div>
                       <div className="mt-4 grid grid-cols-2 gap-3">
                         <button
                           type="button"
@@ -1211,6 +1331,54 @@ const response = await fetch(
                           </p>
                         </div>
 
+                        <div className="mt-3 space-y-2">
+                          {!ride.driver_arrived_at && (
+  <p className="mb-2 text-center text-[10px] text-[#92959b]">
+    {!driverLocation ||
+    Date.now() - driverLocation.updatedAt > 60000
+      ? "Waiting for GPS"
+      : ride.pickup_lat == null || ride.pickup_lng == null
+        ? "Pickup location unavailable"
+        : (() => {
+            const metres = distanceToPickupMetres(
+              driverLocation.lat,
+              driverLocation.lng,
+              Number(ride.pickup_lat),
+              Number(ride.pickup_lng)
+            );
+
+            return metres <= 150
+              ? "Within pickup range - arrival available"
+              : Math.round(metres) + " m from pickup";
+          })()}
+  </p>
+)}
+                          {ride.driver_arrived_at ? (
+                            <div className="rounded-[14px] bg-green-100 px-4 py-3 text-center text-[11px] font-semibold text-green-800">
+                              Arrival Confirmed
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              disabled={arrivingId !== null}
+                              onClick={() => markDriverArrived(ride.id)}
+                              className="w-full rounded-[14px] bg-[#ff6846] px-4 py-3 text-[11px] font-semibold text-white transition active:scale-[0.985] disabled:opacity-50"
+                            >
+                              {arrivingId === ride.id
+                                ? "Confirming arrival..."
+                                : "I've Arrived"}
+                            </button>
+                          )}
+
+                          {ride.passenger_coming_at && (
+                            <div
+                              role="status"
+                              className="rounded-[14px] bg-green-100 px-4 py-3 text-center text-[11px] font-semibold text-green-800"
+                            >
+                              Passenger is coming
+                            </div>
+                          )}
+                        </div>
                         <div className="mt-4 grid grid-cols-2 gap-3">
                           <button
                             type="button"

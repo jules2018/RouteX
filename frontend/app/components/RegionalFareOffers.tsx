@@ -129,6 +129,58 @@ export function PassengerRegionalOffers({ suggestedFare, quoteToken, pickupAddre
     finally { setConfirmingOfferId(null); }
   }
 
+  const rejectDriverOffer = async (offerId: number) => {
+    if (!request || confirmingOfferId !== null || cancelling) return;
+
+    try {
+      setError("");
+
+      const savedPassenger = JSON.parse(
+        localStorage.getItem("passenger") || "null"
+      );
+
+      const token = savedPassenger?.token;
+
+      if (!token) throw new Error("Please sign in again.");
+
+      const response = await fetch(
+        `${API_URL}/regional-fare-requests/${request.id}/offers/${offerId}/reject`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error || "Unable to reject offer.");
+      }
+
+      setRequest((previous) =>
+        previous
+          ? {
+              ...previous,
+              offers: previous.offers.map((offer) =>
+                offer.id === offerId
+                  ? { ...offer, status: "passenger_rejected" }
+                  : offer
+              ),
+            }
+          : previous
+      );
+
+    } catch (error) {
+      setError(
+        error instanceof Error ? error.message : "Unable to reject offer."
+      );
+    }
+  };
+
+
   if (searching && request) return (
     <div className="fixed inset-0 z-[90] overflow-y-auto bg-[#edf0f6] text-[#202c40] dark:bg-[#10141e] dark:text-white">
       <div className="mx-auto min-h-screen w-full max-w-md bg-[#e9edf5] px-5 pb-10 pt-7 dark:bg-[#202736]">
@@ -166,7 +218,20 @@ export function PassengerRegionalOffers({ suggestedFare, quoteToken, pickupAddre
           </div>
           <div className="mt-5 rounded-[26px] bg-[#e9edf5] p-4 shadow-[8px_8px_18px_#c5cdda,-8px_-8px_18px_#ffffff] dark:bg-[#242e40] dark:shadow-[7px_7px_16px_#131b29,-7px_-7px_16px_#35445c]">
             <div className="mb-3 flex items-center justify-between"><p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#53637b] dark:text-white/70">Driver responses</p><span className="rounded-full bg-[#e1e6ef] px-2.5 py-1 text-[10px] font-bold text-[#e95432] shadow-[inset_2px_2px_5px_#c3cbd8,inset_-2px_-2px_5px_#ffffff] dark:bg-[#1e293a] dark:shadow-none">{request.offers?.filter(o => o.status === "active" && (o.response === "accept" || o.response === "counter")).length || 0}</span></div>
-            {request.offers?.filter(o => o.status === "active" && (o.response === "accept" || o.response === "counter")).length ? request.offers.filter(o => o.status === "active" && (o.response === "accept" || o.response === "counter")).map(o => <div key={o.id} className="mb-3 rounded-[20px] bg-[#e3e8f1] p-3 shadow-[inset_4px_4px_9px_#c5cdd9,inset_-4px_-4px_9px_#ffffff] last:mb-0 dark:bg-[#1e293a] dark:shadow-[inset_4px_4px_9px_#131b29,inset_-4px_-4px_9px_#35445c]"><div className="flex items-center justify-between gap-3"><div className="min-w-0"><p className="text-[11px] font-semibold">Driver #{o.driver_id}</p><p className="mt-1 text-[10px] opacity-60">{o.response === "accept" ? "Accepted your fare" : "Counteroffer"}</p><p className="mt-2 text-[22px] font-extrabold tabular-nums text-[#263750] dark:text-white">R{Number(o.offered_fare).toFixed(2)}</p></div><button type="button" disabled={confirmingOfferId !== null || cancelling} onClick={() => confirmOffer(o.id)} className="shrink-0 rounded-[15px] bg-[#f15a36] px-3 py-3.5 text-[11px] font-bold text-white shadow-[4px_5px_11px_rgba(216,75,43,0.25)] transition active:scale-95 disabled:opacity-50">{confirmingOfferId === o.id ? "Confirming..." : "Choose & confirm"}</button></div></div>) : <div className="rounded-[18px] bg-[#e2e7f0] px-4 py-5 text-center shadow-[inset_4px_4px_9px_#c5cdd9,inset_-4px_-4px_9px_#ffffff] dark:bg-[#1e293a] dark:shadow-[inset_4px_4px_9px_#131b29,inset_-4px_-4px_9px_#35445c]"><p className="text-[12px] font-medium text-[#66758b] dark:text-white/60">No driver has responded yet.</p><p className="mt-1 text-[10px] text-[#8490a2] dark:text-white/40">New offers will appear here automatically.</p></div>}
+            {request.offers?.filter(o => o.status === "active" && (o.response === "accept" || o.response === "counter")).length ? request.offers.filter(o => o.status === "active" && (o.response === "accept" || o.response === "counter")).map(o => <div key={o.id} className="mb-3 rounded-[20px] bg-[#e3e8f1] p-3 shadow-[inset_4px_4px_9px_#c5cdd9,inset_-4px_-4px_9px_#ffffff] last:mb-0 dark:bg-[#1e293a] dark:shadow-[inset_4px_4px_9px_#131b29,inset_-4px_-4px_9px_#35445c]"><div className="flex items-center justify-between gap-3"><div className="min-w-0"><p className="text-[11px] font-semibold">Driver #{o.driver_id}</p><p className="mt-1 text-[10px] opacity-60">{o.response === "accept" ? "Accepted your fare" : "Counteroffer"}</p><p className="mt-2 text-[22px] font-extrabold tabular-nums text-[#263750] dark:text-white">R{Number(o.offered_fare).toFixed(2)}</p></div>
+    <div className="flex flex-col gap-2">
+      <button type="button" disabled={confirmingOfferId !== null || cancelling} onClick={() => confirmOffer(o.id)} className="shrink-0 rounded-[15px] bg-[#f15a36] px-3 py-3.5 text-[11px] font-bold text-white shadow-[4px_5px_11px_rgba(216,75,43,0.25)] transition active:scale-95 disabled:opacity-50">{confirmingOfferId === o.id ? "Confirming..." : "Choose & confirm"}</button>
+      {o.response === "counter" && (
+        <button
+          type="button"
+          onClick={() => rejectDriverOffer(o.id)}
+          disabled={confirmingOfferId !== null || cancelling}
+          className="rounded-[14px] border border-[#f15a36] px-3 py-2 text-[11px] font-bold text-[#d64c32] disabled:opacity-50"
+        >
+          Reject Offer
+        </button>
+      )}
+    </div></div></div>) : <div className="rounded-[18px] bg-[#e2e7f0] px-4 py-5 text-center shadow-[inset_4px_4px_9px_#c5cdd9,inset_-4px_-4px_9px_#ffffff] dark:bg-[#1e293a] dark:shadow-[inset_4px_4px_9px_#131b29,inset_-4px_-4px_9px_#35445c]"><p className="text-[12px] font-medium text-[#66758b] dark:text-white/60">No driver has responded yet.</p><p className="mt-1 text-[10px] text-[#8490a2] dark:text-white/40">New offers will appear here automatically.</p></div>}
           </div>
           {error && <p role="alert" className="mt-4 rounded-[14px] bg-red-50 p-3 text-xs text-red-700 dark:bg-red-950/30 dark:text-red-300">{error}</p>}
           <button type="button" disabled={cancelling || confirmingOfferId !== null} onClick={cancelOffer} className="mt-6 w-full rounded-[20px] bg-[#e9edf5] px-5 py-4 text-[13px] font-bold text-[#d64c32] shadow-[7px_7px_16px_#c5cdda,-7px_-7px_16px_#ffffff] transition active:scale-[0.98] active:shadow-[inset_4px_4px_9px_#c5cdda,inset_-4px_-4px_9px_#ffffff] disabled:opacity-50 dark:bg-[#29364b] dark:text-[#ff8b74] dark:shadow-[6px_6px_14px_#131b29,-6px_-6px_14px_#35445c]">{cancelling ? "Cancelling..." : "Cancel fare request"}</button>
@@ -174,6 +239,10 @@ export function PassengerRegionalOffers({ suggestedFare, quoteToken, pickupAddre
       </div>
     </div>
   );
+
+
+
+  if (!quoteToken || suggestedFare <= 0) return null;
 
   return <section className="mt-5 rounded-[24px] bg-[#e9edf5] p-4 text-[#202c40] shadow-[8px_8px_20px_rgba(31,45,72,0.11),-7px_-7px_18px_rgba(255,255,255,0.95)] dark:bg-[#242b39] dark:text-white dark:shadow-[7px_7px_18px_rgba(0,0,0,0.07),-7px_-7px_18px_rgba(48,51,61,0.85)]">
     <h3 className="text-sm font-bold">Offer your fare</h3>
@@ -192,10 +261,23 @@ export function PassengerRegionalOffers({ suggestedFare, quoteToken, pickupAddre
           <div className="flex items-center justify-between gap-2">
             <div><p className="font-semibold">Driver #{o.driver_id} · {o.response === "accept" ? "Accepted" : "Counteroffer"}</p>
               <p className="mt-1 text-base font-bold">R{Number(o.offered_fare).toFixed(2)}</p></div>
-            <button type="button" disabled={confirmingOfferId !== null} onClick={() => confirmOffer(o.id)}
+
+    <div className="flex flex-col gap-2">
+      <button type="button" disabled={confirmingOfferId !== null} onClick={() => confirmOffer(o.id)}
               className="rounded-xl bg-[#ff6846] px-3 py-3 text-xs font-bold text-white disabled:opacity-50">
               {confirmingOfferId === o.id ? "Confirming…" : "Choose driver & confirm"}
             </button>
+      {o.response === "counter" && (
+        <button
+          type="button"
+          onClick={() => rejectDriverOffer(o.id)}
+          disabled={confirmingOfferId !== null || cancelling}
+          className="rounded-[14px] border border-[#f15a36] px-3 py-2 text-[11px] font-bold text-[#d64c32] disabled:opacity-50"
+        >
+          Reject Offer
+        </button>
+      )}
+    </div>
           </div>
         </div>)}
       <p className="text-slate-600">A trip is booked only after you select a driver and confirmation succeeds.</p>
@@ -317,7 +399,11 @@ export function DriverRegionalOffers({ isAvailable }: { isAvailable: boolean }) 
         <p className="text-[9px] font-bold uppercase tracking-[0.13em] text-[#59677d] dark:text-white/70">Passenger's offer</p>
         <p className="mt-0.5 text-[24px] font-extrabold tabular-nums leading-tight text-[#e95432]">R{Number(r.passenger_offer).toFixed(2)}</p>
       </div>
-      {r.my_status === "active" ? <p className="mt-3 rounded-xl bg-white/60 p-3 font-semibold dark:bg-[#34465e]">Your {r.my_response === "counter" ? "counteroffer" : "accepted fare"}: R{Number(r.my_fare).toFixed(2)} · Awaiting passenger decision</p> : r.my_status === "rejected" ? <p className="mt-3 text-xs opacity-70">You declined this offer. Waiting for any revised fare.</p> : null}
+      {r.my_status === "active" ? <p className="mt-3 rounded-xl bg-white/60 p-3 font-semibold dark:bg-[#34465e]">Your {r.my_response === "counter" ? "counteroffer" : "accepted fare"}: R{Number(r.my_fare).toFixed(2)} · Awaiting passenger decision</p> : r.my_status === "passenger_rejected"
+  ? <p className="mt-3 rounded-xl bg-[#fce5df] p-3 text-xs font-semibold text-[#b63d27] dark:bg-[#513029] dark:text-[#ffb4a3]">
+      Passenger rejected your offer. Wait for a revised fare.
+    </p>
+  : r.my_status === "rejected" ? <p className="mt-3 text-xs opacity-70">You declined this offer. Waiting for any revised fare.</p> : null}
       {!r.my_status || r.my_status === "superseded" ? <><div className="mt-2 flex flex-wrap items-center gap-2">
         <button
   disabled={busy === r.id}
@@ -351,7 +437,7 @@ export function DriverRegionalOffers({ isAvailable }: { isAvailable: boolean }) 
         <button type="button" aria-label="Increase counteroffer by R5" disabled={busy === r.id || (counter[r.id] ?? clampOffer(Number(r.passenger_offer))) >= MAX_OFFER} onClick={() => setCounter(old => ({ ...old, [r.id]: Math.min(MAX_OFFER, (old[r.id] ?? clampOffer(Number(r.passenger_offer))) + OFFER_STEP) }))} className="h-10 rounded-[13px] bg-[#e9eef6] text-xl font-bold text-[#263750] shadow-[4px_4px_9px_#c8d0dc,-4px_-4px_9px_#ffffff] active:shadow-inner disabled:opacity-40 dark:bg-[#34465e] dark:text-white dark:shadow-none">+</button>
       </div>
       <div className="mt-2">
-        <button disabled={busy === r.id} onClick={() => respond(r.id, "counter", Number(r.passenger_offer))} className="w-full rounded-[14px] bg-[#ff6846] px-3 py-2.5 font-semibold text-white shadow-[4px_5px_12px_rgba(255,104,70,.24)] transition active:scale-[.99] disabled:opacity-50">Send counteroffer</button>
+        <button disabled={busy === r.id} onClick={() => respond(r.id, "counter", counter[r.id] ?? clampOffer(Number(r.passenger_offer)))} className="w-full rounded-[14px] bg-[#ff6846] px-3 py-2.5 font-semibold text-white shadow-[4px_5px_12px_rgba(255,104,70,.24)] transition active:scale-[.99] disabled:opacity-50">Send counteroffer</button>
       </div></> : null}
     </div>)}
     {error && <p role="alert" className="mt-2 text-xs text-red-500">{error}</p>}

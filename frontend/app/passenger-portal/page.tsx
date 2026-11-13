@@ -92,6 +92,8 @@ export default function PassengerPortalPage() {
   const [pinError, setPinError] = useState<Record<string, string>>({});
   const [trackingDeliveryId, setTrackingDeliveryId] = useState<number | null>(null);
   const [trips, setTrips] = useState<any[]>([]);
+  const [comingBusyId, setComingBusyId] = useState<number | null>(null);
+
   const [onlineDrivers, setOnlineDrivers] = useState(0);
   const [availableDrivers, setAvailableDrivers] = useState<any[]>([]);
   const [photo, setPhoto] = useState<File | null>(null);
@@ -396,6 +398,60 @@ export default function PassengerPortalPage() {
       console.error("Error loading driver location:", error);
 
       setDriverLocation(null);
+    }
+  };
+
+
+  const confirmPassengerComing = async (bookingId: number) => {
+    if (comingBusyId !== null) return;
+
+    try {
+      setComingBusyId(bookingId);
+
+      const savedPassenger = JSON.parse(
+        localStorage.getItem("passenger") || "null"
+      );
+
+      const token = savedPassenger?.token;
+
+      if (!token) {
+        throw new Error("Please sign in again to confirm your response.");
+      }
+
+      const response = await fetch(
+        `${API_URL}/passenger-bookings/${bookingId}/coming`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data?.error || "Unable to notify your driver."
+        );
+      }
+
+      setTrips((previous) =>
+        previous.map((trip) =>
+          Number(trip.id) === Number(bookingId)
+            ? {
+                ...trip,
+                passenger_coming_at: data.booking.passenger_coming_at,
+              }
+            : trip
+        )
+      );
+    } catch (error: any) {
+      console.error("PASSENGER COMING ERROR:", error);
+      alert(error?.message || "Unable to notify your driver.");
+    } finally {
+      setComingBusyId(null);
     }
   };
 
@@ -1162,6 +1218,37 @@ export default function PassengerPortalPage() {
           </section>
         )}
 
+
+        {activeTrip &&
+          activeTrip.driver_arrived_at &&
+          String(activeTrip.trip_status).trim().toLowerCase() === "accepted" && (
+            <div className="mt-4 rounded-[18px] bg-[#e7e9ee] p-4 shadow-[4px_4px_9px_#c4c6ca,-4px_-4px_9px_#ffffff] dark:bg-[#17191e] dark:shadow-none">
+              <p className="text-center text-[13px] font-bold text-[#ff6846]">
+                Your driver has arrived
+              </p>
+
+              {activeTrip.passenger_coming_at ? (
+                <p
+                  role="status"
+                  className="mt-3 rounded-[14px] bg-green-100 px-4 py-3 text-center text-[11px] font-semibold text-green-800"
+                >
+                  Driver Notified
+                </p>
+              ) : (
+                <button
+                  type="button"
+                  disabled={comingBusyId !== null}
+                  onClick={() => confirmPassengerComing(activeTrip.id)}
+                  className="mt-3 w-full rounded-[14px] bg-[#ff6846] px-4 py-3 text-[12px] font-semibold text-white disabled:opacity-50"
+                >
+                  {comingBusyId === activeTrip.id
+                    ? "Notifying driver..."
+                    : "I'm Coming"}
+                </button>
+              )}
+            </div>
+          )}
+
         {activeTrip && (
           <section className="mt-8">
             <div className="flex items-end justify-between gap-3">
@@ -1279,11 +1366,7 @@ export default function PassengerPortalPage() {
               <div
                 className={`mt-4 grid ${activeTrip.driver_phone ? "grid-cols-2" : "grid-cols-1"} gap-3`}
               >
-                {driverLocation &&
-                  driverLocation.driver_lat &&
-                  driverLocation.driver_lng &&
-                  driverLocation.pickup_lat &&
-                  driverLocation.pickup_lng && (
+{activeTrip.assigned_driver_id && (
                     <button
                       type="button"
                       onClick={() =>
@@ -1291,7 +1374,7 @@ export default function PassengerPortalPage() {
                       }
                       className="rounded-[14px] bg-[#17191f] py-3 text-[10px] font-semibold text-white transition active:scale-[0.98] dark:bg-[#292c35]"
                     >
-                      Track driver
+                      Track Your Driver
                     </button>
                   )}
 
