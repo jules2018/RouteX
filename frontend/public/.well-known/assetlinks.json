@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "za.co.routex.app",
+      "sha256_cert_fingerprints": [
+        "26:F5:6A:B9:53:2D:9F:3A:55:DD:EC:64:84:2F:64:5F:37:EA:A5:BA:C2:FC:28:CA:52:07:85:5C:C6:98:3D:32"
+      ]
+    }
+  }
+]
