@@ -364,15 +364,7 @@ localStorage.setItem("passenger", JSON.stringify(data));
                     placeholder:text-[#9b9ea5]
                   "
                 />
-                <div className="mt-3 text-right">
-                  <button
-                    type="button"
-                    onClick={() => router.push("/forgot-password")}
-                    className="text-[11px] font-bold text-[#ff6846]"
-                  >
-                    Forgot password?
-                  </button>
-                </div>
+
               </div>
             </div>
 
@@ -515,6 +507,16 @@ localStorage.setItem("passenger", JSON.stringify(data));
                 </button>
               </div>
             </div>
+
+                <div className="mt-3 text-right">
+                  <button
+                    type="button"
+                    onClick={() => router.push("/forgot-password")}
+                    className="text-[11px] font-bold text-[#ff6846]"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
 
             {/* SIGN IN */}
 

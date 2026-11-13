@@ -53,26 +53,26 @@ export default function Home() {
         </header>
         <main>
           <section className="section">
-            <div className="sectionhead"><strong>YOUR SERVICES</strong><small>UPINGTON â—</small></div>
+            <div className="sectionhead"><strong>YOUR SERVICES</strong><small>UPINGTON &#9679;</small></div>
             <a className="service" href="/passenger-login">
               <div className="icon"><svg viewBox="0 0 24 24"><path d="M5 11 7 5.5A2 2 0 0 1 8.9 4h6.2A2 2 0 0 1 17 5.5L19 11M5 11h14a2 2 0 0 1 2 2v4H3v-4a2 2 0 0 1 2-2ZM5 17v2a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-2m8 0v2a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-2M7 14h.01M17 14h.01"/></svg></div>
-              <div className="copy"><b>Book a ride</b><p>Travel anywhere in Upington</p></div><span className="arrow">â†’</span>
+              <div className="copy"><b>Book a ride</b><p>Travel anywhere in Upington</p></div><span className="arrow">&#8594;</span>
             </a>
             <a className="service" href="/passenger-login">
               <div className="icon"><svg viewBox="0 0 24 24"><path d="m3 7 9-4 9 4v10l-9 4-9-4V7ZM3 7l9 5 9-5M12 12v9"/></svg></div>
-              <div className="copy"><b>Send a package</b><p>Collection and local delivery</p></div><span className="arrow">â†’</span>
+              <div className="copy"><b>Send a package</b><p>Collection and local delivery</p></div><span className="arrow">&#8594;</span>
             </a>
             <a className="service" href="/monthly-transport" aria-label="Register interest in upcoming monthly transport">
               <div className="icon"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="16" rx="3"/><path d="M4 12h16M8 7h3m2 0h3M7 19v2m10-2v2M8 15h.01M16 15h.01"/></svg></div>
-              <div className="copy"><div className="monthly-title"><b>Monthly transport</b><span className="coming-soon">COMING SOON</span></div><p>Work or school? Help us plan shared routes</p><span className="monthly-hint">Register your interest Â· No payment needed</span></div><span className="arrow">â†’</span>
+              <div className="copy"><div className="monthly-title"><b>Monthly transport</b><span className="coming-soon">COMING SOON</span></div><p>Work or school? Help us plan shared routes</p><span className="monthly-hint">Register your interest &#183; No payment needed</span></div><span className="arrow">&#8594;</span>
             </a>
           </section>
           <section className="access">
             <div className="title">GET STARTED</div>
-            <a className="primary" href="/passenger-register">Create an account &nbsp; â†’</a>
+            <a className="primary" href="/passenger-register">Create an account &nbsp; &#8594;</a>
             <div className="two"><a className="secondary" href="/passenger-login">Passenger login</a><a className="secondary" href="/driver-login">Driver login</a></div>
-            <div className="driver"><div><strong>Drive with RouteX</strong><p>Join our local driver network</p></div><a href="/become-a-driver">Apply â†’</a></div>
-            <a className="routex-support-inline" href="https://wa.me/27799132513?text=Hello%20RouteX%2C%20I%20need%20assistance." target="_blank" rel="noopener noreferrer" aria-label="Contact RouteX support on WhatsApp"><svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M12.04 2a9.84 9.84 0 0 0-8.46 14.86L2 22l5.29-1.53A9.96 9.96 0 1 0 12.04 2Zm0 17.98a8.06 8.06 0 0 1-4.11-1.12l-.3-.18-3.14.91.92-3.06-.2-.31a7.93 7.93 0 1 1 6.83 3.76Zm4.42-5.94c-.24-.12-1.43-.7-1.65-.78-.22-.08-.38-.12-.54.12-.16.24-.62.78-.76.94-.14.16-.28.18-.52.06-.24-.12-1.02-.37-1.94-1.19-.72-.64-1.2-1.43-1.34-1.67-.14-.24-.01-.37.1-.49.11-.11.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.54-1.3-.74-1.78-.2-.47-.4-.4-.54-.41h-.46c-.16 0-.42.06-.64.3-.22.24-.84.82-.84 2s.86 2.32.98 2.48c.12.16 1.69 2.58 4.1 3.62.57.25 1.02.4 1.37.51.58.18 1.1.16 1.51.1.46-.07 1.43-.58 1.63-1.15.2-.56.2-1.04.14-1.14-.06-.1-.22-.16-.46-.28Z"/></svg><span>WhatsApp Support</span><span aria-hidden="true">â†’</span></a>
+            <div className="driver"><div><strong>Drive with RouteX</strong><p>Join our local driver network</p></div><a href="/become-a-driver">Apply &#8594;</a></div>
+            <a className="routex-support-inline" href="https://wa.me/27799132513?text=Hello%20RouteX%2C%20I%20need%20assistance." target="_blank" rel="noopener noreferrer" aria-label="Contact RouteX support on WhatsApp"><svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M12.04 2a9.84 9.84 0 0 0-8.46 14.86L2 22l5.29-1.53A9.96 9.96 0 1 0 12.04 2Zm0 17.98a8.06 8.06 0 0 1-4.11-1.12l-.3-.18-3.14.91.92-3.06-.2-.31a7.93 7.93 0 1 1 6.83 3.76Zm4.42-5.94c-.24-.12-1.43-.7-1.65-.78-.22-.08-.38-.12-.54.12-.16.24-.62.78-.76.94-.14.16-.28.18-.52.06-.24-.12-1.02-.37-1.94-1.19-.72-.64-1.2-1.43-1.34-1.67-.14-.24-.01-.37.1-.49.11-.11.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.54-1.3-.74-1.78-.2-.47-.4-.4-.54-.41h-.46c-.16 0-.42.06-.64.3-.22.24-.84.82-.84 2s.86 2.32.98 2.48c.12.16 1.69 2.58 4.1 3.62.57.25 1.02.4 1.37.51.58.18 1.1.16 1.51.1.46-.07 1.43-.58 1.63-1.15.2-.56.2-1.04.14-1.14-.06-.1-.22-.16-.46-.28Z"/></svg><span>WhatsApp Support</span><span aria-hidden="true">&#8594;</span></a>
           </section>
         </main>
         <footer className="foot"><a href="/safety">Safety</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a></footer>
