@@ -88,7 +88,7 @@ export default function BookingTestPage() {
 
   const [showPickupSearch, setShowPickupSearch] = useState(false);
 
-  const [selectedTown, setSelectedTown] = useState("Upington");
+  const [selectedTown, setSelectedTown] = useState("Cape Town");
 
   const [pickupQuery, setPickupQuery] = useState("");
 
