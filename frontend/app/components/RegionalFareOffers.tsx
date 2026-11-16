@@ -401,10 +401,10 @@ export function DriverRegionalOffers({ isAvailable }: { isAvailable: boolean }) 
       </div>
       {r.my_status === "active" ? <p className="mt-3 rounded-xl bg-white/60 p-3 font-semibold dark:bg-[#34465e]">Your {r.my_response === "counter" ? "counteroffer" : "accepted fare"}: R{Number(r.my_fare).toFixed(2)} · Awaiting passenger decision</p> : r.my_status === "passenger_rejected"
   ? <p className="mt-3 rounded-xl bg-[#fce5df] p-3 text-xs font-semibold text-[#b63d27] dark:bg-[#513029] dark:text-[#ffb4a3]">
-      Passenger rejected your offer. Wait for a revised fare.
+      Passenger rejected your counteroffer. You can accept their price, decline, or send another counteroffer.
     </p>
   : r.my_status === "rejected" ? <p className="mt-3 text-xs opacity-70">You declined this offer. Waiting for any revised fare.</p> : null}
-      {!r.my_status || r.my_status === "superseded" ? <><div className="mt-2 flex flex-wrap items-center gap-2">
+      {!r.my_status || r.my_status === "superseded" || r.my_status === "passenger_rejected" ? <><div className="mt-2 flex flex-wrap items-center gap-2">
         <button
   disabled={busy === r.id}
   onClick={() => respond(r.id, "accept", Number(r.passenger_offer))}

@@ -7408,7 +7408,7 @@ app.post('/driver/regional-fare-requests/:id/respond', fareOffersEnabled, authen
       }
       const previousResponse = await client.query(`
         SELECT id FROM routex_driver_offers
-        WHERE request_id = $1 AND driver_id = $2 AND status <> 'superseded'
+        WHERE request_id = $1 AND driver_id = $2 AND status NOT IN ('superseded', 'passenger_rejected')
         LIMIT 1
       `, [requestId, d.id]);
       if (previousResponse.rowCount) {
@@ -7455,7 +7455,7 @@ app.post('/driver/regional-fare-requests/:id/respond', fareOffersEnabled, authen
         ON CONFLICT (request_id, driver_id) DO UPDATE
           SET offered_fare = EXCLUDED.offered_fare,
               response = 'accept', status = 'selected', updated_at = NOW()
-          WHERE routex_driver_offers.status = 'superseded'
+          WHERE routex_driver_offers.status IN ('superseded', 'passenger_rejected')
         RETURNING id
       `, [requestId, d.id, agreedFare]);
       if (!offerResult.rowCount) {
@@ -7507,7 +7507,7 @@ app.post('/driver/regional-fare-requests/:id/respond', fareOffersEnabled, authen
       VALUES($1,$2,$3,$4,$5)
       ON CONFLICT(request_id,driver_id) DO UPDATE
       SET offered_fare=EXCLUDED.offered_fare,response=EXCLUDED.response,status=EXCLUDED.status,updated_at=NOW()
-      WHERE routex_driver_offers.status IN ('superseded')
+      WHERE routex_driver_offers.status IN ('superseded', 'passenger_rejected')
       RETURNING *`,[r.id,d.id,finalFare,response,response==='decline'?'rejected':'active']);
     if (!result.rowCount) {await client.query('ROLLBACK');return res.status(409).json({error:'You have already responded to the current passenger offer.'});}
     await client.query('COMMIT');res.status(201).json(result.rows[0]);
