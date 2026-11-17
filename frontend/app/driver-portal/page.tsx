@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import AuthGuard from "../components/AuthGuard";
 import { DriverRegionalOffers } from "../components/RegionalFareOffers";
@@ -45,6 +45,8 @@ export default function DriverPortalPage() {
   const [deliveryPins, setDeliveryPins] = useState<Record<number, string>>({});
   const [deliveryLoading, setDeliveryLoading] = useState(true);
   const [scheduledRides, setScheduledRides] = useState<any[]>([]);
+  const scheduledAlertTracker = useRef<Map<string, string> | null>(null);
+  const ridesRefreshInProgress = useRef(false);
   const [liveRequests, setLiveRequests] = useState<any[]>([]);
   const [acceptedTrips, setAcceptedTrips] = useState<any[]>([]);
   const [inProgressTrips, setInProgressTrips] = useState<any[]>([]);
@@ -263,6 +265,8 @@ const response = await fetch(`${API_URL}/driver/upload-photo`, {
   };
 
   const loadDriverRides = async (driverId: number) => {
+    if (ridesRefreshInProgress.current) return;
+    ridesRefreshInProgress.current = true;
     try {
       const [
         scheduledResponse,
@@ -293,7 +297,50 @@ const response = await fetch(`${API_URL}/driver/upload-photo`, {
       ]);
 
       if (scheduledResponse.ok) {
-        setScheduledRides(Array.isArray(scheduledData) ? scheduledData : []);
+        const rides = Array.isArray(scheduledData) ? scheduledData : [];
+        const previous = scheduledAlertTracker.current;
+
+        if (previous !== null) {
+          for (const ride of rides) {
+            const id = String(ride.id);
+            const currentStatus = String(ride.trip_status || "");
+            const previousStatus = previous.get(id);
+
+            if (previousStatus === undefined) {
+              showAppPopup(
+                "New scheduled booking",
+                "A passenger has scheduled a trip. Check Scheduled Rides.",
+                "info",
+              );
+              showNotification(
+                "RouteX - New scheduled booking",
+                "A new scheduled trip is available to preview.",
+              );
+            } else if (
+              previousStatus !== "Waiting" &&
+              currentStatus === "Waiting"
+            ) {
+              showAppPopup(
+                "Scheduled booking ready",
+                "A scheduled booking has entered the matching stage.",
+                "success",
+              );
+              showNotification(
+                "RouteX - Scheduled booking ready",
+                "A scheduled trip has entered the matching stage.",
+              );
+            }
+          }
+        }
+
+        scheduledAlertTracker.current = new Map(
+          rides.map((ride: any) => [
+            String(ride.id),
+            String(ride.trip_status || ""),
+          ]),
+        );
+
+        setScheduledRides(rides);
       }
 
       if (requestsResponse.ok) {
@@ -329,6 +376,7 @@ const response = await fetch(`${API_URL}/driver/upload-photo`, {
     } catch (error) {
       console.error("DRIVER RIDES LOAD ERROR:", error);
     } finally {
+      ridesRefreshInProgress.current = false;
       setLoadingScheduled(false);
     }
   };
