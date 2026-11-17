@@ -46,6 +46,7 @@ export default function DriverPortalPage() {
   const [deliveryLoading, setDeliveryLoading] = useState(true);
   const [scheduledRides, setScheduledRides] = useState<any[]>([]);
   const scheduledAlertTracker = useRef<Map<string, string> | null>(null);
+  const deliveryAlertTracker = useRef<Set<string> | null>(null);
   const ridesRefreshInProgress = useRef(false);
   const [liveRequests, setLiveRequests] = useState<any[]>([]);
   const [acceptedTrips, setAcceptedTrips] = useState<any[]>([]);
@@ -212,7 +213,37 @@ const response = await fetch(`${API_URL}/driver/upload-photo`, {
       const [available, mine] = await Promise.all([
         availableResponse.json(), mineResponse.json(),
       ]);
-      setAvailableDeliveries(Array.isArray(available) ? available : []);
+      const availableList = Array.isArray(available) ? available : [];
+      const currentDeliveryIds = new Set<string>(
+        availableList.map((delivery: any) => String(delivery.id))
+      );
+
+      if (deliveryAlertTracker.current !== null) {
+        const newDeliveries = availableList.filter(
+          (delivery: any) =>
+            !deliveryAlertTracker.current?.has(String(delivery.id))
+        );
+
+        if (newDeliveries.length > 0) {
+          showAppPopup(
+            "New package delivery",
+            newDeliveries.length === 1
+              ? "A new package delivery is available. Check Deliveries."
+              : `${newDeliveries.length} new package deliveries are available.`,
+            "info"
+          );
+
+          showNotification(
+            "RouteX - New package delivery",
+            newDeliveries.length === 1
+              ? "A new delivery request is available."
+              : `${newDeliveries.length} new delivery requests are available.`
+          );
+        }
+      }
+
+      deliveryAlertTracker.current = currentDeliveryIds;
+      setAvailableDeliveries(availableList);
       setMyDeliveries(Array.isArray(mine) ? mine : []);
     } catch (error) {
       console.error("PACKAGE DELIVERY LOAD ERROR:", error);
@@ -2232,3 +2263,4 @@ function RadarIcon() {
     </svg>
   );
 }
+
