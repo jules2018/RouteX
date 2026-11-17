@@ -33,11 +33,30 @@ type Section =
   | "overview"
   | "operations"
   | "bookings"
+  | "deliveries"
   | "drivers"
   | "passengers"
   | "analytics"
   | "monthly";
 
+type PackageDelivery = {
+  id: number;
+  passenger_id: number;
+  driver_id: number | null;
+  driver_name: string | null;
+  delivery_type: string;
+  pickup_address: string;
+  dropoff_address: string;
+  parcel_description: string | null;
+  parcel_size: string | null;
+  scheduled_pickup_at: string | null;
+  fare_amount: number | string;
+  status: string;
+  created_at: string;
+  accepted_at: string | null;
+  collected_at: string | null;
+  delivered_at: string | null;
+};
 type MonthlyInterest = {
   id: number;
   transport_type: string;
@@ -153,6 +172,7 @@ const NAV = [
   { id: "operations", label: "Live operations", icon: Activity },
 
   { id: "bookings", label: "Bookings", icon: CalendarDays },
+  { id: "deliveries", label: "Package Deliveries", icon: ClipboardList },
 
   { id: "drivers", label: "Drivers", icon: CarFront },
 
@@ -286,6 +306,9 @@ export default function AdminDashboardPage() {
   const [bookingError, setBookingError] = useState("");
   const [bookingLoading, setBookingLoading] = useState(false);
   const [bookingFilter, setBookingFilter] = useState("all");
+  const [packageDeliveries, setPackageDeliveries] = useState<PackageDelivery[]>([]);
+  const [deliveryLoading, setDeliveryLoading] = useState(false);
+  const [deliveryError, setDeliveryError] = useState("");
 
   const [driverError, setDriverError] = useState("");
   const [resettingDriverId, setResettingDriverId] = useState<number | null>(null);
@@ -452,6 +475,40 @@ export default function AdminDashboardPage() {
     return () => window.clearInterval(timer);
   }, [loadBookings, section]);
 
+  const loadPackageDeliveries = useCallback(async () => {
+    if (!adminKey) {
+      setPackageDeliveries([]);
+      setDeliveryError("");
+      return;
+    }
+    setDeliveryLoading(true);
+    try {
+      const response = await fetch(`${API_URL}/admin/package-deliveries`, {
+        cache: "no-store",
+        headers: { "X-RouteX-Admin-Key": adminKey },
+      });
+      if (!response.ok) {
+        throw new Error(response.status === 403
+          ? "Admin access denied. Update your access key."
+          : `Package deliveries unavailable (${response.status})`);
+      }
+      const data: unknown = await response.json();
+      if (!Array.isArray(data)) throw new Error("Unexpected delivery response");
+      setPackageDeliveries(data as PackageDelivery[]);
+      setDeliveryError("");
+    } catch (error) {
+      setDeliveryError(error instanceof Error ? error.message : "Unable to load deliveries");
+    } finally {
+      setDeliveryLoading(false);
+    }
+  }, [adminKey]);
+
+  useEffect(() => {
+    if (section !== "deliveries") return;
+    void loadPackageDeliveries();
+    const timer = window.setInterval(() => void loadPackageDeliveries(), 15000);
+    return () => window.clearInterval(timer);
+  }, [loadPackageDeliveries, section]);
   const loadMonthlyInterests = useCallback(async () => {
     if (!adminKey) {
       setMonthlyInterests([]);
@@ -1260,6 +1317,55 @@ export default function AdminDashboardPage() {
             </>
           )}
 
+          {section === "deliveries" && (
+            <section>
+              <SectionHeading
+                eyebrow="Delivery management"
+                title="Package Deliveries"
+                description="Review package delivery requests, assigned drivers and delivery progress. Refreshes every 15 seconds."
+              />
+              <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-3">
+                <Metric label="Total deliveries" value={packageDeliveries.length} icon={ClipboardList} />
+                <Metric label="Active deliveries" value={packageDeliveries.filter((d) => !["delivered", "completed", "cancelled", "canceled"].includes(d.status.toLowerCase())).length} icon={Activity} />
+                <Metric label="Completed" value={packageDeliveries.filter((d) => ["delivered", "completed"].includes(d.status.toLowerCase())).length} icon={CheckCircle2} />
+              </div>
+              {!adminKey ? (
+                <div className="rounded-2xl border border-[#353942] bg-[#1e2127] p-6 text-sm text-white/70">
+                  Enter your admin access key to view package deliveries.
+                </div>
+              ) : deliveryError ? (
+                <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-5 text-sm text-red-200" role="alert">{deliveryError}</div>
+              ) : deliveryLoading && packageDeliveries.length === 0 ? (
+                <p className="py-8 text-sm text-white/50">Loading package deliveries...</p>
+              ) : packageDeliveries.length === 0 ? (
+                <EmptyPanel icon={ClipboardList} title="No package deliveries yet" description="New package delivery requests will appear here." />
+              ) : (
+                <div className="space-y-3">
+                  {packageDeliveries.map((delivery) => (
+                    <article key={delivery.id} className="rounded-[22px] border border-[#353942] bg-[#1e2127] p-5">
+                      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                          <p className="text-base font-black text-white">Delivery #{delivery.id}</p>
+                          <p className="mt-1 text-xs text-white/50">{delivery.delivery_type === "scheduled" ? "Scheduled" : "Now"} Â· {delivery.parcel_size || "Parcel"}</p>
+                        </div>
+                        <span className="rounded-full bg-[#ff754d]/10 px-3 py-1 text-xs font-bold capitalize text-[#ff754d]">{delivery.status.replace(/_/g, " ")}</span>
+                      </div>
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <Detail label="Pickup" value={delivery.pickup_address} />
+                        <Detail label="Destination" value={delivery.dropoff_address} />
+                        <Detail label="Fare" value={`R${Number(delivery.fare_amount).toFixed(2)}`} />
+                        <Detail label="Assigned driver" value={delivery.driver_name || (delivery.driver_id ? `Driver #${delivery.driver_id}` : "Unassigned")} />
+                        <Detail label="Scheduled pickup" value={delivery.scheduled_pickup_at ? new Date(delivery.scheduled_pickup_at).toLocaleString("en-ZA", { timeZone: "Africa/Johannesburg", dateStyle: "medium", timeStyle: "short" }) : "Not scheduled"} />
+                        <Detail label="Requested" value={new Date(delivery.created_at).toLocaleString("en-ZA", { timeZone: "Africa/Johannesburg", dateStyle: "medium", timeStyle: "short" })} />
+                        <Detail label="Parcel description" value={delivery.parcel_description} />
+                        <Detail label="Passenger" value={`#${delivery.passenger_id}`} />
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
           {section === "monthly" && (
             <section>
               <SectionHeading

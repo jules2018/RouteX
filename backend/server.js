@@ -6331,6 +6331,54 @@ app.get("/admin/bookings", async (req, res) => {
     });
   }
 });
+app.get("/admin/package-deliveries", async (req, res) => {
+  const expected = process.env.ADMIN_DASHBOARD_KEY;
+  const provided = req.get("X-RouteX-Admin-Key") || "";
+
+  if (!expected || !provided) {
+    return res.status(403).json({ error: "Admin access required" });
+  }
+
+  const a = Buffer.from(expected);
+  const b = Buffer.from(provided);
+
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+    return res.status(403).json({ error: "Admin access denied" });
+  }
+
+  try {
+    const result = await pool.query(`
+      SELECT
+        pd.id,
+        pd.passenger_id,
+        pd.driver_id,
+        d.full_name AS driver_name,
+        pd.delivery_type,
+        pd.pickup_address,
+        pd.dropoff_address,
+        pd.parcel_description,
+        pd.parcel_size,
+        pd.scheduled_pickup_at,
+        pd.fare_amount,
+        pd.status,
+        pd.created_at,
+        pd.accepted_at,
+        pd.collected_at,
+        pd.delivered_at
+      FROM public.package_deliveries pd
+      LEFT JOIN drivers d ON d.id = pd.driver_id
+      ORDER BY pd.created_at DESC
+      LIMIT 200
+    `);
+
+    return res.json(result.rows);
+  } catch (error) {
+    console.error("ADMIN PACKAGE DELIVERIES ERROR:", error);
+    return res.status(500).json({
+      error: "Unable to load package deliveries",
+    });
+  }
+});
 
 // ROUTEX ADMIN DRIVER DIRECTORY ΓÇö add before app.get("/admin/stats", ...)
 // Set ADMIN_DASHBOARD_KEY as a strong, private Render environment variable.
