@@ -42,6 +42,8 @@ type Section =
 type PackageDelivery = {
   id: number;
   passenger_id: number;
+  passenger_name: string | null;
+  passenger_phone: string | null;
   driver_id: number | null;
   driver_name: string | null;
   delivery_type: string;
@@ -122,6 +124,21 @@ type Driver = {
 type OperationGroup =
   "waiting" | "assigned" | "in_progress" | "completed" | "cancelled" | "other";
 
+function whatsappUrl(phone: string): string | null {
+  const digits = phone.replace(/\D/g, "");
+  if (!digits) return null;
+
+  const normalized = digits.startsWith("00")
+    ? digits.slice(2)
+    : digits.startsWith("0")
+      ? `27${digits.slice(1)}`
+      : digits.length === 9
+        ? `27${digits}`
+        : digits;
+
+  if (normalized.length < 10 || normalized.length > 15) return null;
+  return `https://wa.me/${normalized}`;
+}
 function operationGroup(booking: Booking): OperationGroup {
   const statuses = [booking.booking_status, booking.trip_status]
     .filter((value): value is string => Boolean(value))
@@ -199,7 +216,7 @@ function formatWhatsAppNumber(phone: string) {
 }
 
 function passengerMessage(passenger: Passenger) {
-  return `Hi ${passenger.full_name},\n\nAs one of our first RouteX members, you've received R20 OFF your first ride.\n\nUse promo code:\nWELCOME20\n\nEnter the code when booking your trip.\n\nBook here:\nhttps://routex-frontend.onrender.com\n\nRouteX â€¢ Getting Upington Moving`;
+  return `Hi ${passenger.full_name},\n\nAs one of our first RouteX members, you've received R20 OFF your first ride.\n\nUse promo code:\nWELCOME20\n\nEnter the code when booking your trip.\n\nBook here:\nhttps://routex-frontend.onrender.com\n\nRouteX Ã¢â‚¬Â¢ Getting Upington Moving`;
 }
 
 function SectionHeading({
@@ -213,13 +230,13 @@ function SectionHeading({
 }) {
   return (
     <div className="mb-6">
-      <p className="text-[10px] font-black uppercase tracking-[.18em] text-[#f36e47]">
+      <p className="text-[10px] font-semibold uppercase tracking-[.14em] text-[#0d9488]">
         {eyebrow}
       </p>
-      <h2 className="mt-2 text-2xl font-black tracking-tight text-white sm:text-3xl">
+      <h2 className="mt-2 text-xl font-semibold tracking-tight text-[#173d73] sm:text-2xl">
         {title}
       </h2>
-      <p className="mt-2 max-w-2xl text-sm leading-6 text-white/60">
+      <p className="mt-2 max-w-2xl text-xs leading-5 text-slate-500">
         {description}
       </p>
     </div>
@@ -238,17 +255,17 @@ function Metric({
   note?: string;
 }) {
   return (
-    <div className="rounded-[22px] border border-[#353942] bg-[#1e2127] p-4 shadow-[0_6px_24px_rgba(17,24,39,.035)] sm:p-5">
+    <div className="rounded-[18px] border border-[#dbe6f2] bg-white p-4 text-slate-800 shadow-[5px_5px_14px_#d5deea,-5px_-5px_14px_#ffffff]">
       <div className="flex items-start justify-between gap-3">
-        <p className="text-[11px] font-bold text-white/60">{label}</p>
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#ff754d]/10 text-[#e9623b]">
+        <p className="text-[11px] font-medium text-slate-500">{label}</p>
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#e4f4f5] text-[#0d9488]">
           <Icon size={18} />
         </span>
       </div>
-      <p className="mt-4 text-3xl font-black tracking-tight text-white">
+      <p className="mt-3 text-2xl font-semibold tracking-tight text-[#173d73]">
         {value}
       </p>
-      {note && <p className="mt-2 text-[11px] text-white/40">{note}</p>}
+      {note && <p className="mt-2 text-[11px] text-slate-400">{note}</p>}
     </div>
   );
 }
@@ -282,7 +299,7 @@ function Detail({ label, value }: { label: string; value?: string | null }) {
         {label}
       </p>
       <p className="mt-1 break-words text-sm font-bold text-white">
-        {value || "â€”"}
+        {value || "Ã¢â‚¬â€"}
       </p>
     </div>
   );
@@ -307,6 +324,7 @@ export default function AdminDashboardPage() {
   const [bookingLoading, setBookingLoading] = useState(false);
   const [bookingFilter, setBookingFilter] = useState("all");
   const [packageDeliveries, setPackageDeliveries] = useState<PackageDelivery[]>([]);
+  const [deliveryFilter, setDeliveryFilter] = useState<"all" | "active" | "completed">("all");
   const [deliveryLoading, setDeliveryLoading] = useState(false);
   const [deliveryError, setDeliveryError] = useState("");
 
@@ -469,7 +487,7 @@ export default function AdminDashboardPage() {
   }, [adminKey]);
 
   useEffect(() => {
-    if (section !== "bookings" && section !== "operations") return;
+    if (section !== "bookings" && section !== "operations" && section !== "overview") return;
     void loadBookings();
     const timer = window.setInterval(() => void loadBookings(), 15000);
     return () => window.clearInterval(timer);
@@ -504,7 +522,7 @@ export default function AdminDashboardPage() {
   }, [adminKey]);
 
   useEffect(() => {
-    if (section !== "deliveries") return;
+    if (section !== "deliveries" && section !== "overview") return;
     void loadPackageDeliveries();
     const timer = window.setInterval(() => void loadPackageDeliveries(), 15000);
     return () => window.clearInterval(timer);
@@ -748,6 +766,24 @@ export default function AdminDashboardPage() {
     [bookings],
   );
 
+  const newOverviewBookings = useMemo(
+    () => bookings.filter((booking) => operationGroup(booking) === "waiting"),
+    [bookings],
+  );
+
+  const newOverviewDeliveries = useMemo(
+    () => packageDeliveries.filter(
+      (delivery) =>
+        delivery.status.toLowerCase() === "pending" &&
+        delivery.driver_id === null,
+    ),
+    [packageDeliveries],
+  );
+
+  const passengerById = useMemo(
+    () => new Map(passengers.map((passenger) => [passenger.id, passenger])),
+    [passengers],
+  );
   const filteredDrivers = useMemo(
     () =>
       drivers.filter((d) =>
@@ -801,7 +837,7 @@ export default function AdminDashboardPage() {
                         driver.license_plate,
                       ]
                         .filter(Boolean)
-                        .join(" Â· ") || "Vehicle details unavailable"}
+                        .join(" Ã‚Â· ") || "Vehicle details unavailable"}
                     </p>
                   </div>
                   <span
@@ -975,7 +1011,7 @@ export default function AdminDashboardPage() {
     );
 
   return (
-    <main className="min-h-screen bg-[#101216] text-white">
+    <main className="min-h-screen bg-[#edf3fa] text-slate-800">
       {mobileMenu && (
         <button
           type="button"
@@ -986,7 +1022,7 @@ export default function AdminDashboardPage() {
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-[264px] flex-col bg-[#111319] text-white transition-transform duration-200 lg:translate-x-0 ${mobileMenu ? "translate-x-0" : "-translate-x-full"}`}
+        className={`fixed inset-y-0 left-0 z-50 flex w-[244px] flex-col bg-gradient-to-b from-[#102e56] via-[#153f70] to-[#0c3457] text-white transition-transform duration-200 lg:translate-x-0 ${mobileMenu ? "translate-x-0" : "-translate-x-full"}`}
       >
         <div className="flex items-center justify-between border-b border-white/10 px-6 py-7">
           <div>
@@ -1019,7 +1055,7 @@ export default function AdminDashboardPage() {
               type="button"
               key={id}
               onClick={() => navigate(id)}
-              className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3.5 text-left text-sm font-bold transition ${section === id ? "bg-[#ff754d] text-[#151515]" : "text-white/60 hover:bg-[#1e2127]/10 hover:text-white"}`}
+              className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3.5 text-left text-sm font-bold transition ${section === id ? "bg-white/15 text-white shadow-sm" : "text-white/70 hover:bg-white/10 hover:text-white"}`}
             >
               <Icon size={18} />
               <span className="flex-1">{label}</span>
@@ -1054,34 +1090,34 @@ export default function AdminDashboardPage() {
         </div>
       </aside>
 
-      <div className="min-h-screen lg:pl-[264px]">
-        <header className="sticky top-0 z-30 flex items-center justify-between border-b border-white/10 bg-[#181b20]/95 px-4 py-4 backdrop-blur sm:px-8">
+      <div className="min-h-screen lg:pl-[244px]">
+        <header className="sticky top-0 z-30 flex items-center justify-between border-b border-[#d9e5f2] bg-white/95 px-4 py-4 text-[#173d73] shadow-sm backdrop-blur sm:px-8">
           <div className="flex items-center gap-3">
             <button
               type="button"
               aria-label="Open menu"
-              className="rounded-xl border border-white/10 p-2 lg:hidden"
+              className="rounded-xl border border-[#d9e5f2] p-2 lg:hidden"
               onClick={() => setMobileMenu(true)}
             >
               <Menu size={21} />
             </button>
             <div>
-              <p className="text-xs font-black text-white">
+              <p className="text-xs font-black text-[#173d73]">
                 {NAV.find((n) => n.id === section)?.label}
               </p>
-              <p className="mt-0.5 text-[10px] text-white/40">
+              <p className="mt-0.5 text-[10px] text-slate-500">
                 RouteX administration
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2 sm:gap-4">
-            <span className="hidden items-center gap-2 text-xs font-bold text-white/60 sm:inline-flex">
+            <span className="hidden items-center gap-2 text-xs font-bold text-slate-600 sm:inline-flex">
               <span
                 className={`h-2 w-2 rounded-full ${stats.onlineDrivers > 0 ? "bg-emerald-500" : "bg-slate-300"}`}
               />
               {stats.onlineDrivers} drivers online
             </span>
-            <button type="button" onClick={saveAdminKey} className="rounded-xl border border-white/15 px-3 py-2 text-xs font-bold text-white/80">{adminKey ? "Change admin key" : "Unlock admin"}</button>
+            <button type="button" onClick={saveAdminKey} className="rounded-xl border border-[#d9e5f2] px-3 py-2 text-xs font-bold text-[#173d73]">{adminKey ? "Change admin key" : "Unlock admin"}</button>
             <button
               type="button"
               aria-label="Refresh dashboard"
@@ -1091,7 +1127,7 @@ export default function AdminDashboardPage() {
                 void loadDrivers();
               }}
               disabled={refreshing}
-              className="rounded-xl border border-white/10 p-2.5 text-white/70 hover:bg-white/10 disabled:opacity-50"
+              className="rounded-xl border border-[#d9e5f2] p-2.5 text-slate-600 hover:bg-blue-50 disabled:opacity-50"
             >
               <RefreshCw
                 size={17}
@@ -1214,89 +1250,98 @@ export default function AdminDashboardPage() {
                   value={stats.pendingApplications}
                   icon={ClipboardList}
                 />
+                <Metric label="Total deliveries" value={packageDeliveries.length} icon={ClipboardList} />
               </div>
 
-              <div className="mt-7 grid gap-5 xl:grid-cols-[1.3fr_1fr]">
-                <section className="rounded-[24px] bg-[#1e2127] p-6 text-white sm:p-7">
-                  <p className="text-[10px] font-black uppercase tracking-[.18em] text-[#ff754d]">
-                    Operations
-                  </p>
-                  <h3 className="mt-3 text-2xl font-black">
-                    Manage RouteX from one place.
-                  </h3>
-                  <p className="mt-3 max-w-lg text-sm leading-6 text-white/55">
-                    Review driver applications, contact passengers and monitor
-                    the information currently available from your backend.
-                  </p>
-                  <div className="mt-7 flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      onClick={() => navigate("drivers")}
-                      className="inline-flex items-center gap-2 rounded-xl bg-[#ff754d] px-4 py-3 text-xs font-black text-white"
-                    >
-                      Manage drivers <ArrowRight size={15} />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => navigate("passengers")}
-                      className="rounded-xl border border-white/20 px-4 py-3 text-xs font-bold"
-                    >
-                      View passengers
-                    </button>
+              <div className="mt-6 grid gap-4 xl:grid-cols-2">
+                <section className="rounded-[20px] border border-[#dbe6f2] bg-white p-5 text-slate-800 shadow-[6px_6px_18px_#d5deea,-6px_-6px_18px_#ffffff]">
+                  <div className="mb-4 flex items-center justify-between gap-3">
+                    <div>
+                      <h3 className="text-sm font-semibold text-[#173d73]">New passenger bookings</h3>
+                      <p className="mt-1 text-[11px] text-slate-500">Waiting for a driver</p>
+                    </div>
+                    <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">{newOverviewBookings.length} new</span>
+                  </div>
+                  <div className="max-h-[520px] space-y-3 overflow-y-auto">
+                    {newOverviewBookings.length === 0 ? (
+                      <p className="rounded-xl bg-slate-50 p-5 text-center text-xs text-slate-500">No new bookings waiting.</p>
+                    ) : (
+                      newOverviewBookings.map((booking) => {
+                        const passenger = booking.passenger_id === null ? undefined : passengerById.get(booking.passenger_id);
+                        const contact = passenger?.phone ? whatsappUrl(passenger.phone) : null;
+                        return (
+                          <article key={booking.id} className="rounded-2xl border border-slate-100 bg-[#f8fbff] p-4">
+                            <div className="mb-3 flex items-center justify-between gap-2">
+                              <div>
+                                <p className="text-xs font-semibold text-slate-800">{passenger?.full_name || `Passenger #${booking.passenger_id ?? "unknown"}`}</p>
+                                <p className="mt-1 text-[11px] text-slate-500">Booking #{booking.id}</p>
+                              </div>
+                              <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-medium text-amber-700">Waiting</span>
+                            </div>
+                            <p className="text-[11px] text-slate-600"><span className="font-semibold">From:</span> {booking.pickup_address || "Not provided"}</p>
+                            <p className="mt-1.5 text-[11px] text-slate-600"><span className="font-semibold">To:</span> {booking.dropoff_address || "Not provided"}</p>
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              {contact ? (
+                                <a href={contact} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg bg-[#e5f7f2] px-3 py-2 text-[11px] font-semibold text-[#087e68]">
+                                  <MessageCircle size={14} /> WhatsApp passenger
+                                </a>
+                              ) : (
+                                <span className="text-[11px] text-slate-400">No WhatsApp number available</span>
+                              )}
+                              <button type="button" onClick={() => navigate("bookings")} className="rounded-lg bg-blue-50 px-3 py-2 text-[11px] font-semibold text-blue-700">View booking</button>
+                            </div>
+                          </article>
+                        );
+                      })
+                    )}
                   </div>
                 </section>
-                <section className="rounded-[24px] border border-[#353942] bg-[#1e2127] p-6">
-                  <h3 className="text-lg font-black">Quick access</h3>
-                  <p className="mt-1 text-xs text-white/40">
-                    Jump straight to a workspace
-                  </p>
-                  <div className="mt-5 space-y-2">
-                    {(
-                      [
-                        {
-                          id: "drivers",
-                          title: "Driver applications",
-                          subtitle: `${stats.pendingApplications} pending`,
-                          icon: CarFront,
-                        },
-                        {
-                          id: "passengers",
-                          title: "Passenger directory",
-                          subtitle: `${stats.passengers} registered`,
-                          icon: Users,
-                        },
-                        {
-                          id: "operations",
-                          title: "Live operations",
-                          subtitle: "Availability overview",
-                          icon: Activity,
-                        },
-                      ] as const
-                    ).map(({ id, title, subtitle, icon: Icon }) => (
-                      <button
-                        type="button"
-                        key={id}
-                        onClick={() => navigate(id)}
-                        className="flex w-full items-center gap-3 rounded-2xl border border-white/10 p-3 text-left hover:bg-white/10"
-                      >
-                        <span className="rounded-xl bg-[#ff754d]/10 p-2.5 text-[#e9623b]">
-                          <Icon size={17} />
-                        </span>
-                        <span className="flex-1">
-                          <span className="block text-xs font-black">
-                            {title}
-                          </span>
-                          <span className="mt-0.5 block text-[11px] text-white/40">
-                            {subtitle}
-                          </span>
-                        </span>
-                        <ChevronRight size={17} className="text-white/40" />
-                      </button>
-                    ))}
+
+                <section className="rounded-[20px] border border-[#dbe6f2] bg-white p-5 text-slate-800 shadow-[6px_6px_18px_#d5deea,-6px_-6px_18px_#ffffff]">
+                  <div className="mb-4 flex items-center justify-between gap-3">
+                    <div>
+                      <h3 className="text-sm font-semibold text-[#173d73]">New package deliveries</h3>
+                      <p className="mt-1 text-[11px] text-slate-500">Pending driver acceptance</p>
+                    </div>
+                    <span className="rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-700">{newOverviewDeliveries.length} new</span>
+                  </div>
+                  <div className="max-h-[520px] space-y-3 overflow-y-auto">
+                    {newOverviewDeliveries.length === 0 ? (
+                      <p className="rounded-xl bg-slate-50 p-5 text-center text-xs text-slate-500">No new delivery requests.</p>
+                    ) : (
+                      newOverviewDeliveries.map((delivery) => {
+                        const passenger = passengerById.get(delivery.passenger_id);
+                        const contact = passenger?.phone ? whatsappUrl(passenger.phone) : null;
+                        return (
+                          <article key={delivery.id} className="rounded-2xl border border-slate-100 bg-[#f8fbff] p-4">
+                            <div className="mb-3 flex items-center justify-between gap-2">
+                              <div>
+                                <p className="text-xs font-semibold text-slate-800">{passenger?.full_name || `Passenger #${delivery.passenger_id}`}</p>
+                                <p className="mt-1 text-[11px] text-slate-500">Delivery #{delivery.id} Â· {delivery.delivery_type}</p>
+                              </div>
+                              <span className="rounded-full bg-teal-50 px-2.5 py-1 text-[10px] font-medium text-teal-700">Pending</span>
+                            </div>
+                            <p className="text-[11px] text-slate-600"><span className="font-semibold">From:</span> {delivery.pickup_address}</p>
+                            <p className="mt-1.5 text-[11px] text-slate-600"><span className="font-semibold">To:</span> {delivery.dropoff_address}</p>
+                            <p className="mt-2 text-xs font-semibold text-[#173d73]">R{Number(delivery.fare_amount).toFixed(2)}</p>
+                            <p className="mt-1 text-[10px] text-slate-400">Requested {new Date(delivery.created_at).toLocaleString("en-ZA", { timeZone: "Africa/Johannesburg", dateStyle: "short", timeStyle: "short" })}</p>
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              {contact ? (
+                                <a href={contact} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg bg-[#e5f7f2] px-3 py-2 text-[11px] font-semibold text-[#087e68]">
+                                  <MessageCircle size={14} /> WhatsApp sender
+                                </a>
+                              ) : (
+                                <span className="text-[11px] text-slate-400">No WhatsApp number available</span>
+                              )}
+                              <button type="button" onClick={() => navigate("deliveries")} className="rounded-lg bg-blue-50 px-3 py-2 text-[11px] font-semibold text-blue-700">View delivery</button>
+                            </div>
+                          </article>
+                        );
+                      })
+                    )}
                   </div>
                 </section>
               </div>
-
               {driverDirectory}
 
               <section className="mt-7">
@@ -1314,6 +1359,78 @@ export default function AdminDashboardPage() {
                 </div>
                 {applicationCards(applications.slice(0, 2))}
               </section>
+              <section className="mt-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-800">Today's completed deliveries</h3>
+                    <p className="mt-1 text-xs text-slate-500">Completed today · South Africa time</p>
+                  </div>
+                  <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
+                    {packageDeliveries.filter((d) => {
+                      if (!["delivered", "completed"].includes(d.status.toLowerCase()) || !d.delivered_at) return false;
+                      const localDate = (date: Date) =>
+                        new Intl.DateTimeFormat("en-CA", {
+                          timeZone: "Africa/Johannesburg",
+                          year: "numeric",
+                          month: "2-digit",
+                          day: "2-digit"
+                        }).format(date);
+                      return localDate(new Date(d.delivered_at)) === localDate(new Date());
+                    }).length} completed
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  {packageDeliveries.filter((d) => {
+                    if (!["delivered", "completed"].includes(d.status.toLowerCase()) || !d.delivered_at) return false;
+                    const localDate = (date: Date) =>
+                      new Intl.DateTimeFormat("en-CA", {
+                        timeZone: "Africa/Johannesburg",
+                        year: "numeric",
+                        month: "2-digit",
+                        day: "2-digit"
+                      }).format(date);
+                    return localDate(new Date(d.delivered_at)) === localDate(new Date());
+                  }).map((delivery) => (
+                    <div key={delivery.id} className="grid gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3 sm:grid-cols-5 sm:items-center">
+                      <div>
+                        <p className="text-xs font-semibold text-slate-800">Delivery #{delivery.id}</p>
+                        <p className="text-xs text-emerald-700">Delivered</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-slate-400">Passenger</p>
+                        <p className="text-xs text-slate-700">{delivery.passenger_name || `#${delivery.passenger_id}`}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-slate-400">Driver</p>
+                        <p className="text-xs text-slate-700">{delivery.driver_name || "Unassigned"}</p>
+                      </div>
+                      <p className="text-sm font-medium text-slate-800">R{Number(delivery.fare_amount).toFixed(2)}</p>
+                      <p className="text-xs text-slate-500">
+                        {delivery.delivered_at ? new Date(delivery.delivered_at).toLocaleTimeString("en-ZA", {
+                          timeZone: "Africa/Johannesburg",
+                          hour: "2-digit",
+                          minute: "2-digit"
+                        }) : "—"}
+                      </p>
+                    </div>
+                  ))}
+                  {packageDeliveries.every((d) => {
+                    if (!["delivered", "completed"].includes(d.status.toLowerCase()) || !d.delivered_at) return true;
+                    const localDate = (date: Date) =>
+                      new Intl.DateTimeFormat("en-CA", {
+                        timeZone: "Africa/Johannesburg",
+                        year: "numeric",
+                        month: "2-digit",
+                        day: "2-digit"
+                      }).format(date);
+                    return localDate(new Date(d.delivered_at)) !== localDate(new Date());
+                  }) && (
+                    <p className="rounded-xl bg-slate-50 p-4 text-center text-xs text-slate-500">
+                      No completed deliveries today.
+                    </p>
+                  )}
+                </div>
+              </section>
             </>
           )}
 
@@ -1325,43 +1442,76 @@ export default function AdminDashboardPage() {
                 description="Review package delivery requests, assigned drivers and delivery progress. Refreshes every 15 seconds."
               />
               <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-3">
-                <Metric label="Total deliveries" value={packageDeliveries.length} icon={ClipboardList} />
+                
                 <Metric label="Active deliveries" value={packageDeliveries.filter((d) => !["delivered", "completed", "cancelled", "canceled"].includes(d.status.toLowerCase())).length} icon={Activity} />
                 <Metric label="Completed" value={packageDeliveries.filter((d) => ["delivered", "completed"].includes(d.status.toLowerCase())).length} icon={CheckCircle2} />
               </div>
               {!adminKey ? (
-                <div className="rounded-2xl border border-[#353942] bg-[#1e2127] p-6 text-sm text-white/70">
+                <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-900/70">
                   Enter your admin access key to view package deliveries.
                 </div>
               ) : deliveryError ? (
                 <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-5 text-sm text-red-200" role="alert">{deliveryError}</div>
               ) : deliveryLoading && packageDeliveries.length === 0 ? (
-                <p className="py-8 text-sm text-white/50">Loading package deliveries...</p>
+                <p className="py-8 text-sm text-slate-500">Loading package deliveries...</p>
               ) : packageDeliveries.length === 0 ? (
                 <EmptyPanel icon={ClipboardList} title="No package deliveries yet" description="New package delivery requests will appear here." />
               ) : (
+                <div>
+                <div className="mb-4 flex flex-wrap gap-2">
+  {(["all", "active", "completed"] as const).map((filter) => (
+    <button
+      key={filter}
+      type="button"
+      onClick={() => setDeliveryFilter(filter)}
+      className={`rounded-xl border px-4 py-2 text-xs font-bold capitalize transition ${
+        deliveryFilter === filter
+          ? "border-teal-600 bg-teal-600 text-slate-900"
+          : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+      }`}
+    >
+      {filter}
+    </button>
+  ))}
+</div>
                 <div className="space-y-3">
-                  {packageDeliveries.map((delivery) => (
-                    <article key={delivery.id} className="rounded-[22px] border border-[#353942] bg-[#1e2127] p-5">
+                  {packageDeliveries.filter((delivery) => deliveryFilter === "all" || (deliveryFilter === "completed" ? ["delivered", "completed"].includes(delivery.status.toLowerCase()) : !["delivered", "completed", "cancelled", "canceled"].includes(delivery.status.toLowerCase()))).map((delivery) => (
+                    <article key={delivery.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                         <div>
-                          <p className="text-base font-black text-white">Delivery #{delivery.id}</p>
-                          <p className="mt-1 text-xs text-white/50">{delivery.delivery_type === "scheduled" ? "Scheduled" : "Now"} Â· {delivery.parcel_size || "Parcel"}</p>
+                          <p className="text-base font-semibold tracking-tight text-slate-800">Delivery #{delivery.id}</p>
+                          <p className="mt-1 text-xs text-slate-500">{delivery.delivery_type === "scheduled" ? "Scheduled" : "Now"} {" | "} {delivery.parcel_size || "Parcel"}</p>
                         </div>
-                        <span className="rounded-full bg-[#ff754d]/10 px-3 py-1 text-xs font-bold capitalize text-[#ff754d]">{delivery.status.replace(/_/g, " ")}</span>
+                        <span className="rounded-full bg-teal-50 px-3 py-1 text-xs font-medium capitalize text-teal-700">{delivery.status.replace(/_/g, " ")}</span>
                       </div>
-                      <div className="grid gap-4 sm:grid-cols-2">
-                        <Detail label="Pickup" value={delivery.pickup_address} />
-                        <Detail label="Destination" value={delivery.dropoff_address} />
-                        <Detail label="Fare" value={`R${Number(delivery.fare_amount).toFixed(2)}`} />
-                        <Detail label="Assigned driver" value={delivery.driver_name || (delivery.driver_id ? `Driver #${delivery.driver_id}` : "Unassigned")} />
-                        <Detail label="Scheduled pickup" value={delivery.scheduled_pickup_at ? new Date(delivery.scheduled_pickup_at).toLocaleString("en-ZA", { timeZone: "Africa/Johannesburg", dateStyle: "medium", timeStyle: "short" }) : "Not scheduled"} />
-                        <Detail label="Requested" value={new Date(delivery.created_at).toLocaleString("en-ZA", { timeZone: "Africa/Johannesburg", dateStyle: "medium", timeStyle: "short" })} />
-                        <Detail label="Parcel description" value={delivery.parcel_description} />
-                        <Detail label="Passenger" value={`#${delivery.passenger_id}`} />
+                      <div className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+                        <div><p className="text-[10px] font-medium uppercase tracking-wide text-slate-400">Pickup</p><p className="mt-1 break-words text-sm font-normal leading-relaxed text-slate-700">{delivery.pickup_address}</p></div>
+                        <div><p className="text-[10px] font-medium uppercase tracking-wide text-slate-400">Destination</p><p className="mt-1 break-words text-sm font-normal leading-relaxed text-slate-700">{delivery.dropoff_address}</p></div>
+                        <div><p className="text-[10px] font-medium uppercase tracking-wide text-slate-400">Fare</p><p className="mt-1 break-words text-sm font-normal leading-relaxed text-slate-700">{`R${Number(delivery.fare_amount).toFixed(2)}`}</p></div>
+                        <div><p className="text-[10px] font-medium uppercase tracking-wide text-slate-400">Assigned driver</p><p className="mt-1 break-words text-sm font-normal leading-relaxed text-slate-700">{delivery.driver_name || (delivery.driver_id ? `Driver #${delivery.driver_id}` : "Unassigned")}</p></div>
+                        <div><p className="text-[10px] font-medium uppercase tracking-wide text-slate-400">Scheduled pickup</p><p className="mt-1 break-words text-sm font-normal leading-relaxed text-slate-700">{delivery.scheduled_pickup_at ? new Date(delivery.scheduled_pickup_at).toLocaleString("en-ZA", { timeZone: "Africa/Johannesburg", dateStyle: "medium", timeStyle: "short" }) : "Not scheduled"}</p></div>
+                        <div><p className="text-[10px] font-medium uppercase tracking-wide text-slate-400">Requested</p><p className="mt-1 break-words text-sm font-normal leading-relaxed text-slate-700">{new Date(delivery.created_at).toLocaleString("en-ZA", { timeZone: "Africa/Johannesburg", dateStyle: "medium", timeStyle: "short" })}</p></div>
+                        <div><p className="text-[10px] font-medium uppercase tracking-wide text-slate-400">Parcel description</p><p className="mt-1 break-words text-sm font-normal leading-relaxed text-slate-700">{delivery.parcel_description}</p></div>
+                        <div>
+  <p className="text-xs text-slate-500">Passenger</p>
+  <p className="mt-1 text-sm font-medium text-slate-700">
+    {delivery.passenger_name || `Passenger #${delivery.passenger_id}`}
+  </p>
+  {delivery.passenger_phone && (
+    <a
+      href={`https://wa.me/${delivery.passenger_phone.replace(/\D/g, "").replace(/^0/, "").replace(/^(?!27)/, "27")}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="mt-2 inline-flex items-center gap-2 rounded-lg bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700 hover:bg-emerald-100"
+    >
+      WhatsApp passenger
+    </a>
+  )}
+</div>
                       </div>
                     </article>
                   ))}
+                </div>
                 </div>
               )}
             </section>
@@ -1456,6 +1606,78 @@ export default function AdminDashboardPage() {
               </div>
               {applicationCards(filteredApplications)}
               <div className="mt-6">{driverDirectory}</div>
+              <section className="mt-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-800">Today's completed deliveries</h3>
+                    <p className="mt-1 text-xs text-slate-500">Completed today · South Africa time</p>
+                  </div>
+                  <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
+                    {packageDeliveries.filter((d) => {
+                      if (!["delivered", "completed"].includes(d.status.toLowerCase()) || !d.delivered_at) return false;
+                      const localDate = (date: Date) =>
+                        new Intl.DateTimeFormat("en-CA", {
+                          timeZone: "Africa/Johannesburg",
+                          year: "numeric",
+                          month: "2-digit",
+                          day: "2-digit"
+                        }).format(date);
+                      return localDate(new Date(d.delivered_at)) === localDate(new Date());
+                    }).length} completed
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  {packageDeliveries.filter((d) => {
+                    if (!["delivered", "completed"].includes(d.status.toLowerCase()) || !d.delivered_at) return false;
+                    const localDate = (date: Date) =>
+                      new Intl.DateTimeFormat("en-CA", {
+                        timeZone: "Africa/Johannesburg",
+                        year: "numeric",
+                        month: "2-digit",
+                        day: "2-digit"
+                      }).format(date);
+                    return localDate(new Date(d.delivered_at)) === localDate(new Date());
+                  }).map((delivery) => (
+                    <div key={delivery.id} className="grid gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3 sm:grid-cols-5 sm:items-center">
+                      <div>
+                        <p className="text-xs font-semibold text-slate-800">Delivery #{delivery.id}</p>
+                        <p className="text-xs text-emerald-700">Delivered</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-slate-400">Passenger</p>
+                        <p className="text-xs text-slate-700">{delivery.passenger_name || `#${delivery.passenger_id}`}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-slate-400">Driver</p>
+                        <p className="text-xs text-slate-700">{delivery.driver_name || "Unassigned"}</p>
+                      </div>
+                      <p className="text-sm font-medium text-slate-800">R{Number(delivery.fare_amount).toFixed(2)}</p>
+                      <p className="text-xs text-slate-500">
+                        {delivery.delivered_at ? new Date(delivery.delivered_at).toLocaleTimeString("en-ZA", {
+                          timeZone: "Africa/Johannesburg",
+                          hour: "2-digit",
+                          minute: "2-digit"
+                        }) : "—"}
+                      </p>
+                    </div>
+                  ))}
+                  {packageDeliveries.every((d) => {
+                    if (!["delivered", "completed"].includes(d.status.toLowerCase()) || !d.delivered_at) return true;
+                    const localDate = (date: Date) =>
+                      new Intl.DateTimeFormat("en-CA", {
+                        timeZone: "Africa/Johannesburg",
+                        year: "numeric",
+                        month: "2-digit",
+                        day: "2-digit"
+                      }).format(date);
+                    return localDate(new Date(d.delivered_at)) !== localDate(new Date());
+                  }) && (
+                    <p className="rounded-xl bg-slate-50 p-4 text-center text-xs text-slate-500">
+                      No completed deliveries today.
+                    </p>
+                  )}
+                </div>
+              </section>
             </>
           )}
 
@@ -1485,6 +1707,78 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
               {passengerCards(filteredPassengers)}
+              <section className="mt-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-800">Today's completed deliveries</h3>
+                    <p className="mt-1 text-xs text-slate-500">Completed today · South Africa time</p>
+                  </div>
+                  <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
+                    {packageDeliveries.filter((d) => {
+                      if (!["delivered", "completed"].includes(d.status.toLowerCase()) || !d.delivered_at) return false;
+                      const localDate = (date: Date) =>
+                        new Intl.DateTimeFormat("en-CA", {
+                          timeZone: "Africa/Johannesburg",
+                          year: "numeric",
+                          month: "2-digit",
+                          day: "2-digit"
+                        }).format(date);
+                      return localDate(new Date(d.delivered_at)) === localDate(new Date());
+                    }).length} completed
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  {packageDeliveries.filter((d) => {
+                    if (!["delivered", "completed"].includes(d.status.toLowerCase()) || !d.delivered_at) return false;
+                    const localDate = (date: Date) =>
+                      new Intl.DateTimeFormat("en-CA", {
+                        timeZone: "Africa/Johannesburg",
+                        year: "numeric",
+                        month: "2-digit",
+                        day: "2-digit"
+                      }).format(date);
+                    return localDate(new Date(d.delivered_at)) === localDate(new Date());
+                  }).map((delivery) => (
+                    <div key={delivery.id} className="grid gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3 sm:grid-cols-5 sm:items-center">
+                      <div>
+                        <p className="text-xs font-semibold text-slate-800">Delivery #{delivery.id}</p>
+                        <p className="text-xs text-emerald-700">Delivered</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-slate-400">Passenger</p>
+                        <p className="text-xs text-slate-700">{delivery.passenger_name || `#${delivery.passenger_id}`}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-slate-400">Driver</p>
+                        <p className="text-xs text-slate-700">{delivery.driver_name || "Unassigned"}</p>
+                      </div>
+                      <p className="text-sm font-medium text-slate-800">R{Number(delivery.fare_amount).toFixed(2)}</p>
+                      <p className="text-xs text-slate-500">
+                        {delivery.delivered_at ? new Date(delivery.delivered_at).toLocaleTimeString("en-ZA", {
+                          timeZone: "Africa/Johannesburg",
+                          hour: "2-digit",
+                          minute: "2-digit"
+                        }) : "—"}
+                      </p>
+                    </div>
+                  ))}
+                  {packageDeliveries.every((d) => {
+                    if (!["delivered", "completed"].includes(d.status.toLowerCase()) || !d.delivered_at) return true;
+                    const localDate = (date: Date) =>
+                      new Intl.DateTimeFormat("en-CA", {
+                        timeZone: "Africa/Johannesburg",
+                        year: "numeric",
+                        month: "2-digit",
+                        day: "2-digit"
+                      }).format(date);
+                    return localDate(new Date(d.delivered_at)) !== localDate(new Date());
+                  }) && (
+                    <p className="rounded-xl bg-slate-50 p-4 text-center text-xs text-slate-500">
+                      No completed deliveries today.
+                    </p>
+                  )}
+                </div>
+              </section>
             </>
           )}
 
@@ -1639,18 +1933,90 @@ export default function AdminDashboardPage() {
                                   : "Not assigned")}
                             </span>
                             <span className="ml-3">
-                              Passenger #{booking.passenger_id ?? "â€”"}
+                              Passenger #{booking.passenger_id ?? "Ã¢â‚¬â€"}
                             </span>
                           </div>
                           <p className="mt-2 text-[11px] text-white/40">
-                            Booking status: {booking.booking_status || "â€”"} Â·
-                            Trip status: {booking.trip_status || "â€”"}
+                            Booking status: {booking.booking_status || "Ã¢â‚¬â€"} Ã‚Â·
+                            Trip status: {booking.trip_status || "Ã¢â‚¬â€"}
                           </p>
                         </article>
                       );
                     })}
                   </div>
                 )}
+              </section>
+              <section className="mt-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-800">Today's completed deliveries</h3>
+                    <p className="mt-1 text-xs text-slate-500">Completed today · South Africa time</p>
+                  </div>
+                  <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
+                    {packageDeliveries.filter((d) => {
+                      if (!["delivered", "completed"].includes(d.status.toLowerCase()) || !d.delivered_at) return false;
+                      const localDate = (date: Date) =>
+                        new Intl.DateTimeFormat("en-CA", {
+                          timeZone: "Africa/Johannesburg",
+                          year: "numeric",
+                          month: "2-digit",
+                          day: "2-digit"
+                        }).format(date);
+                      return localDate(new Date(d.delivered_at)) === localDate(new Date());
+                    }).length} completed
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  {packageDeliveries.filter((d) => {
+                    if (!["delivered", "completed"].includes(d.status.toLowerCase()) || !d.delivered_at) return false;
+                    const localDate = (date: Date) =>
+                      new Intl.DateTimeFormat("en-CA", {
+                        timeZone: "Africa/Johannesburg",
+                        year: "numeric",
+                        month: "2-digit",
+                        day: "2-digit"
+                      }).format(date);
+                    return localDate(new Date(d.delivered_at)) === localDate(new Date());
+                  }).map((delivery) => (
+                    <div key={delivery.id} className="grid gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3 sm:grid-cols-5 sm:items-center">
+                      <div>
+                        <p className="text-xs font-semibold text-slate-800">Delivery #{delivery.id}</p>
+                        <p className="text-xs text-emerald-700">Delivered</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-slate-400">Passenger</p>
+                        <p className="text-xs text-slate-700">{delivery.passenger_name || `#${delivery.passenger_id}`}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-slate-400">Driver</p>
+                        <p className="text-xs text-slate-700">{delivery.driver_name || "Unassigned"}</p>
+                      </div>
+                      <p className="text-sm font-medium text-slate-800">R{Number(delivery.fare_amount).toFixed(2)}</p>
+                      <p className="text-xs text-slate-500">
+                        {delivery.delivered_at ? new Date(delivery.delivered_at).toLocaleTimeString("en-ZA", {
+                          timeZone: "Africa/Johannesburg",
+                          hour: "2-digit",
+                          minute: "2-digit"
+                        }) : "—"}
+                      </p>
+                    </div>
+                  ))}
+                  {packageDeliveries.every((d) => {
+                    if (!["delivered", "completed"].includes(d.status.toLowerCase()) || !d.delivered_at) return true;
+                    const localDate = (date: Date) =>
+                      new Intl.DateTimeFormat("en-CA", {
+                        timeZone: "Africa/Johannesburg",
+                        year: "numeric",
+                        month: "2-digit",
+                        day: "2-digit"
+                      }).format(date);
+                    return localDate(new Date(d.delivered_at)) !== localDate(new Date());
+                  }) && (
+                    <p className="rounded-xl bg-slate-50 p-4 text-center text-xs text-slate-500">
+                      No completed deliveries today.
+                    </p>
+                  )}
+                </div>
               </section>
             </>
           )}
@@ -1769,7 +2135,7 @@ export default function AdminDashboardPage() {
                               Booking #{booking.id}
                             </p>
                             <p className="mt-1 text-[11px] text-white/40">
-                              Passenger #{booking.passenger_id ?? "â€”"}
+                              Passenger #{booking.passenger_id ?? "Ã¢â‚¬â€"}
                             </p>
                           </div>
                           <span className="rounded-full bg-[#ff754d]/10 px-3 py-1.5 text-[11px] font-bold capitalize text-[#ff9b7c]">
@@ -1800,7 +2166,7 @@ export default function AdminDashboardPage() {
                           booking.trip_status !== booking.booking_status && (
                             <p className="mt-4 text-[11px] text-white/40">
                               Booking status:{" "}
-                              {booking.booking_status.replace(/_/g, " ")} Â· Trip
+                              {booking.booking_status.replace(/_/g, " ")} Ã‚Â· Trip
                               status: {booking.trip_status.replace(/_/g, " ")}
                             </p>
                           )}
@@ -1843,7 +2209,7 @@ export default function AdminDashboardPage() {
           )}
 
           <footer className="mt-10 border-t border-white/10 py-5 text-center text-[11px] text-white/40">
-            RouteX Control Centre Â· Upington
+            RouteX Control Centre Ã‚Â· Upington
           </footer>
         </div>
       </div>
