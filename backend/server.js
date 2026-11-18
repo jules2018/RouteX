@@ -6351,6 +6351,8 @@ app.get("/admin/package-deliveries", async (req, res) => {
       SELECT
         pd.id,
         pd.passenger_id,
+        p.full_name AS passenger_name,
+        p.phone AS passenger_phone,
         pd.driver_id,
         d.full_name AS driver_name,
         pd.delivery_type,
@@ -6367,6 +6369,7 @@ app.get("/admin/package-deliveries", async (req, res) => {
         pd.delivered_at
       FROM public.package_deliveries pd
       LEFT JOIN drivers d ON d.id = pd.driver_id
+      LEFT JOIN passengers p ON p.id = pd.passenger_id
       ORDER BY pd.created_at DESC
       LIMIT 200
     `);
