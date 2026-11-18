@@ -8650,3 +8650,64 @@ app.get("/admin/monthly-transport/interests", async (req, res) => {
   }
 });
 
+
+
+app.get("/driver/growth-partner/stats", authenticateDriver, async (req, res) => {
+  try {
+    const driverId = req.authenticatedDriverId;
+
+    const partner = await pool.query(
+      `SELECT id, full_name, referral_code
+       FROM drivers
+       WHERE id = $1 AND id IN (26, 39)`,
+      [driverId]
+    );
+
+    if (!partner.rows.length) {
+      return res.status(403).json({
+        error: "Growth Partner access not enabled."
+      });
+    }
+
+    const driver = partner.rows[0];
+    const code = driver.referral_code;
+
+    const passengers = await pool.query(
+      `SELECT COUNT(*) AS total
+       FROM passengers
+       WHERE UPPER(TRIM(referral_code)) = UPPER($1)`,
+      [code]
+    );
+
+    const applications = await pool.query(
+      `SELECT COUNT(*) AS total
+       FROM driver_applications
+       WHERE UPPER(TRIM(referral_code)) = UPPER($1)`,
+      [code]
+    );
+
+    const trips = await pool.query(
+      `SELECT COUNT(*) AS total
+       FROM trip_bookings tb
+       JOIN passengers p ON p.id = tb.passenger_id
+       WHERE UPPER(TRIM(p.referral_code)) = UPPER($1)
+         AND tb.booking_status = 'Completed'
+         AND tb.trip_status = 'Completed'`,
+      [code]
+    );
+
+    res.json({
+      partner_name: driver.full_name.trim(),
+      referral_code: code,
+      passengers_recruited: Number(passengers.rows[0].total),
+      driver_applications: Number(applications.rows[0].total),
+      completed_trips: Number(trips.rows[0].total)
+    });
+
+  } catch (error) {
+    console.error("GROWTH PARTNER STATS ERROR:", error);
+    res.status(500).json({
+      error: "Unable to load Growth Partner statistics."
+    });
+  }
+});
