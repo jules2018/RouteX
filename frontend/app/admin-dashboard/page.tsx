@@ -216,7 +216,34 @@ function formatWhatsAppNumber(phone: string) {
 }
 
 function passengerMessage(passenger: Passenger) {
-  return `Hi ${passenger.full_name},\n\nAs one of our first RouteX members, you've received R20 OFF your first ride.\n\nUse promo code:\nWELCOME20\n\nEnter the code when booking your trip.\n\nBook here:\nhttps://routex-frontend.onrender.com\n\nRouteX Ã¢â‚¬Â¢ Getting Upington Moving`;
+  return `🚗📦 *HALLO ${passenger.full_name || "DAAR"}!* 🧡
+
+Onthou jy nog vir RouteX? 👋
+
+Dis al 'n rukkie sedert jy by ons aangesluit het!
+
+*RouteX groei en maak die lewe makliker!*
+
+🚗 *BENODIG JY 'N RIT?*
+Bespreek 'n rit met plaaslike bestuurders.
+
+💰 *JOU RIT, JOU PRYS!*
+Stel jou eie prys voor en laat bestuurders reageer.
+
+📦 *PAKKIE-AFLEWERINGS*
+Laat jou pakkies plaaslik aflewer.
+
+📱 *VINNIG EN MAKLIK*
+Alles sommer van jou selfoon af!
+
+🤝 *TROTS PLAASLIK*
+Ons ondersteun plaaslike bestuurders en gemeenskappe.
+
+🧡 Ons sien uit daarna om jou weer op RouteX te verwelkom!
+
+👉 https://routex-nationwide-frontend.onrender.com/
+
+*RouteX – Plaaslik. Maklik. Gerieflik.* 🚗📦`;
 }
 
 function SectionHeading({
